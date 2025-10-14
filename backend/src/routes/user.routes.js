@@ -39,12 +39,14 @@ router.patch("/me", requireAuth, async (req, res) => {
         ...(lastName !== undefined ? { lastName } : {}),
         ...(occupation !== undefined ? { occupation } : {}),
       },
-      { new: true }
+      { new: true, runValidators: true }
     );
     res.json({ ok: true, user });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ ok: false, error: "Server error" });
+    return res
+      .status(400)
+      .json({ ok: false, error: err.message || "Bad Request" });
   }
 });
 

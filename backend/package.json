@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "lint": "echo 'No linter configured'"
+    "lint": "echo 'No linter configured'",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules NODE_ENV=test jest"
   },
   "engines": {
     "node": ">=18"
@@ -22,6 +23,10 @@
     "openai": "^4.56.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.4"
+    "cross-env": "^10.1.0",
+    "jest": "^30.2.0",
+    "mongodb-memory-server": "^10.2.3",
+    "nodemon": "^3.1.4",
+    "supertest": "^7.1.4"
   }
 }
