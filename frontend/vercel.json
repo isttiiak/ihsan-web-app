@@ -9,5 +9,8 @@
       "VITE_FIREBASE_STORAGE_BUCKET": "@vite_firebase_storage_bucket",
       "VITE_BACKEND_URL": "@vite_backend_url"
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
