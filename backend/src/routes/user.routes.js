@@ -16,4 +16,36 @@ router.get("/me", requireAuth, async (req, res) => {
   }
 });
 
+// PATCH /api/user/me — update profile
+router.patch("/me", requireAuth, async (req, res) => {
+  try {
+    const {
+      displayName,
+      photoUrl,
+      gender,
+      birthDate,
+      firstName,
+      lastName,
+      occupation,
+    } = req.body;
+    const user = await User.findOneAndUpdate(
+      { uid: req.user.uid },
+      {
+        ...(displayName !== undefined ? { displayName } : {}),
+        ...(photoUrl !== undefined ? { photoUrl } : {}),
+        ...(gender !== undefined ? { gender } : {}),
+        ...(birthDate !== undefined ? { birthDate } : {}),
+        ...(firstName !== undefined ? { firstName } : {}),
+        ...(lastName !== undefined ? { lastName } : {}),
+        ...(occupation !== undefined ? { occupation } : {}),
+      },
+      { new: true }
+    );
+    res.json({ ok: true, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+
 export default router;

@@ -25,11 +25,11 @@ router.post("/verify", async (req, res) => {
       return res.status(500).json({ ok: false, error: "Auth not configured" });
     }
 
-    const { uid, email, name: displayName } = decoded;
+    const { uid, email, name: displayName, picture } = decoded;
 
     const user = await User.findOneAndUpdate(
       { uid },
-      { uid, email, displayName },
+      { uid, email, displayName, ...(picture ? { photoUrl: picture } : {}) },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 

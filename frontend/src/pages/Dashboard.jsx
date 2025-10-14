@@ -11,6 +11,7 @@ export default function Dashboard() {
     count,
     selectType,
     increment,
+    decrement,
     reset,
     startAutoSaveTimer,
     isSaving,
@@ -25,9 +26,25 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchedTypes.length]);
 
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("ihsan_user") || "{}");
+    const handler = (e) => {
+      if (!user?.uid && count > 0) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [count]);
+
   const onIncrement = () => {
     increment();
     startAutoSaveTimer();
+  };
+
+  const onDecrement = () => {
+    decrement();
   };
 
   const addCustom = async () => {
@@ -76,18 +93,31 @@ export default function Dashboard() {
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 10 }}
-              className="text-6xl font-bold text-ihsan-primary"
+              className="text-7xl md:text-8xl font-bold text-ihsan-primary"
             >
               {count}
             </motion.div>
-            <div className="mt-4 flex justify-center gap-3">
-              <CounterButton onClick={onIncrement}>Increment</CounterButton>
-              <button className="btn" onClick={reset}>
-                Reset
+            <div className="mt-4 flex justify-center gap-4">
+              <button className="btn btn-outline" onClick={onDecrement}>
+                −1
+              </button>
+              <button
+                className="btn btn-primary btn-lg"
+                style={{ minWidth: 160 }}
+                onClick={onIncrement}
+              >
+                +1
               </button>
             </div>
-            <div className="mt-2 text-sm opacity-70">
-              {isSaving ? "Saving..." : "Auto-saves after a pause"}
+            <div className="mt-4 text-sm opacity-70">
+              {isSaving
+                ? "Saving..."
+                : "Counts will auto-save when you pause (if logged in)"}
+            </div>
+            <div className="mt-6">
+              <button className="btn btn-sm btn-outline" onClick={reset}>
+                Reset counter
+              </button>
             </div>
           </div>
         </div>

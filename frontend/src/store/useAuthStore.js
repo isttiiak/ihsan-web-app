@@ -3,7 +3,9 @@ import { create } from "zustand";
 export const useAuthStore = create((set) => ({
   user: null,
   aiEnabled: false,
+  redirectPath: "/",
   setUser: (user) => set({ user }),
+  setRedirectPath: (path) => set({ redirectPath: path || "/" }),
   setAiEnabled: (aiEnabled) => {
     localStorage.setItem("ihsan_ai_enabled", aiEnabled ? "1" : "0");
     set({ aiEnabled });

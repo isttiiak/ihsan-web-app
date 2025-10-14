@@ -13,16 +13,29 @@ import {
 export default function Analytics() {
   const [summary, setSummary] = useState(null);
   const [range, setRange] = useState("7d");
+  const [unauthorized, setUnauthorized] = useState(false);
 
   useEffect(() => {
     const idToken = localStorage.getItem("ihsan_idToken");
+    if (!idToken) {
+      setUnauthorized(true);
+      return;
+    }
     fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/stats?range=${range}`, {
       headers: { Authorization: idToken ? `Bearer ${idToken}` : "" },
     })
-      .then((r) => r.json())
-      .then((d) => setSummary(d.summary));
+      .then(async (r) => {
+        if (r.status === 401) {
+          setUnauthorized(true);
+          return null;
+        }
+        return r.json();
+      })
+      .then((d) => d && setSummary(d.summary));
   }, [range]);
 
+  if (unauthorized)
+    return <div className="p-4">Please log in to view analytics.</div>;
   if (!summary) return <div className="p-4">Loading...</div>;
 
   return (

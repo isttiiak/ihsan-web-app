@@ -1,21 +1,24 @@
 import React, { useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
 import {
-  onAuthStateChanged,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
-import { auth, googleProvider } from "./firebase";
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
 import { useAuthStore } from "./store/useAuthStore";
+import { useZikrStore } from "./store/useZikrStore";
 import Navbar from "./components/Navbar";
 import Dashboard from "./pages/Dashboard";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Footer from "./components/Footer";
 import NotFound from "./pages/NotFound";
+import AuthSignIn from "./pages/AuthSignIn";
+import AuthSignUp from "./pages/AuthSignUp";
+import UnsavedWarning from "./components/UnsavedWarning";
 
 const AuthGate = ({ children }) => {
   const { user } = useAuthStore();
@@ -23,99 +26,10 @@ const AuthGate = ({ children }) => {
   return children;
 };
 
-const Login = () => {
-  const { setUser } = useAuthStore();
-
-  const verifyWithBackend = async (idToken, user) => {
-    const res = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      }
-    );
-    const data = await res.json();
-    if (data.ok) {
-      localStorage.setItem("ihsan_idToken", idToken);
-      localStorage.setItem(
-        "ihsan_user",
-        JSON.stringify({
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-        })
-      );
-      setUser({
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-      });
-    }
-  };
-
-  const google = async () => {
-    const result = await signInWithPopup(auth, googleProvider);
-    const idToken = await result.user.getIdToken();
-    await verifyWithBackend(idToken, result.user);
-  };
-
-  const emailPassword = async (e) => {
-    e.preventDefault();
-    const email = e.target.email.value;
-    const password = e.target.password.value;
-    try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = await result.user.getIdToken();
-      await verifyWithBackend(idToken, result.user);
-    } catch {
-      // Try sign up
-      const result = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const idToken = await result.user.getIdToken();
-      await verifyWithBackend(idToken, result.user);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="card bg-base-200 w-full max-w-md shadow-xl">
-        <div className="card-body gap-4">
-          <h2 className="card-title justify-center">Ihsan — Log in</h2>
-          <button className="btn btn-primary" onClick={google}>
-            Continue with Google
-          </button>
-          <div className="divider">or</div>
-          <form onSubmit={emailPassword} className="flex flex-col gap-2">
-            <input
-              name="email"
-              type="email"
-              placeholder="Email"
-              className="input input-bordered"
-              required
-            />
-            <input
-              name="password"
-              type="password"
-              placeholder="Password"
-              className="input input-bordered"
-              required
-            />
-            <button className="btn btn-secondary" type="submit">
-              Continue
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export default function App() {
   const { setUser, init } = useAuthStore();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     init();
@@ -129,7 +43,7 @@ export default function App() {
         return;
       }
       const idToken = await u.getIdToken();
-      // re-verify on refresh
+      // verify token (dev bypass ok)
       await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -139,23 +53,29 @@ export default function App() {
       const user = { uid: u.uid, email: u.email, displayName: u.displayName };
       localStorage.setItem("ihsan_user", JSON.stringify(user));
       setUser(user);
+
+      // If user just logged in, save any offline session
+      try {
+        await useZikrStore.getState().saveSession();
+      } catch {}
+
+      // Redirect to intended page if set
+      const redirect = sessionStorage.getItem("ihsan_redirect");
+      if (redirect && location.pathname === "/login") {
+        sessionStorage.removeItem("ihsan_redirect");
+        navigate(redirect || "/", { replace: true });
+      }
     });
     return () => unsub();
-  }, [setUser, init]);
+  }, [setUser, init, navigate, location.pathname]);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <UnsavedWarning />
       <div className="flex-1">
         <Routes>
-          <Route
-            path="/"
-            element={
-              <AuthGate>
-                <Dashboard />
-              </AuthGate>
-            }
-          />
+          <Route path="/" element={<Dashboard />} />
           <Route
             path="/analytics"
             element={
@@ -172,7 +92,8 @@ export default function App() {
               </AuthGate>
             }
           />
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<AuthSignIn />} />
+          <Route path="/signup" element={<AuthSignUp />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
