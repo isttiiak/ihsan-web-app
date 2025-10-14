@@ -4,6 +4,7 @@ import { auth, googleProvider } from "../firebase";
 
 export default function AuthSignIn() {
   const verifyWithBackend = async (idToken, user) => {
+    // /api/auth/verify will upsert user document (creates if first login)
     await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

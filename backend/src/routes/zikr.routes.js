@@ -1,86 +1,121 @@
 import { Router } from "express";
 import User from "../models/User.js";
-import ZikrSession from "../models/ZikrSession.js";
+import ZikrDaily from "../models/ZikrDaily.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
-// Save a Zikr session (auth required)
-router.post("/session", requireAuth, async (req, res) => {
+function truncateUTC(dateLike) {
+  const d = new Date(dateLike);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
+// Single increment
+router.post("/increment", requireAuth, async (req, res) => {
   try {
     const userId = req.user.uid;
-    const { date, zikrType, count } = req.body;
-    if (!date || !zikrType || typeof count !== "number")
-      return res.status(400).json({ error: "Missing fields" });
+    const { zikrType, amount = 1, ts } = req.body;
+    if (!zikrType) return res.status(400).json({ error: "zikrType required" });
+    if (!Number.isFinite(amount) || amount <= 0)
+      return res.status(400).json({ error: "amount must be > 0" });
 
-    const session = await ZikrSession.create({
-      userId,
-      date: new Date(date),
+    const date = truncateUTC(ts || Date.now());
+
+    try {
+      await ZikrDaily.updateOne(
+        { userId, date, zikrType },
+        { $inc: { count: amount } },
+        { upsert: true }
+      );
+    } catch {}
+
+    const user = await User.findOne({ uid: userId });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (
+      !user.zikrTypes.some(
+        (t) => t.name.toLowerCase() === zikrType.toLowerCase()
+      )
+    )
+      user.zikrTypes.push({ name: zikrType });
+    user.totalCount += amount;
+    user.zikrTotals.set(
       zikrType,
-      count,
-    });
+      (user.zikrTotals.get(zikrType) || 0) + amount
+    );
+    await user.save();
 
-    res.json({ ok: true, session });
+    return res.json({
+      ok: true,
+      totalCount: user.totalCount,
+      zikrTotals: Object.fromEntries(user.zikrTotals || []),
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: "Server error" });
   }
 });
 
-// Get stats (auth required)
-// /api/zikr/stats?range=7d|30d|all
-router.get("/stats", requireAuth, async (req, res) => {
+// Batch increment: [{ zikrType, amount, ts? }, ...]
+router.post("/increment/batch", requireAuth, async (req, res) => {
   try {
-    const { range = "7d" } = req.query;
     const userId = req.user.uid;
+    const { increments } = req.body;
+    if (!Array.isArray(increments) || !increments.length)
+      return res.status(400).json({ error: "increments array required" });
 
-    const now = new Date();
-    let start;
-    if (range === "7d")
-      start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    else if (range === "30d")
-      start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const user = await User.findOne({ uid: userId });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    const match = { userId };
-    if (start) match.date = { $gte: start };
+    for (const item of increments) {
+      const { zikrType, amount = 1, ts } = item || {};
+      if (!zikrType || !Number.isFinite(amount) || amount <= 0) continue;
+      const date = truncateUTC(ts || Date.now());
+      try {
+        await ZikrDaily.updateOne(
+          { userId, date, zikrType },
+          { $inc: { count: amount } },
+          { upsert: true }
+        );
+      } catch {}
+      if (
+        !user.zikrTypes.some(
+          (t) => t.name.toLowerCase() === zikrType.toLowerCase()
+        )
+      )
+        user.zikrTypes.push({ name: zikrType });
+      user.totalCount += amount;
+      user.zikrTotals.set(
+        zikrType,
+        (user.zikrTotals.get(zikrType) || 0) + amount
+      );
+    }
 
-    const pipeline = [
-      { $match: match },
-      {
-        $addFields: {
-          day: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-        },
-      },
-      {
-        $group: {
-          _id: "$day",
-          total: { $sum: "$count" },
-        },
-      },
-      { $sort: { _id: 1 } },
-    ];
+    await user.save();
+    return res.json({
+      ok: true,
+      totalCount: user.totalCount,
+      zikrTotals: Object.fromEntries(user.zikrTotals || []),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
 
-    const perDay = await ZikrSession.aggregate(pipeline);
-
-    const perType = await ZikrSession.aggregate([
-      { $match: match },
-      { $group: { _id: "$zikrType", total: { $sum: "$count" } } },
-      { $sort: { total: -1 } },
-    ]);
-
-    const totalCount = perType.reduce((acc, x) => acc + x.total, 0);
-    const topZikrTypes = perType
-      .slice(0, 3)
-      .map((x) => ({ name: x._id, total: x.total }));
-
+// Summary & types
+router.get("/summary", requireAuth, async (req, res) => {
+  try {
+    const user = await User.findOne({ uid: req.user.uid });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    const perType = [...(user.zikrTotals || new Map()).entries()].map(
+      ([zikrType, total]) => ({ zikrType, total })
+    );
     res.json({
       ok: true,
-      summary: {
-        totalCount,
-        dailyStats: perDay.map((d) => ({ date: d._id, total: d.total })),
-        perType: perType.map((t) => ({ zikrType: t._id, total: t.total })),
-        topZikrTypes,
-      },
+      totalCount: user.totalCount || 0,
+      perType: perType.sort((a, b) => b.total - a.total),
+      types: user.zikrTypes,
     });
   } catch (err) {
     console.error(err);
@@ -88,47 +123,32 @@ router.get("/stats", requireAuth, async (req, res) => {
   }
 });
 
-// Get preset & user Zikr types (auth required)
 router.get("/types", requireAuth, async (req, res) => {
   try {
-    const userId = req.user.uid;
-    const user = await User.findOne({ uid: userId });
-    const types = user?.zikrTypes || [];
-    res.json({ ok: true, types });
+    const user = await User.findOne({ uid: req.user.uid });
+    res.json({ ok: true, types: user?.zikrTypes || [] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: "Server error" });
   }
 });
 
-// Add a custom Zikr type (auth required)
 router.post("/type", requireAuth, async (req, res) => {
   try {
-    const userId = req.user.uid;
-    const { name } = req.body;
+    let { name } = req.body;
     if (!name) return res.status(400).json({ error: "Missing fields" });
+    name = String(name).trim();
+    if (!name) return res.status(400).json({ error: "Empty name" });
 
-    const user = await User.findOneAndUpdate(
-      { uid: userId },
-      { $addToSet: { zikrTypes: { name } } },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
-    );
-
+    const user = await User.findOne({ uid: req.user.uid });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (
+      !user.zikrTypes.some((t) => t.name.toLowerCase() === name.toLowerCase())
+    ) {
+      user.zikrTypes.push({ name });
+      await user.save();
+    }
     res.json({ ok: true, types: user.zikrTypes });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: "Server error" });
-  }
-});
-
-// Export all sessions (auth required)
-router.get("/sessions", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user.uid;
-    const sessions = await ZikrSession.find({ userId })
-      .sort({ date: -1 })
-      .limit(2000);
-    res.json({ ok: true, sessions });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: "Server error" });

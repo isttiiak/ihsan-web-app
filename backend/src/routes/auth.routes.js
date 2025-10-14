@@ -9,7 +9,7 @@ import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
-// Verify Firebase ID token and upsert user
+// Verify Firebase ID token and upsert user (used after login or signup)
 router.post("/verify", async (req, res) => {
   try {
     const { idToken } = req.body;
@@ -18,7 +18,10 @@ router.post("/verify", async (req, res) => {
     let decoded;
     if (isFirebaseInitialized()) {
       decoded = await verifyFirebaseToken(idToken);
-    } else if (process.env.DEV_AUTH_BYPASS === "1") {
+    } else if (
+      process.env.NODE_ENV !== "production" &&
+      process.env.DEV_AUTH_BYPASS === "1"
+    ) {
       decoded = decodeUnverifiedJwt(idToken);
       if (!decoded?.uid) throw new Error("Invalid token");
     } else {

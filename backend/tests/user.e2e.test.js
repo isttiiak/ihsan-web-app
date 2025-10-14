@@ -12,11 +12,6 @@ const fakeJwt = (payload) => {
   return `${header}.${body}.`;
 };
 
-// Increase default timeout for async operations
-if (typeof jasmine !== "undefined") {
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
-}
-
 let mongo;
 
 describe("User profile API", () => {
@@ -28,8 +23,10 @@ describe("User profile API", () => {
   });
 
   afterAll(async () => {
-    await mongoose.connection.dropDatabase();
-    await mongoose.disconnect();
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.dropDatabase().catch(() => {});
+      await mongoose.disconnect().catch(() => {});
+    }
     if (mongo) await mongo.stop();
   });
 

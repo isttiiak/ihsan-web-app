@@ -8,5 +8,7 @@ export const connectDB = async () => {
     dbName: "ihsan",
     autoIndex: true,
   });
-  console.log("MongoDB connected");
+  if (process.env.NODE_ENV !== "test") {
+    console.log("MongoDB connected");
+  }
 };

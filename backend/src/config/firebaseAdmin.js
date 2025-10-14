@@ -8,9 +8,11 @@ export const initFirebaseAdmin = () => {
     process.env;
 
   if (!FIREBASE_PROJECT_ID || !FIREBASE_CLIENT_EMAIL || !FIREBASE_PRIVATE_KEY) {
-    console.warn(
-      "Firebase Admin not fully configured. Auth verification may fail."
-    );
+    if (process.env.NODE_ENV !== "test") {
+      console.warn(
+        "Firebase Admin not fully configured. Auth verification may fail."
+      );
+    }
     return;
   }
 
@@ -23,7 +25,9 @@ export const initFirebaseAdmin = () => {
   });
 
   initialized = true;
-  console.log("Firebase Admin initialized");
+  if (process.env.NODE_ENV !== "test") {
+    console.log("Firebase Admin initialized");
+  }
 };
 
 export const isFirebaseInitialized = () => initialized;

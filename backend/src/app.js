@@ -13,10 +13,18 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan("dev"));
+const isProd = process.env.NODE_ENV === "production";
+app.use(morgan(isProd ? "combined" : "dev"));
+
+// Normalize CORS origins from env
+const rawOrigins = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+const allowedOrigins = String(rawOrigins)
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
 app.use(
   cors({
-    origin: process.env.FRONTEND_ORIGIN?.split(",") || "http://localhost:5173",
+    origin: allowedOrigins,
     credentials: true,
   })
 );

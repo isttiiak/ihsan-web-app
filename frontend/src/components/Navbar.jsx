@@ -78,7 +78,7 @@ export default function Navbar() {
                 <>
                   <li className="menu-title">Profile</li>
                   <li>
-                    <Link to="/settings" onClick={closeDropdown}>
+                    <Link to="/profile" onClick={closeDropdown}>
                       Edit profile
                     </Link>
                   </li>

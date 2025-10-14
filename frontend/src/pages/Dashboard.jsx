@@ -1,23 +1,24 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useZikrStore } from "../store/useZikrStore";
 import useFetchZikrTypes from "../hooks/useFetchZikrTypes";
-import CounterButton from "../components/CounterButton";
 
 export default function Dashboard() {
   const {
     types,
     selected,
-    count,
+    counts,
     selectType,
     increment,
     decrement,
     reset,
-    startAutoSaveTimer,
-    isSaving,
+    scheduleFlush,
     setTypes,
   } = useZikrStore();
   const fetchedTypes = useFetchZikrTypes();
+  const currentCount = counts?.[selected] || 0;
+  const [showAdd, setShowAdd] = useState(false);
+  const [newZikr, setNewZikr] = useState("");
 
   useEffect(() => {
     if (fetchedTypes.length) {
@@ -26,45 +27,52 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchedTypes.length]);
 
+  // Warn about unsaved only if anonymous user (no persistence anyway now we reset on reload)
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("ihsan_user") || "{}");
     const handler = (e) => {
-      if (!user?.uid && count > 0) {
+      if (!user?.uid && currentCount > 0) {
         e.preventDefault();
         e.returnValue = "";
       }
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [count]);
+  }, [currentCount]);
 
   const onIncrement = () => {
     increment();
-    startAutoSaveTimer();
+    scheduleFlush();
   };
 
   const onDecrement = () => {
     decrement();
   };
 
-  const addCustom = async () => {
-    const name = prompt("Add new Zikr type");
+  const submitCustom = async () => {
+    const name = newZikr.trim();
     if (!name) return;
     try {
       const idToken = localStorage.getItem("ihsan_idToken");
-      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/type`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: idToken ? `Bearer ${idToken}` : "",
-        },
-        body: JSON.stringify({ name }),
-      });
-      setTypes([...new Set([name, ...types])]);
-      selectType(name);
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/zikr/type`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: idToken ? `Bearer ${idToken}` : "",
+          },
+          body: JSON.stringify({ name }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed");
     } catch (e) {
-      console.error(e);
+      console.warn("Adding custom locally", e?.message || e);
     }
+    setTypes([...new Set([name, ...types])]);
+    selectType(name);
+    setNewZikr("");
+    setShowAdd(false);
   };
 
   return (
@@ -81,7 +89,7 @@ export default function Dashboard() {
                 <option key={t}>{t}</option>
               ))}
             </select>
-            <button className="btn" onClick={addCustom}>
+            <button className="btn" onClick={() => setShowAdd(true)}>
               Add Custom
             </button>
           </div>
@@ -89,13 +97,13 @@ export default function Dashboard() {
           <div className="text-center">
             <div className="text-2xl mb-2">{selected}</div>
             <motion.div
-              key={count}
+              key={`${selected}:${currentCount}`}
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 10 }}
               className="text-7xl md:text-8xl font-bold text-ihsan-primary"
             >
-              {count}
+              {currentCount}
             </motion.div>
             <div className="mt-4 flex justify-center gap-4">
               <button className="btn btn-outline" onClick={onDecrement}>
@@ -109,11 +117,6 @@ export default function Dashboard() {
                 +1
               </button>
             </div>
-            <div className="mt-4 text-sm opacity-70">
-              {isSaving
-                ? "Saving..."
-                : "Counts will auto-save when you pause (if logged in)"}
-            </div>
             <div className="mt-6">
               <button className="btn btn-sm btn-outline" onClick={reset}>
                 Reset counter
@@ -122,6 +125,35 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {showAdd && (
+        <div className="toast toast-center z-50">
+          <div className="alert bg-gradient-to-r from-emerald-500 to-amber-500 text-white shadow-xl">
+            <div className="flex flex-col md:flex-row gap-3 md:items-center">
+              <div className="font-semibold">Add new Zikr</div>
+              <input
+                autoFocus
+                value={newZikr}
+                onChange={(e) => setNewZikr(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") submitCustom();
+                  if (e.key === "Escape") setShowAdd(false);
+                }}
+                placeholder="Type name..."
+                className="input input-bordered text-base-content"
+              />
+              <div className="flex gap-2 justify-end">
+                <button className="btn" onClick={() => setShowAdd(false)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={submitCustom}>
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

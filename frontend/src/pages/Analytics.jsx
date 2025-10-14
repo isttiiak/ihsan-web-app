@@ -1,106 +1,69 @@
 import React, { useEffect, useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from "recharts";
 
 export default function Analytics() {
   const [summary, setSummary] = useState(null);
-  const [range, setRange] = useState("7d");
   const [unauthorized, setUnauthorized] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const idToken = localStorage.getItem("ihsan_idToken");
     if (!idToken) {
       setUnauthorized(true);
+      setLoading(false);
       return;
     }
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/stats?range=${range}`, {
-      headers: { Authorization: idToken ? `Bearer ${idToken}` : "" },
-    })
-      .then(async (r) => {
-        if (r.status === 401) {
+    (async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/zikr/summary`,
+          { headers: { Authorization: `Bearer ${idToken}` } }
+        );
+        if (res.status === 401) {
           setUnauthorized(true);
-          return null;
+          return;
         }
-        return r.json();
-      })
-      .then((d) => d && setSummary(d.summary));
-  }, [range]);
+        const data = await res.json();
+        setSummary(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   if (unauthorized)
     return <div className="p-4">Please log in to view analytics.</div>;
-  if (!summary) return <div className="p-4">Loading...</div>;
+  if (loading) return <div className="p-4">Loading...</div>;
+  if (!summary)
+    return <div className="p-4">No data yet. Start counting your Zikr.</div>;
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl">Analytics</h2>
-        <select
-          className="select select-bordered"
-          value={range}
-          onChange={(e) => setRange(e.target.value)}
-        >
-          <option value="7d">Last 7 days</option>
-          <option value="30d">Last 30 days</option>
-          <option value="all">All time</option>
-        </select>
-      </div>
+    <div className="p-4 max-w-3xl mx-auto">
+      <h2 className="text-2xl mb-4">Analytics</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="card bg-base-200 shadow">
-          <div className="card-body">
-            <h3 className="card-title">Daily Totals</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={summary.dailyStats}>
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="total" fill="#2E7D32" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        <div className="card bg-base-200 shadow">
-          <div className="card-body">
-            <h3 className="card-title">Per Zikr Totals</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={summary.perType}>
-                  <XAxis dataKey="zikrType" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="total" stroke="#CDA434" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 card bg-base-200">
+      <div className="card bg-base-200 shadow mb-6">
         <div className="card-body">
-          <div className="text-lg">
-            Total Count:{" "}
-            <span className="font-semibold">{summary.totalCount}</span>
-          </div>
-          <div className="opacity-70">
-            Top Zikr:{" "}
-            {summary.topZikrTypes
-              .map((t) => `${t.name} (${t.total})`)
-              .join(", ") || "—"}
+          <div className="text-sm opacity-70">All-time Zikr</div>
+          <div className="text-5xl font-bold text-ihsan-primary">
+            {summary.totalCount || 0}
           </div>
         </div>
       </div>
+
+      <h3 className="text-xl mb-2">Per Zikr Totals</h3>
+      {summary.perType?.length ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {summary.perType.map((t) => (
+            <div key={t.zikrType} className="stat bg-base-200 rounded-box">
+              <div className="stat-title">{t.zikrType}</div>
+              <div className="stat-value text-primary">{t.total}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="opacity-70">No zikr counted yet.</div>
+      )}
     </div>
   );
 }

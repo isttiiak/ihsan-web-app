@@ -7,9 +7,8 @@ import {
 import { auth, googleProvider } from "../firebase";
 
 export default function AuthSignUp() {
-  const google = async () => {
-    const result = await signInWithPopup(auth, googleProvider);
-    const idToken = await result.user.getIdToken();
+  const verifyAndStore = async (user) => {
+    const idToken = await user.getIdToken();
     await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -19,14 +18,18 @@ export default function AuthSignUp() {
     localStorage.setItem(
       "ihsan_user",
       JSON.stringify({
-        uid: result.user.uid,
-        email: result.user.email,
-        displayName: result.user.displayName,
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
       })
     );
-    // After google signup/login, go to home
     sessionStorage.removeItem("ihsan_redirect");
-    window.location.href = "/";
+    window.location.replace("/");
+  };
+
+  const google = async () => {
+    const result = await signInWithPopup(auth, googleProvider);
+    await verifyAndStore(result.user);
   };
 
   const onSubmit = async (e) => {
@@ -40,8 +43,7 @@ export default function AuthSignUp() {
     try {
       await updateProfile(res.user, { displayName: fullName });
     } catch {}
-    // redirect to login
-    window.location.href = "/login";
+    await verifyAndStore(res.user);
   };
 
   return (

@@ -4,25 +4,27 @@ import { useZikrStore } from "../store/useZikrStore";
 import { useAuthStore } from "../store/useAuthStore";
 
 export default function UnsavedWarning() {
-  const { count } = useZikrStore();
-  const { user } = useAuthStore();
+  const { counts } = useZikrStore();
+  const { user, authLoading } = useAuthStore();
   const [visible, setVisible] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
+  const anyUnsaved = Object.values(counts || {}).some((c) => (c || 0) > 0);
+
   useEffect(() => {
     const dismissed = sessionStorage.getItem("ihsan_unsaved_dismissed") === "1";
     const onAuthPage = ["/login", "/signup"].includes(location.pathname);
-    if (!user && count > 0 && !dismissed && !onAuthPage) {
+    if (!authLoading && !user && anyUnsaved && !dismissed && !onAuthPage) {
       setVisible(true);
     } else {
       setVisible(false);
     }
-  }, [user, count, location.pathname]);
+  }, [user, anyUnsaved, location.pathname, authLoading]);
 
   useEffect(() => {
-    if (count === 0) sessionStorage.removeItem("ihsan_unsaved_dismissed");
-  }, [count]);
+    if (!anyUnsaved) sessionStorage.removeItem("ihsan_unsaved_dismissed");
+  }, [anyUnsaved]);
 
   if (!visible) return null;
 
@@ -32,8 +34,8 @@ export default function UnsavedWarning() {
         <div className="flex-1">
           <h3 className="font-bold">Unsaved counts</h3>
           <div className="text-sm">
-            You’re not signed in. Your tasbeeh count will be lost on reload. Log
-            in to save your progress.
+            You’re not signed in. Your tasbeeh counts will be lost on reload.
+            Log in to save your progress.
           </div>
         </div>
         <div className="flex gap-2 ml-4">

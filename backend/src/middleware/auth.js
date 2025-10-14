@@ -16,8 +16,9 @@ export const requireAuth = async (req, res, next) => {
       return next();
     }
 
-    // Dev bypass: decode without verification if explicitly enabled
-    if (process.env.DEV_AUTH_BYPASS === "1") {
+    // Dev bypass: only in non-production environments
+    const isProd = process.env.NODE_ENV === "production";
+    if (!isProd && process.env.DEV_AUTH_BYPASS === "1") {
       const payload = decodeUnverifiedJwt(token);
       if (!payload?.uid)
         return res.status(401).json({ error: "Invalid token" });

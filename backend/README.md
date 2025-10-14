@@ -1,22 +1,23 @@
-# Ihsan Backend
+# Backend — Ihsan API
 
-Express.js + MongoDB + Firebase Admin + optional OpenAI.
+Express + MongoDB + Firebase Admin backend for Ihsan.
 
-Scripts
+## Current Simplified Zikr Model
 
-- npm run dev — start dev server with nodemon
-- npm start — start production server
+(Interim step while resetting database) — Only lifetime totals are exposed via API.
 
-Environment variables
-See .env.example
+### Collections
 
-API
+- users: `totalCount`, `zikrTotals` (per-type), `zikrTypes`
+- (Optional for future) zikrdailies retained but not used in UI
 
-- GET /api/health — health check
-- POST /api/auth/verify — verify Firebase ID token, upsert user
-- GET /api/auth/me?uid=... — get user by uid
-- POST /api/zikr/session — save zikr session { userId, date, zikrType, count }
-- GET /api/zikr/stats?userId=...&range=7d|30d|all — stats aggregation
-- GET /api/zikr/types?userId=... — preset + user types
-- POST /api/zikr/type — add custom type { userId, name }
-- POST /api/ai/suggest — returns dhikr suggestions and a motivational line (uses OpenAI if configured)
+### Endpoints (active)
+
+- POST /api/zikr/increment
+- GET /api/zikr/summary
+- GET /api/zikr/types
+- POST /api/zikr/type
+
+Daily / stats aggregation is temporarily removed to keep logic simple while reseeding data.
+
+Add back advanced analytics later by reintroducing a /stats endpoint aggregating `zikrdailies`.

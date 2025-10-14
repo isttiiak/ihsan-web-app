@@ -19,15 +19,25 @@ import NotFound from "./pages/NotFound";
 import AuthSignIn from "./pages/AuthSignIn";
 import AuthSignUp from "./pages/AuthSignUp";
 import UnsavedWarning from "./components/UnsavedWarning";
+import Profile from "./pages/Profile";
 
-const AuthGate = ({ children }) => {
-  const { user } = useAuthStore();
-  if (!user) return <Navigate to="/login" replace />;
+const Protected = ({ children }) => {
+  const { user, authLoading } = useAuthStore();
+  const location = useLocation();
+  if (authLoading) return null; // wait for auth resolution to avoid flicker
+  if (!user) {
+    sessionStorage.setItem(
+      "ihsan_redirect",
+      location.pathname + location.search
+    );
+    return <Navigate to="/login" replace />;
+  }
   return children;
 };
 
 export default function App() {
-  const { setUser, init } = useAuthStore();
+  const { setUser, init, setAuthLoading } = useAuthStore();
+  const { hydrate, resetAll } = useZikrStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -38,12 +48,14 @@ export default function App() {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) {
         setUser(null);
+        resetAll(); // clear on logout
         localStorage.removeItem("ihsan_user");
         localStorage.removeItem("ihsan_idToken");
+        setAuthLoading(false);
         return;
       }
+      // Do NOT reset here so counts persist across reloads
       const idToken = await u.getIdToken();
-      // verify token (dev bypass ok)
       await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,51 +65,77 @@ export default function App() {
       const user = { uid: u.uid, email: u.email, displayName: u.displayName };
       localStorage.setItem("ihsan_user", JSON.stringify(user));
       setUser(user);
-
-      // If user just logged in, save any offline session
       try {
-        await useZikrStore.getState().saveSession();
+        hydrate();
       } catch {}
-
-      // Redirect to intended page if set
       const redirect = sessionStorage.getItem("ihsan_redirect");
-      if (redirect && location.pathname === "/login") {
+      if (redirect && ["/login", "/signup"].includes(location.pathname)) {
         sessionStorage.removeItem("ihsan_redirect");
         navigate(redirect || "/", { replace: true });
       }
+      setAuthLoading(false);
     });
     return () => unsub();
-  }, [setUser, init, navigate, location.pathname]);
+  }, [
+    setUser,
+    init,
+    navigate,
+    location.pathname,
+    resetAll,
+    hydrate,
+    setAuthLoading,
+  ]);
+
+  const { authLoading } = useAuthStore();
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <UnsavedWarning />
-      <div className="flex-1">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route
-            path="/analytics"
-            element={
-              <AuthGate>
-                <Analytics />
-              </AuthGate>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <AuthGate>
-                <Settings />
-              </AuthGate>
-            }
-          />
-          <Route path="/login" element={<AuthSignIn />} />
-          <Route path="/signup" element={<AuthSignUp />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </div>
-      <Footer />
+      {authLoading ? (
+        <div className="flex-1 grid place-items-center">
+          <div className="flex flex-col items-center gap-4 opacity-80">
+            <span className="loading loading-spinner loading-lg" />
+            <div className="text-sm">Preparing your session…</div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <Navbar />
+          <UnsavedWarning />
+          <div className="flex-1">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route
+                path="/analytics"
+                element={
+                  <Protected>
+                    <Analytics />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <Protected>
+                    <Settings />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <Protected>
+                    <Profile />
+                  </Protected>
+                }
+              />
+              <Route path="/login" element={<AuthSignIn />} />
+              <Route path="/signup" element={<AuthSignUp />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
+          <Footer />
+        </>
+      )}
     </div>
   );
 }
