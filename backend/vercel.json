@@ -1,0 +1,4 @@
+{
+  "ignoreCommand": "echo backend is API only",
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/$1" }]
+}

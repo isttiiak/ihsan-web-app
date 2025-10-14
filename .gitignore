@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Environments
+.env
+**/.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+
+# Builds
+frontend/dist/
+backend/dist/
+
+# Tools
+.vercel/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
