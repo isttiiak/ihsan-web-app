@@ -7,6 +7,9 @@ node_modules/
 .env.*
 !.env.example
 
+# Secrets (Firebase Admin service accounts)
+*firebase-adminsdk*.json
+
 # OS
 .DS_Store
 
