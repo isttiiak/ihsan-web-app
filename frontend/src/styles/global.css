@@ -1,0 +1,168 @@
+/* Global styles for Ihsan app */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent text selection on counter buttons */
+.counter-btn {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Better focus outline for accessibility */
+*:focus-visible {
+  outline: 2px solid #1b998b;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Fix overflow on mobile */
+body {
+  overflow-x: hidden;
+}
+
+/* Improved scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1b998b;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0f4c75;
+}
+
+/* Responsive text utilities */
+@media (max-width: 375px) {
+  .text-responsive {
+    font-size: 0.875rem;
+  }
+}
+
+/* Prevent zoom on input focus on iOS */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="date"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Better tap targets for mobile */
+@media (max-width: 768px) {
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Animation for gradient backgrounds */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+/* Improved card shadows for depth */
+.card-elevated {
+  box-shadow: 0 4px 6px -1px rgba(15, 76, 117, 0.1),
+    0 2px 4px -1px rgba(15, 76, 117, 0.06);
+}
+
+.card-elevated:hover {
+  box-shadow: 0 10px 15px -3px rgba(15, 76, 117, 0.2),
+    0 4px 6px -2px rgba(15, 76, 117, 0.1);
+}
+
+/* Loading skeleton */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(15, 76, 117, 0.05) 25%,
+    rgba(27, 153, 139, 0.1) 50%,
+    rgba(15, 76, 117, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Responsive container max widths */
+.container-sm {
+  max-width: 640px;
+}
+
+.container-md {
+  max-width: 768px;
+}
+
+.container-lg {
+  max-width: 1024px;
+}
+
+.container-xl {
+  max-width: 1280px;
+}
+
+/* Fix for iPhone SE and small screens */
+@media (max-width: 375px) {
+  .navbar-center {
+    font-size: 0.75rem;
+  }
+
+  .salam-text {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Improved mobile menu */
+@media (max-width: 640px) {
+  .mobile-menu-item {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+}

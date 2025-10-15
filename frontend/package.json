@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "axios": "^1.7.7",
     "daisyui": "^4.12.10",
     "firebase": "^10.13.1",
@@ -22,10 +23,10 @@
   "devDependencies": {
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
-    "vite": "^5.4.2",
-    "@vitejs/plugin-react": "^4.3.1"
+    "vite": "^5.4.2"
   }
 }

@@ -113,12 +113,12 @@ export default function App() {
   const { authLoading } = useAuthStore();
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-base-100">
       {authLoading ? (
-        <div className="flex-1 grid place-items-center">
-          <div className="flex flex-col items-center gap-4 opacity-80">
-            <span className="loading loading-spinner loading-lg" />
-            <div className="text-sm">Preparing your session…</div>
+        <div className="flex-1 grid place-items-center bg-gradient-to-br from-ihsan-light via-base-100 to-ihsan-light/50">
+          <div className="flex flex-col items-center gap-4">
+            <span className="loading loading-spinner loading-lg text-ihsan-primary" />
+            <div className="text-sm opacity-70">Preparing your session…</div>
           </div>
         </div>
       ) : (

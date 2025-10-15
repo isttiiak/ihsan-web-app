@@ -5,6 +5,15 @@ import { signOut } from "firebase/auth";
 import logo from "../assets/logo.svg";
 import { useAuthStore } from "../store/useAuthStore";
 import { useZikrStore } from "../store/useZikrStore";
+import {
+  Bars3Icon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+  UserCircleIcon,
+  ArrowRightOnRectangleIcon,
+  MoonIcon,
+  SunIcon,
+} from "@heroicons/react/24/outline";
 
 export default function Navbar() {
   const location = useLocation();
@@ -12,10 +21,11 @@ export default function Navbar() {
   const { user, setUser } = useAuthStore();
   const { reset } = useZikrStore();
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const salam = `Assalamu ‘alaikum wa raḥmatullāhi wa barakātuh${
-    user?.displayName ? ", " + user.displayName : ""
+  const salam = `Assalamu 'alaikum${
+    user?.displayName ? ", " + user.displayName.split(" ")[0] : ""
   }`;
 
   useEffect(() => {
@@ -23,161 +33,182 @@ export default function Navbar() {
     if (dropdownRef.current && dropdownRef.current.hasAttribute("open")) {
       dropdownRef.current.removeAttribute("open");
     }
+    setMobileMenuOpen(false);
   }, [location.pathname]);
 
   const closeDropdown = () => {
     if (dropdownRef.current) dropdownRef.current.removeAttribute("open");
   };
 
+  const toggleTheme = () => {
+    const theme =
+      document.documentElement.getAttribute("data-theme") || "emerald";
+    const next =
+      theme === "dark" ? "light" : theme === "light" ? "emerald" : "dark";
+    localStorage.setItem("ihsan_theme", next);
+    document.documentElement.setAttribute("data-theme", next);
+  };
+
   return (
     <>
-      <div className="navbar bg-base-100 border-b border-base-200">
-        <div className="navbar-start">
-          <Link to="/" className="btn btn-ghost text-xl gap-2">
-            <img src={logo} alt="Ihsan" className="w-6 h-6" />
-            <span className="text-ihsan-primary">Ihsan</span>
+      <div className="navbar bg-gradient-to-r from-ihsan-primary to-ihsan-secondary text-white shadow-islamic sticky top-0 z-40 px-2 sm:px-4">
+        <div className="navbar-start flex-1">
+          <Link
+            to="/"
+            className="btn btn-ghost text-lg sm:text-xl gap-2 hover:bg-white/10"
+          >
+            <img src={logo} alt="Ihsan" className="w-6 h-6 sm:w-7 sm:h-7" />
+            <span className="font-bold hidden sm:inline">Ihsan</span>
           </Link>
         </div>
 
-        <div className="navbar-center">
-          <div className="text-center text-sm md:text-base opacity-80 truncate max-w-[60vw]">
-            {salam}
+        {/* Center - Salam (Hidden on very small screens) */}
+        <div className="navbar-center hidden md:flex flex-1 justify-center">
+          <div className="text-center px-4">
+            <p className="text-sm lg:text-base font-medium text-white/90 truncate max-w-xs lg:max-w-md">
+              {salam}
+            </p>
           </div>
         </div>
 
-        <div className="navbar-end gap-2">
-          <ul className="menu menu-horizontal px-1">
-            <li>
-              <Link
-                className={location.pathname === "/analytics" ? "active" : ""}
-                to="/analytics"
-              >
-                Analytics
-              </Link>
-            </li>
-          </ul>
-          <details className="dropdown dropdown-end" ref={dropdownRef}>
-            <summary className="btn btn-ghost btn-circle avatar placeholder">
-              {user?.photoUrl ? (
-                <div className="w-8 rounded-full overflow-hidden">
-                  <img
-                    alt={user.displayName || "Profile"}
-                    src={user.photoUrl}
-                  />
-                </div>
-              ) : (
-                <div className="bg-base-200 text-base-content rounded-full w-8">
-                  <span className="text-xs">
-                    {user?.displayName?.[0]?.toUpperCase() || "U"}
-                  </span>
-                </div>
-              )}
-            </summary>
-            <ul className="menu dropdown-content bg-base-200 rounded-box z-[1] w-64 p-2 shadow">
-              {user ? (
-                <>
-                  <li className="menu-title">Profile</li>
-                  <li>
-                    <Link to="/profile" onClick={closeDropdown}>
-                      Edit profile
-                    </Link>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => {
-                        const theme =
-                          document.documentElement.getAttribute("data-theme") ||
-                          "emerald";
-                        const next =
-                          theme === "dark"
-                            ? "light"
-                            : theme === "light"
-                            ? "emerald"
-                            : "dark";
-                        localStorage.setItem("ihsan_theme", next);
-                        document.documentElement.setAttribute(
-                          "data-theme",
-                          next
-                        );
-                        closeDropdown();
-                      }}
-                    >
-                      Toggle theme
-                    </button>
-                  </li>
-                  <li>
-                    <Link to="/settings" onClick={closeDropdown}>
-                      Settings
-                    </Link>
-                  </li>
-                  <li>
-                    <button
-                      className="btn btn-error btn-sm"
-                      onClick={() => {
-                        closeDropdown();
-                        setConfirmLogout(true);
-                      }}
-                    >
-                      Sign out
-                    </button>
-                  </li>
-                </>
-              ) : (
-                <>
-                  <li>
-                    <Link
-                      to="/login"
-                      onClick={() => {
-                        sessionStorage.setItem(
-                          "ihsan_redirect",
-                          location.pathname
-                        );
-                        closeDropdown();
-                      }}
-                    >
-                      Sign in
-                    </Link>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => {
-                        const theme =
-                          document.documentElement.getAttribute("data-theme") ||
-                          "emerald";
-                        const next =
-                          theme === "dark"
-                            ? "light"
-                            : theme === "light"
-                            ? "emerald"
-                            : "dark";
-                        localStorage.setItem("ihsan_theme", next);
-                        document.documentElement.setAttribute(
-                          "data-theme",
-                          next
-                        );
-                        closeDropdown();
-                      }}
-                    >
-                      Toggle theme
-                    </button>
-                  </li>
-                </>
-              )}
-            </ul>
-          </details>
+        {/* Right Side - Desktop Menu */}
+        <div className="navbar-end flex-none gap-2">
+          {/* Desktop Navigation Links */}
+          <div className="hidden lg:flex gap-1">
+            {user && (
+              <>
+                <Link
+                  to="/analytics"
+                  className={`btn btn-ghost btn-sm gap-2 hover:bg-white/10 ${
+                    location.pathname === "/analytics" ? "bg-white/20" : ""
+                  }`}
+                >
+                  <ChartBarIcon className="w-4 h-4" />
+                  Analytics
+                </Link>
+                <Link
+                  to="/settings"
+                  className={`btn btn-ghost btn-sm gap-2 hover:bg-white/10 ${
+                    location.pathname === "/settings" ? "bg-white/20" : ""
+                  }`}
+                >
+                  <Cog6ToothIcon className="w-4 h-4" />
+                  Settings
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Theme Toggle Button */}
+          <button
+            className="btn btn-ghost btn-circle btn-sm hover:bg-white/10"
+            onClick={toggleTheme}
+          >
+            <MoonIcon className="w-5 h-5 hidden dark:block" />
+            <SunIcon className="w-5 h-5 dark:hidden" />
+          </button>
+
+          {/* User Menu Dropdown */}
+          {user ? (
+            <details className="dropdown dropdown-end" ref={dropdownRef}>
+              <summary className="btn btn-ghost btn-circle avatar placeholder hover:bg-white/10">
+                {user?.photoUrl ? (
+                  <div className="w-8 sm:w-10 rounded-full overflow-hidden ring-2 ring-white/30">
+                    <img
+                      alt={user.displayName || "Profile"}
+                      src={user.photoUrl}
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-white/20 text-white rounded-full w-8 sm:w-10 flex items-center justify-center">
+                    <span className="text-sm font-semibold">
+                      {user?.displayName?.[0]?.toUpperCase() || "U"}
+                    </span>
+                  </div>
+                )}
+              </summary>
+              <ul className="menu dropdown-content bg-base-100 text-base-content rounded-box z-[1] w-64 p-2 shadow-islamic-lg mt-3 border border-ihsan-primary/10">
+                <li className="menu-title">
+                  <span className="text-ihsan-primary">Profile</span>
+                </li>
+                <li>
+                  <Link to="/profile" onClick={closeDropdown} className="gap-2">
+                    <UserCircleIcon className="w-5 h-5" />
+                    Edit Profile
+                  </Link>
+                </li>
+                <li className="lg:hidden">
+                  <Link
+                    to="/analytics"
+                    onClick={closeDropdown}
+                    className="gap-2"
+                  >
+                    <ChartBarIcon className="w-5 h-5" />
+                    Analytics
+                  </Link>
+                </li>
+                <li className="lg:hidden">
+                  <Link
+                    to="/settings"
+                    onClick={closeDropdown}
+                    className="gap-2"
+                  >
+                    <Cog6ToothIcon className="w-5 h-5" />
+                    Settings
+                  </Link>
+                </li>
+                <div className="divider my-1"></div>
+                <li>
+                  <button
+                    className="text-error gap-2"
+                    onClick={() => {
+                      closeDropdown();
+                      setConfirmLogout(true);
+                    }}
+                  >
+                    <ArrowRightOnRectangleIcon className="w-5 h-5" />
+                    Sign Out
+                  </button>
+                </li>
+              </ul>
+            </details>
+          ) : (
+            <Link
+              to="/login"
+              className="btn btn-sm bg-white text-ihsan-primary hover:bg-white/90 border-0 shadow-md"
+              onClick={() => {
+                sessionStorage.setItem("ihsan_redirect", location.pathname);
+              }}
+            >
+              Sign In
+            </Link>
+          )}
         </div>
       </div>
 
+      {/* Mobile Salam Banner (Shown only on small screens) */}
+      {user && (
+        <div className="md:hidden bg-gradient-to-r from-ihsan-secondary/10 to-ihsan-primary/10 px-4 py-2 text-center border-b border-ihsan-primary/10">
+          <p className="text-xs sm:text-sm text-ihsan-primary font-medium truncate">
+            {salam}
+          </p>
+        </div>
+      )}
+
+      {/* Logout Confirmation Modal */}
       {confirmLogout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="card bg-base-200 shadow-xl w-full max-w-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="card bg-base-100 shadow-islamic-lg w-full max-w-md border border-ihsan-primary/10">
             <div className="card-body gap-4">
-              <h3 className="card-title">Sign out?</h3>
-              <p>
+              <h3 className="card-title text-ihsan-primary">Sign Out?</h3>
+              <p className="text-sm opacity-70">
                 Are you sure you want to sign out? Unsaved counts will be lost.
               </p>
-              <div className="card-actions justify-end">
-                <button className="btn" onClick={() => setConfirmLogout(false)}>
+              <div className="card-actions justify-end gap-2">
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => setConfirmLogout(false)}
+                >
                   Cancel
                 </button>
                 <button
@@ -193,7 +224,7 @@ export default function Navbar() {
                     navigate("/", { replace: true });
                   }}
                 >
-                  Sign out
+                  Sign Out
                 </button>
               </div>
             </div>
