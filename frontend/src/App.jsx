@@ -56,20 +56,36 @@ export default function App() {
       }
       // Do NOT reset here so counts persist across reloads
       const idToken = await u.getIdToken(true);
-      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({ idToken }),
-      });
+      const verifyRes = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ idToken }),
+        }
+      );
+
+      if (!verifyRes.ok) {
+        console.error(
+          "Verify failed:",
+          verifyRes.status,
+          await verifyRes.text()
+        );
+        // Force logout if verify fails
+        await auth.signOut();
+        setAuthLoading(false);
+        return;
+      }
+
       localStorage.setItem("ihsan_idToken", idToken);
       const user = { uid: u.uid, email: u.email, displayName: u.displayName };
       localStorage.setItem("ihsan_user", JSON.stringify(user));
       setUser(user);
       try {
-        hydrate();
+        await hydrate();
       } catch {}
       const redirect = sessionStorage.getItem("ihsan_redirect");
       if (redirect && ["/login", "/signup"].includes(location.pathname)) {
