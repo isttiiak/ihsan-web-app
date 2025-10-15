@@ -55,7 +55,7 @@ export default function App() {
         return;
       }
       // Do NOT reset here so counts persist across reloads
-      const idToken = await u.getIdToken();
+      const idToken = await u.getIdToken(true);
       await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
