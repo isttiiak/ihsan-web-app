@@ -69,10 +69,15 @@ export default function App() {
       );
 
       if (!verifyRes.ok) {
-        console.error(
-          "Verify failed:",
-          verifyRes.status,
-          await verifyRes.text()
+        const errorText = await verifyRes.text();
+        console.error("Verify failed:", {
+          status: verifyRes.status,
+          body: errorText,
+          backend: import.meta.env.VITE_BACKEND_URL,
+          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+        });
+        alert(
+          `Auth verification failed (${verifyRes.status}). Check console for details.`
         );
         // Force logout if verify fails
         await auth.signOut();
