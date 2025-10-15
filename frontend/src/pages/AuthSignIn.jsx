@@ -1,42 +1,37 @@
-import React from "react";
+import React, { useState } from "react";
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
+import { useNavigate } from "react-router-dom";
 
 export default function AuthSignIn() {
-  const verifyWithBackend = async (idToken, user) => {
-    // /api/auth/verify will upsert user document (creates if first login)
-    await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken }),
-    });
-    localStorage.setItem("ihsan_idToken", idToken);
-    localStorage.setItem(
-      "ihsan_user",
-      JSON.stringify({
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-      })
-    );
-    const redirect = sessionStorage.getItem("ihsan_redirect") || "/";
-    sessionStorage.removeItem("ihsan_redirect");
-    window.location.replace(redirect);
-  };
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const google = async () => {
-    const result = await signInWithPopup(auth, googleProvider);
-    const idToken = await result.user.getIdToken();
-    await verifyWithBackend(idToken, result.user);
+    setLoading(true);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      // onAuthStateChanged in App.jsx will handle verify and redirect
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+      setLoading(false);
+    }
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const email = e.target.email.value;
     const password = e.target.password.value;
-    const res = await signInWithEmailAndPassword(auth, email, password);
-    const idToken = await res.user.getIdToken();
-    await verifyWithBackend(idToken, res.user);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged in App.jsx will handle verify and redirect
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,8 +45,8 @@ export default function AuthSignIn() {
             <h2 className="card-title justify-center text-2xl">
               Log in to Ihsan
             </h2>
-            <button className="btn btn-primary" onClick={google}>
-              Continue with Google
+            <button className="btn btn-primary" onClick={google} disabled={loading}>
+              {loading ? <span className="loading loading-spinner loading-sm" /> : "Continue with Google"}
             </button>
             <div className="divider">or</div>
             <form onSubmit={onSubmit} className="grid grid-cols-1 gap-2">
@@ -69,8 +64,8 @@ export default function AuthSignIn() {
                 className="input input-bordered"
                 required
               />
-              <button className="btn btn-secondary" type="submit">
-                Log in
+              <button className="btn btn-secondary" type="submit" disabled={loading}>
+                {loading ? <span className="loading loading-spinner loading-sm" /> : "Log in"}
               </button>
             </form>
             <div className="text-sm text-center opacity-70">

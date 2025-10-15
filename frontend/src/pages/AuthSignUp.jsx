@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   createUserWithEmailAndPassword,
   signInWithPopup,
@@ -7,43 +7,41 @@ import {
 import { auth, googleProvider } from "../firebase";
 
 export default function AuthSignUp() {
-  const verifyAndStore = async (user) => {
-    const idToken = await user.getIdToken();
-    await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken }),
-    });
-    localStorage.setItem("ihsan_idToken", idToken);
-    localStorage.setItem(
-      "ihsan_user",
-      JSON.stringify({
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-      })
-    );
-    sessionStorage.removeItem("ihsan_redirect");
-    window.location.replace("/");
-  };
+  const [loading, setLoading] = useState(false);
 
   const google = async () => {
-    const result = await signInWithPopup(auth, googleProvider);
-    await verifyAndStore(result.user);
+    setLoading(true);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      // onAuthStateChanged in App.jsx will handle verify and redirect
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+      setLoading(false);
+    }
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const firstName = e.target.firstName.value.trim();
     const lastName = e.target.lastName.value.trim();
     const email = e.target.email.value;
     const password = e.target.password.value;
-    const res = await createUserWithEmailAndPassword(auth, email, password);
-    const fullName = [firstName, lastName].filter(Boolean).join(" ");
     try {
-      await updateProfile(res.user, { displayName: fullName });
-    } catch {}
-    await verifyAndStore(res.user);
+      const res = await createUserWithEmailAndPassword(auth, email, password);
+      const fullName = [firstName, lastName].filter(Boolean).join(" ");
+      if (fullName) {
+        try {
+          await updateProfile(res.user, { displayName: fullName });
+        } catch {}
+      }
+      // onAuthStateChanged in App.jsx will handle verify and redirect
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -57,8 +55,8 @@ export default function AuthSignUp() {
             <h2 className="card-title justify-center text-2xl">
               Create your Ihsan account
             </h2>
-            <button className="btn btn-primary" onClick={google}>
-              Sign up with Google
+            <button className="btn btn-primary" onClick={google} disabled={loading}>
+              {loading ? <span className="loading loading-spinner loading-sm" /> : "Sign up with Google"}
             </button>
             <div className="divider">or</div>
             <form onSubmit={onSubmit} className="grid grid-cols-1 gap-2">
@@ -90,8 +88,8 @@ export default function AuthSignUp() {
                 className="input input-bordered"
                 required
               />
-              <button className="btn btn-secondary" type="submit">
-                Sign up
+              <button className="btn btn-secondary" type="submit" disabled={loading}>
+                {loading ? <span className="loading loading-spinner loading-sm" /> : "Sign up"}
               </button>
             </form>
             <div className="text-sm text-center opacity-70">
