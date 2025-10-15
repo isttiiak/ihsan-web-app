@@ -45,8 +45,16 @@ export default function AuthSignIn() {
             <h2 className="card-title justify-center text-2xl">
               Log in to Ihsan
             </h2>
-            <button className="btn btn-primary" onClick={google} disabled={loading}>
-              {loading ? <span className="loading loading-spinner loading-sm" /> : "Continue with Google"}
+            <button
+              className="btn btn-primary"
+              onClick={google}
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="loading loading-spinner loading-sm" />
+              ) : (
+                "Continue with Google"
+              )}
             </button>
             <div className="divider">or</div>
             <form onSubmit={onSubmit} className="grid grid-cols-1 gap-2">
@@ -64,8 +72,16 @@ export default function AuthSignIn() {
                 className="input input-bordered"
                 required
               />
-              <button className="btn btn-secondary" type="submit" disabled={loading}>
-                {loading ? <span className="loading loading-spinner loading-sm" /> : "Log in"}
+              <button
+                className="btn btn-secondary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="loading loading-spinner loading-sm" />
+                ) : (
+                  "Log in"
+                )}
               </button>
             </form>
             <div className="text-sm text-center opacity-70">

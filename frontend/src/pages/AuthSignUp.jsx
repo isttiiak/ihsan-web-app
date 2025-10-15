@@ -55,8 +55,16 @@ export default function AuthSignUp() {
             <h2 className="card-title justify-center text-2xl">
               Create your Ihsan account
             </h2>
-            <button className="btn btn-primary" onClick={google} disabled={loading}>
-              {loading ? <span className="loading loading-spinner loading-sm" /> : "Sign up with Google"}
+            <button
+              className="btn btn-primary"
+              onClick={google}
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="loading loading-spinner loading-sm" />
+              ) : (
+                "Sign up with Google"
+              )}
             </button>
             <div className="divider">or</div>
             <form onSubmit={onSubmit} className="grid grid-cols-1 gap-2">
@@ -88,8 +96,16 @@ export default function AuthSignUp() {
                 className="input input-bordered"
                 required
               />
-              <button className="btn btn-secondary" type="submit" disabled={loading}>
-                {loading ? <span className="loading loading-spinner loading-sm" /> : "Sign up"}
+              <button
+                className="btn btn-secondary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="loading loading-spinner loading-sm" />
+                ) : (
+                  "Sign up"
+                )}
               </button>
             </form>
             <div className="text-sm text-center opacity-70">
