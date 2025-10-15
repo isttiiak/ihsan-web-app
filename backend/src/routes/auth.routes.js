@@ -38,8 +38,12 @@ router.post("/verify", async (req, res) => {
 
     res.json({ ok: true, user });
   } catch (err) {
-    console.error(err);
-    res.status(401).json({ ok: false, error: "Invalid token" });
+    const code = err?.code || err?.errorInfo?.code || null;
+    const message = err?.message || err?.errorInfo?.message || "Unauthorized";
+    if (process.env.NODE_ENV !== "test") {
+      console.error("/api/auth/verify error:", code, message);
+    }
+    res.status(401).json({ ok: false, error: "Invalid token", code, message });
   }
 });
 
