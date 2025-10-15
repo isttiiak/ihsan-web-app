@@ -31,7 +31,8 @@ app.use(
       if (!origin) return callback(null, true); // non-browser or same-origin
       const normalized = origin.replace(/\/$/, "");
       const ok =
-        allowedOrigins.includes(normalized) || vercelPreviewRegex.test(normalized);
+        allowedOrigins.includes(normalized) ||
+        vercelPreviewRegex.test(normalized);
       return callback(null, ok);
     },
     credentials: true,
