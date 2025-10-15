@@ -11,7 +11,9 @@ import { auth } from "./firebase";
 import { useAuthStore } from "./store/useAuthStore";
 import { useZikrStore } from "./store/useZikrStore";
 import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
+import ZikrCounter from "./pages/ZikrCounter";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Footer from "./components/Footer";
@@ -20,6 +22,9 @@ import AuthSignIn from "./pages/AuthSignIn";
 import AuthSignUp from "./pages/AuthSignUp";
 import UnsavedWarning from "./components/UnsavedWarning";
 import Profile from "./pages/Profile";
+import SalatTracker from "./pages/SalatTracker";
+import FastingTracker from "./pages/FastingTracker";
+import PrayerTimes from "./pages/PrayerTimes";
 
 const Protected = ({ children }) => {
   const { user, authLoading } = useAuthStore();
@@ -112,6 +117,10 @@ export default function App() {
 
   const { authLoading } = useAuthStore();
 
+  // Define focus mode routes (no navbar/footer)
+  const focusModeRoutes = ["/zikr", "/salat", "/fasting", "/prayer-times"];
+  const isFocusMode = focusModeRoutes.includes(location.pathname);
+
   return (
     <div className="min-h-screen flex flex-col bg-base-100">
       {authLoading ? (
@@ -123,11 +132,16 @@ export default function App() {
         </div>
       ) : (
         <>
-          <Navbar />
-          <UnsavedWarning />
+          {!isFocusMode && <Navbar />}
+          {!isFocusMode && <UnsavedWarning />}
           <div className="flex-1">
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/zikr" element={<ZikrCounter />} />
+              <Route path="/salat" element={<SalatTracker />} />
+              <Route path="/fasting" element={<FastingTracker />} />
+              <Route path="/prayer-times" element={<PrayerTimes />} />
               <Route
                 path="/analytics"
                 element={
@@ -157,7 +171,7 @@ export default function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
-          <Footer />
+          {!isFocusMode && <Footer />}
         </>
       )}
     </div>

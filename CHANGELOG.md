@@ -4,6 +4,28 @@ All notable changes to the Ihsan web app redesign.
 
 ---
 
+## [2.1.0] - December 2024
+
+### 🎯 Focus Mode Implementation (Option 3)
+
+- **ADDED**: New home page with activity card grid at `/`
+- **ADDED**: Salat Tracker with daily prayer logging (`/salat`)
+- **ADDED**: Fasting Tracker with streak and goal tracking (`/fasting`)
+- **ADDED**: Prayer Times display with live clock (`/prayer-times`)
+- **MOVED**: Zikr Counter dashboard to `/dashboard` (from `/`)
+- **IMPLEMENTED**: Minimal focus mode navigation for all trackers
+- **ADDED**: localStorage persistence for all tracking data
+- **ADDED**: Automatic midnight reset for Salat Tracker
+- **ADDED**: Geolocation support for Prayer Times
+- **ADDED**: Progress ring for Salat completion
+- **ADDED**: Progress bar for Fasting goals
+- **ADDED**: Live countdown for next prayer time
+- **IMPROVED**: Navigation flow with "Back to Home" buttons
+- **IMPROVED**: Responsive design for all new pages
+- **IMPROVED**: Unique gradient backgrounds for each activity
+
+---
+
 ## [2.0.0] - October 15, 2025
 
 ### 🎨 Design Overhaul
