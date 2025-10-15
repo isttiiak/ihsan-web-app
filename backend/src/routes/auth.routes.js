@@ -12,7 +12,11 @@ const router = Router();
 // Verify Firebase ID token and upsert user (used after login or signup)
 router.post("/verify", async (req, res) => {
   try {
-    const { idToken } = req.body;
+    const header = req.headers.authorization || "";
+    const tokenFromHeader = header.startsWith("Bearer ")
+      ? header.slice(7)
+      : null;
+    const idToken = req.body?.idToken || tokenFromHeader;
     if (!idToken) return res.status(400).json({ error: "idToken required" });
 
     let decoded;
