@@ -58,7 +58,10 @@ export default function App() {
       const idToken = await u.getIdToken(true);
       await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({ idToken }),
       });
       localStorage.setItem("ihsan_idToken", idToken);
