@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { getUserTimezoneOffset, getTodayLocal } from "../utils/timezone.js";
 
 const FLUSH_DELAY = 800; // ms
 
@@ -20,17 +21,18 @@ export const useZikrStore = create(
       isFlushing: false,
       lastResetDate: null, // Track the last reset date
       checkAndResetIfNewDay: () => {
-        const today = new Date().toDateString();
+        // Use browser's timezone (auto-detected)
+        const today = getTodayLocal(); // Gets today in user's local timezone
         const lastReset = get().lastResetDate;
 
         if (lastReset !== today) {
-          // It's a new day, reset daily counts
+          // It's a new day in user's timezone, reset daily counts
           set({
             counts: {},
             pending: {},
             lastResetDate: today,
           });
-          console.log("✨ Daily counts reset for new day:", today);
+          console.log("✨ Daily counts reset for new day (local time):", today);
         }
       },
       setTypes: (types) => set({ types }),
@@ -100,11 +102,16 @@ export const useZikrStore = create(
             const current = s.counts[type] || 0;
             const pend = s.pending[type] || 0;
             const life = s.lifetimeTotals[type] || 0;
+
+            // Get user's timezone offset for sending to backend
+            const timezoneOffset = getUserTimezoneOffset();
+
             return {
               counts: { ...s.counts, [type]: current + 1 },
               lifetimeTotals: { ...s.lifetimeTotals, [type]: life + 1 },
               pending: { ...s.pending, [type]: pend + 1 },
               total: s.total + 1,
+              timezoneOffset, // Store for flushing
             };
           },
           false,
@@ -120,7 +127,10 @@ export const useZikrStore = create(
         }),
       reset: () =>
         set(
-          (s) => ({ counts: { ...s.counts, [s.selected]: 0 } }),
+          (s) => ({
+            counts: { ...s.counts, [s.selected]: 0 },
+            pending: { ...s.pending, [s.selected]: 0 },
+          }),
           false,
           "reset"
         ),
@@ -130,12 +140,16 @@ export const useZikrStore = create(
         set({ _flushTimer: t });
       },
       flush: async () => {
-        const { pending } = get();
+        const { pending, timezoneOffset } = get();
         const idToken = localStorage.getItem("ihsan_idToken");
         if (!idToken) return;
         const payload = Object.entries(pending)
           .filter(([, a]) => a > 0)
-          .map(([zikrType, amount]) => ({ zikrType, amount }));
+          .map(([zikrType, amount]) => ({
+            zikrType,
+            amount,
+            timezoneOffset: timezoneOffset || getUserTimezoneOffset(), // Include timezone
+          }));
         if (!payload.length) return;
         set({ isFlushing: true });
         try {
@@ -147,7 +161,10 @@ export const useZikrStore = create(
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${idToken}`,
               },
-              body: JSON.stringify({ increments: payload }),
+              body: JSON.stringify({
+                increments: payload,
+                timezoneOffset: timezoneOffset || getUserTimezoneOffset(), // Global timezone
+              }),
             }
           );
           set((s) => ({

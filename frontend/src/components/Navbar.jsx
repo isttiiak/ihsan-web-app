@@ -78,15 +78,6 @@ export default function Navbar() {
             {user && (
               <>
                 <Link
-                  to="/analytics"
-                  className={`btn btn-ghost btn-sm gap-2 hover:bg-white/10 ${
-                    location.pathname === "/analytics" ? "bg-white/20" : ""
-                  }`}
-                >
-                  <ChartBarIcon className="w-4 h-4" />
-                  Analytics
-                </Link>
-                <Link
                   to="/settings"
                   className={`btn btn-ghost btn-sm gap-2 hover:bg-white/10 ${
                     location.pathname === "/settings" ? "bg-white/20" : ""
@@ -135,16 +126,6 @@ export default function Navbar() {
                   <Link to="/profile" onClick={closeDropdown} className="gap-2">
                     <UserCircleIcon className="w-5 h-5" />
                     Edit Profile
-                  </Link>
-                </li>
-                <li className="lg:hidden">
-                  <Link
-                    to="/analytics"
-                    onClick={closeDropdown}
-                    className="gap-2"
-                  >
-                    <ChartBarIcon className="w-5 h-5" />
-                    Analytics
                   </Link>
                 </li>
                 <li className="lg:hidden">

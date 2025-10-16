@@ -1,7 +1,16 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { FireIcon } from "@heroicons/react/24/solid";
-import { PauseIcon, PlayIcon } from "@heroicons/react/24/outline";
+import {
+  FireIcon,
+  TrophyIcon,
+  LockClosedIcon,
+} from "@heroicons/react/24/solid";
+import {
+  PauseIcon,
+  PlayIcon,
+  BoltIcon,
+  CheckCircleIcon,
+} from "@heroicons/react/24/outline";
 
 export default function StreakCard({ streak, onPause, onResume, isLoading }) {
   const { currentStreak, longestStreak, isPaused } = streak || {};
@@ -36,26 +45,63 @@ export default function StreakCard({ streak, onPause, onResume, isLoading }) {
       <div className="card-body p-3 sm:p-4 relative z-10">
         <div className="flex items-center justify-between mb-2">
           <motion.h3
-            className="text-sm sm:text-base font-extrabold flex items-center gap-1.5"
+            className="text-base sm:text-lg font-extrabold flex items-center gap-2"
             animate={!isPaused ? { scale: [1, 1.01, 1] } : {}}
             transition={{ duration: 2.5, repeat: Infinity }}
           >
-            <FireIcon className="w-4 h-4 drop-shadow-lg" />
-            {isPaused ? "🔒 Paused" : "🔥 Streak"}
+            {isPaused ? (
+              <>
+                <LockClosedIcon className="w-5 h-5 drop-shadow-lg" />
+                Paused
+              </>
+            ) : (
+              <>
+                <FireIcon className="w-5 h-5 drop-shadow-lg" />
+                Streak
+              </>
+            )}
           </motion.h3>
           <motion.button
             onClick={isPaused ? onResume : onPause}
             disabled={isLoading}
-            whileHover={{ scale: 1.1, rotate: isPaused ? 360 : 180 }}
-            whileTap={{ scale: 0.9 }}
-            className="btn btn-xs btn-circle bg-white/50 hover:bg-white/80 border-2 border-white/70 shadow-lg hover:shadow-xl text-white backdrop-blur-sm font-bold transition-all duration-300"
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.85 }}
+            className={`
+              relative overflow-hidden rounded-full p-2
+              ${
+                isPaused
+                  ? "bg-gradient-to-br from-emerald-400 to-green-500 hover:from-emerald-300 hover:to-green-400"
+                  : "bg-gradient-to-br from-white/90 to-white/70 hover:from-white hover:to-white/90"
+              }
+              shadow-[0_4px_15px_-2px_rgba(0,0,0,0.3)] hover:shadow-[0_6px_20px_-2px_rgba(0,0,0,0.4)]
+              border-2 ${isPaused ? "border-green-600/30" : "border-white/40"}
+              backdrop-blur-md
+              transition-all duration-300 ease-out
+              disabled:opacity-50 disabled:cursor-not-allowed
+              group
+            `}
             title={isPaused ? "Resume Streak" : "Pause Streak"}
           >
-            {isPaused ? (
-              <PlayIcon className="w-3 h-3" />
-            ) : (
-              <PauseIcon className="w-3 h-3" />
-            )}
+            <motion.div
+              animate={isPaused ? { rotate: 360 } : {}}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className={isPaused ? "text-white" : "text-orange-600"}
+            >
+              {isPaused ? (
+                <PlayIcon className="w-4 h-4 drop-shadow-md" />
+              ) : (
+                <PauseIcon className="w-4 h-4 drop-shadow-sm" />
+              )}
+            </motion.div>
+            {/* Hover glow effect */}
+            <motion.div
+              className={`absolute inset-0 rounded-full ${
+                isPaused ? "bg-green-400" : "bg-white"
+              } opacity-0 group-hover:opacity-30 blur-md`}
+              initial={{ scale: 0 }}
+              whileHover={{ scale: 1.2 }}
+              transition={{ duration: 0.3 }}
+            />
           </motion.button>
         </div>
 
@@ -63,7 +109,6 @@ export default function StreakCard({ streak, onPause, onResume, isLoading }) {
           {/* Current Streak */}
           <div className="text-center">
             <motion.div
-              className="text-3xl sm:text-4xl font-black mb-0.5 drop-shadow-lg"
               animate={
                 !isPaused && currentStreak > 0
                   ? {
@@ -81,21 +126,24 @@ export default function StreakCard({ streak, onPause, onResume, isLoading }) {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
+              className="text-4xl sm:text-5xl font-black mb-1 drop-shadow-lg"
             >
               {currentStreak || 0}
             </motion.div>
-            <p className="text-[10px] font-bold opacity-90">Day Streak</p>
+            <p className="text-xs font-bold opacity-90">Day Streak</p>
           </div>
 
           {/* Best Streak */}
           <div className="text-center border-l border-white/30">
             <motion.div
-              className="text-2xl sm:text-3xl font-black mb-0.5 opacity-90 drop-shadow-lg"
+              className="text-3xl sm:text-4xl font-black mb-1 opacity-90 drop-shadow-lg"
               whileHover={{ scale: 1.05 }}
             >
               {longestStreak || 0}
             </motion.div>
-            <p className="text-[10px] font-bold opacity-90">Best 🏅</p>
+            <p className="text-xs font-bold opacity-90 flex items-center justify-center gap-1">
+              Best <TrophyIcon className="w-3 h-3" />
+            </p>
           </div>
         </div>
 
@@ -106,8 +154,8 @@ export default function StreakCard({ streak, onPause, onResume, isLoading }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <p className="text-[10px] text-center font-semibold opacity-95">
-              🎯 Keep it up! Strong habit.
+            <p className="text-xs text-center font-semibold opacity-95 flex items-center justify-center gap-1.5">
+              <CheckCircleIcon className="w-4 h-4" /> Keep it up! Strong habit.
             </p>
           </motion.div>
         )}
@@ -119,23 +167,44 @@ export default function StreakCard({ streak, onPause, onResume, isLoading }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <p className="text-[10px] text-center font-semibold opacity-95">
-              ⏸️ Safe. Resume anytime!
+            <p className="text-xs text-center font-semibold opacity-95 flex items-center justify-center gap-1.5">
+              <PauseIcon className="w-4 h-4" /> Safe. Resume anytime!
             </p>
           </motion.div>
         )}
 
-        {/* Compact Streak Rules */}
+        {/* Enhanced Streak Rules */}
         <motion.div
-          className="p-2 bg-white/10 rounded-lg border border-white/20"
+          className="p-3 bg-white/10 rounded-lg border border-white/20 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          <p className="text-[9px] font-bold opacity-90 mb-0.5">📋 Rules:</p>
-          <p className="text-[9px] opacity-85">
-            • 1 zikr daily • 24h grace • Pause anytime
+          <p className="text-base font-bold opacity-95 mb-2 flex items-center gap-1.5">
+            <BoltIcon className="w-4 h-4" /> How Streaks Work:
           </p>
+          <div className="space-y-1.5 text-sm opacity-90">
+            <p className="flex items-start gap-2">
+              <CheckCircleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>Complete your daily zikr goal to continue your streak</span>
+            </p>
+            <p className="flex items-start gap-2">
+              <FireIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>
+                Miss 1 day? No problem! You get a 24-hour grace period
+              </span>
+            </p>
+            <p className="flex items-start gap-2">
+              <PauseIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>Pause anytime to preserve your streak safely</span>
+            </p>
+            <p className="flex items-start gap-2">
+              <LockClosedIcon className="w-4 h-4 flex-shrink-0 mt-0.5 opacity-80" />
+              <span className="text-xs italic opacity-75">
+                Note: Missing 2+ days in a row will reset your streak
+              </span>
+            </p>
+          </div>
         </motion.div>
       </div>
     </motion.div>

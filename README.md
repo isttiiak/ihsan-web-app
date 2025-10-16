@@ -1,153 +1,297 @@
-# Ihsan — Muslim Productivity & Worship Tracker
+# 🕌 Ihsan - Islamic Productivity App
 
-Ihsan is a MERN-stack web application to help Muslims track dhikr, analyze worship habits, and grow spiritually with a gentle, playful UI. This MVP (Phase 1) ships with Firebase Authentication, interactive Zikr counter, analytics dashboard, and an optional AI suggestion endpoint.
+**Live Demo:** [https://ihsan-web-app-main.vercel.app/](https://ihsan-web-app-main.vercel.app/)
 
-Tech stack
+A modern Islamic productivity application to help Muslims track their daily Zikr (remembrance of Allah), maintain streaks, set goals, and monitor their spiritual progress.
 
-- Frontend: React + Vite + Tailwind CSS + DaisyUI + React Router + Recharts + Firebase Auth SDK
-- Backend: Node.js + Express + MongoDB (Mongoose) + Firebase Admin + OpenAI (optional)
-- Deployment: Vercel (frontend), Render (backend), MongoDB Atlas (M0)
+---
 
-Monorepo structure
+## ✨ Features
 
-- frontend/ — Vite React app
-- backend/ — Express API
+### 🔢 Zikr Counter
 
-Quick start
+- Beautiful, intuitive counter interface
+- Multiple Zikr types (SubhanAllah, Alhamdulillah, Allahu Akbar, La ilaha illallah)
+- Custom Zikr types support
+- Real-time count tracking
+- Smooth animations and haptic feedback
 
-1. Prerequisites
+### 📊 Analytics Dashboard
 
-- Node.js 18+
-- MongoDB Atlas M0 cluster
-- Firebase project (Authentication enabled: Email/Password and Google)
-- Optional: OpenAI API key for AI suggestions
+- Daily, weekly, and custom period analytics
+- Beautiful charts and visualizations
+- Per-Zikr type breakdown
+- Today vs All-time statistics
+- Progress tracking
 
-2. Environment variables
+### 🎯 Goals & Streaks
 
-- Copy the example env files and fill in values
+- Set daily Zikr goals
+- Track current and longest streaks
+- Visual progress indicators
+- Goal achievement celebrations
+- Streak pause/resume feature
 
-Backend
-cp backend/.env.example backend/.env
+### 🌍 Worldwide Timezone Support
 
-Frontend
-cp frontend/.env.example frontend/.env
+- **Automatic timezone detection** - Works for users anywhere in the world
+- **Local midnight reset** - Daily reset occurs at user's local midnight
+- **Accurate analytics** - All data reflects user's local timezone
+- **Zero configuration** - Works automatically out of the box
 
-3. Install dependencies
+### 🎨 Modern UI/UX
 
-# From repo root
+- Dark glassmorphism design
+- Vivid gradients and spiritual aesthetics
+- Smooth animations with Framer Motion
+- Responsive design (mobile, tablet, desktop)
+- Islamic-inspired color palette
 
-cd backend && npm install
-cd ../frontend && npm install
+---
 
-4. Run locally (two terminals)
+## 🚀 Tech Stack
 
-# Terminal 1 — backend
+### Frontend
 
+- **React** - UI framework
+- **Vite** - Build tool
+- **Zustand** - State management
+- **React Router** - Navigation
+- **Framer Motion** - Animations
+- **Recharts** - Data visualization
+- **Tailwind CSS** - Styling
+- **DaisyUI** - Component library
+
+### Backend
+
+- **Node.js** - Runtime
+- **Express** - Web framework
+- **MongoDB** - Database
+- **Firebase Auth** - Authentication
+- **Mongoose** - ODM
+
+---
+
+## 📁 Project Structure
+
+```
+ihsan/
+├── frontend/          # React frontend application
+│   ├── src/
+│   │   ├── components/   # Reusable components
+│   │   ├── pages/        # Page components
+│   │   ├── store/        # Zustand store
+│   │   └── utils/        # Utility functions
+│   └── package.json
+│
+├── backend/           # Express backend API
+│   ├── src/
+│   │   ├── models/       # MongoDB models
+│   │   ├── routes/       # API routes
+│   │   ├── middleware/   # Custom middleware
+│   │   ├── utils/        # Utility functions
+│   │   └── jobs/         # Cron jobs
+│   └── package.json
+│
+└── docs/              # Documentation
+    └── README.md
+```
+
+---
+
+## 🛠️ Installation & Setup
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- MongoDB (local or Atlas)
+- Firebase project (for authentication)
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/isttiiak/ihsan.git
+cd ihsan
+```
+
+### 2. Backend Setup
+
+```bash
 cd backend
+npm install
+
+# Create .env file
+cp .env.example .env
+
+# Add your environment variables:
+# - MONGODB_URI
+# - FIREBASE_PROJECT_ID
+# - FIREBASE_PRIVATE_KEY
+# - FIREBASE_CLIENT_EMAIL
+# - PORT
+
+# Start backend
 npm run dev
+```
 
-# Terminal 2 — frontend
+### 3. Frontend Setup
 
+```bash
 cd frontend
+npm install
+
+# Create .env file
+cp .env.example .env
+
+# Add your environment variables:
+# - VITE_BACKEND_URL
+# - VITE_FIREBASE_API_KEY
+# - VITE_FIREBASE_AUTH_DOMAIN
+# - VITE_FIREBASE_PROJECT_ID
+# - VITE_FIREBASE_STORAGE_BUCKET
+# - VITE_FIREBASE_MESSAGING_SENDER_ID
+# - VITE_FIREBASE_APP_ID
+
+# Start frontend
 npm run dev
+```
 
-- Backend: http://localhost:5000 (update PORT in .env if needed)
-- Frontend: http://localhost:5173 (Vite may switch to 5174+ if busy)
+### 4. Access the app
 
-CORS note
-- If Vite chooses a different port (e.g., 5174), add it to FRONTEND_ORIGIN in backend .env: FRONTEND_ORIGIN=http://localhost:5173,http://localhost:5174
+- Frontend: http://localhost:5173
+- Backend: http://localhost:5000
 
-5. First login flow
+---
 
-- Create an account using Email/Password or Google Sign-In
-- The frontend will obtain a Firebase ID token and verify with the backend via /api/auth/verify
+## 🌍 Worldwide Timezone Support
 
-6. Zikr & Analytics
+The app automatically detects the user's timezone and provides accurate daily reset timing:
 
-- Choose or create a Zikr type
-- Increment counter, Reset if needed
-- Data auto-saves when idle or when you press Save
-- View analytics for daily/weekly/monthly trends
+- **User in New York (UTC-5):** Daily reset at 12:00 AM New York time
+- **User in Tokyo (UTC+9):** Daily reset at 12:00 AM Tokyo time
+- **User in Dhaka (UTC+6):** Daily reset at 12:00 AM Dhaka time
 
-Deployment
-Frontend (Vercel)
+No configuration needed - it just works! ✨
 
-- Import the frontend/ directory as a project
-- Set Environment Variables (Vercel Project Settings → Environment Variables):
-  - VITE_FIREBASE_API_KEY
-  - VITE_FIREBASE_AUTH_DOMAIN
-  - VITE_FIREBASE_PROJECT_ID
-  - VITE_FIREBASE_APP_ID
-  - VITE_FIREBASE_MESSAGING_SENDER_ID
-  - VITE_FIREBASE_STORAGE_BUCKET
-  - VITE_BACKEND_URL (your Render backend URL)
-- Build Command: npm run build
-- Output Directory: dist
+---
 
-Backend (Render)
+## 🎯 Key Features Explained
 
-- Create a new Web Service from the backend/ folder repo
-- Environment:
-  - Node 18+
-  - Build Command: npm install
-  - Start Command: npm start
-- Environment Variables:
-  - PORT: 5000
-  - MONGODB_URI
-  - FIREBASE_PROJECT_ID
-  - FIREBASE_CLIENT_EMAIL
-  - FIREBASE_PRIVATE_KEY (escape newlines as \n)
-  - FRONTEND_ORIGIN (Vercel URL, e.g., https://your-app.vercel.app)
-  - OPENAI_API_KEY (optional)
+### Daily Reset Logic
 
-MongoDB Atlas
+- Automatically resets daily counts at local midnight
+- Preserves streak and lifetime totals
+- Smart detection on page focus/visibility change
+- No wasteful polling or intervals
 
-- Create an M0 cluster
-- Whitelist IPs or set 0.0.0.0/0 (dev only)
-- Create a database user
-- Get connection string and put in backend .env
+### Analytics
 
-Firebase Auth
+- View data for 7, 15, 30, 60, 90, or 180 days
+- See today's progress vs all-time statistics
+- Beautiful charts with gradient fills
+- Per-Zikr type breakdown
 
-- Enable Email/Password and Google providers
-- Get project config and fill frontend .env
-- Create a service account (for Admin SDK) and copy credentials into backend .env
+### Authentication
 
-Notes
+- Secure Firebase authentication
+- Email/password login
+- Protected routes
+- Persistent sessions
 
-- AI suggestions are opt-in and only work if OPENAI_API_KEY is configured on the backend. Without it, the endpoint will return static suggestions.
-- Theming and AI settings persist in localStorage.
-- This is a non-commercial, privacy-first app. No analytics trackers.
+---
 
-Scripts
-Backend
+## 📝 API Endpoints
 
-- npm run dev — nodemon dev server
-- npm start — production server
+### Zikr
 
-Frontend
+- `POST /api/zikr/increment` - Increment Zikr count
+- `POST /api/zikr/increment/batch` - Batch increment
+- `GET /api/zikr/summary` - Get user summary
+- `GET /api/zikr/types` - Get Zikr types
+- `POST /api/zikr/type` - Add custom Zikr type
 
-- npm run dev — Vite dev server
-- npm run build — production build
-- npm run preview — preview production build locally
+### Analytics
 
-Root
+- `GET /api/analytics/analytics` - Get analytics data
+- `GET /api/analytics/goal` - Get user goal
+- `POST /api/analytics/goal` - Set/update goal
+- `GET /api/analytics/streak` - Get streak info
+- `POST /api/analytics/streak/pause` - Pause streak
+- `POST /api/analytics/streak/resume` - Resume streak
 
-- npm run dev — runs backend and frontend together
-- npm run install:all — installs backend and frontend
+---
 
-GitHub
+## 🧪 Testing
 
-- Ensure no secrets are committed (.env files are ignored). Commit .env.example files only.
-- Initialize and push:
+```bash
+# Backend tests
+cd backend
+npm test
 
-  git init
-  git add .
-  git commit -m "feat: Ihsan MVP scaffold (Phase 1)"
-  git branch -M main
-  git remote add origin <your_repo_url>
-  git push -u origin main
+# Frontend tests
+cd frontend
+npm test
+```
 
-License
+---
 
-- MIT — free for all.
+## 🚀 Deployment
+
+### Backend (e.g., Render, Railway)
+
+1. Push code to GitHub
+2. Connect repository to hosting service
+3. Set environment variables
+4. Deploy!
+
+### Frontend (e.g., Vercel, Netlify)
+
+1. Push code to GitHub
+2. Connect repository to hosting service
+3. Set environment variables
+4. Deploy!
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 🙏 Acknowledgments
+
+- Islamic design inspiration
+- Open source community
+- Allah SWT for guidance
+
+---
+
+## 📧 Contact
+
+**Istiak Islam**
+
+- GitHub: [@isttiiak](https://github.com/isttiiak)
+- Email: isttiiak@gmail.com
+
+---
+
+## 🌟 Show your support
+
+Give a ⭐️ if this project helped you!
+
+---
+
+**Built with ❤️ for the Muslim community**

@@ -16,6 +16,7 @@
     "framer-motion": "^11.3.27",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-hot-toast": "^2.6.0",
     "react-router-dom": "^6.26.2",
     "recharts": "^2.15.4",
     "zustand": "^4.5.5"

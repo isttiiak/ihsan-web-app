@@ -14,7 +14,6 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import ZikrCounter from "./pages/ZikrCounter";
-import Analytics from "./pages/Analytics";
 import ZikrAnalytics from "./pages/ZikrAnalytics";
 import Settings from "./pages/Settings";
 import Footer from "./components/Footer";
@@ -47,14 +46,31 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check for new day every minute
+  // Smart detection: Check for new day when user interacts with the app
   useEffect(() => {
-    const interval = setInterval(() => {
-      checkAndResetIfNewDay();
-    }, 60000); // Check every minute
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible, check for new day
+        checkAndResetIfNewDay();
+      }
+    };
 
-    return () => clearInterval(interval);
-  }, [checkAndResetIfNewDay]);
+    const handleFocus = () => {
+      // Window gained focus, check for new day
+      checkAndResetIfNewDay();
+    };
+
+    // Also check on route change
+    checkAndResetIfNewDay();
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [checkAndResetIfNewDay, location.pathname]);
 
   useEffect(() => {
     init();
@@ -152,14 +168,6 @@ export default function App() {
               <Route path="/salat" element={<SalatTracker />} />
               <Route path="/fasting" element={<FastingTracker />} />
               <Route path="/prayer-times" element={<PrayerTimes />} />
-              <Route
-                path="/analytics"
-                element={
-                  <Protected>
-                    <Analytics />
-                  </Protected>
-                }
-              />
               <Route
                 path="/zikr/analytics"
                 element={

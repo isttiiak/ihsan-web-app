@@ -4,9 +4,15 @@ import ZikrDaily from "../models/ZikrDaily.js";
 import ZikrGoal from "../models/ZikrGoal.js";
 import ZikrStreak from "../models/ZikrStreak.js";
 import { requireAuth } from "../middleware/auth.js";
+import {
+  truncateToTimezone,
+  getTodayString,
+  DEFAULT_TIMEZONE_OFFSET,
+} from "../utils/timezone-flexible.js";
 
 const router = Router();
 
+// Legacy UTC function (keeping for backwards compatibility if needed)
 function truncateUTC(dateLike) {
   const d = new Date(dateLike);
   d.setUTCHours(0, 0, 0, 0);
@@ -14,9 +20,12 @@ function truncateUTC(dateLike) {
 }
 
 // Helper function to check and update streak
-async function checkAndUpdateStreak(userId) {
+async function checkAndUpdateStreak(
+  userId,
+  timezoneOffset = DEFAULT_TIMEZONE_OFFSET
+) {
   try {
-    const today = truncateUTC(Date.now());
+    const today = truncateToTimezone(Date.now(), timezoneOffset); // Use user's timezone
 
     // Get today's total count
     const todayRecords = await ZikrDaily.find({ userId, date: today });
@@ -51,12 +60,14 @@ async function checkAndUpdateStreak(userId) {
 router.post("/increment", requireAuth, async (req, res) => {
   try {
     const userId = req.user.uid;
-    const { zikrType, amount = 1, ts } = req.body;
+    const { zikrType, amount = 1, ts, timezoneOffset } = req.body;
     if (!zikrType) return res.status(400).json({ error: "zikrType required" });
     if (!Number.isFinite(amount) || amount <= 0)
       return res.status(400).json({ error: "amount must be > 0" });
 
-    const date = truncateUTC(ts || Date.now());
+    const userOffset =
+      timezoneOffset !== undefined ? timezoneOffset : DEFAULT_TIMEZONE_OFFSET;
+    const date = truncateToTimezone(ts || Date.now(), userOffset); // Use user's timezone
 
     try {
       await ZikrDaily.updateOne(
@@ -82,7 +93,7 @@ router.post("/increment", requireAuth, async (req, res) => {
     await user.save();
 
     // Check and update streak
-    const streakResult = await checkAndUpdateStreak(userId);
+    const streakResult = await checkAndUpdateStreak(userId, userOffset);
 
     return res.json({
       ok: true,
@@ -102,17 +113,19 @@ router.post("/increment", requireAuth, async (req, res) => {
 router.post("/increment/batch", requireAuth, async (req, res) => {
   try {
     const userId = req.user.uid;
-    const { increments } = req.body;
+    const { increments, timezoneOffset } = req.body;
     if (!Array.isArray(increments) || !increments.length)
       return res.status(400).json({ error: "increments array required" });
 
+    const userOffset =
+      timezoneOffset !== undefined ? timezoneOffset : DEFAULT_TIMEZONE_OFFSET;
     const user = await User.findOne({ uid: userId });
     if (!user) return res.status(404).json({ error: "User not found" });
 
     for (const item of increments) {
       const { zikrType, amount = 1, ts } = item || {};
       if (!zikrType || !Number.isFinite(amount) || amount <= 0) continue;
-      const date = truncateUTC(ts || Date.now());
+      const date = truncateToTimezone(ts || Date.now(), userOffset); // Use user's timezone
       try {
         await ZikrDaily.updateOne(
           { userId, date, zikrType },
@@ -135,7 +148,7 @@ router.post("/increment/batch", requireAuth, async (req, res) => {
 
     await user.save();
     // Check and update streak
-    const streakResult = await checkAndUpdateStreak(userId);
+    const streakResult = await checkAndUpdateStreak(userId, userOffset);
 
     return res.json({
       ok: true,

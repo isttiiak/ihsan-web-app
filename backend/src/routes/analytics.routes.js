@@ -4,9 +4,15 @@ import ZikrDaily from "../models/ZikrDaily.js";
 import ZikrGoal from "../models/ZikrGoal.js";
 import ZikrStreak from "../models/ZikrStreak.js";
 import { requireAuth } from "../middleware/auth.js";
+import {
+  truncateToTimezone,
+  getTodayString,
+  DEFAULT_TIMEZONE_OFFSET,
+} from "../utils/timezone-flexible.js";
 
 const router = Router();
 
+// Legacy UTC function (keeping for backwards compatibility if needed)
 function truncateUTC(dateLike) {
   const d = new Date(dateLike);
   d.setUTCHours(0, 0, 0, 0);
@@ -164,9 +170,13 @@ router.post("/streak/check", requireAuth, async (req, res) => {
 router.get("/analytics", requireAuth, async (req, res) => {
   try {
     const userId = req.user.uid;
-    const { days = 7 } = req.query; // Default 7 days
+    const { days = 7, timezoneOffset } = req.query; // Default 7 days
 
-    const today = truncateUTC(Date.now());
+    const userOffset =
+      timezoneOffset !== undefined
+        ? parseInt(timezoneOffset)
+        : DEFAULT_TIMEZONE_OFFSET;
+    const today = truncateToTimezone(Date.now(), userOffset); // Use user's timezone
     const startDate = new Date(today);
     startDate.setDate(startDate.getDate() - parseInt(days) + 1);
 
@@ -219,9 +229,13 @@ router.get("/analytics", requireAuth, async (req, res) => {
     const goal = await ZikrGoal.findOne({ userId });
     const streak = await ZikrStreak.findOne({ userId });
 
-    // Get today's total
+    // Get today's total and breakdown
     const todayRecords = await ZikrDaily.find({ userId, date: today });
     const todayTotal = todayRecords.reduce((sum, r) => sum + r.count, 0);
+    const todayPerType = todayRecords.map((r) => ({
+      zikrType: r.zikrType,
+      total: r.count,
+    }));
 
     // Get user summary for all-time stats
     const user = await User.findOne({ uid: userId });
@@ -280,6 +294,7 @@ router.get("/analytics", requireAuth, async (req, res) => {
       today: {
         total: todayTotal,
         goalMet: goal ? todayTotal >= goal.dailyTarget : false,
+        perType: todayPerType.sort((a, b) => b.total - a.total),
       },
       goal: goal || { dailyTarget: 100, isActive: true },
       streak: streak || { currentStreak: 0, longestStreak: 0 },
@@ -301,7 +316,7 @@ router.get("/analytics/compare", requireAuth, async (req, res) => {
     const userId = req.user.uid;
     const { days = 7 } = req.query;
 
-    const today = truncateUTC(Date.now());
+    const today = truncateDhakaDate(Date.now()); // Use Dhaka timezone
     const periodStart = new Date(today);
     periodStart.setDate(periodStart.getDate() - parseInt(days) + 1);
 

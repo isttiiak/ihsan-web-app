@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
 import { useZikrStore } from "../store/useZikrStore";
 import useFetchZikrTypes from "../hooks/useFetchZikrTypes";
 import {
@@ -77,9 +78,49 @@ export default function ZikrCounter() {
   };
 
   const onReset = () => {
-    if (currentCount > 0 && confirm("Reset count for " + selected + "?")) {
-      reset();
-    }
+    if (currentCount === 0) return;
+
+    toast(
+      (t) => (
+        <div className="flex flex-col gap-3">
+          <p className="font-semibold text-gray-800">
+            Reset count for{" "}
+            <span className="font-bold text-ihsan-primary">{selected}</span>?
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                reset();
+                toast.dismiss(t.id);
+                toast.success("Count reset successfully!", {
+                  icon: "🔄",
+                  duration: 2000,
+                });
+              }}
+              className="btn btn-sm bg-red-500 hover:bg-red-600 text-white border-0"
+            >
+              Reset
+            </button>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="btn btn-sm btn-ghost"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 5000,
+        position: "top-center",
+        style: {
+          background: "white",
+          padding: "16px",
+          borderRadius: "12px",
+          boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+        },
+      }
+    );
   };
 
   const submitCustomZikr = async () => {
@@ -104,14 +145,28 @@ export default function ZikrCounter() {
         selectType(name);
         setCustomZikr("");
         setShowAddCustom(false);
+        toast.success(`${name} added successfully!`, {
+          icon: "✨",
+          duration: 3000,
+        });
+      } else {
+        toast.error("Failed to add custom zikr", {
+          duration: 3000,
+        });
       }
     } catch (e) {
       console.error("Failed to add custom zikr:", e);
+      toast.error("An error occurred", {
+        duration: 3000,
+      });
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ihsan-secondary via-ihsan-primary to-ihsan-primary">
+      {/* Toast Container */}
+      <Toaster />
+
       {/* Minimal Navbar */}
       <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">

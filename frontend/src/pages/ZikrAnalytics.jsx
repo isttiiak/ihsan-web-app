@@ -9,23 +9,20 @@ import {
   FireIcon,
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
-import { useZikrStore } from "../store/useZikrStore";
 import StreakCard from "../components/analytics/StreakCard";
 import GoalCard from "../components/analytics/GoalCard";
 import TrendChart from "../components/analytics/TrendChart";
+import { getUserTimezoneOffset } from "../utils/timezone";
 
 export default function ZikrAnalytics() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState(7);
-  const [activeTab, setActiveTab] = useState("all"); // "today" or "all"
+  const [activeTab, setActiveTab] = useState("today"); // "today" or "all"
   const [showGoalModal, setShowGoalModal] = useState(false);
-  const [newGoal, setNewGoal] = useState(100);
+  const [newGoal, setNewGoal] = useState(70);
   const [updating, setUpdating] = useState(false);
-
-  // Get today's counts from local store
-  const { counts: todayCounts } = useZikrStore();
 
   const periods = [
     { label: "7 Days", value: 7 },
@@ -40,15 +37,41 @@ export default function ZikrAnalytics() {
     fetchAnalytics();
   }, [selectedPeriod]);
 
+  // Smart detection: Check for day change when user focuses the page
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible, refresh analytics
+        fetchAnalytics();
+      }
+    };
+
+    const handleFocus = () => {
+      // Window gained focus, refresh analytics
+      fetchAnalytics();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [selectedPeriod]);
+
   const fetchAnalytics = async () => {
     try {
       const idToken = localStorage.getItem("ihsan_idToken");
       if (!idToken) return;
 
+      // Get user's timezone offset (auto-detected)
+      const timezoneOffset = getUserTimezoneOffset();
+
       const res = await fetch(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/analytics/analytics?days=${selectedPeriod}`,
+        }/api/analytics/analytics?days=${selectedPeriod}&timezoneOffset=${timezoneOffset}`,
         { headers: { Authorization: `Bearer ${idToken}` } }
       );
 
@@ -138,10 +161,12 @@ export default function ZikrAnalytics() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-ihsan-light via-base-100 to-ihsan-light/50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
-          <span className="loading loading-spinner loading-lg text-ihsan-primary" />
-          <p className="text-sm opacity-70">Loading analytics...</p>
+          <span className="loading loading-spinner loading-lg text-emerald-400" />
+          <p className="text-sm bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent font-semibold">
+            Loading analytics...
+          </p>
         </div>
       </div>
     );
@@ -149,9 +174,11 @@ export default function ZikrAnalytics() {
 
   if (!analyticsData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-ihsan-light via-base-100 to-ihsan-light/50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
         <div className="text-center">
-          <p className="text-lg opacity-70">No analytics data available</p>
+          <p className="text-lg text-slate-400 font-medium">
+            No analytics data available
+          </p>
         </div>
       </div>
     );
@@ -159,16 +186,9 @@ export default function ZikrAnalytics() {
 
   const { chartData, stats, today, goal, streak, allTime } = analyticsData;
 
-  // Calculate today's data
-  const todayTypes = Object.entries(todayCounts)
-    .map(([zikrType, count]) => ({
-      zikrType,
-      total: count,
-    }))
-    .filter((t) => t.total > 0)
-    .sort((a, b) => b.total - a.total);
-
-  const todayTotal = todayTypes.reduce((sum, t) => sum + t.total, 0);
+  // Get today's data from backend (not local store to avoid reset issues)
+  const todayTypes = today?.perType || [];
+  const todayTotal = today?.total || 0;
 
   // Fetch all-time per-type data from backend
   const allTimeTypes = analyticsData.perType || [];
@@ -179,73 +199,50 @@ export default function ZikrAnalytics() {
     activeTab === "today" ? todayTotal : allTime?.totalCount || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Top Navigation Bar */}
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+      {/* Animated gradient orbs in background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-full blur-3xl"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-purple-500/20 to-pink-500/20 rounded-full blur-3xl"
+          animate={{
+            scale: [1.2, 1, 1.2],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{ duration: 10, repeat: Infinity }}
+        />
+      </div>
+
+      {/* Subtle grid pattern overlay */}
+      <div
+        className="fixed inset-0 opacity-[0.02] pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+                           linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px)`,
+          backgroundSize: "50px 50px",
+        }}
+      />
+
+      <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+        {/* Compact Top Navigation - Only show on mobile or when needed */}
+        <div className="flex items-center justify-end lg:hidden">
           <motion.button
             onClick={() => navigate("/zikr")}
-            whileHover={{ scale: 1.05, x: -5 }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="btn bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white border-none shadow-lg hover:shadow-xl gap-2"
+            className="btn btn-sm bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white shadow-lg gap-2"
           >
-            <ArrowLeftIcon className="w-5 h-5" />
-            Back to Zikr Counter
+            <ArrowLeftIcon className="w-4 h-4" />
+            Back
           </motion.button>
         </div>
-
-        {/* Header with Global Counter */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent mb-6">
-            📊 Zikr Analytics
-          </h1>
-
-          {/* Global Zikr Counter - Smaller, More Refined */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            whileHover={{ scale: 1.02, y: -2 }}
-            className="inline-block w-full max-w-md"
-          >
-            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-teal-600 via-cyan-600 to-blue-600 text-white shadow-[0_10px_40px_-10px_rgba(20,184,166,0.4)] hover:shadow-[0_15px_50px_-10px_rgba(20,184,166,0.5)] transition-all">
-              {/* Subtle animated background pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <motion.div
-                  className="absolute top-0 right-0 w-48 h-48 bg-white rounded-full blur-3xl"
-                  animate={{
-                    scale: [1, 1.15, 1],
-                    opacity: [0.1, 0.2, 0.1],
-                  }}
-                  transition={{ duration: 4, repeat: Infinity }}
-                />
-              </div>
-
-              <div className="relative card-body p-3 sm:p-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-0.5">
-                  <motion.div
-                    animate={{ rotate: [0, 5, -5, 0] }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                  >
-                    <FireIcon className="w-4 h-4 opacity-90" />
-                  </motion.div>
-                  <h2 className="text-xs font-semibold opacity-90">
-                    Total Zikr Count
-                  </h2>
-                </div>
-                <div className="text-4xl sm:text-5xl font-black tracking-tight my-0.5">
-                  {allTime?.totalCount?.toLocaleString() || 0}
-                </div>
-                <p className="text-[10px] opacity-75">
-                  All-time remembrance ☪️
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
 
         {/* Streak and Goal Cards - Redesigned with Harmonious Colors */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -266,50 +263,80 @@ export default function ZikrAnalytics() {
         </div>
 
         {/* Overview Statistics Section */}
-        <div className="space-y-5">
+        <div className="space-y-6">
           <motion.h2
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            whileHover={{ x: 5 }}
-            className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-teal-400 via-blue-400 to-purple-400 bg-clip-text text-transparent flex items-center gap-3"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent flex items-center gap-3"
           >
-            <ChartBarIcon className="w-8 h-8 text-teal-400" />
+            <ChartBarIcon className="w-8 h-8 text-emerald-400" />
             Overview Statistics
           </motion.h2>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {/* All-Time Total */}
+          {/* Stats Cards - Grid with Total Zikr Count as first card */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Total Zikr Count - FEATURED CARD */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ y: -8, scale: 1.03 }}
-              transition={{ delay: 0.1 }}
-              className="card bg-gradient-to-br from-indigo-600 to-blue-600 text-white shadow-[0_10px_40px_-10px_rgba(79,70,229,0.6)] hover:shadow-[0_15px_50px_-10px_rgba(79,70,229,0.8)] cursor-pointer"
+              transition={{ delay: 0.05 }}
+              className="sm:col-span-2 lg:col-span-1 card relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_48px_rgba(16,185,129,0.4)] cursor-pointer group"
             >
-              <div className="card-body p-4 sm:p-5">
-                <div className="text-xs sm:text-sm font-bold mb-2 opacity-95">
-                  📊 All-Time
+              {/* Animated gradient orbs */}
+              <div className="absolute inset-0 opacity-30">
+                <motion.div
+                  className="absolute top-0 right-0 w-32 h-32 bg-white/30 rounded-full blur-2xl"
+                  animate={{
+                    scale: [1, 1.3, 1],
+                    opacity: [0.3, 0.5, 0.3],
+                  }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                />
+              </div>
+
+              <div className="card-body p-5 sm:p-6 relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  >
+                    <FireIcon className="w-6 h-6 text-white drop-shadow-lg" />
+                  </motion.div>
+                  <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide">
+                    Total Zikr
+                  </h3>
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold">
+                <div className="text-5xl sm:text-6xl font-black text-white mb-2 drop-shadow-2xl">
                   {allTime?.totalCount?.toLocaleString() || 0}
                 </div>
+                <p className="text-xs text-white/80 font-medium">
+                  ✨ All-time remembrance
+                </p>
               </div>
+
+              {/* Shine effect on hover */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.6 }}
+              />
             </motion.div>
 
             {/* Today's Count */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -8, scale: 1.03 }}
-              transition={{ delay: 0.15 }}
-              className="card bg-gradient-to-br from-amber-600 to-orange-600 text-white shadow-[0_10px_40px_-10px_rgba(245,158,11,0.6)] hover:shadow-[0_15px_50px_-10px_rgba(245,158,11,0.8)] cursor-pointer"
+              whileHover={{ y: -6, scale: 1.02 }}
+              transition={{ delay: 0.1 }}
+              className="card bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg hover:shadow-xl cursor-pointer"
             >
-              <div className="card-body p-4 sm:p-5">
-                <div className="text-xs sm:text-sm font-bold mb-2 opacity-95">
+              <div className="card-body p-5 sm:p-6">
+                <div className="text-xs sm:text-sm font-bold mb-2 bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent uppercase tracking-wide">
                   📅 Today
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold">
+                <div className="text-4xl sm:text-5xl font-black bg-gradient-to-br from-amber-300 to-orange-300 bg-clip-text text-transparent">
                   {todayTotal.toLocaleString()}
                 </div>
               </div>
@@ -319,18 +346,18 @@ export default function ZikrAnalytics() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -8, scale: 1.03 }}
-              transition={{ delay: 0.2 }}
-              className="card bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-[0_10px_40px_-10px_rgba(16,185,129,0.6)] hover:shadow-[0_15px_50px_-10px_rgba(16,185,129,0.8)] cursor-pointer"
+              whileHover={{ y: -6, scale: 1.02 }}
+              transition={{ delay: 0.15 }}
+              className="card bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg hover:shadow-xl cursor-pointer"
             >
-              <div className="card-body p-4 sm:p-5">
-                <div className="text-xs sm:text-sm font-bold mb-2 opacity-95">
+              <div className="card-body p-5 sm:p-6">
+                <div className="text-xs sm:text-sm font-bold mb-2 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent uppercase tracking-wide">
                   🏆 Best
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold">
+                <div className="text-4xl sm:text-5xl font-black bg-gradient-to-br from-green-300 to-emerald-300 bg-clip-text text-transparent">
                   {allTime?.bestDay?.count?.toLocaleString() || 0}
                 </div>
-                <div className="text-xs opacity-90 mt-1">
+                <div className="text-xs text-slate-400 mt-2 font-medium">
                   {allTime?.bestDay?.date
                     ? new Date(allTime.bestDay.date).toLocaleDateString(
                         "en-US",
@@ -348,15 +375,15 @@ export default function ZikrAnalytics() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -8, scale: 1.03 }}
-              transition={{ delay: 0.25 }}
-              className="card bg-gradient-to-br from-fuchsia-600 to-pink-600 text-white shadow-[0_10px_40px_-10px_rgba(192,38,211,0.6)] hover:shadow-[0_15px_50px_-10px_rgba(192,38,211,0.8)] cursor-pointer"
+              whileHover={{ y: -6, scale: 1.02 }}
+              transition={{ delay: 0.2 }}
+              className="card bg-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg hover:shadow-xl cursor-pointer"
             >
-              <div className="card-body p-4 sm:p-5">
-                <div className="text-xs sm:text-sm font-bold mb-2 opacity-95">
+              <div className="card-body p-5 sm:p-6">
+                <div className="text-xs sm:text-sm font-bold mb-2 bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent uppercase tracking-wide">
                   🎯 Types
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold">
+                <div className="text-4xl sm:text-5xl font-black bg-gradient-to-br from-pink-300 to-rose-300 bg-clip-text text-transparent">
                   {allTimeTypes.filter((t) => t.total > 0).length}
                 </div>
               </div>
@@ -365,22 +392,22 @@ export default function ZikrAnalytics() {
         </div>
 
         {/* Breakdown by Type Section */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex items-center justify-between px-2 flex-wrap gap-4">
             <div className="flex items-center gap-3">
-              <ChartBarIcon className="w-6 h-6 text-ihsan-primary" />
-              <h2 className="text-xl sm:text-2xl font-bold text-ihsan-primary">
+              <h2 className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 via-pink-400 to-rose-400 bg-clip-text text-transparent flex items-center gap-3">
+                <ChartBarIcon className="w-8 h-8 text-purple-400" />
                 Breakdown by Type
               </h2>
             </div>
 
-            {/* Today/All Tabs */}
-            <div className="tabs tabs-boxed bg-base-200">
+            {/* Today/All Tabs - Glassmorphism */}
+            <div className="tabs tabs-boxed bg-slate-800/50 backdrop-blur-xl border border-white/10 shadow-lg">
               <button
                 className={`tab ${
                   activeTab === "today"
-                    ? "tab-active bg-gradient-teal text-white"
-                    : ""
+                    ? "tab-active bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold"
+                    : "text-slate-300 hover:text-white"
                 }`}
                 onClick={() => setActiveTab("today")}
               >
@@ -389,12 +416,12 @@ export default function ZikrAnalytics() {
               <button
                 className={`tab ${
                   activeTab === "all"
-                    ? "tab-active bg-gradient-teal text-white"
-                    : ""
+                    ? "tab-active bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold"
+                    : "text-slate-300 hover:text-white"
                 }`}
                 onClick={() => setActiveTab("all")}
               >
-                🕊️ All Time
+                ✨ All Time
               </button>
             </div>
           </div>
@@ -403,12 +430,12 @@ export default function ZikrAnalytics() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {displayData.map((t, index) => {
                 const gradients = [
-                  "from-cyan-600 to-blue-600",
-                  "from-violet-600 to-purple-600",
-                  "from-rose-600 to-pink-600",
-                  "from-amber-600 to-orange-600",
-                  "from-emerald-600 to-teal-600",
-                  "from-indigo-600 to-blue-600",
+                  "from-cyan-600 via-blue-600 to-indigo-600",
+                  "from-violet-600 via-purple-600 to-fuchsia-600",
+                  "from-rose-600 via-pink-600 to-red-600",
+                  "from-amber-600 via-orange-600 to-red-600",
+                  "from-emerald-600 via-teal-600 to-cyan-600",
+                  "from-indigo-600 via-blue-600 to-cyan-600",
                 ];
                 const gradient = gradients[index % gradients.length];
 
@@ -417,21 +444,29 @@ export default function ZikrAnalytics() {
                     key={t.zikrType}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ y: -8, scale: 1.02 }}
+                    whileHover={{ y: -8, scale: 1.03 }}
                     transition={{ delay: 0.1 + index * 0.05 }}
-                    className={`card bg-gradient-to-br ${gradient} text-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_15px_50px_-10px_rgba(0,0,0,0.6)] cursor-pointer`}
+                    className={`card relative overflow-hidden bg-gradient-to-br ${gradient} backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-2xl cursor-pointer rounded-2xl group`}
                   >
-                    <div className="card-body p-5 sm:p-6">
-                      <h3 className="font-bold text-lg sm:text-xl truncate opacity-95">
+                    {/* Shine effect */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                      initial={{ x: "-100%" }}
+                      whileHover={{ x: "100%" }}
+                      transition={{ duration: 0.6 }}
+                    />
+
+                    <div className="card-body p-6 relative z-10">
+                      <h3 className="font-black text-xl sm:text-2xl truncate text-white drop-shadow-lg">
                         {t.zikrType}
                       </h3>
-                      <div className="text-4xl sm:text-5xl font-extrabold">
+                      <div className="text-5xl sm:text-6xl font-black text-white drop-shadow-2xl my-2">
                         {t.total.toLocaleString()}
                       </div>
 
                       {/* Visual Progress Bar */}
                       <div className="mt-4">
-                        <div className="w-full bg-white/20 rounded-full h-2.5 overflow-hidden backdrop-blur-sm">
+                        <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden backdrop-blur-sm">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{
@@ -444,7 +479,7 @@ export default function ZikrAnalytics() {
                             className="h-full bg-white rounded-full shadow-lg"
                           />
                         </div>
-                        <p className="text-xs font-semibold opacity-90 mt-2">
+                        <p className="text-sm font-bold text-white/90 mt-2 drop-shadow-md">
                           {((t.total / displayTotal) * 100).toFixed(1)}% of
                           {activeTab === "today" ? " today" : " total"}
                         </p>
@@ -455,9 +490,9 @@ export default function ZikrAnalytics() {
               })}
             </div>
           ) : (
-            <div className="card bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-700 shadow-xl">
-              <div className="card-body text-center p-8">
-                <p className="text-gray-400 text-lg">
+            <div className="card bg-slate-800/50 backdrop-blur-xl border border-white/10 shadow-lg rounded-2xl">
+              <div className="card-body text-center p-12">
+                <p className="text-slate-400 text-lg font-medium">
                   No zikr recorded yet for{" "}
                   {activeTab === "today" ? "today" : "all time"}.
                 </p>
@@ -467,22 +502,22 @@ export default function ZikrAnalytics() {
         </div>
 
         {/* Trends & Insights Section */}
-        <div className="space-y-5 mt-12 pt-8 border-t-2 border-slate-700">
+        <div className="space-y-6 mt-12 pt-8 border-t-2 border-slate-700/50">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <h2 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-teal-400 via-blue-400 to-purple-400 bg-clip-text text-transparent flex items-center gap-3">
-              <ChartBarIcon className="w-8 h-8 text-teal-400" />
+            <h2 className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent flex items-center gap-3">
+              <ChartBarIcon className="w-8 h-8 text-blue-400" />
               Trends & Insights
             </h2>
 
-            {/* Period Selector */}
-            <div className="tabs tabs-boxed bg-slate-800 border border-slate-700">
+            {/* Period Selector - Glassmorphism */}
+            <div className="tabs tabs-boxed bg-slate-800/50 backdrop-blur-xl border border-white/10 shadow-lg">
               {periods.map((period) => (
                 <button
                   key={period.value}
                   className={`tab ${
                     selectedPeriod === period.value
-                      ? "tab-active bg-gradient-to-r from-teal-600 to-cyan-600 text-white"
-                      : "text-gray-400 hover:text-white"
+                      ? "tab-active bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold"
+                      : "text-slate-300 hover:text-white"
                   }`}
                   onClick={() => setSelectedPeriod(period.value)}
                 >
@@ -492,90 +527,25 @@ export default function ZikrAnalytics() {
             </div>
           </div>
 
-          {/* Period-Based Stats Cards - Above Chart */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {/* Period Total */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -5, scale: 1.02 }}
-              transition={{ delay: 0.1 }}
-              className="card bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-[0_10px_40px_-10px_rgba(59,130,246,0.6)] cursor-pointer"
-            >
-              <div className="card-body p-4 text-center">
-                <div className="text-xs font-semibold mb-2 opacity-90">
-                  Period Total
-                </div>
-                <div className="text-3xl font-extrabold">
-                  {stats?.total?.toLocaleString() || 0}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Daily Average */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -5, scale: 1.02 }}
-              transition={{ delay: 0.15 }}
-              className="card bg-gradient-to-br from-violet-600 to-purple-600 text-white shadow-[0_10px_40px_-10px_rgba(139,92,246,0.6)] cursor-pointer"
-            >
-              <div className="card-body p-4 text-center">
-                <div className="text-xs font-semibold mb-2 opacity-90">
-                  Daily Average
-                </div>
-                <div className="text-3xl font-extrabold">
-                  {stats?.average?.toLocaleString() || 0}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Best Day in Period */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -5, scale: 1.02 }}
-              transition={{ delay: 0.2 }}
-              className="card bg-gradient-to-br from-pink-600 to-rose-600 text-white shadow-[0_10px_40px_-10px_rgba(236,72,153,0.6)] cursor-pointer"
-            >
-              <div className="card-body p-4 text-center">
-                <div className="text-xs font-semibold mb-2 opacity-90">
-                  Best Day
-                </div>
-                <div className="text-3xl font-extrabold">
-                  {stats?.maxCount?.toLocaleString() || 0}
-                </div>
-                <div className="text-xs opacity-90 mt-1">
-                  {stats?.maxDay
-                    ? new Date(stats.maxDay).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })
-                    : "-"}
-                </div>
-              </div>
-            </motion.div>
-          </div>
-
           {/* Trend Chart */}
           <TrendChart data={chartData} period={selectedPeriod} />
         </div>
       </div>
 
-      {/* Goal Edit Modal */}
+      {/* Goal Edit Modal - Dark Glassmorphism */}
       {showGoalModal && (
         <div className="modal modal-open">
           <motion.div
-            className="modal-box bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-700"
+            className="modal-box bg-slate-800/90 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-2xl"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
           >
-            <h3 className="font-bold text-xl mb-4 text-white">
+            <h3 className="font-black text-2xl mb-6 bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
               Set Daily Goal
             </h3>
             <div className="form-control">
               <label className="label">
-                <span className="label-text text-gray-300">
+                <span className="label-text text-slate-300 font-semibold">
                   Daily Target (zikr count)
                 </span>
               </label>
@@ -584,20 +554,20 @@ export default function ZikrAnalytics() {
                 min="1"
                 value={newGoal}
                 onChange={(e) => setNewGoal(e.target.value)}
-                className="input input-bordered bg-slate-700 text-white border-slate-600 focus:border-teal-500"
+                className="input input-bordered bg-slate-700/50 text-white border-slate-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/50 backdrop-blur-sm"
                 placeholder="Enter your daily goal"
               />
             </div>
             <div className="modal-action">
               <button
-                className="btn bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
+                className="btn bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 border-slate-600 backdrop-blur-sm"
                 onClick={() => setShowGoalModal(false)}
                 disabled={updating}
               >
                 Cancel
               </button>
               <button
-                className="btn bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white border-none shadow-lg"
+                className="btn bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-none shadow-lg font-bold"
                 onClick={handleUpdateGoal}
                 disabled={updating || !newGoal || newGoal < 1}
               >
@@ -606,7 +576,7 @@ export default function ZikrAnalytics() {
             </div>
           </motion.div>
           <div
-            className="modal-backdrop bg-black/70"
+            className="modal-backdrop bg-black/60 backdrop-blur-sm"
             onClick={() => setShowGoalModal(false)}
           />
         </div>
