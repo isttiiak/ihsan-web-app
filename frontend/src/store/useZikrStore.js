@@ -18,6 +18,21 @@ export const useZikrStore = create(
       pending: {},
       total: 0,
       isFlushing: false,
+      lastResetDate: null, // Track the last reset date
+      checkAndResetIfNewDay: () => {
+        const today = new Date().toDateString();
+        const lastReset = get().lastResetDate;
+
+        if (lastReset !== today) {
+          // It's a new day, reset daily counts
+          set({
+            counts: {},
+            pending: {},
+            lastResetDate: today,
+          });
+          console.log("✨ Daily counts reset for new day:", today);
+        }
+      },
       setTypes: (types) => set({ types }),
       replaceTypes: (types) =>
         set({
@@ -42,6 +57,9 @@ export const useZikrStore = create(
           ],
         }),
       hydrate: async () => {
+        // Check and reset if it's a new day
+        get().checkAndResetIfNewDay();
+
         const idToken = localStorage.getItem("ihsan_idToken");
         if (!idToken) return;
         try {
@@ -72,7 +90,10 @@ export const useZikrStore = create(
           console.error(e);
         }
       },
-      increment: () =>
+      increment: () => {
+        // Check if it's a new day before incrementing
+        get().checkAndResetIfNewDay();
+
         set(
           (s) => {
             const type = s.selected;
@@ -88,7 +109,8 @@ export const useZikrStore = create(
           },
           false,
           "increment"
-        ),
+        );
+      },
       decrement: () =>
         set((s) => {
           const type = s.selected;
@@ -150,6 +172,7 @@ export const useZikrStore = create(
         counts: state.counts,
         pending: state.pending,
         total: state.total,
+        lastResetDate: state.lastResetDate,
       }),
     }
   )

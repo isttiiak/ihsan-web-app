@@ -14,4 +14,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// Fix Google OAuth CORS warnings by using popup instead of redirect
+googleProvider.setCustomParameters({
+  prompt: "select_account",
+});
+
 export const storage = getStorage(app);

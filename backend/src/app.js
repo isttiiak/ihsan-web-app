@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.routes.js";
 import zikrRoutes from "./routes/zikr.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 
 const app = express();
 
@@ -52,5 +53,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/zikr", zikrRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 export default app;

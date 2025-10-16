@@ -15,6 +15,7 @@ import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import ZikrCounter from "./pages/ZikrCounter";
 import Analytics from "./pages/Analytics";
+import ZikrAnalytics from "./pages/ZikrAnalytics";
 import Settings from "./pages/Settings";
 import Footer from "./components/Footer";
 import NotFound from "./pages/NotFound";
@@ -42,9 +43,18 @@ const Protected = ({ children }) => {
 
 export default function App() {
   const { setUser, init, setAuthLoading } = useAuthStore();
-  const { hydrate, resetAll } = useZikrStore();
+  const { hydrate, resetAll, checkAndResetIfNewDay } = useZikrStore();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Check for new day every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkAndResetIfNewDay();
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [checkAndResetIfNewDay]);
 
   useEffect(() => {
     init();
@@ -147,6 +157,14 @@ export default function App() {
                 element={
                   <Protected>
                     <Analytics />
+                  </Protected>
+                }
+              />
+              <Route
+                path="/zikr/analytics"
+                element={
+                  <Protected>
+                    <ZikrAnalytics />
                   </Protected>
                 }
               />

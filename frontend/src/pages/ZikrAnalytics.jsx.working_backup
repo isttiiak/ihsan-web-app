@@ -1,0 +1,481 @@
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  ChartBarIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
+  MinusIcon,
+  ArrowLeftIcon,
+  FireIcon,
+} from "@heroicons/react/24/outline";
+import { useNavigate } from "react-router-dom";
+import { useZikrStore } from "../store/useZikrStore";
+import StreakCard from "../components/analytics/StreakCard";
+import GoalCard from "../components/analytics/GoalCard";
+import TrendChart from "../components/analytics/TrendChart";
+
+export default function ZikrAnalytics() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [selectedPeriod, setSelectedPeriod] = useState(7);
+  const [activeTab, setActiveTab] = useState("all"); // "today" or "all"
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [newGoal, setNewGoal] = useState(100);
+  const [updating, setUpdating] = useState(false);
+
+  // Get today's counts from local store
+  const { counts: todayCounts } = useZikrStore();
+
+  const periods = [
+    { label: "7 Days", value: 7 },
+    { label: "15 Days", value: 15 },
+    { label: "30 Days", value: 30 },
+    { label: "60 Days", value: 60 },
+    { label: "90 Days", value: 90 },
+    { label: "180 Days", value: 180 },
+    { label: "180 Days", value: 180 },
+  ];
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [selectedPeriod]);
+
+  const fetchAnalytics = async () => {
+    try {
+      const idToken = localStorage.getItem("ihsan_idToken");
+      if (!idToken) return;
+
+      const res = await fetch(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/analytics/analytics?days=${selectedPeriod}`,
+        { headers: { Authorization: `Bearer ${idToken}` } }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        setAnalyticsData(data);
+      }
+    } catch (err) {
+      console.error("Error fetching analytics:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePauseStreak = async () => {
+    setUpdating(true);
+    try {
+      const idToken = localStorage.getItem("ihsan_idToken");
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/analytics/streak/pause`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${idToken}` },
+        }
+      );
+
+      if (res.ok) {
+        await fetchAnalytics();
+      }
+    } catch (err) {
+      console.error("Error pausing streak:", err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleResumeStreak = async () => {
+    setUpdating(true);
+    try {
+      const idToken = localStorage.getItem("ihsan_idToken");
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/analytics/streak/resume`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${idToken}` },
+        }
+      );
+
+      if (res.ok) {
+        await fetchAnalytics();
+      }
+    } catch (err) {
+      console.error("Error resuming streak:", err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleUpdateGoal = async () => {
+    if (!newGoal || newGoal < 1) return;
+
+    setUpdating(true);
+    try {
+      const idToken = localStorage.getItem("ihsan_idToken");
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/analytics/goal`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ dailyTarget: parseInt(newGoal) }),
+        }
+      );
+
+      if (res.ok) {
+        await fetchAnalytics();
+        setShowGoalModal(false);
+      }
+    } catch (err) {
+      console.error("Error updating goal:", err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-ihsan-light via-base-100 to-ihsan-light/50 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-4">
+          <span className="loading loading-spinner loading-lg text-ihsan-primary" />
+          <p className="text-sm opacity-70">Loading analytics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!analyticsData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-ihsan-light via-base-100 to-ihsan-light/50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-lg opacity-70">No analytics data available</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { chartData, stats, today, goal, streak, allTime } = analyticsData;
+
+  // Calculate today's data
+  const todayTypes = Object.entries(todayCounts)
+    .map(([zikrType, count]) => ({
+      zikrType,
+      total: count,
+    }))
+    .filter((t) => t.total > 0)
+    .sort((a, b) => b.total - a.total);
+
+  const todayTotal = todayTypes.reduce((sum, t) => sum + t.total, 0);
+
+  // Fetch all-time per-type data from backend
+  const allTimeTypes = analyticsData.perType || [];
+
+  // Get data based on active tab for breakdown
+  const displayData = activeTab === "today" ? todayTypes : allTimeTypes;
+  const displayTotal =
+    activeTab === "today" ? todayTotal : allTime?.totalCount || 0;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-ihsan-light via-base-100 to-ihsan-light/50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Top Navigation Bar */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => navigate("/zikr")}
+            className="btn btn-ghost gap-2"
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+            Back to Zikr Counter
+          </button>
+        </div>
+
+        {/* Header with Global Counter */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center"
+        >
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-teal bg-clip-text text-transparent mb-6">
+            📊 Zikr Analytics
+          </h1>
+
+          {/* Global Zikr Counter */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="inline-block w-full max-w-2xl"
+          >
+            <div className="card bg-gradient-to-br from-ihsan-primary to-ihsan-secondary text-white shadow-2xl">
+              <div className="card-body p-6 sm:p-8 text-center">
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <FireIcon className="w-8 h-8" />
+                  <h2 className="text-xl font-semibold">Total Zikr Count</h2>
+                </div>
+                <div className="text-5xl sm:text-6xl font-bold">
+                  {allTime?.totalCount?.toLocaleString() || 0}
+                </div>
+                <p className="text-sm opacity-90 mt-2">
+                  All-time remembrance of Allah
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Streak and Goal Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <StreakCard
+            streak={streak}
+            onPause={handlePauseStreak}
+            onResume={handleResumeStreak}
+            isLoading={updating}
+          />
+          <GoalCard
+            goal={goal}
+            today={today}
+            onEditGoal={() => {
+              setNewGoal(goal.dailyTarget);
+              setShowGoalModal(true);
+            }}
+          />
+        </div>
+
+        {/* Breakdown by Type Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-2 flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <ChartBarIcon className="w-6 h-6 text-ihsan-primary" />
+              <h2 className="text-xl sm:text-2xl font-bold text-ihsan-primary">
+                Breakdown by Type
+              </h2>
+            </div>
+
+            {/* Today/All Tabs */}
+            <div className="tabs tabs-boxed bg-base-200">
+              <button
+                className={`tab ${
+                  activeTab === "today"
+                    ? "tab-active bg-gradient-teal text-white"
+                    : ""
+                }`}
+                onClick={() => setActiveTab("today")}
+              >
+                📅 Today
+              </button>
+              <button
+                className={`tab ${
+                  activeTab === "all"
+                    ? "tab-active bg-gradient-teal text-white"
+                    : ""
+                }`}
+                onClick={() => setActiveTab("all")}
+              >
+                🕊️ All Time
+              </button>
+            </div>
+          </div>
+
+          {displayData?.length ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {displayData.map((t, index) => (
+                <motion.div
+                  key={t.zikrType}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 + index * 0.05 }}
+                  className="card bg-base-100 shadow-md hover:shadow-islamic border border-ihsan-primary/10 hover:border-ihsan-primary/30 transition-all duration-300"
+                >
+                  <div className="card-body p-4 sm:p-6">
+                    <h3 className="font-semibold text-base sm:text-lg text-ihsan-primary truncate">
+                      {t.zikrType}
+                    </h3>
+                    <div className="text-3xl sm:text-4xl font-bold text-ihsan-secondary">
+                      {t.total.toLocaleString()}
+                    </div>
+
+                    {/* Visual Progress Bar */}
+                    <div className="mt-3">
+                      <div className="w-full bg-base-200 rounded-full h-2 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{
+                            width: `${(t.total / displayTotal) * 100}%`,
+                          }}
+                          transition={{
+                            delay: 0.2 + index * 0.05,
+                            duration: 0.8,
+                          }}
+                          className="h-full bg-gradient-teal rounded-full"
+                        />
+                      </div>
+                      <p className="text-xs opacity-60 mt-1">
+                        {((t.total / displayTotal) * 100).toFixed(1)}% of
+                        {activeTab === "today" ? " today" : " total"}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="card bg-base-100 shadow-md border border-ihsan-primary/10">
+              <div className="card-body text-center p-8">
+                <p className="opacity-70">
+                  No zikr recorded yet for{" "}
+                  {activeTab === "today" ? "today" : "all time"}.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Trends & Insights Section - Moved to Bottom */}
+        <div className="space-y-6 mt-12 pt-8 border-t-2 border-ihsan-primary/10">
+          <h2 className="text-2xl font-bold text-ihsan-primary flex items-center gap-2">
+            <ChartBarIcon className="w-6 h-6" />
+            Trends & Insights
+          </h2>
+
+          {/* Period Selector */}
+          <div className="flex items-center justify-end flex-wrap gap-4">
+            <div className="tabs tabs-boxed bg-base-200">
+              {periods.map((period) => (
+                <button
+                  key={period.value}
+                  className={`tab ${
+                    selectedPeriod === period.value
+                      ? "tab-active bg-gradient-teal text-white"
+                      : ""
+                  }`}
+                  onClick={() => setSelectedPeriod(period.value)}
+                >
+                  {period.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Stats Cards - Moved Above Chart */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {/* Period Total */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="card bg-base-100 shadow-md border border-ihsan-primary/10"
+            >
+              <div className="card-body p-4 text-center">
+                <div className="text-xs opacity-60 mb-1">Period Total</div>
+                <div className="text-2xl font-bold text-ihsan-primary">
+                  {stats?.total?.toLocaleString() || 0}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Daily Average */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="card bg-base-100 shadow-md border border-ihsan-accent/10"
+            >
+              <div className="card-body p-4 text-center">
+                <div className="text-xs opacity-60 mb-1">Daily Average</div>
+                <div className="text-2xl font-bold text-ihsan-accent">
+                  {stats?.average?.toLocaleString() || 0}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Best Day */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="card bg-base-100 shadow-md border border-ihsan-secondary/10"
+            >
+              <div className="card-body p-4 text-center">
+                <div className="text-xs opacity-60 mb-1">Best Day</div>
+                <div className="text-2xl font-bold text-ihsan-secondary">
+                  {stats?.maxCount?.toLocaleString() || 0}
+                </div>
+                <div className="text-xs opacity-50 mt-1">
+                  {stats?.maxDay
+                    ? new Date(stats.maxDay).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "-"}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Types Done */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="card bg-base-100 shadow-md border border-purple-500/10"
+            >
+              <div className="card-body p-4 text-center">
+                <div className="text-xs opacity-60 mb-1">Types Done</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {allTimeTypes.filter((t) => t.total > 0).length}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Trend Chart */}
+          <TrendChart data={chartData} period={selectedPeriod} />
+        </div>
+      </div>
+
+      {/* Goal Edit Modal */}
+      {showGoalModal && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Set Daily Goal</h3>
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">Daily Target (zikr count)</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={newGoal}
+                onChange={(e) => setNewGoal(e.target.value)}
+                className="input input-bordered"
+                placeholder="Enter your daily goal"
+              />
+            </div>
+            <div className="modal-action">
+              <button
+                className="btn"
+                onClick={() => setShowGoalModal(false)}
+                disabled={updating}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn bg-gradient-teal text-white border-0"
+                onClick={handleUpdateGoal}
+                disabled={updating || !newGoal || newGoal < 1}
+              >
+                {updating ? "Updating..." : "Save Goal"}
+              </button>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => setShowGoalModal(false)}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
