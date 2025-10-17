@@ -16,14 +16,6 @@ A modern Islamic productivity application to help Muslims track their daily Zikr
 - Real-time count tracking
 - Smooth animations and haptic feedback
 
-### 📊 Analytics Dashboard
-
-- Daily, weekly, and custom period analytics
-- Beautiful charts and visualizations
-- Per-Zikr type breakdown
-- Today vs All-time statistics
-- Progress tracking
-
 ### 🎯 Goals & Streaks
 
 - Set daily Zikr goals

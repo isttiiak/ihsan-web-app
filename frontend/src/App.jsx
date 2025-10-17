@@ -12,7 +12,6 @@ import { useAuthStore } from "./store/useAuthStore";
 import { useZikrStore } from "./store/useZikrStore";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard";
 import ZikrCounter from "./pages/ZikrCounter";
 import ZikrAnalytics from "./pages/ZikrAnalytics";
 import Settings from "./pages/Settings";
@@ -163,7 +162,6 @@ export default function App() {
           <div className="flex-1">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/zikr" element={<ZikrCounter />} />
               <Route path="/salat" element={<SalatTracker />} />
               <Route path="/fasting" element={<FastingTracker />} />

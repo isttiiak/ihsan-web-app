@@ -12,6 +12,16 @@ export default {
           dark: "#0A1931", // Deep navy
           light: "#F0F4F8", // Soft white
         },
+        brand: {
+          emerald: "#2A9B7D",
+          magenta: "#C757AB",
+          gold: "#D6C52B",
+          deep: "#0b1220",
+        },
+        // semantic tokens
+        surface: {
+          glass: "rgba(11, 18, 32, 0.6)",
+        },
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
@@ -19,12 +29,18 @@ export default {
           "linear-gradient(135deg, #0F4C75 0%, #1B998B 50%, #0A1931 100%)",
         "gradient-gold": "linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)",
         "gradient-teal": "linear-gradient(135deg, #1B998B 0%, #0F4C75 100%)",
+        "conic-brand":
+          "conic-gradient(from 0deg, #2A9B7D, #D6C52B, #C757AB, #2A9B7D)",
       },
       boxShadow: {
         islamic: "0 10px 40px rgba(15, 76, 117, 0.3)",
         "islamic-lg": "0 20px 60px rgba(15, 76, 117, 0.4)",
         gold: "0 8px 32px rgba(212, 175, 55, 0.25)",
         "inner-glow": "inset 0 0 20px rgba(27, 153, 139, 0.2)",
+        glass: "0 20px 60px -20px rgba(0,0,0,0.6)",
+        "glow-emerald": "0 0 24px rgba(42,155,125,0.45)",
+        "glow-magenta": "0 0 24px rgba(199,87,171,0.45)",
+        "glow-gold": "0 0 24px rgba(214,197,43,0.45)",
       },
       animation: {
         float: "float 6s ease-in-out infinite",

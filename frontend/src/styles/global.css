@@ -1,5 +1,13 @@
 /* Global styles for Ihsan app */
 
+/* Brand CSS variables */
+:root {
+  --brand-emerald: #2a9b7d;
+  --brand-magenta: #c757ab;
+  --brand-gold: #d6c52b;
+  --brand-deep: #0b1220;
+}
+
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
@@ -15,8 +23,40 @@ html {
 
 /* Better focus outline for accessibility */
 *:focus-visible {
-  outline: 2px solid #1b998b;
+  outline: 2px solid var(--brand-emerald);
   outline-offset: 2px;
+}
+
+/* High contrast overrides */
+:root[data-high-contrast] {
+  --tw-ring-color: #ffffff;
+  --tw-text-opacity: 1;
+  color: rgba(255, 255, 255, var(--tw-text-opacity));
+}
+
+:root[data-high-contrast] *:focus-visible {
+  outline: 2px solid var(--brand-gold) !important;
+}
+
+:root[data-high-contrast] .text-white\/70 {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+:root[data-high-contrast] .text-white\/80 {
+  color: rgba(255, 255, 255, 1);
+}
+
+:root[data-high-contrast] .border-white\/10 {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Reduced motion: prefer minimal animations */
+:root[data-reduce-motion] *,
+:root[data-reduce-motion] *::before,
+:root[data-reduce-motion] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
 }
 
 /* Smooth transitions for theme changes */
@@ -40,12 +80,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1b998b;
+  background: var(--brand-emerald);
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #0f4c75;
+  background: var(--brand-deep);
 }
 
 /* Responsive text utilities */

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import AnimatedBackground from "../components/AnimatedBackground";
 
 export default function PrayerTimes() {
   const navigate = useNavigate();
@@ -131,7 +132,7 @@ export default function PrayerTimes() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-amber-800 to-yellow-900 transition-colors duration-700">
+    <AnimatedBackground variant="sunset">
       {/* Minimal Navbar */}
       <div className="bg-black/30 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -312,6 +313,6 @@ export default function PrayerTimes() {
           </div>
         </motion.div>
       </div>
-    </div>
+    </AnimatedBackground>
   );
 }

@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import { useZikrStore } from "../store/useZikrStore";
 import useFetchZikrTypes from "../hooks/useFetchZikrTypes";
-import AnimatedBackground from "../components/AnimatedBackground";
 import {
   PlusIcon,
   MinusIcon,
@@ -164,7 +163,7 @@ export default function ZikrCounter() {
   };
 
   return (
-    <AnimatedBackground variant="ocean">
+    <div className="min-h-screen bg-gradient-to-br from-ihsan-secondary via-ihsan-primary to-ihsan-primary">
       {/* Toast Container */}
       <Toaster />
 
@@ -412,6 +411,6 @@ export default function ZikrCounter() {
           </motion.div>
         </div>
       )}
-    </AnimatedBackground>
+    </div>
   );
 }

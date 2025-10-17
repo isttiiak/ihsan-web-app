@@ -28,6 +28,10 @@ export default function Navbar() {
     user?.displayName ? ", " + user.displayName.split(" ")[0] : ""
   }`;
 
+  // Hide salam on focus routes
+  const focusRoutes = ["/zikr", "/salat", "/fasting", "/prayer-times"];
+  const hideSalam = focusRoutes.includes(location.pathname);
+
   useEffect(() => {
     // Close dropdown when route changes
     if (dropdownRef.current && dropdownRef.current.hasAttribute("open")) {
@@ -49,6 +53,39 @@ export default function Navbar() {
     document.documentElement.setAttribute("data-theme", next);
   };
 
+  // Simple React Bits-style TextType animation
+  function TextType({ text, speed = 80 }) {
+    const [display, setDisplay] = useState("");
+    useEffect(() => {
+      let i = 0;
+      setDisplay("");
+      const interval = setInterval(() => {
+        setDisplay((d) => text.slice(0, i));
+        i++;
+        if (i > text.length) clearInterval(interval);
+      }, speed);
+      return () => clearInterval(interval);
+    }, [text, speed]);
+    return (
+      <span
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, var(--brand-emerald,#2A9B7D) 0%, var(--brand-gold,#D6C52B) 50%, var(--brand-magenta,#C757AB) 100%)",
+          backgroundSize: "200% 100%",
+          backgroundClip: "text",
+          WebkitBackgroundClip: "text",
+          color: "transparent",
+          WebkitTextFillColor: "transparent",
+          WebkitTextStroke: "0.4px rgba(0,0,0,0.2)",
+          textShadow: "0 2px 12px rgba(0,0,0,0.25)",
+          animation: "navbarShimmer 10s linear infinite",
+        }}
+      >
+        {display}
+      </span>
+    );
+  }
+
   return (
     <>
       <div className="navbar bg-gradient-to-r from-ihsan-primary to-ihsan-secondary text-white shadow-islamic sticky top-0 z-40 px-2 sm:px-4">
@@ -63,13 +100,14 @@ export default function Navbar() {
         </div>
 
         {/* Center - Salam (Hidden on very small screens) */}
-        <div className="navbar-center hidden md:flex flex-1 justify-center">
-          <div className="text-center px-4">
-            <p className="text-sm lg:text-base font-medium text-white/90 truncate max-w-xs lg:max-w-md">
-              {salam}
-            </p>
+        {user && !hideSalam && (
+          <div className="navbar-center hidden md:flex flex-1 justify-center">
+            <div className="text-center px-4">
+              {/* React Bits TextType animation for salam */}
+              <TextType text={salam} speed={60} />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Right Side - Desktop Menu */}
         <div className="navbar-end flex-none gap-2">
@@ -80,7 +118,7 @@ export default function Navbar() {
                 <Link
                   to="/settings"
                   className={`btn btn-ghost btn-sm gap-2 hover:bg-white/10 ${
-                    location.pathname === "/settings" ? "bg-white/20" : ""
+                    location.pathname === "/settings" ? "bg:white/20" : ""
                   }`}
                 >
                   <Cog6ToothIcon className="w-4 h-4" />
@@ -168,13 +206,30 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Salam Banner (Shown only on small screens) */}
-      {user && (
+      {user && !hideSalam && (
         <div className="md:hidden bg-gradient-to-r from-ihsan-secondary/10 to-ihsan-primary/10 px-4 py-2 text-center border-b border-ihsan-primary/10">
-          <p className="text-xs sm:text-sm text-ihsan-primary font-medium truncate">
+          <p
+            className="text-xs sm:text-sm font-extrabold truncate"
+            style={{
+              backgroundImage:
+                "linear-gradient(90deg, var(--brand-emerald,#2A9B7D) 0%, var(--brand-gold,#D6C52B) 50%, var(--brand-magenta,#C757AB) 100%)",
+              backgroundSize: "200% 100%",
+              backgroundClip: "text",
+              WebkitBackgroundClip: "text",
+              color: "transparent",
+              WebkitTextFillColor: "transparent",
+              WebkitTextStroke: "0.3px rgba(0,0,0,0.25)",
+              textShadow: "0 2px 10px rgba(0,0,0,0.25)",
+              animation: "navbarShimmer 10s linear infinite",
+            }}
+          >
             {salam}
           </p>
         </div>
       )}
+
+      {/* Add a keyframes style tag for shimmer if not present globally */}
+      <style>{`@keyframes navbarShimmer {0%{background-position: 0% 50%;}50%{background-position: 100% 50%;}100%{background-position: 0% 50%;}}`}</style>
 
       {/* Logout Confirmation Modal */}
       {confirmLogout && (

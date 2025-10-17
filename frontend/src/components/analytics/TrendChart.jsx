@@ -5,11 +5,9 @@ import {
   Line,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Area,
-  AreaChart,
+  CartesianGrid,
 } from "recharts";
 
 export default function TrendChart({ data, period }) {
@@ -65,26 +63,52 @@ export default function TrendChart({ data, period }) {
         </h3>
 
         <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={chartData}>
+          <LineChart
+            data={chartData}
+            margin={{ top: 16, right: 16, left: 0, bottom: 8 }}
+          >
             <defs>
-              <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+              <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="var(--brand-emerald)"
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--brand-emerald)"
+                  stopOpacity={0}
+                />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#9ca3af" />
-            <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
-            <Tooltip content={<CustomTooltip />} />
-            <Area
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(255,255,255,0.1)"
+            />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 12 }}
+              stroke="rgba(255,255,255,0.6)"
+            />
+            <YAxis tick={{ fontSize: 12 }} stroke="rgba(255,255,255,0.6)" />
+            <Tooltip
+              contentStyle={{
+                background: "rgba(15,23,42,0.9)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "#fff",
+                borderRadius: 12,
+              }}
+            />
+            <Line
               type="monotone"
               dataKey="count"
-              stroke="#14b8a6"
-              strokeWidth={3}
-              fill="url(#colorCount)"
-              animationDuration={1000}
+              stroke="var(--brand-emerald)"
+              strokeWidth={2}
+              dot={false}
+              fillOpacity={1}
+              fill="url(#trendGradient)"
             />
-          </AreaChart>
+          </LineChart>
         </ResponsiveContainer>
       </div>
     </motion.div>

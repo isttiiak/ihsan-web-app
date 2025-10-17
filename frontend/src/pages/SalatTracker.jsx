@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import AnimatedBackground from "../components/AnimatedBackground";
 
 export default function SalatTracker() {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ export default function SalatTracker() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-700">
+    <AnimatedBackground variant="dark">
       {/* Minimal Navbar */}
       <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -208,6 +209,6 @@ export default function SalatTracker() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </AnimatedBackground>
   );
 }

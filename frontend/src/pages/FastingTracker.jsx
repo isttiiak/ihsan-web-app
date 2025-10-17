@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import AnimatedBackground from "../components/AnimatedBackground";
 
 export default function FastingTracker() {
   const navigate = useNavigate();
@@ -87,7 +88,7 @@ export default function FastingTracker() {
     (fastingData.totalDays / fastingData.monthlyGoal) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-800 to-indigo-900">
+    <AnimatedBackground variant="default">
       {/* Minimal Navbar */}
       <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -281,6 +282,6 @@ export default function FastingTracker() {
           </div>
         </motion.div>
       </div>
-    </div>
+    </AnimatedBackground>
   );
 }
