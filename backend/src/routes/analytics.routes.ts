@@ -12,7 +12,7 @@ router.get('/streak', requireAuth, analyticsController.getStreakHandler);
 router.post('/streak/pause', requireAuth, analyticsController.pauseStreakHandler);
 router.post('/streak/resume', requireAuth, analyticsController.resumeStreakHandler);
 router.post('/streak/check', requireAuth, analyticsController.checkStreakHandler);
-router.get('/analytics', requireAuth, validate(analyticsQuerySchema), analyticsController.getAnalyticsHandler);
-router.get('/analytics/compare', requireAuth, analyticsController.compareAnalyticsHandler);
+router.get('/', requireAuth, validate(analyticsQuerySchema), analyticsController.getAnalyticsHandler);
+router.get('/compare', requireAuth, analyticsController.compareAnalyticsHandler);
 
 export default router;

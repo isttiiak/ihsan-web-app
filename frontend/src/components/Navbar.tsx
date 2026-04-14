@@ -76,7 +76,7 @@ export default function Navbar() {
 
   return (
     <>
-      <div className="navbar bg-gradient-to-r from-brand-emerald to-brand-emerald-dim text-white shadow-islamic sticky top-0 z-40 px-2 sm:px-4">
+      <div className="navbar bg-gradient-to-r from-[#0a1a0d] via-brand-deep to-[#0d1520] text-white border-b border-brand-emerald/20 shadow-[0_2px_20px_rgba(16,185,129,0.12)] sticky top-0 z-40 px-2 sm:px-4">
         <div className="navbar-start flex-1">
           <Link to="/" className="btn btn-ghost text-lg sm:text-xl gap-2 hover:bg-white/10">
             <img src={logo as string} alt="Ihsan" className="w-6 h-6 sm:w-7 sm:h-7" />
@@ -158,7 +158,7 @@ export default function Navbar() {
       </div>
 
       {user && !hideSalam && (
-        <div className="md:hidden bg-gradient-to-r from-brand-emerald/10 to-brand-emerald-dim/10 px-4 py-2 text-center border-b border-brand-border">
+        <div className="md:hidden bg-gradient-to-r from-[#0a1a0d] to-brand-deep px-4 py-2 text-center border-b border-brand-emerald/20">
           <p
             className="text-xs sm:text-sm font-extrabold truncate"
             style={{

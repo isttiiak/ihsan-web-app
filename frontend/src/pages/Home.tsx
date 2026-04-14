@@ -131,24 +131,25 @@ export default function Home() {
                     </span>
 
                     {isZikr && (
-                      <div className="absolute top-4 right-4 z-20 flex flex-row items-center gap-3">
-                        <button
-                          title={`Current streak: ${a.streakCount ?? '-'} days`}
-                          className="px-2 py-1 rounded-full flex items-center gap-1 font-bold shadow-lg border border-white/10 backdrop-blur-md bg-gradient-to-br from-brand-emerald/60 via-pink-400/30 to-brand-gold/40 hover:scale-105 transition-transform"
-                          disabled={loadingAnalytics}
+                      <div className="absolute top-4 right-4 z-20 flex flex-row items-center gap-2">
+                        <div className="tooltip tooltip-left" data-tip={`Streak: ${a.streakCount ?? '-'} day${a.streakCount === 1 ? '' : 's'}`}>
+                          <div className="px-2 py-1 rounded-full flex items-center gap-1 font-bold shadow-lg border border-white/10 backdrop-blur-md bg-gradient-to-br from-brand-emerald/60 via-pink-400/30 to-brand-gold/40">
+                            <span className="text-base" role="img" aria-label="streak">🔥</span>
+                            <span className="text-xs text-white/90 font-bold">
+                              {a.streakCount !== null ? a.streakCount : <span className="loading loading-spinner loading-xs" />}
+                            </span>
+                          </div>
+                        </div>
+                        <div
+                          className="tooltip tooltip-left"
+                          data-tip={a.goalCompleted ? '🏆 Daily goal achieved!' : `🎯 Goal: ${analyticsGoal ?? '…'} zikr/day`}
                         >
-                          <span className="text-lg" role="img" aria-label="streak">🔥</span>
-                          <span className="text-xs text-white/90 font-bold">
-                            {a.streakCount !== null ? a.streakCount : <span className="loading loading-spinner loading-xs" />}
-                          </span>
-                        </button>
-                        <button
-                          title={a.goalCompleted ? 'Goal Achieved!' : 'Goal Incomplete'}
-                          className={`px-2 py-1 rounded-full flex items-center gap-1 font-bold shadow-lg border border-white/10 backdrop-blur-md bg-gradient-to-br from-brand-gold/60 via-pink-400/30 to-brand-emerald/40 hover:scale-105 transition-transform ${a.goalCompleted ? '' : 'opacity-70'}`}
-                          disabled={loadingAnalytics}
-                        >
-                          <span className="text-lg" role="img" aria-label="goal">{a.goalCompleted ? '🏆' : '⭕'}</span>
-                        </button>
+                          <div className={`px-2 py-1 rounded-full flex items-center font-bold shadow-lg border border-white/10 backdrop-blur-md bg-gradient-to-br from-brand-gold/60 via-pink-400/30 to-brand-emerald/40 ${a.goalCompleted ? '' : 'opacity-70'}`}>
+                            <span className="text-base" role="img" aria-label="goal">
+                              {a.goalCompleted ? '✅' : '🎯'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     )}
 

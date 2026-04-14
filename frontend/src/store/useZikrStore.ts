@@ -4,6 +4,11 @@ import { getUserTimezoneOffset, getTodayLocal } from '../utils/timezone.js';
 
 const FLUSH_DELAY = 800; // ms
 
+export interface CustomMeaning {
+  arabic?: string;
+  meaning: string;
+}
+
 interface ZikrState {
   types: string[];
   selected: string;
@@ -14,12 +19,14 @@ interface ZikrState {
   isFlushing: boolean;
   lastResetDate: string | null;
   timezoneOffset?: number;
+  customMeanings: Record<string, CustomMeaning>;
   _flushTimer?: ReturnType<typeof setTimeout>;
 
   checkAndResetIfNewDay: () => void;
   setTypes: (types: string[]) => void;
   replaceTypes: (types: string[]) => void;
   selectType: (selected: string) => void;
+  setCustomMeaning: (name: string, data: CustomMeaning) => void;
   resetAll: () => void;
   hydrate: () => Promise<void>;
   increment: () => void;
@@ -40,6 +47,7 @@ export const useZikrStore = create<ZikrState>()(
       total: 0,
       isFlushing: false,
       lastResetDate: null,
+      customMeanings: {},
 
       checkAndResetIfNewDay: () => {
         const today = getTodayLocal();
@@ -56,6 +64,9 @@ export const useZikrStore = create<ZikrState>()(
 
       selectType: (selected) => set({ selected }),
 
+      setCustomMeaning: (name, data) =>
+        set((s) => ({ customMeanings: { ...s.customMeanings, [name]: data } })),
+
       resetAll: () =>
         set({
           counts: {},
@@ -64,6 +75,7 @@ export const useZikrStore = create<ZikrState>()(
           total: 0,
           selected: 'SubhanAllah',
           types: ['SubhanAllah', 'Alhamdulillah', 'Allahu Akbar', 'La ilaha illallah'],
+          customMeanings: {},
         }),
 
       hydrate: async () => {
@@ -102,18 +114,16 @@ export const useZikrStore = create<ZikrState>()(
       increment: () => {
         get().checkAndResetIfNewDay();
         const timezoneOffset = getUserTimezoneOffset();
-        set(
-          (s) => {
-            const type = s.selected;
-            return {
-              counts: { ...s.counts, [type]: (s.counts[type] ?? 0) + 1 },
-              lifetimeTotals: { ...s.lifetimeTotals, [type]: (s.lifetimeTotals[type] ?? 0) + 1 },
-              pending: { ...s.pending, [type]: (s.pending[type] ?? 0) + 1 },
-              total: s.total + 1,
-              timezoneOffset,
-            };
-          }
-        );
+        set((s) => {
+          const type = s.selected;
+          return {
+            counts: { ...s.counts, [type]: (s.counts[type] ?? 0) + 1 },
+            lifetimeTotals: { ...s.lifetimeTotals, [type]: (s.lifetimeTotals[type] ?? 0) + 1 },
+            pending: { ...s.pending, [type]: (s.pending[type] ?? 0) + 1 },
+            total: s.total + 1,
+            timezoneOffset,
+          };
+        });
       },
 
       decrement: () =>
@@ -121,9 +131,14 @@ export const useZikrStore = create<ZikrState>()(
           const type = s.selected;
           const current = s.counts[type] ?? 0;
           if (current <= 0) return {};
-          return { counts: { ...s.counts, [type]: current - 1 } };
+          return {
+            counts: { ...s.counts, [type]: current - 1 },
+            pending: { ...s.pending, [type]: Math.max(0, (s.pending[type] ?? 0) - 1) },
+            total: Math.max(0, s.total - 1),
+          };
         }),
 
+      // Reset clears only this session's local count — server-confirmed data in analytics is unaffected
       reset: () =>
         set((s) => ({
           counts: { ...s.counts, [s.selected]: 0 },
@@ -137,27 +152,48 @@ export const useZikrStore = create<ZikrState>()(
       },
 
       flush: async () => {
-        const { pending, timezoneOffset } = get();
+        // Prevent concurrent flushes
+        if (get().isFlushing) return;
+
+        // Snapshot pending at this moment — any taps during the request stay safe
+        const snapshot = { ...get().pending };
+        const entries = Object.entries(snapshot).filter(([, a]) => a > 0);
+        if (!entries.length) return;
+
         const idToken = localStorage.getItem('ihsan_idToken');
         if (!idToken) return;
-        const resolvedOffset = timezoneOffset ?? getUserTimezoneOffset();
-        const payload = Object.entries(pending)
-          .filter(([, a]) => a > 0)
-          .map(([zikrType, amount]) => ({ zikrType, amount, timezoneOffset: resolvedOffset }));
-        if (!payload.length) return;
+
+        const resolvedOffset = get().timezoneOffset ?? getUserTimezoneOffset();
+        const payload = entries.map(([zikrType, amount]) => ({
+          zikrType,
+          amount,
+          timezoneOffset: resolvedOffset,
+        }));
+
         set({ isFlushing: true });
         try {
-          await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/increment/batch`, {
+          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/increment/batch`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
             body: JSON.stringify({ increments: payload, timezoneOffset: resolvedOffset }),
           });
-          set((s) => ({
-            pending: Object.fromEntries(Object.keys(s.pending).map((k) => [k, 0])),
-          }));
-          void get().hydrate();
+
+          if (!res.ok) {
+            // Keep pending intact — counts will be retried on next flush
+            console.warn(`Batch flush returned ${res.status} — pending preserved for retry`);
+            return;
+          }
+
+          // Only subtract the amounts we confirmed were saved (not everything — user may have tapped during request)
+          set((s) => {
+            const newPending = { ...s.pending };
+            for (const [type, amount] of entries) {
+              newPending[type] = Math.max(0, (newPending[type] ?? 0) - amount);
+            }
+            return { pending: newPending };
+          });
         } catch (e) {
-          console.error(e);
+          console.error('Flush error — pending preserved:', e);
         } finally {
           set({ isFlushing: false });
         }
@@ -172,6 +208,7 @@ export const useZikrStore = create<ZikrState>()(
         pending: state.pending,
         total: state.total,
         lastResetDate: state.lastResetDate,
+        customMeanings: state.customMeanings,
       }),
     }
   )

@@ -8,7 +8,7 @@ export function useAnalytics(days = 7) {
   return useQuery<AnalyticsResponse>({
     queryKey: ['analytics', days, timezoneOffset],
     queryFn: async () => {
-      const res = await api.get<AnalyticsResponse>('/api/analytics/analytics', {
+      const res = await api.get<AnalyticsResponse>('/api/analytics', {
         params: { days, timezoneOffset },
       });
       return res.data;

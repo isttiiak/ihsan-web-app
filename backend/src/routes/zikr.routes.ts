@@ -10,6 +10,6 @@ router.post('/increment', requireAuth, validate(incrementSchema), zikrController
 router.post('/increment/batch', requireAuth, validate(batchIncrementSchema), zikrController.batchIncrementHandler);
 router.get('/summary', requireAuth, zikrController.getSummaryHandler);
 router.get('/types', requireAuth, zikrController.getTypesHandler);
-router.post('/type', requireAuth, validate(addZikrTypeSchema), zikrController.addTypeHandler);
+router.post('/types', requireAuth, validate(addZikrTypeSchema), zikrController.addTypeHandler);
 
 export default router;

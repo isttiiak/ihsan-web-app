@@ -3,76 +3,119 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import { useZikrStore } from '../store/useZikrStore.js';
-import useFetchZikrTypes from '../hooks/useFetchZikrTypes.js';
+import type { CustomMeaning } from '../store/useZikrStore.js';
+import { useZikrTypes, useAddZikrType } from '../hooks/useZikrTypes.js';
+import { useAnalytics } from '../hooks/useAnalytics.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { PlusIcon, MinusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MinusIcon, ArrowPathIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+
+// Meanings for the 4 default dhikr
+const DEFAULT_MEANINGS: Record<string, { arabic: string; transliteration: string; meaning: string }> = {
+  SubhanAllah: {
+    arabic: 'سُبْحَانَ اللَّهِ',
+    transliteration: 'Subḥāna-llāh',
+    meaning: 'Glory be to Allah — praising His perfection above all imperfections',
+  },
+  Alhamdulillah: {
+    arabic: 'الْحَمْدُ لِلَّهِ',
+    transliteration: 'Al-ḥamdu li-llāh',
+    meaning: 'All praise belongs to Allah — gratitude for every blessing, seen and unseen',
+  },
+  'Allahu Akbar': {
+    arabic: 'اللَّهُ أَكْبَرُ',
+    transliteration: 'Allāhu Akbar',
+    meaning: 'Allah is the Greatest — His greatness transcends all of creation',
+  },
+  'La ilaha illallah': {
+    arabic: 'لَا إِلَهَ إِلَّا اللَّهُ',
+    transliteration: 'Lā ilāha illā-llāh',
+    meaning: 'There is no god but Allah — the declaration of Tawhid, key to Jannah',
+  },
+};
+
+const GLOW_PALETTE = [
+  { glow: 'rgba(16,185,129,0.9)', ring: 'rgba(16,185,129,0.3)', bar: 'bg-brand-emerald' },
+  { glow: 'rgba(245,158,11,0.9)', ring: 'rgba(245,158,11,0.3)', bar: 'bg-brand-gold' },
+  { glow: 'rgba(99,102,241,0.9)', ring: 'rgba(99,102,241,0.3)', bar: 'bg-indigo-500' },
+  { glow: 'rgba(236,72,153,0.9)', ring: 'rgba(236,72,153,0.3)', bar: 'bg-pink-500' },
+  { glow: 'rgba(6,182,212,0.9)', ring: 'rgba(6,182,212,0.3)', bar: 'bg-cyan-500' },
+  { glow: 'rgba(168,85,247,0.9)', ring: 'rgba(168,85,247,0.3)', bar: 'bg-purple-500' },
+];
 
 export default function ZikrCounter() {
   const navigate = useNavigate();
-  const { types, selected, counts, selectType, increment, decrement, reset, scheduleFlush, setTypes } = useZikrStore();
-  const fetchedTypes = useFetchZikrTypes();
-  const currentCount = counts?.[selected] || 0;
-  const [colorShadow, setColorShadow] = useState('rgba(27, 153, 139, 0.8)');
-  const [showAddCustom, setShowAddCustom] = useState(false);
-  const [customZikr, setCustomZikr] = useState('');
+  const { types, selected, counts, customMeanings, selectType, increment, decrement, reset, scheduleFlush, setTypes, setCustomMeaning } = useZikrStore();
+  const { data: fetchedTypes } = useZikrTypes();
+  const addZikrType = useAddZikrType();
+  const { data: analyticsData } = useAnalytics(1);
 
+
+  const currentCount = counts?.[selected] ?? 0;
+  const [colorIdx, setColorIdx] = useState(0);
+  const [showAddCustom, setShowAddCustom] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customArabic, setCustomArabic] = useState('');
+  const [customMeaningText, setCustomMeaningText] = useState('');
+
+  // Goal data from server (so reset doesn't affect goal progress)
+  const confirmedTotal = analyticsData?.today?.total ?? 0;
+  const dailyGoal = analyticsData?.goal?.dailyTarget ?? null;
+  const streakCount = analyticsData?.streak?.currentStreak ?? null;
+  const goalProgress = dailyGoal ? Math.min(100, Math.round((confirmedTotal / dailyGoal) * 100)) : null;
+  const goalMet = dailyGoal !== null ? confirmedTotal >= dailyGoal : false;
+
+  const color = GLOW_PALETTE[colorIdx % GLOW_PALETTE.length]!;
+
+  // Resolve meaning: default → custom → none
+  const meaning = DEFAULT_MEANINGS[selected] ?? (customMeanings[selected]
+    ? { arabic: customMeanings[selected].arabic ?? '', transliteration: '', meaning: customMeanings[selected].meaning }
+    : null);
+
+  // Merge server types into local store
   useEffect(() => {
-    if (fetchedTypes.length) {
-      setTypes([...new Set([...fetchedTypes.map((t) => t.name), ...types])]);
+    if (fetchedTypes?.length) {
+      const serverNames = fetchedTypes.map((t) => t.name).filter(Boolean);
+      setTypes([...new Set([...serverNames, ...types])]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchedTypes.length]);
+  }, [fetchedTypes?.length]);
 
+  // Keyboard: Space = increment
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
+    const handler = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
         e.preventDefault();
         onIncrement();
       }
     };
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentCount]);
-
-  const randomColors = [
-    'rgba(27, 153, 139, 0.9)',
-    'rgba(15, 76, 117, 0.9)',
-    'rgba(212, 175, 55, 0.9)',
-    'rgba(59, 130, 246, 0.9)',
-    'rgba(139, 92, 246, 0.9)',
-    'rgba(236, 72, 153, 0.9)',
-  ];
+  }, []);
 
   const onIncrement = () => {
     increment();
     scheduleFlush();
-    setColorShadow(randomColors[Math.floor(Math.random() * randomColors.length)]);
+    setColorIdx((i) => (i + 1) % GLOW_PALETTE.length);
   };
 
-  const onDecrement = () => {
-    if (currentCount > 0) decrement();
-  };
+  const onDecrement = () => { if (currentCount > 0) decrement(); };
 
   const onReset = () => {
     if (currentCount === 0) return;
     toast(
       (t) => (
         <div className="flex flex-col gap-3">
-          <p className="font-semibold text-gray-800">
-            Reset count for <span className="font-bold text-emerald-600">{selected}</span>?
+          <p className="font-semibold text-gray-800 text-sm">
+            Reset <span className="font-bold text-emerald-600">{selected}</span> counter?
+            <br />
+            <span className="text-gray-500 text-xs">Server-confirmed analytics won't be affected.</span>
           </p>
           <div className="flex gap-2">
             <button
-              onClick={() => {
-                reset();
-                toast.dismiss(t.id);
-                toast.success('Count reset successfully!', { icon: '🔄', duration: 2000 });
-              }}
+              onClick={() => { reset(); toast.dismiss(t.id); toast.success('Counter reset.', { icon: '🔄', duration: 2000 }); }}
               className="btn btn-sm bg-red-500 hover:bg-red-600 text-white border-0"
-            >
-              Reset
-            </button>
+            >Reset</button>
             <button onClick={() => toast.dismiss(t.id)} className="btn btn-sm btn-ghost">Cancel</button>
           </div>
         </div>
@@ -81,198 +124,347 @@ export default function ZikrCounter() {
     );
   };
 
-  const submitCustomZikr = async () => {
-    const name = customZikr.trim();
-    if (!name) return;
-    try {
-      const idToken = localStorage.getItem('ihsan_idToken');
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/type`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken ?? ''}` },
-        body: JSON.stringify({ name }),
-      });
-      if (res.ok) {
+  const submitCustomZikr = () => {
+    const name = customName.trim();
+    const meaning = customMeaningText.trim();
+    if (!name || !meaning) return;
+    addZikrType.mutate(name, {
+      onSuccess: () => {
+        if (customArabic.trim() || meaning) {
+          setCustomMeaning(name, { arabic: customArabic.trim() || undefined, meaning });
+        }
         setTypes([...types, name]);
         selectType(name);
-        setCustomZikr('');
+        setCustomName(''); setCustomArabic(''); setCustomMeaningText('');
         setShowAddCustom(false);
-        toast.success(`${name} added successfully!`, { icon: '✨', duration: 3000 });
-      } else {
-        toast.error('Failed to add custom zikr', { duration: 3000 });
-      }
-    } catch (e) {
-      console.error('Failed to add custom zikr:', e);
-      toast.error('An error occurred', { duration: 3000 });
-    }
+        toast.success(`${name} added!`, { icon: '✨', duration: 3000 });
+      },
+      onError: () => toast.error('Failed to add dhikr', { duration: 3000 }),
+    });
   };
 
   return (
     <AnimatedBackground variant="ocean">
       <Toaster />
 
-      <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={() => navigate('/')} className="btn btn-ghost btn-sm text-white gap-2 hover:bg-white/10">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* ── Compact top bar ── */}
+      <div className="bg-black/25 backdrop-blur-md border-b border-white/10 sticky top-0 z-30">
+        <div className="max-w-2xl mx-auto px-3 py-2.5 flex items-center gap-2">
+          {/* Left: back + title */}
+          <button onClick={() => navigate('/')} className="btn btn-ghost btn-xs text-white/70 hover:text-white hover:bg-white/10 gap-1 flex-shrink-0">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Home
+            <span className="hidden sm:inline">Back</span>
           </button>
-          <div className="text-white font-semibold">🕌 Ihsan</div>
-          <button
-            onClick={() => navigate('/zikr/analytics')}
-            className="btn btn-sm bg-white/10 hover:bg-white/20 border-white/30 text-white gap-2 transition-all"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-            </svg>
-            Analytics
+          <div className="flex items-center gap-1.5 text-white font-bold text-sm flex-shrink-0">
+            <span>📿</span>
+            <span className="hidden sm:inline">Zikr Counter</span>
+          </div>
+
+          {/* Center: streak + goal */}
+          <div className="flex-1 flex items-center justify-center gap-2">
+            {streakCount !== null && (
+              <div className="tooltip" data-tip={`${streakCount} day streak`}>
+                <div className="px-2 py-0.5 rounded-full bg-brand-gold/20 border border-brand-gold/40 text-white text-xs font-bold flex items-center gap-1">
+                  🔥 <span>{streakCount}</span>
+                </div>
+              </div>
+            )}
+            {goalProgress !== null && (
+              <div className="tooltip" data-tip={goalMet ? 'Daily goal achieved! 🏆' : `${confirmedTotal} / ${dailyGoal ?? '?'} confirmed`}>
+                <div className={`px-2 py-0.5 rounded-full border text-white text-xs font-bold flex items-center gap-1 ${goalMet ? 'bg-brand-emerald/30 border-brand-emerald/50' : 'bg-white/10 border-white/20'}`}>
+                  {goalMet ? '✅' : '🎯'} <span>{goalProgress}%</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: analytics */}
+          <button onClick={() => navigate('/zikr/analytics')} className="btn btn-ghost btn-xs text-white/70 hover:text-white hover:bg-white/10 gap-1 flex-shrink-0">
+            <ChartBarIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">Analytics</span>
           </button>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          <div className="text-6xl sm:text-7xl mb-4">📿</div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3">Zikr Counter</h1>
-          <p className="text-lg sm:text-xl text-white/80">Remember Allah with every count</p>
+      <div className="max-w-2xl mx-auto px-4 pb-10 pt-4 space-y-5">
+
+        {/* Motivational subtitle */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center text-white/50 text-sm tracking-wide"
+        >
+          Every count is an act of worship — keep going 🌙
+        </motion.p>
+
+        {/* ── Type selector: name | change dropdown | + ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="flex items-center gap-2 bg-white/8 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-white/15"
+          style={{ background: 'rgba(255,255,255,0.07)' }}
+        >
+          {/* Selected name — glowing accent */}
+          <span
+            className="font-bold text-sm truncate flex-shrink-0 max-w-[140px] sm:max-w-[180px]"
+            style={{ color: color.glow, textShadow: `0 0 12px ${color.glow}60` }}
+          >
+            {selected}
+          </span>
+
+          {/* Separator */}
+          <span className="text-white/25 select-none flex-shrink-0">|</span>
+
+          {/* Change dropdown */}
+          <select
+            value={selected}
+            onChange={(e) => selectType(e.target.value)}
+            className="flex-1 min-w-0 bg-transparent border-none text-white/60 text-xs focus:outline-none cursor-pointer appearance-none"
+            style={{ backgroundImage: 'none' }}
+          >
+            {types.map((t) => (
+              <option key={t} value={t} className="bg-brand-deep text-white">{t}</option>
+            ))}
+          </select>
+          {/* Custom caret */}
+          <svg className="w-3.5 h-3.5 text-white/40 flex-shrink-0 -ml-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+          </svg>
+
+          {/* Add custom */}
+          <button
+            onClick={() => setShowAddCustom(true)}
+            className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
+            title="Add custom dhikr"
+          >
+            <PlusIcon className="w-3.5 h-3.5" />
+          </button>
         </motion.div>
 
+        {/* ── Counter + meaning card ── */}
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
+          initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white/10 backdrop-blur-md rounded-3xl p-6 mb-8 border border-white/20 shadow-2xl"
+          transition={{ delay: 0.08 }}
+          className="rounded-3xl border border-white/20 bg-white/8 backdrop-blur-lg shadow-2xl overflow-hidden"
+          style={{ background: 'rgba(255,255,255,0.07)' }}
         >
-          <label className="block text-white/80 text-sm mb-3 text-center">Select Zikr Type</label>
-          <div className="flex gap-3">
-            <select
-              value={selected}
-              onChange={(e) => selectType(e.target.value)}
-              className="select select-lg flex-1 bg-white/20 border-white/30 text-white focus:border-white/50 focus:bg-white/30 transition-all"
-            >
-              {types.map((t) => (
-                <option key={t} value={t} className="bg-brand-deep text-white">{t}</option>
-              ))}
-            </select>
-            <button
-              onClick={() => setShowAddCustom(true)}
-              className="btn btn-lg bg-white/20 hover:bg-white/30 border-white/30 text-white"
-              title="Add Custom Zikr"
-            >
-              <PlusIcon className="w-6 h-6" />
-            </button>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white/10 backdrop-blur-md rounded-3xl p-8 sm:p-12 mb-8 border border-white/20 shadow-2xl"
-        >
-          <div className="text-center">
+          {/* Number */}
+          <div className="pt-10 pb-4 text-center">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`${selected}:${currentCount}`}
-                initial={{ scale: 0.8, opacity: 0 }}
+                initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 1.2, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25, duration: 0.15 }}
-                className="relative inline-block"
+                exit={{ scale: 1.15, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 28 }}
               >
                 <div
-                  className="text-7xl sm:text-8xl lg:text-9xl font-bold text-white"
-                  style={{ textShadow: `0 0 40px ${colorShadow}, 0 0 80px ${colorShadow}, 0 0 120px ${colorShadow}`, transition: 'text-shadow 0.3s ease-in-out' }}
+                  className="text-8xl sm:text-9xl font-black text-white leading-none"
+                  style={{
+                    textShadow: `0 0 40px ${color.glow}, 0 0 90px ${color.glow}60`,
+                    transition: 'text-shadow 0.25s ease',
+                  }}
                 >
                   {currentCount}
                 </div>
               </motion.div>
             </AnimatePresence>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6 text-white/70 text-lg">
-              {selected}
-            </motion.p>
           </div>
+
+          {/* Divider */}
+          <div className="mx-6 h-px bg-white/10" />
+
+          {/* Meaning section */}
+          <div className="px-6 py-5 text-center space-y-2.5 min-h-[130px] flex flex-col justify-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selected}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-2"
+              >
+                {meaning ? (
+                  <>
+                    {meaning.arabic && (
+                      <p
+                        dir="rtl"
+                        className="text-2xl sm:text-3xl font-bold text-white"
+                        style={{
+                          fontFamily: "'Amiri', 'Scheherazade New', serif",
+                          textShadow: `0 0 16px ${color.glow}80`,
+                        }}
+                      >
+                        {meaning.arabic}
+                      </p>
+                    )}
+                    {meaning.transliteration && (
+                      <p className="text-xs text-white/50 italic tracking-wide">{meaning.transliteration}</p>
+                    )}
+                    <p className="text-sm text-white/75 leading-relaxed">{meaning.meaning}</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-white/40 italic">Custom dhikr — remember Allah sincerely with every count.</p>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Goal progress bar */}
+          {dailyGoal !== null && (
+            <div className="px-6 pb-6 pt-1">
+              <div className="flex justify-between text-xs text-white/40 mb-1.5">
+                <span>Confirmed today: {confirmedTotal}</span>
+                <span>Goal: {dailyGoal}</span>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                <motion.div
+                  animate={{ width: `${goalProgress}%` }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  className={`h-full rounded-full ${color.bar}`}
+                />
+              </div>
+              {goalMet && (
+                <p className="text-xs text-brand-emerald font-semibold text-center mt-2">🏆 Daily goal achieved!</p>
+              )}
+            </div>
+          )}
         </motion.div>
 
+        {/* ── Action buttons ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="flex flex-wrap gap-4 justify-center items-center mb-8"
+          transition={{ delay: 0.15 }}
+          className="flex gap-3 justify-center items-center"
         >
           <motion.button
             whileHover={{ scale: 1.1, rotate: -5 }}
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ scale: 0.93 }}
             onClick={onDecrement}
             disabled={currentCount === 0}
-            className="btn btn-lg btn-circle bg-white/20 hover:bg-white/30 border-white/30 text-white backdrop-blur-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="btn btn-circle bg-white/15 hover:bg-white/25 border-white/20 text-white backdrop-blur-sm disabled:opacity-25"
           >
-            <MinusIcon className="w-7 h-7" />
+            <MinusIcon className="w-6 h-6" />
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.04, backgroundColor: '#e6faf3' }}
+            whileTap={{ scale: 0.96, backgroundColor: '#d1fae5' }}
             onClick={onIncrement}
-            className="btn btn-lg sm:btn-wide bg-white hover:bg-white/90 text-brand-emerald border-0 shadow-2xl transition-all duration-300 font-bold text-xl"
+            className="btn btn-wide text-brand-deep border-0 shadow-2xl font-bold text-lg h-14"
+            style={{ backgroundColor: 'white', boxShadow: `0 8px 32px ${color.glow}50` }}
           >
-            <PlusIcon className="w-7 h-7" />
-            <span className="hidden sm:inline">Count</span>
+            <PlusIcon className="w-6 h-6" />
+            Count
           </motion.button>
 
           <motion.button
             whileHover={{ scale: 1.1, rotate: 180 }}
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ scale: 0.93 }}
             onClick={onReset}
             disabled={currentCount === 0}
-            className="btn btn-lg btn-circle bg-white/20 hover:bg-red-500/80 border-white/30 text-white backdrop-blur-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="btn btn-circle bg-white/15 hover:bg-red-500/70 border-white/20 text-white backdrop-blur-sm disabled:opacity-25 transition-colors"
           >
-            <ArrowPathIcon className="w-7 h-7" />
+            <ArrowPathIcon className="w-6 h-6" />
           </motion.button>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-center space-y-3">
-          <p className="text-white/60 text-sm">
-            ✨ Press <kbd className="kbd kbd-sm bg-white/20 text-white border-white/30">Space</kbd> or click to count
-          </p>
-          <p className="text-white/60 text-sm">🎨 Watch the colors change with each count</p>
-        </motion.div>
+        {/* Keyboard hint */}
+        <p className="text-center text-white/35 text-xs">
+          Press <kbd className="kbd kbd-xs bg-white/15 text-white border-white/20">Space</kbd> to count
+        </p>
       </div>
 
-      {showAddCustom && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      {/* ── Add custom dhikr modal ── */}
+      <AnimatePresence>
+        {showAddCustom && (
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-brand-surface rounded-3xl p-8 max-w-md w-full shadow-2xl border border-brand-border"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowAddCustom(false); }}
           >
-            <h3 className="text-2xl font-bold text-brand-emerald mb-4">Add Custom Zikr</h3>
-            <input
-              type="text"
-              value={customZikr}
-              onChange={(e) => setCustomZikr(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void submitCustomZikr();
-                if (e.key === 'Escape') setShowAddCustom(false);
-              }}
-              placeholder="Enter zikr name..."
-              className="input input-bordered input-lg w-full mb-6 bg-brand-deep border-brand-border text-white focus:border-brand-emerald"
-              autoFocus
-            />
-            <div className="flex gap-3">
-              <button onClick={() => { setShowAddCustom(false); setCustomZikr(''); }} className="btn btn-lg flex-1 btn-ghost text-white">Cancel</button>
-              <button
-                onClick={() => void submitCustomZikr()}
-                disabled={!customZikr.trim()}
-                className="btn btn-lg flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0"
-              >
-                Add
-              </button>
-            </div>
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25 }}
+              className="bg-brand-surface rounded-3xl p-6 w-full max-w-md shadow-2xl border border-brand-border"
+            >
+              <h3 className="text-xl font-bold text-brand-emerald mb-1">Add Custom Dhikr</h3>
+              <p className="text-white/40 text-xs mb-5">Name and meaning are required. Arabic is optional but recommended.</p>
+
+              <div className="space-y-3">
+                {/* Name */}
+                <div>
+                  <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
+                    Dhikr Name <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                    placeholder="e.g. Astaghfirullah"
+                    className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Arabic */}
+                <div>
+                  <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
+                    Arabic Text <span className="text-white/30">(optional)</span>
+                  </label>
+                  <input
+                    value={customArabic}
+                    onChange={(e) => setCustomArabic(e.target.value)}
+                    placeholder="أَسْتَغْفِرُ اللَّهَ"
+                    dir="rtl"
+                    className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-base"
+                    style={{ fontFamily: "'Amiri', serif" }}
+                  />
+                </div>
+
+                {/* Meaning */}
+                <div>
+                  <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
+                    English Meaning <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    value={customMeaningText}
+                    onChange={(e) => setCustomMeaningText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') submitCustomZikr(); if (e.key === 'Escape') setShowAddCustom(false); }}
+                    placeholder="e.g. I seek forgiveness from Allah"
+                    className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => { setShowAddCustom(false); setCustomName(''); setCustomArabic(''); setCustomMeaningText(''); }}
+                  className="btn flex-1 btn-ghost text-white/60 border-brand-border"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitCustomZikr}
+                  disabled={!customName.trim() || !customMeaningText.trim() || addZikrType.isPending}
+                  className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold"
+                >
+                  {addZikrType.isPending ? <span className="loading loading-spinner loading-sm" /> : 'Add Dhikr'}
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </AnimatedBackground>
   );
 }

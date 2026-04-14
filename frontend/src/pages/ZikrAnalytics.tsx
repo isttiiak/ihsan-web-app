@@ -93,18 +93,22 @@ export default function ZikrAnalytics() {
 
   return (
     <AnimatedBackground variant="dark">
+      {/* Sticky back bar — stays visible while scrolling */}
+      <div className="sticky top-0 z-20 px-4 py-2 bg-brand-void/70 backdrop-blur-md border-b border-brand-border/40">
+        <div className="max-w-7xl mx-auto flex items-center">
+          <motion.button
+            onClick={() => navigate(-1)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="btn btn-sm bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white shadow-lg gap-2"
+          >
+            <ArrowLeftIcon className="w-4 h-4" /> Back
+          </motion.button>
+        </div>
+      </div>
+
       <div className="p-4 sm:p-6 lg:p-8 relative">
         <div className="max-w-7xl mx-auto space-y-8 relative z-10">
-          <div className="flex items-center justify-end lg:hidden">
-            <motion.button
-              onClick={() => navigate('/zikr')}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="btn btn-sm bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white shadow-lg gap-2"
-            >
-              <ArrowLeftIcon className="w-4 h-4" /> Back
-            </motion.button>
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <StreakCard streak={streak} onPause={handlePauseStreak} onResume={handleResumeStreak} isLoading={isUpdating} />

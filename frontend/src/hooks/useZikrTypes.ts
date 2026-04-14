@@ -16,7 +16,7 @@ export function useZikrTypes() {
 export function useAddZikrType() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => api.post('/api/zikr/type', { name }),
+    mutationFn: (name: string) => api.post('/api/zikr/types', { name }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['zikr', 'types'] });
     },
