@@ -354,10 +354,10 @@ export default function ZikrCounter() {
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.04, backgroundColor: '#e6faf3' }}
+            whileHover={{ scale: 1.04, backgroundColor: '#e6faf4' }}
             whileTap={{ scale: 0.96, backgroundColor: '#d1fae5' }}
             onClick={onIncrement}
-            className="btn btn-wide text-brand-deep border-0 shadow-2xl font-bold text-lg h-14"
+            className="flex items-center justify-center gap-2 w-44 sm:w-56 h-14 rounded-2xl text-brand-deep font-bold text-lg cursor-pointer select-none outline-none border-0"
             style={{ backgroundColor: 'white', boxShadow: `0 8px 32px ${color.glow}50` }}
           >
             <PlusIcon className="w-6 h-6" />

@@ -15,7 +15,7 @@ interface ActivityItem {
   link: string;
   accentColor: string;
   iconBg: string;
-  tag: string;
+  tag?: string;
   streakCount?: number | null;
   goalCompleted?: boolean;
 }
@@ -56,7 +56,6 @@ export default function Home() {
       link: '/zikr',
       accentColor: 'var(--brand-emerald, #10b981)',
       iconBg: 'bg-gradient-to-br from-brand-emerald/20 to-emerald-400/30',
-      tag: 'Developing',
       streakCount,
       goalCompleted,
     },
@@ -117,18 +116,17 @@ export default function Home() {
                     whileTap={{ scale: 0.98 }}
                     className="relative h-full rounded-3xl overflow-hidden backdrop-blur-2xl border border-white/10 bg-white/5"
                   >
-                    <span
-                      className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md border border-white/10"
-                      style={{
-                        letterSpacing: '0.04em',
-                        background:
-                          a.tag === 'Developing'
-                            ? 'linear-gradient(90deg, var(--brand-emerald) 0%, var(--brand-magenta) 100%)'
-                            : 'linear-gradient(90deg, var(--brand-gold) 0%, var(--brand-magenta) 100%)',
-                      }}
-                    >
-                      {a.tag}
-                    </span>
+                    {a.tag && (
+                      <span
+                        className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md border border-white/10"
+                        style={{
+                          letterSpacing: '0.04em',
+                          background: 'linear-gradient(90deg, var(--brand-gold) 0%, var(--brand-magenta) 100%)',
+                        }}
+                      >
+                        {a.tag}
+                      </span>
+                    )}
 
                     {isZikr && (
                       <div className="absolute top-4 right-4 z-20 flex flex-row items-center gap-2">
