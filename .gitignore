@@ -49,3 +49,13 @@ Desktop.ini
 # Misc
 .vercel
 .netlify
+
+# Backup files
+*.backup
+*.bak
+
+# TypeScript build output
+backend/dist/
+
+# Local AI/dev context
+CLAUDE.md

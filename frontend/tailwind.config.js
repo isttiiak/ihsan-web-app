@@ -1,84 +1,68 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        ihsan: {
-          // Deep Islamic-inspired palette
-          primary: "#0F4C75", // Deep ocean blue
-          secondary: "#1B998B", // Teal green
-          accent: "#D4AF37", // Golden
-          dark: "#0A1931", // Deep navy
-          light: "#F0F4F8", // Soft white
-        },
         brand: {
-          emerald: "#2A9B7D",
-          magenta: "#C757AB",
-          gold: "#D6C52B",
-          deep: "#0b1220",
-        },
-        // semantic tokens
-        surface: {
-          glass: "rgba(11, 18, 32, 0.6)",
+          void: '#080c12',
+          deep: '#0d1520',
+          surface: '#141e2e',
+          border: '#1e2d42',
+          emerald: '#10b981',
+          'emerald-dim': '#059669',
+          gold: '#f59e0b',
+          'gold-dim': '#d97706',
+          magenta: '#c026d3',
         },
       },
       backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-islamic":
-          "linear-gradient(135deg, #0F4C75 0%, #1B998B 50%, #0A1931 100%)",
-        "gradient-gold": "linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)",
-        "gradient-teal": "linear-gradient(135deg, #1B998B 0%, #0F4C75 100%)",
-        "conic-brand":
-          "conic-gradient(from 0deg, #2A9B7D, #D6C52B, #C757AB, #2A9B7D)",
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'conic-brand': 'conic-gradient(from 0deg, #10b981, #f59e0b, #c026d3, #10b981)',
       },
       boxShadow: {
-        islamic: "0 10px 40px rgba(15, 76, 117, 0.3)",
-        "islamic-lg": "0 20px 60px rgba(15, 76, 117, 0.4)",
-        gold: "0 8px 32px rgba(212, 175, 55, 0.25)",
-        "inner-glow": "inset 0 0 20px rgba(27, 153, 139, 0.2)",
-        glass: "0 20px 60px -20px rgba(0,0,0,0.6)",
-        "glow-emerald": "0 0 24px rgba(42,155,125,0.45)",
-        "glow-magenta": "0 0 24px rgba(199,87,171,0.45)",
-        "glow-gold": "0 0 24px rgba(214,197,43,0.45)",
+        glass: '0 20px 60px -20px rgba(0,0,0,0.6)',
+        islamic: '0 10px 40px rgba(16,185,129,0.2)',
+        'glow-emerald': '0 0 24px rgba(16,185,129,0.45)',
+        'glow-gold': '0 0 24px rgba(245,158,11,0.45)',
+        'glow-magenta': '0 0 24px rgba(192,38,211,0.45)',
       },
       animation: {
-        float: "float 6s ease-in-out infinite",
-        glow: "glow 2s ease-in-out infinite alternate",
+        float: 'float 6s ease-in-out infinite',
       },
       keyframes: {
         float: {
-          "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-20px)" },
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-20px)' },
         },
-        glow: {
-          "0%": { boxShadow: "0 0 20px rgba(27, 153, 139, 0.5)" },
-          "100%": { boxShadow: "0 0 40px rgba(27, 153, 139, 0.8)" },
+        navbarShimmer: {
+          '0%': { backgroundPosition: '0% 50%' },
+          '100%': { backgroundPosition: '200% 50%' },
         },
       },
     },
   },
-  plugins: [require("daisyui")],
+  plugins: [require('daisyui')],
   daisyui: {
     themes: [
       {
-        emerald: {
-          primary: "#0F4C75",
-          secondary: "#1B998B",
-          accent: "#D4AF37",
-          neutral: "#0A1931",
-          "base-100": "#FFFFFF",
-          "base-200": "#F0F4F8",
-          "base-300": "#E2E8F0",
-          info: "#1B998B",
-          success: "#10B981",
-          warning: "#F59E0B",
-          error: "#EF4444",
+        ihsan: {
+          primary: '#10b981',
+          secondary: '#059669',
+          accent: '#f59e0b',
+          neutral: '#141e2e',
+          'base-100': '#080c12',
+          'base-200': '#0d1520',
+          'base-300': '#141e2e',
+          'base-content': '#f1f5f9',
+          success: '#10b981',
+          warning: '#f59e0b',
+          error: '#ef4444',
+          info: '#06b6d4',
         },
       },
-      "light",
-      "dark",
+      'light',
     ],
-    darkTheme: "dark",
+    darkTheme: 'ihsan',
   },
 };

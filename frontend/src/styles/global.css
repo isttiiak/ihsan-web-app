@@ -2,10 +2,17 @@
 
 /* Brand CSS variables */
 :root {
-  --brand-emerald: #2a9b7d;
-  --brand-magenta: #c757ab;
-  --brand-gold: #d6c52b;
-  --brand-deep: #0b1220;
+  --brand-void: #080c12;
+  --brand-deep: #0d1520;
+  --brand-surface: #141e2e;
+  --brand-border: #1e2d42;
+  --brand-emerald: #10b981;
+  --brand-emerald-dim: #059669;
+  --brand-gold: #f59e0b;
+  --brand-gold-dim: #d97706;
+  --brand-magenta: #c026d3;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
 }
 
 /* Smooth scrolling */
@@ -116,6 +123,12 @@ body {
     min-height: 44px;
     min-width: 44px;
   }
+}
+
+/* Navbar gradient shimmer */
+@keyframes navbarShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
 }
 
 /* Animation for gradient backgrounds */
