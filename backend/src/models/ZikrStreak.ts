@@ -31,7 +31,7 @@ const zikrStreakSchema = new Schema<IZikrStreak>(
   { timestamps: true }
 );
 
-zikrStreakSchema.index({ userId: 1 });
+// userId has unique:true above — no separate index needed
 
 zikrStreakSchema.methods.updateStreak = function (
   todayDate: Date,

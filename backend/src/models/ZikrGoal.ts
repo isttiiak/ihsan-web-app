@@ -17,6 +17,5 @@ const zikrGoalSchema = new Schema<IZikrGoal>(
   { timestamps: true }
 );
 
-zikrGoalSchema.index({ userId: 1 });
-
+// userId has unique:true above — no separate index needed
 export default mongoose.model<IZikrGoal>('ZikrGoal', zikrGoalSchema);

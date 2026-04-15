@@ -1,113 +1,221 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { ArrowLeftIcon, ChartBarIcon } from '@heroicons/react/24/outline';
-import { useSalatLog, useUpdatePrayer, PrayerId, PrayerStatus } from '../hooks/useSalatLog.js';
-import { PRAYER_META } from '../utils/prayerTimes.js';
+import { ArrowLeftIcon, ChartBarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import {
+  useSalatLog,
+  useUpdatePrayer,
+  PrayerId,
+  PrayerStatus,
+  PrayerLocation,
+} from '../hooks/useSalatLog.js';
+import {
+  PRAYER_META,
+  calcPrayerTimes,
+  getCurrentAndNextPrayer,
+  formatTime,
+} from '../utils/prayerTimes.js';
 
-interface StatusOption {
-  value: PrayerStatus;
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+function todayStr() { return new Date().toISOString().substring(0, 10); }
+function offsetDate(base: string, delta: number): string {
+  const d = new Date(base + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  return d.toISOString().substring(0, 10);
+}
+function isFuturePrayer(prayerId: string, todayTimes: Record<string, Date> | null | undefined): boolean {
+  if (!todayTimes) return false;
+  const t = todayTimes[prayerId];
+  return !!t && t > new Date();
+}
+function isCurrentPrayer(prayerId: string, currentId: string | undefined): boolean {
+  return prayerId === currentId;
+}
+function friendlyDate(dateStr: string): string {
+  const today = todayStr();
+  const yesterday = offsetDate(today, -1);
+  if (dateStr === today) return 'Today';
+  if (dateStr === yesterday) return 'Yesterday';
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// ─── types ───────────────────────────────────────────────────────────────────
+
+interface SubTagDef {
+  value: PrayerLocation;
   label: string;
   emoji: string;
-  bg: string;
-  border: string;
-  text: string;
+  note: string;
 }
 
-const STATUS_OPTIONS: StatusOption[] = [
-  { value: 'prayed',  label: 'Prayed',    emoji: '✅', bg: 'bg-brand-emerald/20',  border: 'border-brand-emerald/60', text: 'text-brand-emerald' },
-  { value: 'mosque',  label: 'Mosque',    emoji: '🕌', bg: 'bg-cyan-500/20',        border: 'border-cyan-400/60',      text: 'text-cyan-400' },
-  { value: 'kaza',    label: 'Kaza',      emoji: '⏰', bg: 'bg-brand-gold/20',      border: 'border-brand-gold/60',    text: 'text-brand-gold' },
-  { value: 'missed',  label: 'Missed',    emoji: '❌', bg: 'bg-red-500/20',          border: 'border-red-400/60',       text: 'text-red-400' },
-  { value: 'pending', label: 'Not logged', emoji: '⬜', bg: 'bg-brand-surface',      border: 'border-brand-border',     text: 'text-white/40' },
+const LOCATION_TAGS: SubTagDef[] = [
+  { value: 'mosque', label: 'At Mosque', emoji: '🕌', note: 'in jamat' },
+  { value: 'jamat',  label: 'In Jamat',  emoji: '👥', note: 'not at mosque' },
+  { value: 'home',   label: 'At Home',   emoji: '🏠', note: 'alone' },
 ];
 
-function statusStyle(status: PrayerStatus): StatusOption {
-  return STATUS_OPTIONS.find((s) => s.value === status) ?? STATUS_OPTIONS[STATUS_OPTIONS.length - 1];
-}
+// Primary colour per status
+const STATUS_STYLE: Record<PrayerStatus, { bg: string; border: string; text: string; emoji: string }> = {
+  completed: { bg: 'bg-brand-emerald/20', border: 'border-brand-emerald/60', text: 'text-brand-emerald', emoji: '✅' },
+  kaza:      { bg: 'bg-brand-gold/20',    border: 'border-brand-gold/60',    text: 'text-brand-gold',    emoji: '⏰' },
+  missed:    { bg: 'bg-red-500/20',        border: 'border-red-400/60',        text: 'text-red-400',       emoji: '❌' },
+  pending:   { bg: 'bg-brand-surface',    border: 'border-brand-border',     text: 'text-white/40',      emoji: '⬜' },
+};
+
+// ─── component ───────────────────────────────────────────────────────────────
 
 export default function SalatTracker() {
   const navigate = useNavigate();
-  const today = new Date().toISOString().substring(0, 10);
+  const [selectedDate, setSelectedDate] = useState(todayStr());
   const [expandedPrayer, setExpandedPrayer] = useState<PrayerId | null>(null);
 
-  const { data: log, isLoading } = useSalatLog();
+  const isToday = selectedDate === todayStr();
+
+  // Prayer times for current-prayer detection (only needed for today)
+  const todayPrayerTimes = useMemo(() => {
+    const stored = localStorage.getItem('ihsan_location');
+    if (!stored) return null;
+    try {
+      const loc = JSON.parse(stored) as { latitude: number; longitude: number };
+      const times = calcPrayerTimes(loc.latitude, loc.longitude, new Date());
+      const info = getCurrentAndNextPrayer(times, new Date());
+      return {
+        times: {
+          fajr:    times.fajr,
+          dhuhr:   times.dhuhr,
+          asr:     times.asr,
+          maghrib: times.maghrib,
+          isha:    times.isha,
+        } as Record<string, Date>,
+        nextTime: info.nextTime,
+        current: info.current as string,
+      };
+    } catch { return null; }
+  }, []); // computed once on mount; fine for a session
+
+  const { data: log, isLoading } = useSalatLog(isToday ? undefined : selectedDate);
   const updatePrayer = useUpdatePrayer();
 
-  const prayers = PRAYER_META.filter((p) => p.isTrackable);
+  const trackablePrayers = PRAYER_META.filter((p) => p.isTrackable);
 
-  const completedCount = log
-    ? prayers.filter((p) => {
-        const s = log.prayers[p.id as PrayerId]?.status;
-        return s === 'prayed' || s === 'mosque';
-      }).length
-    : 0;
+  const completedCount = useMemo(() => {
+    if (!log) return 0;
+    return trackablePrayers.filter((p) => {
+      const s = log.prayers[p.id as PrayerId]?.status;
+      return s === 'completed' || s === 'kaza';
+    }).length;
+  }, [log, trackablePrayers]);
 
-  const handleSelect = (prayer: PrayerId, status: PrayerStatus) => {
-    updatePrayer.mutate({ prayer, status, date: today });
-    setExpandedPrayer(null);
+  // Handle primary status tap
+  const handleStatus = (prayer: PrayerId, status: PrayerStatus) => {
+    const current = log?.prayers[prayer];
+    // If tapping the already-active status, clear it (toggle off)
+    const newStatus: PrayerStatus = current?.status === status ? 'pending' : status;
+
+    // If setting to completed/kaza, open sub-tag row; keep existing location if re-selecting
+    if (newStatus === 'completed' || newStatus === 'kaza') {
+      updatePrayer.mutate({
+        prayer,
+        status: newStatus,
+        date: isToday ? undefined : selectedDate,
+        location: current?.location ?? 'home',
+        tasbeeh: current?.tasbeeh ?? false,
+      });
+      setExpandedPrayer(prayer); // open sub-tags
+    } else {
+      updatePrayer.mutate({
+        prayer,
+        status: newStatus,
+        date: isToday ? undefined : selectedDate,
+      });
+      setExpandedPrayer(null);
+    }
+  };
+
+  // Handle sub-tag change
+  const handleSubTag = (prayer: PrayerId, type: 'location' | 'tasbeeh', value: PrayerLocation | boolean) => {
+    const current = log?.prayers[prayer];
+    updatePrayer.mutate({
+      prayer,
+      status: current?.status as PrayerStatus ?? 'completed',
+      date: isToday ? undefined : selectedDate,
+      location: type === 'location' ? (value as PrayerLocation) : (current?.location ?? 'home'),
+      tasbeeh: type === 'tasbeeh' ? (value as boolean) : (current?.tasbeeh ?? false),
+    });
   };
 
   return (
     <AnimatedBackground variant="dark">
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="max-w-xl mx-auto space-y-6">
+        <div className="max-w-xl mx-auto space-y-5">
 
-          {/* Back + Analytics nav */}
+          {/* Nav row */}
           <div className="flex items-center justify-between">
             <motion.button
               onClick={() => navigate(-1)}
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.94 }}
-              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand-surface/90 backdrop-blur-md border border-brand-border text-white text-sm font-semibold shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
+              whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
+              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand-surface/90 backdrop-blur-md border border-brand-border text-white text-sm font-semibold"
             >
               <ArrowLeftIcon className="w-4 h-4" /> Back
             </motion.button>
             <motion.button
               onClick={() => navigate('/salat/analytics')}
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.94 }}
+              whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
               className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand-surface/90 backdrop-blur-md border border-brand-border text-white text-sm font-semibold"
             >
               <ChartBarIcon className="w-4 h-4" /> Analytics
             </motion.button>
           </div>
 
-          {/* Header */}
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
-            <h1 className="text-3xl sm:text-4xl font-black text-brand-emerald mb-1">Salat Tracker</h1>
-            <p className="text-white/50 text-sm">
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
-          </motion.div>
+          {/* Date navigator */}
+          <div className="flex items-center justify-between gap-3">
+            <motion.button
+              whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}
+              onClick={() => { setSelectedDate((d) => offsetDate(d, -1)); setExpandedPrayer(null); }}
+              className="p-2 rounded-xl bg-brand-surface border border-brand-border text-white/60 hover:text-white hover:border-brand-emerald/40"
+            >
+              <ChevronLeftIcon className="w-5 h-5" />
+            </motion.button>
+            <div className="text-center">
+              <p className="text-white font-bold text-base">{friendlyDate(selectedDate)}</p>
+              <p className="text-white/30 text-xs">{new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}
+              onClick={() => { setSelectedDate((d) => offsetDate(d, 1)); setExpandedPrayer(null); }}
+              disabled={isToday}
+              className="p-2 rounded-xl bg-brand-surface border border-brand-border text-white/60 hover:text-white hover:border-brand-emerald/40 disabled:opacity-20 disabled:cursor-not-allowed"
+            >
+              <ChevronRightIcon className="w-5 h-5" />
+            </motion.button>
+          </div>
 
           {/* Progress bar */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="card bg-gradient-to-br from-brand-emerald/15 to-brand-deep border border-brand-emerald/20 rounded-2xl"
-          >
-            <div className="card-body p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-white/70 text-sm font-semibold uppercase tracking-wide">Today's Progress</span>
-                <span className="text-2xl font-black text-brand-emerald">
-                  {completedCount}<span className="text-white/40 font-normal text-lg">/5</span>
+          <div className="card bg-gradient-to-br from-brand-emerald/10 to-brand-deep border border-brand-emerald/20 rounded-2xl">
+            <div className="card-body p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white/60 text-xs font-semibold uppercase tracking-wide">
+                  {friendlyDate(selectedDate)}'s Prayers
+                </span>
+                <span className="text-xl font-black text-brand-emerald">
+                  {completedCount}<span className="text-white/30 font-normal text-base">/5</span>
                 </span>
               </div>
-              <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+              <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
                 <motion.div
                   className="h-full bg-gradient-to-r from-brand-emerald to-cyan-400 rounded-full"
                   initial={{ width: 0 }}
                   animate={{ width: `${(completedCount / 5) * 100}%` }}
-                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                  transition={{ duration: 0.5 }}
                 />
               </div>
-              <p className="text-white/40 text-xs mt-2">
-                {completedCount === 5 ? '🎉 All prayers completed — MashaAllah!' : `${5 - completedCount} prayer${5 - completedCount !== 1 ? 's' : ''} remaining`}
-              </p>
+              {completedCount === 5 && (
+                <p className="text-brand-emerald text-xs mt-1 font-semibold">🎉 All prayers completed — MashaAllah!</p>
+              )}
             </div>
-          </motion.div>
+          </div>
 
           {/* Prayer cards */}
           {isLoading ? (
@@ -115,88 +223,161 @@ export default function SalatTracker() {
               <span className="loading loading-spinner loading-lg text-brand-emerald" />
             </div>
           ) : (
-            <div className="space-y-3">
-              {prayers.map((prayer, i) => {
+            <div className="space-y-2">
+              {trackablePrayers.map((prayer, i) => {
                 const prayerId = prayer.id as PrayerId;
-                const status = log?.prayers[prayerId]?.status ?? 'pending';
-                const style = statusStyle(status);
+                const entry = log?.prayers[prayerId];
+                const status = entry?.status ?? 'pending';
+                const style = STATUS_STYLE[status];
+                const isCurrent = isToday && isCurrentPrayer(prayerId, todayPrayerTimes?.current);
+                const isFuture = isToday && isFuturePrayer(prayerId, todayPrayerTimes?.times);
                 const isExpanded = expandedPrayer === prayerId;
+                const hasSubTag = status === 'completed' || status === 'kaza';
+
+                // Current prayer time (if available)
+                const prayerStartTime = todayPrayerTimes?.times[prayerId] instanceof Date
+                  ? formatTime(todayPrayerTimes.times[prayerId])
+                  : null;
 
                 return (
                   <motion.div
                     key={prayer.id}
-                    initial={{ opacity: 0, y: 16 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 * i }}
+                    transition={{ delay: 0.04 * i }}
                     layout
-                    className={`card rounded-2xl border overflow-hidden transition-colors ${style.bg} ${style.border}`}
+                    className={`rounded-2xl border overflow-hidden transition-colors ${
+                      isCurrent
+                        ? 'bg-brand-emerald/10 border-brand-emerald/50 shadow-[0_0_20px_rgba(16,185,129,0.15)]'
+                        : `${style.bg} ${style.border}`
+                    }`}
                   >
                     {/* Main row */}
-                    <button
-                      className="w-full text-left"
-                      onClick={() => setExpandedPrayer(isExpanded ? null : prayerId)}
-                    >
-                      <div className="p-4 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-4">
-                          <span className="text-2xl">{prayer.icon}</span>
-                          <div>
-                            <p className={`font-bold text-base ${style.text}`}>{prayer.name}</p>
-                            <p className="text-white/40 text-xs capitalize">{status === 'pending' ? 'Tap to log' : style.label}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">{style.emoji}</span>
-                          <span className={`text-xs font-bold uppercase tracking-wide ${isExpanded ? 'text-white/60' : 'text-white/30'}`}>
-                            {isExpanded ? '▲' : '▼'}
-                          </span>
+                    <div className="p-3 flex items-center gap-3">
+                      {/* Prayer info */}
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <span className="text-2xl shrink-0">{prayer.icon}</span>
+                        <div className="min-w-0">
+                          <p className={`font-bold text-sm leading-none ${isCurrent ? 'text-brand-emerald' : style.text}`}>
+                            {prayer.name}
+                            {isCurrent && <span className="ml-2 text-xs font-normal text-brand-emerald/70">● now</span>}
+                          </p>
+                          {prayerStartTime && isToday && (
+                            <p className="text-white/30 text-xs mt-0.5">{prayerStartTime}</p>
+                          )}
                         </div>
                       </div>
-                    </button>
 
-                    {/* Status selector */}
+                      {/* Primary action buttons (future prayers locked for today) */}
+                      {isFuture ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white/20 text-xs font-medium px-2 py-1 rounded-lg border border-white/10">
+                            🔒 not yet
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          {/* Completed */}
+                          <motion.button
+                            whileTap={{ scale: 0.88 }}
+                            onClick={() => handleStatus(prayerId, 'completed')}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                              status === 'completed'
+                                ? 'bg-brand-emerald text-white border-brand-emerald shadow-[0_0_12px_rgba(16,185,129,0.4)]'
+                                : 'bg-brand-deep border-brand-border text-white/50 hover:border-brand-emerald/50 hover:text-white/80'
+                            }`}
+                          >
+                            ✅ Done
+                          </motion.button>
+                          {/* Kaza */}
+                          <motion.button
+                            whileTap={{ scale: 0.88 }}
+                            onClick={() => handleStatus(prayerId, 'kaza')}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                              status === 'kaza'
+                                ? 'bg-brand-gold text-white border-brand-gold shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+                                : 'bg-brand-deep border-brand-border text-white/50 hover:border-brand-gold/50 hover:text-white/80'
+                            }`}
+                          >
+                            ⏰ Kaza
+                          </motion.button>
+                          {/* Missed */}
+                          <motion.button
+                            whileTap={{ scale: 0.88 }}
+                            onClick={() => handleStatus(prayerId, 'missed')}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                              status === 'missed'
+                                ? 'bg-red-500 text-white border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.3)]'
+                                : 'bg-brand-deep border-brand-border text-white/50 hover:border-red-400/50 hover:text-white/80'
+                            }`}
+                          >
+                            ❌ Missed
+                          </motion.button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Sub-tags row (only for completed/kaza) */}
                     <AnimatePresence>
-                      {isExpanded && (
+                      {hasSubTag && isExpanded && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
+                          transition={{ duration: 0.18 }}
+                          className="overflow-hidden border-t border-white/10"
                         >
-                          <div className="px-4 pb-4 pt-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {STATUS_OPTIONS.filter((s) => s.value !== 'pending').map((opt) => (
+                          <div className="px-3 py-2.5 space-y-2">
+                            {/* Location tags */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-white/30 text-xs">Where:</span>
+                              {LOCATION_TAGS.map((tag) => (
+                                <motion.button
+                                  key={tag.value}
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={() => handleSubTag(prayerId, 'location', tag.value)}
+                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
+                                    entry?.location === tag.value || (!entry?.location && tag.value === 'home')
+                                      ? 'bg-brand-emerald/20 border-brand-emerald/60 text-brand-emerald'
+                                      : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
+                                  }`}
+                                >
+                                  <span>{tag.emoji}</span> {tag.label}
+                                  <span className="text-white/25 text-xs hidden sm:inline">({tag.note})</span>
+                                </motion.button>
+                              ))}
+                            </div>
+                            {/* Tasbeeh toggle */}
+                            <div className="flex items-center gap-2">
+                              <span className="text-white/30 text-xs">After salat:</span>
                               <motion.button
-                                key={opt.value}
-                                whileHover={{ scale: 1.04 }}
-                                whileTap={{ scale: 0.96 }}
-                                onClick={() => handleSelect(prayerId, opt.value)}
-                                disabled={updatePrayer.isPending}
-                                className={`flex flex-col items-center gap-1 p-3 rounded-xl border font-semibold text-sm transition-all ${
-                                  status === opt.value
-                                    ? `${opt.bg} ${opt.border} ${opt.text} ring-2 ring-offset-1 ring-offset-brand-deep ring-white/20`
-                                    : 'bg-brand-deep border-brand-border text-white/60 hover:border-white/30'
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => handleSubTag(prayerId, 'tasbeeh', !(entry?.tasbeeh ?? false))}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
+                                  entry?.tasbeeh
+                                    ? 'bg-cyan-500/20 border-cyan-400/60 text-cyan-300'
+                                    : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                                 }`}
                               >
-                                <span className="text-xl">{opt.emoji}</span>
-                                <span>{opt.label}</span>
+                                📿 Tasbeeh
                               </motion.button>
-                            ))}
-                            {status !== 'pending' && (
-                              <motion.button
-                                whileHover={{ scale: 1.04 }}
-                                whileTap={{ scale: 0.96 }}
-                                onClick={() => handleSelect(prayerId, 'pending')}
-                                disabled={updatePrayer.isPending}
-                                className="flex flex-col items-center gap-1 p-3 rounded-xl border bg-brand-deep border-brand-border text-white/30 hover:border-white/20 text-sm font-semibold"
-                              >
-                                <span className="text-xl">↩️</span>
-                                <span>Clear</span>
-                              </motion.button>
-                            )}
+                            </div>
                           </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
+
+                    {/* Expand/collapse toggle for sub-tags (only when completed/kaza) */}
+                    {hasSubTag && !isFuture && (
+                      <button
+                        onClick={() => setExpandedPrayer(isExpanded ? null : prayerId)}
+                        className="w-full flex items-center justify-center gap-1 py-1 border-t border-white/5 text-white/20 hover:text-white/50 text-xs transition-colors"
+                      >
+                        {isExpanded ? '▲ Less' : '▾ Details'}
+                        {(entry?.location && entry.location !== 'home') && <span className="text-brand-emerald/60">{LOCATION_TAGS.find((t) => t.value === entry.location)?.emoji}</span>}
+                        {entry?.tasbeeh && <span className="text-cyan-400/60">📿</span>}
+                      </button>
+                    )}
                   </motion.div>
                 );
               })}
@@ -204,31 +385,18 @@ export default function SalatTracker() {
           )}
 
           {/* Legend */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="card bg-brand-surface border border-brand-border rounded-2xl"
-          >
+          <div className="card bg-brand-surface border border-brand-border rounded-2xl">
             <div className="card-body p-4">
-              <p className="text-white/40 text-xs font-semibold uppercase tracking-wide mb-3">Status Legend</p>
-              <div className="grid grid-cols-2 gap-2">
-                {STATUS_OPTIONS.filter((s) => s.value !== 'pending').map((opt) => (
-                  <div key={opt.value} className="flex items-center gap-2">
-                    <span>{opt.emoji}</span>
-                    <span className={`text-xs font-medium ${opt.text}`}>{opt.label}</span>
-                    <span className="text-white/20 text-xs">—</span>
-                    <span className="text-white/30 text-xs">
-                      {opt.value === 'prayed' && 'On time'}
-                      {opt.value === 'mosque' && 'In congregation'}
-                      {opt.value === 'kaza' && 'Made up later'}
-                      {opt.value === 'missed' && 'Not prayed'}
-                    </span>
-                  </div>
-                ))}
+              <p className="text-white/30 text-xs font-semibold uppercase tracking-wide mb-3">How it works</p>
+              <div className="space-y-1.5 text-xs text-white/50">
+                <p>✅ <span className="text-white/70 font-medium">Done</span> — prayed on time</p>
+                <p>⏰ <span className="text-white/70 font-medium">Kaza</span> — prayed late (still counts as prayed)</p>
+                <p>❌ <span className="text-white/70 font-medium">Missed</span> — not prayed</p>
+                <p>🕌 <span className="text-white/70 font-medium">Mosque</span> or 👥 <span className="text-white/70 font-medium">Jamat</span> — tap ▾ Details after marking done</p>
+                <p>🔒 Future prayers are locked until their time begins</p>
               </div>
             </div>
-          </motion.div>
+          </div>
 
         </div>
       </div>
