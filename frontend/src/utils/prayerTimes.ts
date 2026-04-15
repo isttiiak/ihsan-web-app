@@ -9,6 +9,14 @@ export interface PrayerTimesResult {
   asr: Date;
   maghrib: Date;
   isha: Date;
+  sunset: Date;
+}
+
+export interface ForbiddenWindow {
+  label: string;
+  note: string;
+  start: Date;
+  end: Date;
 }
 
 export interface PrayerInfo {
@@ -31,6 +39,8 @@ export function calcPrayerTimes(lat: number, lng: number, date: Date = new Date(
   const coords = new adhan.Coordinates(lat, lng);
   const params = adhan.CalculationMethod.MoonsightingCommittee(); // worldwide-friendly
   const times = new adhan.PrayerTimes(coords, date, params);
+  // sunset: adhan exposes it; fall back to maghrib if missing
+  const sunset: Date = (times as unknown as { sunset?: Date }).sunset ?? times.maghrib;
   return {
     fajr: times.fajr,
     sunrise: times.sunrise,
@@ -38,7 +48,38 @@ export function calcPrayerTimes(lat: number, lng: number, date: Date = new Date(
     asr: times.asr,
     maghrib: times.maghrib,
     isha: times.isha,
+    sunset,
   };
+}
+
+/**
+ * Returns the three makrooh (forbidden) prayer windows for the day.
+ * 1. Around sunrise: from sunrise until 20 minutes after
+ * 2. Solar zenith (istiwa): from 10 minutes before Dhuhr until Dhuhr begins
+ * 3. After Asr: from Asr until Maghrib
+ */
+export function getForbiddenWindows(times: PrayerTimesResult): ForbiddenWindow[] {
+  const MIN = 60_000;
+  return [
+    {
+      label: 'Around Sunrise',
+      note: 'Do not pray at sunrise itself',
+      start: times.sunrise,
+      end: new Date(times.sunrise.getTime() + 20 * MIN),
+    },
+    {
+      label: 'Solar Zenith (Istiwa)',
+      note: 'Sun directly overhead — just before Dhuhr',
+      start: new Date(times.dhuhr.getTime() - 10 * MIN),
+      end: times.dhuhr,
+    },
+    {
+      label: 'After Asr',
+      note: 'From Asr until Maghrib',
+      start: times.asr,
+      end: times.maghrib,
+    },
+  ];
 }
 
 export function formatTime(date: Date): string {

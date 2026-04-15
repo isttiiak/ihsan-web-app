@@ -147,40 +147,38 @@ export default function Home() {
                 whileHover={{ scale: 1.01 }}
                 className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 rounded-2xl bg-brand-surface/80 backdrop-blur-md border border-brand-border hover:border-brand-emerald/40 transition-colors"
               >
-                {/* Current prayer — shows end time (= next prayer start) */}
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xl shrink-0">{PRAYER_META.find((p) => p.id === prayerWidgetData.current)?.icon ?? '🕌'}</span>
-                  <div className="min-w-0">
-                    <p className="text-white/40 text-xs uppercase tracking-wide leading-none mb-0.5">Current</p>
-                    <p className="text-white font-bold text-sm leading-none">
-                      {PRAYER_META.find((p) => p.id === prayerWidgetData.current)?.name}
+                {/* Current prayer + countdown on the right */}
+                <div className="flex items-center justify-between gap-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xl shrink-0">{PRAYER_META.find((p) => p.id === prayerWidgetData.current)?.icon ?? '🕌'}</span>
+                    <div className="min-w-0">
+                      <p className="text-white/40 text-xs uppercase tracking-wide leading-none mb-0.5">Current</p>
+                      <p className="text-white font-bold text-sm leading-none">
+                        {PRAYER_META.find((p) => p.id === prayerWidgetData.current)?.name}
+                      </p>
+                      <p className="text-white/40 text-xs mt-0.5">ends {formatTime(prayerWidgetData.nextTime)}</p>
+                    </div>
+                  </div>
+                  {/* Countdown — belongs to current prayer */}
+                  <div className="text-right shrink-0">
+                    <p className="text-white/40 text-xs uppercase tracking-wide leading-none mb-0.5">Ends in</p>
+                    <p className="text-brand-gold font-black text-sm tabular-nums">
+                      {prayerWidgetData.hh > 0 && `${prayerWidgetData.hh}h `}
+                      {String(prayerWidgetData.mm).padStart(2, '0')}m
                     </p>
-                    <p className="text-white/40 text-xs mt-0.5">ends {formatTime(prayerWidgetData.nextTime)}</p>
                   </div>
                 </div>
 
                 <div className="h-8 w-px bg-brand-border shrink-0" />
 
                 {/* Next prayer — shows start time */}
-                <div className="min-w-0">
+                <div className="min-w-0 shrink-0">
                   <p className="text-white/40 text-xs uppercase tracking-wide leading-none mb-0.5">Next</p>
                   <p className="text-brand-emerald font-bold text-sm leading-none">
                     {PRAYER_META.find((p) => p.id === prayerWidgetData.next)?.icon}{' '}
                     {PRAYER_META.find((p) => p.id === prayerWidgetData.next)?.name}
                   </p>
-                  <p className="text-white/40 text-xs mt-0.5">starts {formatTime(prayerWidgetData.nextTime)}</p>
-                </div>
-
-                <div className="h-8 w-px bg-brand-border shrink-0" />
-
-                {/* Countdown */}
-                <div className="text-right shrink-0">
-                  <p className="text-white/40 text-xs uppercase tracking-wide leading-none mb-0.5">Ends in</p>
-                  <p className="text-brand-gold font-black text-sm tabular-nums">
-                    {prayerWidgetData.hh > 0 && `${prayerWidgetData.hh}h `}
-                    {String(prayerWidgetData.mm).padStart(2, '0')}m{' '}
-                    {String(prayerWidgetData.ss).padStart(2, '0')}s
-                  </p>
+                  <p className="text-white/40 text-xs mt-0.5">at {formatTime(prayerWidgetData.nextTime)}</p>
                 </div>
               </motion.div>
             </Link>

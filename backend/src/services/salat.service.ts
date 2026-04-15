@@ -9,11 +9,32 @@ function todayDateString(): string {
   return new Date().toISOString().substring(0, 10);
 }
 
+const VALID_STATUSES = new Set<string>(['completed', 'kaza', 'missed', 'pending']);
+const VALID_LOCATIONS = new Set<string>(['home', 'mosque', 'jamat']);
+
+/** Migrate legacy enum values written by older schema versions */
+function normaliseLegacyPrayers(log: InstanceType<typeof SalatLog>) {
+  for (const pid of PRAYER_IDS) {
+    const entry = log.prayers[pid];
+    if (!entry) continue;
+    const s = entry.status as string;
+    if (!VALID_STATUSES.has(s)) {
+      entry.status = 'completed'; // 'prayed', 'mosque', etc → completed
+    }
+    const loc = entry.location as string | undefined;
+    if (loc !== undefined && !VALID_LOCATIONS.has(loc)) {
+      entry.location = 'home';
+    }
+  }
+}
+
 export async function getOrCreateLog(userId: string, date?: string) {
   const d = date ?? todayDateString();
   let log = await SalatLog.findOne({ userId, date: d });
   if (!log) {
     log = await SalatLog.create({ userId, date: d });
+  } else {
+    normaliseLegacyPrayers(log);
   }
   return log;
 }

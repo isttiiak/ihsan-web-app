@@ -126,27 +126,27 @@ export default function SalatAnalytics() {
                   {
                     label: 'Completion',
                     value: `${data.completionRate}%`,
-                    sub: `(Done + Kaza) ÷ ${data.totalDays} days × 5`,
+                    sub: `(Done + Kaza) ÷ (${data.totalDays} days × 5) × 100`,
                     gradient: 'from-brand-emerald to-cyan-400',
                     tooltip: true,
                   },
                   {
                     label: 'Current Streak',
                     value: data.currentStreak,
-                    sub: 'all-5 days in a row',
+                    sub: 'Consecutive days with all 5 prayers (done or kaza)',
                     gradient: 'from-brand-gold to-orange-400',
                     icon: <FireIcon className="w-3 h-3 inline" />,
                   },
                   {
                     label: 'Best Streak',
                     value: data.bestStreak,
-                    sub: 'all-time',
+                    sub: 'Longest run of all-5-prayer days ever',
                     gradient: 'from-violet-500 to-purple-400',
                   },
                   {
                     label: 'Tasbeeh',
                     value: data.tasbeehCount,
-                    sub: 'times after salat',
+                    sub: 'Times tasbeeh was done after any salat',
                     gradient: 'from-cyan-500 to-teal-400',
                   },
                 ].map(({ label, value, sub, gradient, icon, tooltip }) => (
@@ -215,10 +215,16 @@ export default function SalatAnalytics() {
                       </div>
                     ))}
                   </div>
-                  <p className="text-white/20 text-xs flex items-center gap-1">
-                    <InformationCircleIcon className="w-3 h-3" />
-                    Completion rate = (On time + Kaza) ÷ total possible prayers × 100
-                  </p>
+                  <div className="space-y-0.5 pt-1 border-t border-white/10">
+                    <p className="text-white/20 text-xs flex items-center gap-1">
+                      <InformationCircleIcon className="w-3 h-3 shrink-0" />
+                      Completion = (On time + Kaza) ÷ ({data.totalDays} × 5) × 100 = <strong className="text-white/30">{data.completionRate}%</strong>
+                    </p>
+                    <p className="text-white/20 text-xs flex items-center gap-1">
+                      <InformationCircleIcon className="w-3 h-3 shrink-0" />
+                      Mosque = prayers specifically at a mosque; Jamat = in congregation (anywhere)
+                    </p>
+                  </div>
                 </div>
               </motion.div>
 
@@ -249,7 +255,10 @@ export default function SalatAnalytics() {
                             <span className="text-2xl">{prayer.icon}</span>
                             <h3 className="font-black text-white text-base">{prayer.name}</h3>
                           </div>
-                          <div className="text-3xl font-black text-white mb-1">{pct}%</div>
+                          <div className="text-3xl font-black text-white mb-0.5">{pct}%</div>
+                          <p className="text-white/40 text-xs mb-1.5">
+                            ({done} prayed ÷ {total} days) × 100
+                          </p>
                           <div className="w-full bg-white/20 rounded-full h-1.5 mb-2">
                             <motion.div
                               initial={{ width: 0 }}

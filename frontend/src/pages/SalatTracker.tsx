@@ -227,8 +227,12 @@ export default function SalatTracker() {
               {trackablePrayers.map((prayer, i) => {
                 const prayerId = prayer.id as PrayerId;
                 const entry = log?.prayers[prayerId];
-                const status = entry?.status ?? 'pending';
-                const style = STATUS_STYLE[status];
+                // Normalise legacy DB values (old model used 'prayed'/'mosque') to new schema
+                const rawStatus = (entry?.status ?? 'pending') as string;
+                const status: PrayerStatus =
+                  rawStatus === 'prayed' || rawStatus === 'mosque' ? 'completed' :
+                  (rawStatus in STATUS_STYLE ? rawStatus as PrayerStatus : 'pending');
+                const style = STATUS_STYLE[status] ?? STATUS_STYLE['pending'];
                 const isCurrent = isToday && isCurrentPrayer(prayerId, todayPrayerTimes?.current);
                 const isFuture = isToday && isFuturePrayer(prayerId, todayPrayerTimes?.times);
                 const isExpanded = expandedPrayer === prayerId;
@@ -328,25 +332,27 @@ export default function SalatTracker() {
                           className="overflow-hidden border-t border-white/10"
                         >
                           <div className="px-3 py-2.5 space-y-2">
-                            {/* Location tags */}
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-white/30 text-xs">Where:</span>
-                              {LOCATION_TAGS.map((tag) => (
-                                <motion.button
-                                  key={tag.value}
-                                  whileTap={{ scale: 0.9 }}
-                                  onClick={() => handleSubTag(prayerId, 'location', tag.value)}
-                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
-                                    entry?.location === tag.value || (!entry?.location && tag.value === 'home')
-                                      ? 'bg-brand-emerald/20 border-brand-emerald/60 text-brand-emerald'
-                                      : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
-                                  }`}
-                                >
-                                  <span>{tag.emoji}</span> {tag.label}
-                                  <span className="text-white/25 text-xs hidden sm:inline">({tag.note})</span>
-                                </motion.button>
-                              ))}
-                            </div>
+                            {/* Location tags — only for completed (kaza is always prayed alone) */}
+                            {status === 'completed' && (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-white/30 text-xs">Where:</span>
+                                {LOCATION_TAGS.map((tag) => (
+                                  <motion.button
+                                    key={tag.value}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={() => handleSubTag(prayerId, 'location', tag.value)}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
+                                      entry?.location === tag.value || (!entry?.location && tag.value === 'home')
+                                        ? 'bg-brand-emerald/20 border-brand-emerald/60 text-brand-emerald'
+                                        : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
+                                    }`}
+                                  >
+                                    <span>{tag.emoji}</span> {tag.label}
+                                    <span className="text-white/25 text-xs hidden sm:inline">({tag.note})</span>
+                                  </motion.button>
+                                ))}
+                              </div>
+                            )}
                             {/* Tasbeeh toggle */}
                             <div className="flex items-center gap-2">
                               <span className="text-white/30 text-xs">After salat:</span>
@@ -374,7 +380,9 @@ export default function SalatTracker() {
                         className="w-full flex items-center justify-center gap-1 py-1 border-t border-white/5 text-white/20 hover:text-white/50 text-xs transition-colors"
                       >
                         {isExpanded ? '▲ Less' : '▾ Details'}
-                        {(entry?.location && entry.location !== 'home') && <span className="text-brand-emerald/60">{LOCATION_TAGS.find((t) => t.value === entry.location)?.emoji}</span>}
+                        {status === 'completed' && entry?.location && entry.location !== 'home' && (
+                          <span className="text-brand-emerald/60">{LOCATION_TAGS.find((t) => t.value === entry.location)?.emoji}</span>
+                        )}
                         {entry?.tasbeeh && <span className="text-cyan-400/60">📿</span>}
                       </button>
                     )}
