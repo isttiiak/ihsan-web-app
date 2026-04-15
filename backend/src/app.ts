@@ -7,6 +7,7 @@ import zikrRoutes from './routes/zikr.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import userRoutes from './routes/user.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
+import salatRoutes from './routes/salat.routes.js';
 import { generalLimiter, authLimiter, zikrLimiter, aiLimiter } from './middleware/rateLimiter.js';
 import { globalErrorHandler } from './middleware/errorHandler.js';
 
@@ -57,6 +58,7 @@ app.use('/api/zikr', zikrLimiter, zikrRoutes);
 app.use('/api/ai', aiLimiter, aiRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/salat', salatRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

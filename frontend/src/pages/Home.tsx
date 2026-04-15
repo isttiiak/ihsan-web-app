@@ -1,9 +1,16 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useZikrStore } from '../store/useZikrStore.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
+import { useSalatLog } from '../hooks/useSalatLog.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import {
+  calcPrayerTimes,
+  formatTime,
+  getCurrentAndNextPrayer,
+  PRAYER_META,
+} from '../utils/prayerTimes.js';
 
 interface ActivityItem {
   id: string;
@@ -38,12 +45,40 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  const { data: analyticsData, isLoading: loadingAnalytics } = useAnalytics(1);
+  const { data: analyticsData } = useAnalytics(1);
+  const { data: salatLog } = useSalatLog();
 
   const totalToday = useMemo(() => Object.values(counts).reduce((a, b) => a + b, 0), [counts]);
   const analyticsGoal = analyticsData?.goal?.dailyTarget ?? null;
   const streakCount = analyticsData?.streak?.currentStreak ?? null;
   const goalCompleted = totalToday !== null && analyticsGoal !== null ? totalToday >= analyticsGoal : false;
+
+  // Salat completed count for today
+  const salatCompletedToday = useMemo(() => {
+    if (!salatLog) return null;
+    return PRAYER_META.filter((p) => p.isTrackable).filter((p) => {
+      const s = salatLog.prayers[p.id as 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha']?.status;
+      return s === 'prayed' || s === 'mosque';
+    }).length;
+  }, [salatLog]);
+
+  // Prayer times widget state
+  const [prayerNow, setPrayerNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setPrayerNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const prayerWidgetData = useMemo(() => {
+    const stored = localStorage.getItem('ihsan_location');
+    if (!stored) return null;
+    try {
+      const loc = JSON.parse(stored) as { latitude: number; longitude: number };
+      const times = calcPrayerTimes(loc.latitude, loc.longitude, prayerNow);
+      return { times, ...getCurrentAndNextPrayer(times, prayerNow) };
+    } catch { return null; }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prayerNow.getMinutes()]); // recalc every minute is enough for widget
 
   const activities: ActivityItem[] = [
     {
@@ -64,12 +99,11 @@ export default function Home() {
       icon: '🕌',
       title: 'Salat Tracker',
       description: 'Track your daily prayers',
-      stats: { label: 'Today', value: '0/5' },
+      stats: { label: 'Today', value: salatCompletedToday !== null ? `${salatCompletedToday}/5` : '—/5' },
       action: 'Track Prayer',
       link: '/salat',
       accentColor: 'var(--brand-emerald, #10b981)',
       iconBg: 'bg-gradient-to-br from-indigo-500/20 to-purple-500/30',
-      tag: 'Coming Soon…',
     },
     {
       id: 'fasting',
@@ -88,18 +122,66 @@ export default function Home() {
       icon: '⏰',
       title: 'Prayer Times',
       description: 'Never miss a prayer',
-      stats: { label: 'Next Prayer', value: 'Fajr' },
+      stats: {
+        label: 'Next Prayer',
+        value: prayerWidgetData
+          ? `${PRAYER_META.find((p) => p.id === prayerWidgetData.next)?.icon ?? ''} ${PRAYER_META.find((p) => p.id === prayerWidgetData.next)?.name ?? ''}`
+          : 'Set location',
+      },
       action: 'View Times',
       link: '/prayer-times',
       accentColor: 'var(--brand-gold, #f59e0b)',
       iconBg: 'bg-gradient-to-br from-brand-gold/20 to-amber-500/30',
-      tag: 'Coming Soon…',
     },
   ];
 
   return (
     <AnimatedBackground variant="premium">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+        {/* Prayer times widget */}
+        {prayerWidgetData && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <Link to="/prayer-times">
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                className="flex items-center justify-between gap-4 px-5 py-3 rounded-2xl bg-brand-surface/80 backdrop-blur-md border border-brand-border hover:border-brand-emerald/40 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">{PRAYER_META.find((p) => p.id === prayerWidgetData.current)?.icon ?? '🕌'}</span>
+                  <div>
+                    <p className="text-white/40 text-xs uppercase tracking-wide leading-none mb-0.5">Current</p>
+                    <p className="text-white font-bold text-sm">{PRAYER_META.find((p) => p.id === prayerWidgetData.current)?.name}</p>
+                  </div>
+                </div>
+                <div className="h-6 w-px bg-brand-border" />
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="text-white/40 text-xs uppercase tracking-wide leading-none mb-0.5 text-right">Next</p>
+                    <p className="text-brand-emerald font-bold text-sm">
+                      {PRAYER_META.find((p) => p.id === prayerWidgetData.next)?.icon}{' '}
+                      {PRAYER_META.find((p) => p.id === prayerWidgetData.next)?.name}
+                      {' '}
+                      <span className="text-white/50 font-normal">{formatTime(prayerWidgetData.nextTime)}</span>
+                    </p>
+                  </div>
+                </div>
+                <div className="h-6 w-px bg-brand-border" />
+                <div className="text-right shrink-0">
+                  <p className="text-white/40 text-xs uppercase tracking-wide leading-none mb-0.5">In</p>
+                  <p className="text-brand-gold font-black text-sm tabular-nums">
+                    {String(prayerWidgetData.hh).padStart(2, '0')}:{String(prayerWidgetData.mm).padStart(2, '0')}:{String(prayerWidgetData.ss).padStart(2, '0')}
+                  </p>
+                </div>
+              </motion.div>
+            </Link>
+          </motion.div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
           {activities.map((a, i) => {
             const isZikr = a.id === 'zikr';

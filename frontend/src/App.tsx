@@ -16,6 +16,7 @@ import AuthSignUp from './pages/AuthSignUp.js';
 import UnsavedWarning from './components/UnsavedWarning.js';
 import Profile from './pages/Profile.js';
 import SalatTracker from './pages/SalatTracker.js';
+import SalatAnalytics from './pages/SalatAnalytics.js';
 import FastingTracker from './pages/FastingTracker.js';
 import PrayerTimes from './pages/PrayerTimes.js';
 import type { AuthUser } from './types/api.js';
@@ -106,7 +107,7 @@ export default function App() {
   }, [setUser, init, navigate, location.pathname, resetAll, hydrate, setAuthLoading]);
 
   const { authLoading } = useAuthStore();
-  const focusModeRoutes = ['/zikr', '/salat', '/fasting', '/prayer-times'];
+  const focusModeRoutes = ['/zikr', '/salat', '/salat/analytics', '/fasting', '/prayer-times'];
   const isFocusMode = focusModeRoutes.includes(location.pathname);
 
   return (
@@ -127,6 +128,7 @@ export default function App() {
               <Route path="/" element={<Home />} />
               <Route path="/zikr" element={<ZikrCounter />} />
               <Route path="/salat" element={<SalatTracker />} />
+              <Route path="/salat/analytics" element={<Protected><SalatAnalytics /></Protected>} />
               <Route path="/fasting" element={<FastingTracker />} />
               <Route path="/prayer-times" element={<PrayerTimes />} />
               <Route path="/zikr/analytics" element={<Protected><ZikrAnalytics /></Protected>} />
