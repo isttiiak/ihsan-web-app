@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as salatService from '../services/salat.service.js';
-import { PrayerId, PrayerStatus, PrayerLocation } from '../models/SalatLog.js';
+import { PrayerId, PrayerStatus, PrayerLocation, NaflType } from '../models/SalatLog.js';
 
 export const getLog = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -22,6 +22,19 @@ export const updatePrayer = async (req: Request, res: Response, next: NextFuncti
     const log = await salatService.updatePrayerStatus(
       req.user.uid, prayer, status, date, location, tasbeeh
     );
+    res.json({ ok: true, log });
+  } catch (err) { next(err); }
+};
+
+export const updateNafl = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { completed, types, rakat, date } = req.body as {
+      completed: boolean;
+      types: NaflType[];
+      rakat: number;
+      date?: string;
+    };
+    const log = await salatService.updateNafl(req.user.uid, completed, types, rakat, date);
     res.json({ ok: true, log });
   } catch (err) { next(err); }
 };

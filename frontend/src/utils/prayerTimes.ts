@@ -74,9 +74,9 @@ export function getForbiddenWindows(times: PrayerTimesResult): ForbiddenWindow[]
       end: times.dhuhr,
     },
     {
-      label: 'After Asr',
-      note: 'From Asr until Maghrib',
-      start: times.asr,
+      label: 'After ʿAsr (nafl restricted)',
+      note: 'ʿAsr prayer itself is performed at ʿAsr time. After completing it, voluntary (nafl) prayers are not permitted until Maghrib.',
+      start: new Date(times.asr.getTime() + MIN),   // 1 min after Asr so the Asr row is not inside the window
       end: times.maghrib,
     },
   ];

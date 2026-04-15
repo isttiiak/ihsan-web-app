@@ -118,13 +118,14 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     },
 
     // ── Forbidden: After Asr ──────────────────────────────────────────────
+    // Start 1 min AFTER Asr so the Asr prayer row sits above this window in the list
     {
       kind: 'forbidden',
-      label: 'Forbidden — After \'Asr',
-      note: 'No voluntary prayers from \'Asr time until Maghrib. Sunset falls within this window. (Making up missed obligatory prayers is permitted.)',
-      hadith: '"There is no prayer after \'Asr until the sun sets." — Ṣaḥīḥ al-Bukhārī 586, Ṣaḥīḥ Muslim 827',
+      label: "Nafl Restricted — After ʿAsr",
+      note: "ʿAsr fard prayer is performed at ʿAsr time. After completing it, voluntary (nafl) prayers are not permitted until Maghrib. Sunset falls within this window. Making up missed obligatory prayers is permitted.",
+      hadith: '"There is no prayer after ʿAsr until the sun sets." — Ṣaḥīḥ al-Bukhārī 586, Ṣaḥīḥ Muslim 827',
       hadithUrl: 'https://sunnah.com/bukhari:586',
-      start: times.asr,
+      start: new Date(times.asr.getTime() + MIN),
       end: times.maghrib,
     },
 
@@ -203,6 +204,12 @@ export default function PrayerTimes() {
   const [locError, setLocError] = useState('');
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
 
+  // City search state
+  const [cityInput, setCityInput] = useState('');
+  const [citySearching, setCitySearching] = useState(false);
+  const [cityError, setCityError] = useState('');
+  const [showCitySearch, setShowCitySearch] = useState(false);
+
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
@@ -214,11 +221,19 @@ export default function PrayerTimes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location, now.toDateString()]);
 
+  const saveLocation = useCallback((loc: StoredLocation) => {
+    setLocation(loc);
+    localStorage.setItem('ihsan_location', JSON.stringify(loc));
+    setShowCitySearch(false);
+    setCityInput('');
+    setCityError('');
+  }, []);
+
   const requestLocation = useCallback(() => {
     setLocLoading(true);
     setLocError('');
     if (!('geolocation' in navigator)) {
-      setLocError('Geolocation is not supported by your browser.');
+      setLocError('Geolocation not supported — use city search instead.');
       setLocLoading(false);
       return;
     }
@@ -235,18 +250,42 @@ export default function PrayerTimes() {
           const country = d.address?.country;
           if (city || country) name = [city, country].filter(Boolean).join(', ');
         } catch { /* use coords fallback */ }
-        const loc: StoredLocation = { latitude, longitude, name };
-        setLocation(loc);
-        localStorage.setItem('ihsan_location', JSON.stringify(loc));
+        saveLocation({ latitude, longitude, name });
         setLocLoading(false);
       },
       (err) => {
-        setLocError(`Could not get location: ${err.message}`);
+        // GPS denied — nudge city search
+        setLocError(`GPS denied (${err.message}). Type your city below.`);
+        setShowCitySearch(true);
         setLocLoading(false);
       },
       { timeout: 10000 }
     );
-  }, []);
+  }, [saveLocation]);
+
+  const searchByCity = useCallback(async () => {
+    if (!cityInput.trim()) return;
+    setCitySearching(true);
+    setCityError('');
+    try {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityInput)}&format=json&limit=1`
+      );
+      const results = await r.json() as Array<{ lat: string; lon: string; display_name: string }>;
+      if (!results.length) {
+        setCityError('City not found. Try a different name.');
+        setCitySearching(false);
+        return;
+      }
+      const { lat, lon, display_name } = results[0];
+      // Shorten display name to first two parts
+      const shortName = display_name.split(',').slice(0, 2).join(',').trim();
+      saveLocation({ latitude: parseFloat(lat), longitude: parseFloat(lon), name: shortName });
+    } catch {
+      setCityError('Search failed. Check your internet connection.');
+    }
+    setCitySearching(false);
+  }, [cityInput, saveLocation]);
 
   const info = times ? getCurrentAndNextPrayer(times, now) : null;
   const currentMeta = PRAYER_META.find((p) => p.id === info?.current);
@@ -283,26 +322,95 @@ export default function PrayerTimes() {
               <ArrowLeftIcon className="w-4 h-4" /> Back
             </motion.button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               {location && (
-                <div className="flex items-center gap-1.5 text-white/50 text-xs">
+                <div className="flex items-center gap-1.5 text-white/50 text-xs min-w-0">
                   <MapPinIcon className="w-3.5 h-3.5 text-brand-emerald shrink-0" />
-                  <span className="truncate max-w-[120px] sm:max-w-[180px]">{location.name}</span>
+                  <span className="truncate max-w-[100px] sm:max-w-[160px]">{location.name}</span>
                 </div>
               )}
-              {locError && <p className="text-red-400 text-xs">{locError}</p>}
               <button
-                onClick={requestLocation}
-                disabled={locLoading}
-                className="btn btn-xs bg-brand-emerald/20 hover:bg-brand-emerald/30 text-brand-emerald border border-brand-emerald/40 shrink-0"
+                onClick={() => { setShowCitySearch(!showCitySearch); setLocError(''); }}
+                className="btn btn-xs bg-brand-surface border border-brand-border text-white/50 hover:text-white shrink-0"
               >
-                {locLoading
-                  ? <span className="loading loading-spinner loading-xs" />
-                  : <><MapPinIcon className="w-3 h-3" /> {location ? 'Update' : 'Set Location'}</>
-                }
+                <MapPinIcon className="w-3 h-3" /> {location ? 'Change' : '📍 Set Location'}
               </button>
             </div>
           </div>
+
+          {/* Location panel — shows when no location or user clicks Change */}
+          <AnimatePresence>
+            {(showCitySearch || !location) && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="card bg-brand-surface border border-brand-border rounded-2xl">
+                  <div className="card-body p-4 space-y-3">
+                    <p className="text-white/60 text-sm font-semibold">
+                      {!location ? '📍 Set your location to see prayer times' : '📍 Update location'}
+                    </p>
+
+                    {/* Option 1: GPS */}
+                    <button
+                      onClick={requestLocation}
+                      disabled={locLoading}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-brand-emerald/10 border border-brand-emerald/30 hover:border-brand-emerald/60 text-left transition-all"
+                    >
+                      {locLoading
+                        ? <span className="loading loading-spinner loading-xs text-brand-emerald" />
+                        : <span className="text-lg">📡</span>
+                      }
+                      <div>
+                        <p className="text-brand-emerald font-semibold text-sm">Use GPS (recommended)</p>
+                        <p className="text-white/30 text-xs">Most accurate. Requires browser location permission.</p>
+                      </div>
+                    </button>
+                    {locError && <p className="text-red-400 text-xs">{locError}</p>}
+
+                    {/* Divider */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-px bg-brand-border" />
+                      <span className="text-white/20 text-xs">or</span>
+                      <div className="flex-1 h-px bg-brand-border" />
+                    </div>
+
+                    {/* Option 2: City search */}
+                    <div>
+                      <p className="text-white/40 text-xs mb-2">
+                        Search by city — no GPS needed, times are still accurate
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={cityInput}
+                          onChange={(e) => setCityInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') void searchByCity(); }}
+                          placeholder="e.g. Dhaka, London, Karachi…"
+                          className="input input-sm flex-1 bg-brand-deep border border-brand-border text-white placeholder-white/20 focus:border-brand-emerald/40 focus:outline-none"
+                        />
+                        <button
+                          onClick={() => void searchByCity()}
+                          disabled={citySearching || !cityInput.trim()}
+                          className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim text-white border-none"
+                        >
+                          {citySearching ? <span className="loading loading-spinner loading-xs" /> : 'Search'}
+                        </button>
+                      </div>
+                      {cityError && <p className="text-red-400 text-xs mt-1">{cityError}</p>}
+                    </div>
+
+                    <p className="text-white/15 text-xs">
+                      Your location is stored only in this browser and never sent to our servers.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
@@ -387,7 +495,9 @@ export default function PrayerTimes() {
               )}
 
               {!location && (
-                <p className="text-white/40 text-sm mt-3">Set your location above to see prayer times</p>
+                <p className="text-white/40 text-sm mt-4">
+                  ↑ Set your location above to calculate prayer times
+                </p>
               )}
             </div>
           </motion.div>
@@ -646,17 +756,6 @@ export default function PrayerTimes() {
                 </div>
               </motion.div>
             </>
-          ) : !location ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="card bg-brand-surface border border-brand-border rounded-2xl"
-            >
-              <div className="card-body text-center p-10">
-                <div className="text-4xl mb-3">📍</div>
-                <p className="text-white/60">Set your location above to see accurate prayer times calculated for your area worldwide.</p>
-              </div>
-            </motion.div>
           ) : null}
 
         </div>

@@ -118,20 +118,16 @@ export default function Home() {
       tag: 'Coming Soon…',
     },
     {
-      id: 'prayer-times',
-      icon: '⏰',
-      title: 'Prayer Times',
-      description: 'Never miss a prayer',
-      stats: {
-        label: 'Next Prayer',
-        value: prayerWidgetData
-          ? `${PRAYER_META.find((p) => p.id === prayerWidgetData.next)?.icon ?? ''} ${PRAYER_META.find((p) => p.id === prayerWidgetData.next)?.name ?? ''}`
-          : 'Set location',
-      },
-      action: 'View Times',
-      link: '/prayer-times',
-      accentColor: 'var(--brand-gold, #f59e0b)',
-      iconBg: 'bg-gradient-to-br from-brand-gold/20 to-amber-500/30',
+      id: 'quran',
+      icon: '📖',
+      title: 'Quran Habit',
+      description: 'Build a daily Quran reading habit',
+      stats: { label: 'Status', value: 'Coming Soon' },
+      action: 'Explore',
+      link: '/quran',
+      accentColor: 'var(--brand-magenta, #c026d3)',
+      iconBg: 'bg-gradient-to-br from-brand-magenta/20 to-purple-500/30',
+      tag: 'Coming Soon…',
     },
   ];
 

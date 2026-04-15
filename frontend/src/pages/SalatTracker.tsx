@@ -6,9 +6,12 @@ import { ArrowLeftIcon, ChartBarIcon, ChevronLeftIcon, ChevronRightIcon } from '
 import {
   useSalatLog,
   useUpdatePrayer,
+  useUpdateNafl,
   PrayerId,
   PrayerStatus,
   PrayerLocation,
+  NaflType,
+  NAFL_TYPE_META,
 } from '../hooks/useSalatLog.js';
 import {
   PRAYER_META,
@@ -97,6 +100,48 @@ export default function SalatTracker() {
 
   const { data: log, isLoading } = useSalatLog(isToday ? undefined : selectedDate);
   const updatePrayer = useUpdatePrayer();
+  const updateNafl = useUpdateNafl();
+
+  // Nafl state
+  const [naflExpanded, setNaflExpanded] = useState(false);
+  const [naflInfoExpanded, setNaflInfoExpanded] = useState<NaflType | null>(null);
+
+  const naflEntry = log?.nafl ?? { completed: false, types: [], rakat: 2 };
+
+  const handleNaflToggle = () => {
+    const newCompleted = !naflEntry.completed;
+    updateNafl.mutate({
+      completed: newCompleted,
+      types: newCompleted ? naflEntry.types : [],
+      rakat: naflEntry.rakat,
+      date: isToday ? undefined : selectedDate,
+    });
+    if (newCompleted) setNaflExpanded(true);
+    else setNaflExpanded(false);
+  };
+
+  const handleNaflTypeToggle = (type: NaflType) => {
+    const currentTypes = naflEntry.types ?? [];
+    const next = currentTypes.includes(type)
+      ? currentTypes.filter((t) => t !== type)
+      : [...currentTypes, type];
+    updateNafl.mutate({
+      completed: naflEntry.completed,
+      types: next,
+      rakat: naflEntry.rakat,
+      date: isToday ? undefined : selectedDate,
+    });
+  };
+
+  const handleNaflRakat = (delta: number) => {
+    const next = Math.max(2, (naflEntry.rakat ?? 2) + delta);
+    updateNafl.mutate({
+      completed: naflEntry.completed,
+      types: naflEntry.types ?? [],
+      rakat: next,
+      date: isToday ? undefined : selectedDate,
+    });
+  };
 
   const trackablePrayers = PRAYER_META.filter((p) => p.isTrackable);
 
@@ -392,6 +437,161 @@ export default function SalatTracker() {
             </div>
           )}
 
+          {/* Nafl Prayer card */}
+          {!isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.24 }}
+              layout
+              className={`rounded-2xl border overflow-hidden transition-colors ${
+                naflEntry.completed
+                  ? 'bg-cyan-500/10 border-cyan-400/40'
+                  : 'bg-brand-surface border-brand-border'
+              }`}
+            >
+              {/* Header row */}
+              <div className="p-3 flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className="text-2xl shrink-0">📿</span>
+                  <div className="min-w-0">
+                    <p className={`font-bold text-sm leading-none ${naflEntry.completed ? 'text-cyan-300' : 'text-white/60'}`}>
+                      Nafl Prayer
+                    </p>
+                    <p className="text-white/25 text-xs mt-0.5">voluntary prayers</p>
+                  </div>
+                </div>
+                {/* Done / Undo button */}
+                <motion.button
+                  whileTap={{ scale: 0.88 }}
+                  onClick={handleNaflToggle}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                    naflEntry.completed
+                      ? 'bg-cyan-500 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.4)]'
+                      : 'bg-brand-deep border-brand-border text-white/50 hover:border-cyan-400/50 hover:text-white/80'
+                  }`}
+                >
+                  {naflEntry.completed ? '✅ Done' : '✅ Done'}
+                </motion.button>
+              </div>
+
+              {/* Expanded: type selector + rakat */}
+              <AnimatePresence>
+                {naflEntry.completed && naflExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden border-t border-white/10"
+                  >
+                    <div className="px-3 py-3 space-y-3">
+
+                      {/* Type of prayer — multi select */}
+                      <div>
+                        <p className="text-white/30 text-xs mb-2">Type of prayer <span className="text-white/20">(select all that apply)</span></p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {NAFL_TYPE_META.map((t) => {
+                            const selected = (naflEntry.types ?? []).includes(t.id);
+                            return (
+                              <div key={t.id} className="flex flex-col gap-0">
+                                <motion.button
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={() => handleNaflTypeToggle(t.id)}
+                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
+                                    selected
+                                      ? 'bg-cyan-500/20 border-cyan-400/60 text-cyan-300'
+                                      : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
+                                  }`}
+                                >
+                                  <span>{t.emoji}</span>
+                                  <span>{t.label}</span>
+                                  {/* Info toggle */}
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setNaflInfoExpanded(naflInfoExpanded === t.id ? null : t.id); }}
+                                    className="text-white/20 hover:text-white/50 text-xs ml-0.5"
+                                  >ⓘ</button>
+                                </motion.button>
+                                {/* Short note always visible */}
+                                <p className="text-white/20 text-xs px-1 mt-0.5">{t.shortNote}</p>
+                                {/* Full note on expand */}
+                                <AnimatePresence>
+                                  {naflInfoExpanded === t.id && (
+                                    <motion.div
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: 'auto', opacity: 1 }}
+                                      exit={{ height: 0, opacity: 0 }}
+                                      transition={{ duration: 0.15 }}
+                                      className="overflow-hidden"
+                                    >
+                                      <div className="mx-1 mt-1 mb-1 p-2 rounded-lg bg-brand-deep border border-white/10 space-y-1">
+                                        <p className="text-white/50 text-xs leading-relaxed">{t.fullNote}</p>
+                                        <p className="text-white/25 text-xs italic">{t.hadith}</p>
+                                        <a
+                                          href={t.hadithUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-cyan-400/50 text-xs underline hover:text-cyan-300/80"
+                                        >
+                                          📖 sunnah.com
+                                        </a>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Rakat counter */}
+                      <div className="flex items-center gap-3">
+                        <p className="text-white/30 text-xs">Rak\'ahs prayed:</p>
+                        <div className="flex items-center gap-2">
+                          <motion.button
+                            whileTap={{ scale: 0.85 }}
+                            onClick={() => handleNaflRakat(-2)}
+                            disabled={(naflEntry.rakat ?? 2) <= 2}
+                            className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center disabled:opacity-25 hover:border-cyan-400/40 hover:text-white transition-all"
+                          >−</motion.button>
+                          <span className="text-white font-black text-lg tabular-nums w-6 text-center">
+                            {naflEntry.rakat ?? 2}
+                          </span>
+                          <motion.button
+                            whileTap={{ scale: 0.85 }}
+                            onClick={() => handleNaflRakat(2)}
+                            className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center hover:border-cyan-400/40 hover:text-white transition-all"
+                          >+</motion.button>
+                        </div>
+                        <p className="text-white/20 text-xs">min 2, steps of 2</p>
+                      </div>
+
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Expand toggle */}
+              {naflEntry.completed && (
+                <button
+                  onClick={() => setNaflExpanded(!naflExpanded)}
+                  className="w-full flex items-center justify-center gap-1 py-1 border-t border-white/5 text-white/20 hover:text-white/50 text-xs transition-colors"
+                >
+                  {naflExpanded ? '▲ Less' : '▾ Details'}
+                  {(naflEntry.types?.length ?? 0) > 0 && (
+                    <span className="text-cyan-400/50 text-xs">
+                      {naflEntry.types.map((t) => NAFL_TYPE_META.find((m) => m.id === t)?.emoji).join(' ')}
+                    </span>
+                  )}
+                  {naflEntry.rakat > 2 && (
+                    <span className="text-white/25 text-xs">{naflEntry.rakat}r</span>
+                  )}
+                </button>
+              )}
+            </motion.div>
+          )}
+
           {/* Legend */}
           <div className="card bg-brand-surface border border-brand-border rounded-2xl">
             <div className="card-body p-4">
@@ -402,6 +602,7 @@ export default function SalatTracker() {
                 <p>❌ <span className="text-white/70 font-medium">Missed</span> — not prayed</p>
                 <p>🕌 <span className="text-white/70 font-medium">Mosque</span> or 👥 <span className="text-white/70 font-medium">Jamat</span> — tap ▾ Details after marking done</p>
                 <p>🔒 Future prayers are locked until their time begins</p>
+                <p>📿 <span className="text-white/70 font-medium">Nafl</span> — mark voluntary prayers and pick type + rak\'ahs</p>
               </div>
             </div>
           </div>

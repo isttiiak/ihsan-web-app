@@ -23,3 +23,15 @@ export const salatHistorySchema = z.object({
   }),
   body: z.object({}).optional(),
 });
+
+export const updateNaflSchema = z.object({
+  body: z.object({
+    completed: z.boolean(),
+    types: z.array(z.enum([
+      'tahajjud', 'ishraq', 'duha', 'awwabin', 'witr',
+      'tahiyyat_wudu', 'tahiyyat_masjid', 'hajat', 'istikharah', 'tarawih',
+    ])).default([]),
+    rakat: z.number().int().min(2).max(200).default(2),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  }),
+});

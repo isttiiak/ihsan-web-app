@@ -120,13 +120,25 @@ export default function SalatAnalytics() {
 
           {data && !isLoading && (
             <>
+              {/* Period note */}
+              {data.totalDays < data.periodDays && (
+                <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-brand-surface border border-brand-border text-xs text-white/40">
+                  <InformationCircleIcon className="w-4 h-4 shrink-0 mt-0.5 text-white/30" />
+                  <span>
+                    <span className="text-white/60 font-semibold">{data.totalDays} of {data.periodDays} days</span> have logged prayers in this period.
+                    The completion rate is calculated over <span className="text-white/60">days with actual entries</span>, not the full calendar period.
+                    Days you didn't open the app are not counted against you.
+                  </span>
+                </div>
+              )}
+
               {/* Stat cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
                   {
                     label: 'Completion',
                     value: `${data.completionRate}%`,
-                    sub: `(Done + Kaza) ÷ (${data.totalDays} days × 5) × 100`,
+                    sub: `(Done + Kaza) ÷ (${data.totalDays} tracked days × 5) × 100`,
                     gradient: 'from-brand-emerald to-cyan-400',
                     tooltip: true,
                   },
@@ -144,9 +156,9 @@ export default function SalatAnalytics() {
                     gradient: 'from-violet-500 to-purple-400',
                   },
                   {
-                    label: 'Tasbeeh',
-                    value: data.tasbeehCount,
-                    sub: 'Times tasbeeh was done after any salat',
+                    label: 'Nafl Days',
+                    value: data.naflDays ?? 0,
+                    sub: 'Days with at least one nafl prayer logged',
                     gradient: 'from-cyan-500 to-teal-400',
                   },
                 ].map(({ label, value, sub, gradient, icon, tooltip }) => (

@@ -1,8 +1,10 @@
 import SalatLog, {
   PRAYER_IDS,
+  NAFL_TYPE_IDS,
   PrayerId,
   PrayerStatus,
   PrayerLocation,
+  NaflType,
 } from '../models/SalatLog.js';
 
 function todayDateString(): string {
@@ -11,6 +13,7 @@ function todayDateString(): string {
 
 const VALID_STATUSES = new Set<string>(['completed', 'kaza', 'missed', 'pending']);
 const VALID_LOCATIONS = new Set<string>(['home', 'mosque', 'jamat']);
+const VALID_NAFL_TYPES = new Set<string>(NAFL_TYPE_IDS);
 
 /** Migrate legacy enum values written by older schema versions */
 function normaliseLegacyPrayers(log: InstanceType<typeof SalatLog>) {
@@ -19,12 +22,18 @@ function normaliseLegacyPrayers(log: InstanceType<typeof SalatLog>) {
     if (!entry) continue;
     const s = entry.status as string;
     if (!VALID_STATUSES.has(s)) {
-      entry.status = 'completed'; // 'prayed', 'mosque', etc → completed
+      entry.status = 'completed';
     }
     const loc = entry.location as string | undefined;
     if (loc !== undefined && !VALID_LOCATIONS.has(loc)) {
       entry.location = 'home';
     }
+  }
+  // Normalise nafl types array too
+  if (log.nafl?.types) {
+    log.nafl.types = (log.nafl.types as string[]).filter(
+      (t) => VALID_NAFL_TYPES.has(t)
+    ) as NaflType[];
   }
 }
 
@@ -58,10 +67,30 @@ export async function updatePrayerStatus(
     entry.location = location ?? 'home';
     entry.tasbeeh = tasbeeh ?? false;
   } else {
-    // Clear sub-tags when resetting to missed/pending
     entry.location = undefined;
     entry.tasbeeh = false;
   }
+
+  await log.save();
+  return log;
+}
+
+export async function updateNafl(
+  userId: string,
+  completed: boolean,
+  types: NaflType[],
+  rakat: number,
+  date?: string
+) {
+  const d = date ?? todayDateString();
+  const log = await getOrCreateLog(userId, d);
+
+  log.nafl = {
+    completed,
+    types,
+    rakat: Math.max(2, rakat),
+    completedAt: completed ? new Date() : undefined,
+  };
 
   await log.save();
   return log;
@@ -71,22 +100,23 @@ export async function getSalatHistory(userId: string, days: number) {
   const since = new Date();
   since.setDate(since.getDate() - days + 1);
   const sinceStr = since.toISOString().substring(0, 10);
-
   return SalatLog.find({ userId, date: { $gte: sinceStr } }).sort({ date: 1 });
 }
 
 export interface SalatAnalyticsResult {
+  periodDays: number;
   totalDays: number;
   totalPossiblePrayers: number;
-  completedCount: number;  // completed (on time)
-  kazaCount: number;       // completed but late
+  completedCount: number;
+  kazaCount: number;
   missedCount: number;
-  prayedTotal: number;     // completed + kaza (both count as "prayed")
+  prayedTotal: number;
   mosqueCount: number;
-  jamaatCount: number;     // mosque + jamat
+  jamaatCount: number;
   homeCount: number;
   tasbeehCount: number;
-  completionRate: number;  // (completed+kaza) / total possible * 100
+  naflDays: number;
+  completionRate: number;
   currentStreak: number;
   bestStreak: number;
   perPrayer: Record<string, {
@@ -98,7 +128,6 @@ export interface SalatAnalyticsResult {
 }
 
 export async function getSalatAnalytics(userId: string, days: number): Promise<SalatAnalyticsResult> {
-  // Fetch enough for calendar (up to 180 days) but compute stats for the requested period
   const calendarDays = Math.max(days, 90);
   const logs = await getSalatHistory(userId, calendarDays);
 
@@ -115,6 +144,7 @@ export async function getSalatAnalytics(userId: string, days: number): Promise<S
   let jamaatCount = 0;
   let homeCount = 0;
   let tasbeehCount = 0;
+  let naflDays = 0;
 
   const perPrayer: SalatAnalyticsResult['perPrayer'] = {};
   for (const pid of PRAYER_IDS) {
@@ -139,17 +169,16 @@ export async function getSalatAnalytics(userId: string, days: number): Promise<S
         if (entry?.tasbeeh) { tasbeehCount++; perPrayer[pid].tasbeeh++; }
       }
     }
+    if (log.nafl?.completed) naflDays++;
   }
 
   const totalDays = statsLogs.length;
   const totalPossiblePrayers = totalDays * 5;
   const prayedTotal = completedCount + kazaCount;
 
-  // Build log map for streak + calendar calculations
   const logMap = new Map(logs.map((l) => [l.date, l]));
   const statsMap = new Map(statsLogs.map((l) => [l.date, l]));
 
-  // Streak: consecutive days where all 5 prayers done (completed or kaza)
   const sortedDates = statsLogs.map((l) => l.date).sort();
   let bestStreak = 0;
   let runStreak = 0;
@@ -164,7 +193,6 @@ export async function getSalatAnalytics(userId: string, days: number): Promise<S
     if (runStreak > bestStreak) bestStreak = runStreak;
   }
 
-  // Current streak (from end of sorted dates)
   let currentStreak = 0;
   const today = todayDateString();
   const yesterday = new Date();
@@ -184,7 +212,6 @@ export async function getSalatAnalytics(userId: string, days: number): Promise<S
     }
   }
 
-  // Last 7 days
   const last7Days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
@@ -201,7 +228,6 @@ export async function getSalatAnalytics(userId: string, days: number): Promise<S
     last7Days.push({ date: dateStr, completed: done, total: 5 });
   }
 
-  // Calendar data — all days fetched (up to 180)
   const calendarData = [];
   for (let i = calendarDays - 1; i >= 0; i--) {
     const d = new Date();
@@ -213,7 +239,6 @@ export async function getSalatAnalytics(userId: string, days: number): Promise<S
       for (const pid of PRAYER_IDS) {
         const s = log.prayers[pid]?.status;
         if (s === 'completed' || s === 'kaza') done++;
-        else if (s === 'missed') done += 0; // explicitly tracked but missed
       }
     }
     calendarData.push({ date: dateStr, completed: done, total: 5 });
@@ -224,6 +249,7 @@ export async function getSalatAnalytics(userId: string, days: number): Promise<S
     : 0;
 
   return {
+    periodDays: days,
     totalDays,
     totalPossiblePrayers,
     completedCount,
@@ -234,6 +260,7 @@ export async function getSalatAnalytics(userId: string, days: number): Promise<S
     jamaatCount,
     homeCount,
     tasbeehCount,
+    naflDays,
     completionRate,
     currentStreak,
     bestStreak,
