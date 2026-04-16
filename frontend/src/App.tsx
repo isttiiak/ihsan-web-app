@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase.js';
 import { useAuthStore } from './store/useAuthStore.js';
@@ -29,10 +29,41 @@ interface ProtectedProps {
 const Protected = ({ children }: ProtectedProps) => {
   const { user, authLoading } = useAuthStore();
   const location = useLocation();
+  const nav = useNavigate();
   if (authLoading) return null;
   if (!user) {
-    sessionStorage.setItem('ihsan_redirect', location.pathname + location.search);
-    return <Navigate to="/login" replace />;
+    const redirectTarget = location.pathname + location.search;
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="text-center space-y-5 max-w-sm w-full">
+          <div className="text-6xl">🔐</div>
+          <h2 className="text-2xl font-black text-white">Sign in required</h2>
+          <p className="text-white/50 text-sm leading-relaxed">
+            This page is only available to signed-in users. Create a free account to track your progress and access analytics.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 w-full"
+              onClick={() => {
+                sessionStorage.setItem('ihsan_redirect', redirectTarget);
+                nav('/login');
+              }}
+            >
+              Sign In
+            </button>
+            <button
+              className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
+              onClick={() => {
+                sessionStorage.setItem('ihsan_redirect', redirectTarget);
+                nav('/signup');
+              }}
+            >
+              Create Free Account
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
   return <>{children}</>;
 };
@@ -103,7 +134,22 @@ export default function App() {
           } catch { /* ignore parse error */ }
         }
 
-        const authUser: AuthUser = { uid: u.uid, email: u.email, displayName: dbDisplayName ?? u.displayName };
+        // Also carry over the photo URL: prefer DB value (user may have uploaded custom photo),
+        // fall back to Firebase/Google profile picture.
+        let dbPhotoUrl: string | null | undefined = u.photoURL ?? null;
+        if (verifyRes.ok) {
+          try {
+            const verifyDataForPhoto = await verifyRes.clone().json() as { user?: { photoUrl?: string } };
+            if (verifyDataForPhoto?.user?.photoUrl) dbPhotoUrl = verifyDataForPhoto.user.photoUrl;
+          } catch { /* ignore */ }
+        }
+
+        const authUser: AuthUser = {
+          uid: u.uid,
+          email: u.email,
+          displayName: dbDisplayName ?? u.displayName,
+          photoUrl: dbPhotoUrl,
+        };
         localStorage.setItem('ihsan_user', JSON.stringify(authUser));
         setUser(authUser);
         try { await hydrate(); } catch { /* hydrate errors are non-fatal */ }

@@ -53,19 +53,29 @@ export default function Navbar() {
   const { user, setUser } = useAuthStore();
   const { reset } = useZikrStore();
   const [confirmLogout, setConfirmLogout] = useState(false);
-  const dropdownRef = useRef<HTMLDetailsElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const salam = `Assalamu 'alaikum${user?.displayName ? ', ' + user.displayName.split(' ')[0] : ''}`;
   const focusRoutes = ['/zikr', '/salat', '/fasting', '/prayer-times'];
   const hideSalam = focusRoutes.includes(location.pathname);
 
-  useEffect(() => {
-    if (dropdownRef.current?.hasAttribute('open')) {
-      dropdownRef.current.removeAttribute('open');
-    }
-  }, [location.pathname]);
+  // Close dropdown on route change
+  useEffect(() => { setDropdownOpen(false); }, [location.pathname]);
 
-  const closeDropdown = () => dropdownRef.current?.removeAttribute('open');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const closeDropdown = () => setDropdownOpen(false);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [dropdownOpen]);
 
   const toggleTheme = () => {
     const theme = document.documentElement.getAttribute('data-theme') ?? 'ihsan';
@@ -111,40 +121,66 @@ export default function Navbar() {
           </button>
 
           {user ? (
-            <details className="dropdown dropdown-end" ref={dropdownRef}>
-              <summary className="btn btn-ghost btn-circle avatar placeholder hover:bg-white/10">
+            <div className="relative" ref={dropdownRef as React.RefObject<HTMLDivElement>}>
+              <button
+                onClick={() => setDropdownOpen((o) => !o)}
+                className="btn btn-ghost btn-circle avatar placeholder hover:bg-white/10 flex items-center justify-center"
+              >
                 {user.photoUrl ? (
                   <div className="w-8 sm:w-10 rounded-full overflow-hidden ring-2 ring-white/30">
-                    <img alt={user.displayName ?? 'Profile'} src={user.photoUrl} />
+                    <img alt={user.displayName ?? 'Profile'} src={user.photoUrl} className="w-full h-full object-cover" />
                   </div>
                 ) : (
-                  <div className="bg-white/20 text-white rounded-full w-8 sm:w-10 flex items-center justify-center">
-                    <span className="text-sm font-semibold">
-                      {user.displayName?.[0]?.toUpperCase() ?? 'U'}
+                  <div className="bg-brand-emerald/30 text-white rounded-full w-8 sm:w-10 flex items-center justify-center ring-2 ring-brand-emerald/40">
+                    <span className="text-sm font-bold">
+                      {user.displayName?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? 'U'}
                     </span>
                   </div>
                 )}
-              </summary>
-              <ul className="menu dropdown-content bg-brand-deep border border-brand-border text-base-content rounded-box z-[1] w-64 p-2 shadow-glass mt-3">
-                <li className="menu-title"><span className="text-brand-emerald">Profile</span></li>
-                <li>
-                  <Link to="/profile" onClick={closeDropdown} className="gap-2">
-                    <UserCircleIcon className="w-5 h-5" /> Edit Profile
-                  </Link>
-                </li>
-                <li className="lg:hidden">
-                  <Link to="/settings" onClick={closeDropdown} className="gap-2">
-                    <Cog6ToothIcon className="w-5 h-5" /> Settings
-                  </Link>
-                </li>
-                <div className="divider my-1"></div>
-                <li>
-                  <button className="text-error gap-2" onClick={() => { closeDropdown(); setConfirmLogout(true); }}>
-                    <ArrowRightOnRectangleIcon className="w-5 h-5" /> Sign Out
-                  </button>
-                </li>
-              </ul>
-            </details>
+              </button>
+
+              {dropdownOpen && (
+                <ul className="absolute right-0 top-full mt-2 menu bg-brand-deep border border-brand-border text-base-content rounded-2xl z-50 w-64 p-2 shadow-2xl">
+                  {/* User info header */}
+                  <li className="px-3 py-2 border-b border-brand-border mb-1">
+                    <div className="flex items-center gap-3 cursor-default hover:bg-transparent focus:bg-transparent active:bg-transparent">
+                      {user.photoUrl ? (
+                        <img src={user.photoUrl} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-brand-emerald/30" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-brand-emerald/20 flex items-center justify-center ring-2 ring-brand-emerald/30">
+                          <span className="text-xs font-bold text-brand-emerald">
+                            {user.displayName?.[0]?.toUpperCase() ?? 'U'}
+                          </span>
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-white font-semibold text-sm truncate">{user.displayName ?? 'User'}</p>
+                        <p className="text-white/30 text-xs truncate">{user.email}</p>
+                      </div>
+                    </div>
+                  </li>
+                  <li>
+                    <Link to="/profile" onClick={closeDropdown} className="gap-2 text-white/70 hover:text-white hover:bg-white/5 rounded-xl">
+                      <UserCircleIcon className="w-4 h-4" /> Edit Profile
+                    </Link>
+                  </li>
+                  <li className="lg:hidden">
+                    <Link to="/settings" onClick={closeDropdown} className="gap-2 text-white/70 hover:text-white hover:bg-white/5 rounded-xl">
+                      <Cog6ToothIcon className="w-4 h-4" /> Settings
+                    </Link>
+                  </li>
+                  <div className="divider my-1 border-brand-border" />
+                  <li>
+                    <button
+                      className="gap-2 text-error hover:bg-red-500/10 rounded-xl"
+                      onClick={() => { closeDropdown(); setConfirmLogout(true); }}
+                    >
+                      <ArrowRightOnRectangleIcon className="w-4 h-4" /> Sign Out
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </div>
           ) : (
             <Link
               to="/login"

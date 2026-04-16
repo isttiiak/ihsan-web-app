@@ -124,7 +124,7 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     {
       kind: 'forbidden',
       label: 'Nafl Restricted — After ʿAsr until Sunset',
-      note: 'ʿAsr fard prayer is performed at ʿAsr time. After completing it, voluntary (nafl) prayers are not permitted until the sun fully sets. The Prophet ﷺ said "There is no prayer after ʿAsr until the sun sets." Making up missed obligatory (qaḍā) prayers is permitted.',
+      note: 'ʿAsr fard prayer is performed at ʿAsr time. After completing it, voluntary (nafl) prayers are not permitted until the sun fully sets. Making up missed obligatory (qaḍā) prayers is permitted. ⚠️ For safety: stop nafl at least 17 minutes before the calculated sunset — this is when the sun begins to turn yellow and descend, marking the start of the disliked window.',
       hadith: '"There is no prayer after ʿAsr until the sun sets." — Ṣaḥīḥ al-Bukhārī 586; Ṣaḥīḥ Muslim 827',
       hadithUrl: 'https://sunnah.com/bukhari:586',
       start: new Date(times.asr.getTime() + MIN),

@@ -12,9 +12,15 @@ import UiInit from './components/UiInit.js';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
+      // 2-minute stale time — reduces redundant refetches while keeping data fresh.
+      staleTime: 2 * 60_000,
+      // Don't refetch just because the user switched tabs — this was flooding the
+      // rate limiter. Explicit invalidation (after mutations) keeps data current.
+      refetchOnWindowFocus: false,
+      // One retry on failure, then surface the error.
       retry: 1,
-      refetchOnWindowFocus: true,
+      // Keep unused cache entries for 5 minutes before GC.
+      gcTime: 5 * 60_000,
     },
   },
 });

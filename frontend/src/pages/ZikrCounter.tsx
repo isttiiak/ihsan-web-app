@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import toast, { Toaster } from 'react-hot-toast';
 import { useZikrStore } from '../store/useZikrStore.js';
 import type { CustomMeaning } from '../store/useZikrStore.js';
+import { useAuthStore } from '../store/useAuthStore.js';
 import { useZikrTypes, useAddZikrType } from '../hooks/useZikrTypes.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -44,11 +46,12 @@ const GLOW_PALETTE = [
 
 export default function ZikrCounter() {
   const navigate = useNavigate();
-  const { types, selected, counts, customMeanings, selectType, increment, decrement, reset, scheduleFlush, setTypes, setCustomMeaning } = useZikrStore();
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const { types, selected, counts, pending, isFlushing, customMeanings, selectType, increment, decrement, reset, scheduleFlush, setTypes, setCustomMeaning } = useZikrStore();
   const { data: fetchedTypes } = useZikrTypes();
   const addZikrType = useAddZikrType();
   const { data: analyticsData } = useAnalytics(1);
-
 
   const currentCount = counts?.[selected] ?? 0;
   const [colorIdx, setColorIdx] = useState(0);
@@ -56,13 +59,44 @@ export default function ZikrCounter() {
   const [customName, setCustomName] = useState('');
   const [customArabic, setCustomArabic] = useState('');
   const [customMeaningText, setCustomMeaningText] = useState('');
+  const [showGuestDialog, setShowGuestDialog] = useState(false);
 
-  // Goal data from server (so reset doesn't affect goal progress)
+  // Real-time goal progress:
+  // confirmedTotal = what the server last told us (stale until RQ refetch).
+  // localTodayTotal = what Zustand has locally (increments immediately on tap).
+  // pendingTotal = what hasn't been synced yet.
+  // We show max(local, confirmed) so the counter never appears to go backwards.
   const confirmedTotal = analyticsData?.today?.total ?? 0;
+  const localTodayTotal = Object.values(counts ?? {}).reduce((a, b) => a + b, 0);
+  const pendingTotal = Object.values(pending ?? {}).reduce((a, b) => a + b, 0);
+  const effectiveTotal = Math.max(localTodayTotal, confirmedTotal + pendingTotal);
+
   const dailyGoal = analyticsData?.goal?.dailyTarget ?? null;
   const streakCount = analyticsData?.streak?.currentStreak ?? null;
-  const goalProgress = dailyGoal ? Math.min(100, Math.round((confirmedTotal / dailyGoal) * 100)) : null;
-  const goalMet = dailyGoal !== null ? confirmedTotal >= dailyGoal : false;
+  const goalProgress = dailyGoal ? Math.min(100, Math.round((effectiveTotal / dailyGoal) * 100)) : null;
+  const goalMet = dailyGoal !== null ? effectiveTotal >= dailyGoal : false;
+
+  // After a flush completes, invalidate the analytics cache so the server total catches up
+  const wasFlushingRef = useRef(false);
+  useEffect(() => {
+    if (wasFlushingRef.current && !isFlushing) {
+      void queryClient.invalidateQueries({ queryKey: ['analytics'] });
+    }
+    wasFlushingRef.current = isFlushing;
+  }, [isFlushing, queryClient]);
+
+  // Guest: warn before tab close if they have unsaved counts
+  useEffect(() => {
+    if (user) return; // only for guests
+    const totalPending = Object.values(pending ?? {}).reduce((a, b) => a + b, 0);
+    if (totalPending === 0) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [user, pending]);
 
   const color = GLOW_PALETTE[colorIdx % GLOW_PALETTE.length]!;
 
@@ -151,7 +185,14 @@ export default function ZikrCounter() {
       <div className="bg-black/25 backdrop-blur-md border-b border-white/10 sticky top-0 z-30">
         <div className="max-w-2xl mx-auto px-3 py-2.5 flex items-center gap-2">
           {/* Left: back + title */}
-          <button onClick={() => navigate('/')} className="btn btn-ghost btn-xs text-white/70 hover:text-white hover:bg-white/10 gap-1 flex-shrink-0">
+          <button
+            onClick={() => {
+              const hasPending = Object.values(pending ?? {}).reduce((a, b) => a + b, 0) > 0;
+              if (!user && hasPending) { setShowGuestDialog(true); return; }
+              navigate('/');
+            }}
+            className="btn btn-ghost btn-xs text-white/70 hover:text-white hover:bg-white/10 gap-1 flex-shrink-0"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -172,7 +213,7 @@ export default function ZikrCounter() {
               </div>
             )}
             {goalProgress !== null && (
-              <div className="tooltip" data-tip={goalMet ? 'Daily goal achieved! 🏆' : `${confirmedTotal} / ${dailyGoal ?? '?'} confirmed`}>
+              <div className="tooltip" data-tip={goalMet ? 'Daily goal achieved! 🏆' : `${effectiveTotal} / ${dailyGoal ?? '?'} today`}>
                 <div className={`px-2 py-0.5 rounded-full border text-white text-xs font-bold flex items-center gap-1 ${goalMet ? 'bg-brand-emerald/30 border-brand-emerald/50' : 'bg-white/10 border-white/20'}`}>
                   {goalMet ? '✅' : '🎯'} <span>{goalProgress}%</span>
                 </div>
@@ -319,7 +360,7 @@ export default function ZikrCounter() {
           {dailyGoal !== null && (
             <div className="px-6 pb-6 pt-1">
               <div className="flex justify-between text-xs text-white/40 mb-1.5">
-                <span>Confirmed today: {confirmedTotal}</span>
+                <span>Today: {effectiveTotal}{pendingTotal > 0 ? <span className="text-brand-gold/60"> (+{pendingTotal} syncing)</span> : ''}</span>
                 <span>Goal: {dailyGoal}</span>
               </div>
               <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
@@ -459,6 +500,57 @@ export default function ZikrCounter() {
                   className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold"
                 >
                   {addZikrType.isPending ? <span className="loading loading-spinner loading-sm" /> : 'Add Dhikr'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Guest data-loss dialog ── */}
+      <AnimatePresence>
+        {showGuestDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', damping: 22 }}
+              className="bg-brand-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-border text-center"
+            >
+              <div className="text-5xl mb-4">📿</div>
+              <h3 className="text-xl font-black text-white mb-2">Don't lose your counts</h3>
+              <p className="text-white/50 text-sm mb-6 leading-relaxed">
+                You have <span className="text-brand-gold font-bold">
+                  {Object.values(pending ?? {}).reduce((a, b) => a + b, 0)}
+                </span> unsaved zikr counts. Sign in to save your progress and track your streaks.
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 w-full"
+                  onClick={() => {
+                    sessionStorage.setItem('ihsan_redirect', '/zikr');
+                    navigate('/login');
+                  }}
+                >
+                  Sign In to Save
+                </button>
+                <button
+                  className="btn btn-ghost text-white/50 hover:text-white w-full"
+                  onClick={() => { setShowGuestDialog(false); navigate('/'); }}
+                >
+                  Leave without saving
+                </button>
+                <button
+                  className="btn btn-ghost text-brand-emerald text-sm w-full"
+                  onClick={() => setShowGuestDialog(false)}
+                >
+                  Keep counting
                 </button>
               </div>
             </motion.div>
