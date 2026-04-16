@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { MapPinIcon } from '@heroicons/react/24/outline';
 import { useZikrStore } from '../store/useZikrStore.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useSalatLog } from '../hooks/useSalatLog.js';
@@ -30,6 +31,7 @@ interface ActivityItem {
 export default function Home() {
   const { counts = {}, hydrate } = useZikrStore();
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const doHydrate = () => hydrate?.();
@@ -64,10 +66,34 @@ export default function Home() {
 
   // Prayer times widget state
   const [prayerNow, setPrayerNow] = useState(new Date());
+  const [locLoading, setLocLoading] = useState(false);
   useEffect(() => {
     const t = setInterval(() => setPrayerNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  const enableLocation = useCallback(() => {
+    if (!('geolocation' in navigator)) { navigate('/prayer-times'); return; }
+    setLocLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        let name = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+          const d = await r.json() as { address?: { city?: string; town?: string; village?: string; country?: string } };
+          const city = d.address?.city ?? d.address?.town ?? d.address?.village;
+          const country = d.address?.country;
+          if (city || country) name = [city, country].filter(Boolean).join(', ');
+        } catch { /* use coords fallback */ }
+        localStorage.setItem('ihsan_location', JSON.stringify({ latitude, longitude, name }));
+        setLocLoading(false);
+        setPrayerNow(new Date()); // trigger recompute
+      },
+      () => { setLocLoading(false); navigate('/prayer-times'); },
+      { timeout: 10000 }
+    );
+  }, [navigate]);
 
   const prayerWidgetData = useMemo(() => {
     const stored = localStorage.getItem('ihsan_location');
@@ -135,9 +161,9 @@ export default function Home() {
     <AnimatedBackground variant="premium">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
-        {/* Prayer times widget */}
-        {prayerWidgetData && (
-          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+        {/* Prayer times widget / location CTA */}
+        <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          {prayerWidgetData ? (
             <Link to="/prayer-times">
               <motion.div
                 whileHover={{ scale: 1.01 }}
@@ -178,8 +204,31 @@ export default function Home() {
                 </div>
               </motion.div>
             </Link>
-          </motion.div>
-        )}
+          ) : (
+            /* No location stored — prompt to enable */
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={enableLocation}
+              disabled={locLoading}
+              className="w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3 rounded-2xl bg-brand-surface/60 backdrop-blur-md border border-brand-border/60 border-dashed hover:border-brand-emerald/40 hover:bg-brand-surface/80 transition-all text-left"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                {locLoading
+                  ? <span className="loading loading-spinner loading-xs text-brand-emerald shrink-0" />
+                  : <MapPinIcon className="w-5 h-5 text-brand-emerald/60 shrink-0" />
+                }
+                <div className="min-w-0">
+                  <p className="text-white/70 font-semibold text-sm leading-none mb-0.5">Enable Prayer Times</p>
+                  <p className="text-white/30 text-xs">Tap to share your location and see live prayer times here</p>
+                </div>
+              </div>
+              <span className="text-brand-emerald/50 text-xs font-semibold shrink-0">
+                {locLoading ? 'Locating…' : 'Set Location →'}
+              </span>
+            </motion.button>
+          )}
+        </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
           {activities.map((a, i) => {

@@ -75,9 +75,9 @@ export function getForbiddenWindows(times: PrayerTimesResult): ForbiddenWindow[]
     },
     {
       label: 'After ʿAsr (nafl restricted)',
-      note: 'ʿAsr prayer itself is performed at ʿAsr time. After completing it, voluntary (nafl) prayers are not permitted until Maghrib.',
+      note: 'ʿAsr prayer itself is performed at ʿAsr time. After completing it, voluntary (nafl) prayers are not permitted until the sun sets (sunset). The hadith says "until the sun sets", so the window ends at sunset — not at Maghrib.',
       start: new Date(times.asr.getTime() + MIN),   // 1 min after Asr so the Asr row is not inside the window
-      end: times.maghrib,
+      end: times.sunset,
     },
   ];
 }

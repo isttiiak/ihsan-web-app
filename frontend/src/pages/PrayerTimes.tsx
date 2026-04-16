@@ -118,24 +118,26 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     },
 
     // ── Forbidden: After Asr ──────────────────────────────────────────────
-    // Start 1 min AFTER Asr so the Asr prayer row sits above this window in the list
+    // Start 1 min AFTER Asr so the Asr prayer row sits above this window in the list.
+    // Ends at SUNSET — the hadith says "until the sun sets" (Bukhārī 586, Muslim 827),
+    // not "until Maghrib". Maghrib begins a few minutes after sunset.
     {
       kind: 'forbidden',
-      label: "Nafl Restricted — After ʿAsr",
-      note: "ʿAsr fard prayer is performed at ʿAsr time. After completing it, voluntary (nafl) prayers are not permitted until Maghrib. Sunset falls within this window. Making up missed obligatory prayers is permitted.",
-      hadith: '"There is no prayer after ʿAsr until the sun sets." — Ṣaḥīḥ al-Bukhārī 586, Ṣaḥīḥ Muslim 827',
+      label: 'Nafl Restricted — After ʿAsr until Sunset',
+      note: 'ʿAsr fard prayer is performed at ʿAsr time. After completing it, voluntary (nafl) prayers are not permitted until the sun fully sets. The Prophet ﷺ said "There is no prayer after ʿAsr until the sun sets." Making up missed obligatory (qaḍā) prayers is permitted.',
+      hadith: '"There is no prayer after ʿAsr until the sun sets." — Ṣaḥīḥ al-Bukhārī 586; Ṣaḥīḥ Muslim 827',
       hadithUrl: 'https://sunnah.com/bukhari:586',
       start: new Date(times.asr.getTime() + MIN),
-      end: times.maghrib,
+      end: times.sunset,
     },
 
-    // ── Sunset (event within forbidden window) ────────────────────────────
+    // ── Sunset — forbidden window ends here ───────────────────────────────
     {
       kind: 'event',
-      label: 'Sunset',
+      label: 'Sunset — Nafl Restriction Ends',
       icon: '🌇',
       time: times.sunset,
-      note: 'Sun sets below the horizon. Still within the post-Asr forbidden window.',
+      note: 'Sun sets. The post-Asr nafl restriction ends. Maghrib begins shortly after.',
     },
 
     // ── Maghrib ───────────────────────────────────────────────────────────

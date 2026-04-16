@@ -38,9 +38,18 @@ export const verifyHandler = async (req: Request, res: Response): Promise<void> 
     const displayName = (decoded['name'] as string | undefined);
     const picture = decoded['picture'] as string | undefined;
 
+    // Always update email (can change in Firebase).
+    // Only set displayName and photoUrl on first creation — never overwrite values
+    // the user has manually edited in their Profile page.
     const user = await User.findOneAndUpdate(
       { uid },
-      { uid, email, displayName, ...(picture ? { photoUrl: picture } : {}) },
+      {
+        $set: { uid, email },
+        $setOnInsert: {
+          displayName: displayName ?? '',
+          ...(picture ? { photoUrl: picture } : {}),
+        },
+      },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 

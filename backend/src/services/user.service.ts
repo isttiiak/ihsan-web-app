@@ -12,6 +12,9 @@ export interface UserUpdateFields {
   firstName?: string;
   lastName?: string;
   occupation?: string;
+  bio?: string;
+  city?: string;
+  country?: string;
 }
 
 export async function updateUser(uid: string, fields: UserUpdateFields): Promise<IUser | null> {
@@ -23,6 +26,9 @@ export async function updateUser(uid: string, fields: UserUpdateFields): Promise
   if (fields.firstName !== undefined) updates.firstName = fields.firstName;
   if (fields.lastName !== undefined) updates.lastName = fields.lastName;
   if (fields.occupation !== undefined) updates.occupation = fields.occupation;
+  if (fields.bio !== undefined) updates.bio = fields.bio;
+  if (fields.city !== undefined) updates.city = fields.city;
+  if (fields.country !== undefined) updates.country = fields.country;
 
   return User.findOneAndUpdate({ uid }, updates, { new: true, runValidators: true });
 }

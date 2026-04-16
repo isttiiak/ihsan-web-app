@@ -70,38 +70,56 @@ export default function App() {
         return;
       }
 
-      const idToken = await u.getIdToken(true);
-      const verifyRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ idToken }),
-      });
+      try {
+        const idToken = await u.getIdToken(true);
+        const verifyRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+          body: JSON.stringify({ idToken }),
+        });
 
-      if (!verifyRes.ok) {
-        const errorText = await verifyRes.text();
-        console.error('Verify failed:', { status: verifyRes.status, body: errorText });
-        // Only sign out on genuine auth failures — not rate limits (429) or server errors (5xx)
-        if (verifyRes.status === 401 || verifyRes.status === 403) {
-          await auth.signOut();
-          setAuthLoading(false);
-          return;
+        if (!verifyRes.ok) {
+          const errorText = await verifyRes.text();
+          console.error('Verify failed:', { status: verifyRes.status, body: errorText });
+          // Only sign out on genuine auth failures — not rate limits (429) or server errors (5xx)
+          if (verifyRes.status === 401 || verifyRes.status === 403) {
+            await auth.signOut();
+            setAuthLoading(false);
+            return;
+          }
+          // For 429/5xx: keep the user signed in, store the token we already have
+          console.warn(`Verify returned ${verifyRes.status} — keeping session alive`);
         }
-        // For 429/5xx: keep the user signed in, store the token we already have
-        console.warn(`Verify returned ${verifyRes.status} — keeping session alive`);
-      }
 
-      localStorage.setItem('ihsan_idToken', idToken);
-      const authUser: AuthUser = { uid: u.uid, email: u.email, displayName: u.displayName };
-      localStorage.setItem('ihsan_user', JSON.stringify(authUser));
-      setUser(authUser);
-      try { await hydrate(); } catch {}
+        localStorage.setItem('ihsan_idToken', idToken);
 
-      const redirect = sessionStorage.getItem('ihsan_redirect');
-      if (redirect && ['/login', '/signup'].includes(location.pathname)) {
-        sessionStorage.removeItem('ihsan_redirect');
-        navigate(redirect || '/', { replace: true });
+        // Prefer the displayName from our DB (user may have edited it in Profile)
+        // Fall back to Firebase display name for brand-new accounts
+        let dbDisplayName: string | null | undefined = u.displayName;
+        if (verifyRes.ok) {
+          try {
+            const verifyData = await verifyRes.clone().json() as { user?: { displayName?: string } };
+            if (verifyData?.user?.displayName) dbDisplayName = verifyData.user.displayName;
+          } catch { /* ignore parse error */ }
+        }
+
+        const authUser: AuthUser = { uid: u.uid, email: u.email, displayName: dbDisplayName ?? u.displayName };
+        localStorage.setItem('ihsan_user', JSON.stringify(authUser));
+        setUser(authUser);
+        try { await hydrate(); } catch { /* hydrate errors are non-fatal */ }
+
+        // Always navigate away from /login or /signup after a successful sign-in
+        if (['/login', '/signup'].includes(location.pathname)) {
+          const redirect = sessionStorage.getItem('ihsan_redirect');
+          sessionStorage.removeItem('ihsan_redirect');
+          navigate(redirect || '/', { replace: true });
+        }
+      } catch (err) {
+        // Network failure or unexpected error — don't leave the spinner running forever
+        console.error('Auth setup error:', err);
+      } finally {
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
     });
 
     return () => unsub();

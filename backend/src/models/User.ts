@@ -16,6 +16,9 @@ export interface IUser extends Document {
   occupation?: string;
   gender?: 'male' | 'female' | 'other' | 'prefer_not_say';
   birthDate?: Date;
+  bio?: string;
+  city?: string;
+  country?: string;
   aiEnabled: boolean;
   totalCount: number;
   zikrTotals: Map<string, number>;
@@ -33,6 +36,9 @@ const userSchema = new Schema(
     firstName: { type: String },
     lastName: { type: String },
     occupation: { type: String },
+    bio: { type: String, maxlength: 250 },
+    city: { type: String },
+    country: { type: String },
     gender: {
       type: String,
       enum: ['male', 'female', 'other', 'prefer_not_say'],

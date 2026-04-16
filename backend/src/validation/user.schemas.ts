@@ -9,5 +9,8 @@ export const updateUserSchema = z.object({
     gender: z.enum(['male', 'female', 'other', 'prefer_not_say']).optional(),
     birthDate: z.string().datetime().optional(),
     occupation: z.string().max(100).optional(),
+    bio: z.string().max(250).optional(),
+    city: z.string().max(100).optional(),
+    country: z.string().max(100).optional(),
   }),
 });
