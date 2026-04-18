@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Swal from 'sweetalert2';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { storage } from '../firebase.js';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -103,6 +104,43 @@ function countryFlag(countryName: string): string {
   return Array.from(code).map((c) => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join('');
 }
 
+// ── Preset avatars ────────────────────────────────────────────────────────────
+const PRESET_AVATARS = [
+  { id: 'sun',       emoji: '☀️',  label: 'Sun',        bg: '#92400e' },
+  { id: 'moon',      emoji: '🌙',  label: 'Moon',       bg: '#312e81' },
+  { id: 'star',      emoji: '⭐',  label: 'Star',       bg: '#1e3a5f' },
+  { id: 'glowstar',  emoji: '🌟',  label: 'Glow Star',  bg: '#3b1f63' },
+  { id: 'rose',      emoji: '🌹',  label: 'Rose',       bg: '#7f1d1d' },
+  { id: 'tulip',     emoji: '🌷',  label: 'Tulip',      bg: '#831843' },
+  { id: 'sunflower', emoji: '🌻',  label: 'Sunflower',  bg: '#713f12' },
+  { id: 'blossom',   emoji: '🌸',  label: 'Blossom',    bg: '#9d174d' },
+  { id: 'leaf',      emoji: '🌿',  label: 'Leaf',       bg: '#064e3b' },
+  { id: 'tree',      emoji: '🌳',  label: 'Tree',       bg: '#14532d' },
+  { id: 'palm',      emoji: '🌴',  label: 'Palm',       bg: '#365314' },
+  { id: 'mountain',  emoji: '⛰️',  label: 'Mountain',   bg: '#292524' },
+  { id: 'ocean',     emoji: '🌊',  label: 'Ocean',      bg: '#0c4a6e' },
+  { id: 'diamond',   emoji: '💎',  label: 'Diamond',    bg: '#164e63' },
+  { id: 'crystal',   emoji: '🔮',  label: 'Crystal',    bg: '#2e1065' },
+  { id: 'rainbow',   emoji: '🌈',  label: 'Rainbow',    bg: '#3b0764' },
+] as const;
+
+function createAvatarDataUrl(emoji: string, bg: string): string {
+  const canvas = document.createElement('canvas');
+  canvas.width = 200;
+  canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.arc(100, 100, 100, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.font = '90px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, 100, 108);
+  return canvas.toDataURL('image/png');
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function calcFullAge(birthDate: string): { years: number; months: number } | null {
   if (!birthDate) return null;
@@ -185,6 +223,8 @@ export default function Profile() {
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState('');
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -380,6 +420,60 @@ export default function Profile() {
     setPhotoPreviewUrl('');
   };
 
+  const handleCameraClick = async () => {
+    const result = await Swal.fire({
+      title: 'Change Profile Photo',
+      text: 'How would you like to update your photo?',
+      showConfirmButton: true,
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: '📷 Upload Photo',
+      denyButtonText: '🎨 Choose Avatar',
+      cancelButtonText: 'Cancel',
+      background: '#141e2e',
+      color: '#f1f5f9',
+      confirmButtonColor: '#10b981',
+      denyButtonColor: '#6366f1',
+      cancelButtonColor: '#1e2d42',
+      customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
+    });
+    if (result.isConfirmed) fileInputRef.current?.click();
+    else if (result.isDenied) setAvatarModalOpen(true);
+  };
+
+  const selectAvatar = async (av: { emoji: string; bg: string }) => {
+    const dataUrl = createAvatarDataUrl(av.emoji, av.bg);
+    if (!dataUrl) return;
+    setSaveError('');
+    setUploading(true);
+    try {
+      setPreview(dataUrl);
+      setProfile((p) => ({ ...p, photoUrl: dataUrl }));
+      setAvatarModalOpen(false);
+      const idToken = localStorage.getItem('ihsan_idToken');
+      if (idToken) {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+          body: JSON.stringify({ photoUrl: dataUrl }),
+        });
+        if (res.ok) {
+          setOriginalProfile((p) => p ? { ...p, photoUrl: dataUrl } : null);
+          const updated = { ...(user ?? { uid: '', email: null }), displayName: user?.displayName ?? null, photoUrl: dataUrl };
+          setUser(updated);
+          localStorage.setItem('ihsan_user', JSON.stringify({
+            ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'),
+            photoUrl: dataUrl,
+          }));
+        }
+      }
+    } catch {
+      setSaveError('Failed to save avatar. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const ageInfo = calcFullAge(profile.birthDate);
   const totalZikr = (dbUser?.totalCount ?? 0).toLocaleString();
   const longestStreak = analyticsData?.streak?.longestStreak ?? null;
@@ -423,15 +517,18 @@ export default function Profile() {
                       )}
                     </div>
                   </div>
-                  <label className="absolute bottom-0 right-0 group cursor-pointer">
-                    <div className="w-8 h-8 rounded-full bg-brand-emerald hover:bg-brand-emerald-dim text-white shadow-lg flex items-center justify-center transition-colors">
-                      <CameraIcon className="w-4 h-4" />
-                    </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleCameraClick()}
+                    disabled={uploading}
+                    className="absolute bottom-0 right-0 group w-8 h-8 rounded-full bg-brand-emerald hover:bg-brand-emerald-dim text-white shadow-lg flex items-center justify-center transition-colors disabled:opacity-50"
+                  >
+                    <CameraIcon className="w-4 h-4" />
                     <span className="absolute -top-7 right-0 bg-brand-deep border border-brand-border text-white/70 text-[10px] px-2 py-0.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                       Change Photo
                     </span>
-                    <input type="file" accept="image/*" className="hidden" onChange={onFileChange} disabled={uploading} />
-                  </label>
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
                 </div>
 
                 {/* Info */}
@@ -707,6 +804,60 @@ export default function Profile() {
     </AnimatedBackground>
 
     {/* ── Photo upload preview modal ── */}
+    {/* ── Avatar selection modal ── */}
+    <AnimatePresence>
+      {avatarModalOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.92, opacity: 0, y: 20 }}
+            transition={{ type: 'spring', damping: 22 }}
+            className="bg-brand-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-border space-y-4"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-black text-white">Choose Avatar</h3>
+                <p className="text-white/35 text-xs mt-0.5">Nature-themed icons — no upload required</p>
+              </div>
+              <button onClick={() => setAvatarModalOpen(false)} className="text-white/40 hover:text-white transition-colors p-1">
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              {PRESET_AVATARS.map((av) => (
+                <button
+                  key={av.id}
+                  onClick={() => void selectAvatar(av)}
+                  disabled={uploading}
+                  className="flex flex-col items-center gap-1 group disabled:opacity-50"
+                  title={av.label}
+                >
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all group-hover:scale-110 group-hover:ring-2 ring-brand-emerald/60 ring-offset-2 ring-offset-brand-surface shadow-md"
+                    style={{ backgroundColor: av.bg }}
+                  >
+                    {av.emoji}
+                  </div>
+                  <span className="text-white/30 text-[9px] leading-none group-hover:text-white/60 transition-colors">{av.label}</span>
+                </button>
+              ))}
+            </div>
+            {uploading && (
+              <div className="flex items-center justify-center gap-2 text-brand-emerald text-sm">
+                <span className="loading loading-spinner loading-sm" /> Saving…
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
     <AnimatePresence>
       {photoModalOpen && (
         <motion.div

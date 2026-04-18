@@ -147,7 +147,7 @@ export default function SalatTracker() {
     updateNafl.mutate({
       completed: newCompleted,
       types: newCompleted ? naflEntry.types : [],
-      rakat: naflEntry.rakat,
+      rakat: 2, // always reset to default when toggling done/undone
       date: isToday ? undefined : selectedDate,
     });
     if (newCompleted) setNaflExpanded(true);

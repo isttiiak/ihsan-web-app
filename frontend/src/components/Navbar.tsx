@@ -133,12 +133,15 @@ export default function Navbar() {
   // ── Center content by route ───────────────────────────────────────────────
   const hijriToday = (() => { const h = getHijriDate(); return h ? formatHijriDate(h) : null; })();
 
+  const todayEnglish = (() => {
+    return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  })();
+
   const centerContent = (() => {
     if (isHome && user) {
       return (
         <div className="hidden sm:flex flex-col items-center truncate">
           <span className="text-sm font-bold leading-tight"><TextType text={greeting} speed={50} /></span>
-          {hijriToday && <span className="text-[10px] text-brand-gold/50 leading-none mt-0.5">{hijriToday}</span>}
         </div>
       );
     }
@@ -251,6 +254,13 @@ export default function Navbar() {
 
           {/* ── Right: settings + theme + profile ─────────── */}
           <div className="flex items-center gap-0.5 flex-shrink-0">
+            {/* Date display — home page only */}
+            {isHome && user && (
+              <div className="hidden md:flex flex-col items-end mr-2 shrink-0">
+                <span className="text-white/45 text-[10px] font-medium leading-none">{todayEnglish}</span>
+                {hijriToday && <span className="text-brand-gold/50 text-[10px] leading-none mt-0.5">{hijriToday}</span>}
+              </div>
+            )}
             {user && (
               <Link
                 to="/settings"

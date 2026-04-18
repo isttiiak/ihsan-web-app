@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MapPinIcon } from '@heroicons/react/24/outline';
@@ -12,11 +12,7 @@ import {
   getMandatoryWidget,
   PRAYER_META,
 } from '../utils/prayerTimes.js';
-import {
-  getTodaySpecialDays,
-  getHijriDate,
-  formatHijriDate,
-} from '../utils/islamicCalendar.js';
+import { getTodaySpecialDays } from '../utils/islamicCalendar.js';
 
 interface ActivityItem {
   id: string;
@@ -101,7 +97,6 @@ export default function Home() {
   }, [navigate]);
 
   const todaySpecialDays = useMemo(() => getTodaySpecialDays(), []);
-  const hijriDate = useMemo(() => getHijriDate(), []);
 
   const prayerWidgetData = useMemo(() => {
     const stored = localStorage.getItem('ihsan_location');
@@ -316,18 +311,6 @@ export default function Home() {
             </motion.button>
           )}
         </motion.div>
-
-        {/* Hijri date — always visible */}
-        {hijriDate && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.05 }}
-            className="text-brand-gold/40 text-xs text-center font-medium tracking-wide mb-4 -mt-2"
-          >
-            {formatHijriDate(hijriDate)}
-          </motion.p>
-        )}
 
         {/* Islamic special day widget */}
         {todaySpecialDays.length > 0 && (
