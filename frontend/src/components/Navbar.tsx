@@ -256,19 +256,10 @@ export default function Navbar() {
           <div className="flex items-center gap-0.5 flex-shrink-0">
             {/* Date display — home page only */}
             {isHome && user && (
-              <div className="hidden md:flex flex-col items-end mr-2 shrink-0">
-                <span className="text-white/45 text-[10px] font-medium leading-none">{todayEnglish}</span>
-                {hijriToday && <span className="text-brand-gold/50 text-[10px] leading-none mt-0.5">{hijriToday}</span>}
+              <div className="hidden md:flex flex-col items-end mr-2 shrink-0 px-2 py-1 rounded-xl bg-white/5 border border-brand-border/60">
+                <span className="text-white/80 text-xs font-bold leading-none">{todayEnglish}</span>
+                {hijriToday && <span className="text-brand-gold/70 text-[10px] font-medium leading-none mt-0.5">{hijriToday}</span>}
               </div>
-            )}
-            {user && (
-              <Link
-                to="/settings"
-                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/8 transition-all text-xs font-medium"
-              >
-                <Cog6ToothIcon className="w-4 h-4" />
-                <span>Settings</span>
-              </Link>
             )}
 
             <button

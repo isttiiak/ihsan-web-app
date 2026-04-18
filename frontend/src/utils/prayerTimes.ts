@@ -107,14 +107,27 @@ export interface NaflWindow {
 export function getCurrentNaflWindow(times: PrayerTimesResult, now: Date = new Date()): NaflWindow | null {
   const MIN = 60_000;
   const { fajr, sunrise, dhuhr, maghrib, isha } = times;
-  const nextDayFajr = new Date(fajr.getTime() + 86_400_000);
 
-  // Tahajjud: last third of night → 30 min before Fajr
-  const nightDuration = nextDayFajr.getTime() - isha.getTime();
-  const tahajjudStart = new Date(isha.getTime() + (2 / 3) * nightDuration);
-  const tahajjudEnd   = new Date(fajr.getTime() - 30 * MIN);
-  if (now >= tahajjudStart && now < tahajjudEnd) {
-    return { name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: tahajjudEnd };
+  // ── Tahajjud: last third of night → 30 min before Fajr ─────────────────────
+  const tahajjudEnd = new Date(fajr.getTime() - 30 * MIN);
+  if (now < fajr) {
+    // Early morning (after midnight, before Fajr): use last night's Tahajjud window.
+    // Approximate yesterday's Isha as today's Isha −24 h (shifts <2 min/day — acceptable).
+    const prevIsha = new Date(isha.getTime() - 86_400_000);
+    const nightDuration = fajr.getTime() - prevIsha.getTime();
+    const tahajjudStart = new Date(prevIsha.getTime() + (2 / 3) * nightDuration);
+    if (now >= tahajjudStart && now < tahajjudEnd) {
+      return { name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: tahajjudEnd };
+    }
+  } else {
+    // After Fajr: check tonight's upcoming Tahajjud (starts after tonight's Isha)
+    const nextDayFajr = new Date(fajr.getTime() + 86_400_000);
+    const nightDuration = nextDayFajr.getTime() - isha.getTime();
+    const tahajjudStart = new Date(isha.getTime() + (2 / 3) * nightDuration);
+    const nextTahajjudEnd = new Date(nextDayFajr.getTime() - 30 * MIN);
+    if (now >= tahajjudStart && now < nextTahajjudEnd) {
+      return { name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: nextTahajjudEnd };
+    }
   }
 
   // Ishraq: 20–45 min after sunrise

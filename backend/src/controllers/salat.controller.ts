@@ -55,3 +55,10 @@ export const getAnalytics = async (req: Request, res: Response, next: NextFuncti
     res.json({ ok: true, ...analytics });
   } catch (err) { next(err); }
 };
+
+export const deleteAllLogs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const result = await salatService.deleteAllUserSalatLogs(req.user.uid);
+    res.json({ ok: true, deletedCount: result.deletedCount });
+  } catch (err) { next(err); }
+};

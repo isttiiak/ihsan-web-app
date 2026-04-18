@@ -80,3 +80,12 @@ export const addTypeHandler = async (req: Request, res: Response, next: NextFunc
     next(err);
   }
 };
+
+export const deleteAllZikrData = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    await zikrService.deleteAllUserZikrData(req.user.uid);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+};

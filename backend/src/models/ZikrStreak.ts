@@ -74,11 +74,9 @@ zikrStreakSchema.methods.updateStreak = function (
       this.longestStreak = Math.max(this.longestStreak, this.currentStreak);
       this.lastCompletedDate = today;
       return { streakChanged: true, message: 'Streak continued (1 day grace)' };
-    } else {
-      this.currentStreak = 0;
-      this.lastCompletedDate = null;
-      return { streakChanged: true, message: 'Streak reset (2 days missed)' };
     }
+    // Goal not yet met today — preserve streak; user still has the rest of today
+    return { streakChanged: false, message: 'Grace period active — hit your goal today to continue' };
   } else {
     if (goalMet) {
       this.currentStreak = 1;

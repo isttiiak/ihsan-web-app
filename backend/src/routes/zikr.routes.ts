@@ -12,4 +12,7 @@ router.get('/summary', requireAuth, zikrController.getSummaryHandler);
 router.get('/types', requireAuth, zikrController.getTypesHandler);
 router.post('/types', requireAuth, validate(addZikrTypeSchema), zikrController.addTypeHandler);
 
+// DELETE /api/zikr/all — delete all zikr data for the authenticated user
+router.delete('/all', requireAuth, zikrController.deleteAllZikrData);
+
 export default router;

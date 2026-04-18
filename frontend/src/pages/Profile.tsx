@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { storage } from '../firebase.js';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -14,8 +15,11 @@ import {
   MapPinIcon,
   BriefcaseIcon,
   XMarkIcon,
+  TrashIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { useAnalytics } from '../hooks/useAnalytics.js';
+import { useZikrStore } from '../store/useZikrStore.js';
 
 // ── Country → Cities data ─────────────────────────────────────────────────────
 const COUNTRIES_CITIES: Record<string, string[]> = {
@@ -194,6 +198,8 @@ interface UserResponse {
 export default function Profile() {
   const { user, setUser } = useAuthStore();
   const { data: analyticsData } = useAnalytics(1);
+  const { resetAll: resetZikrStore } = useZikrStore();
+  const queryClient = useQueryClient();
 
   const googleFirstName = useMemo(() => {
     const parts = (user?.displayName ?? '').trim().split(' ');
@@ -471,6 +477,108 @@ export default function Profile() {
       setSaveError('Failed to save avatar. Please try again.');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const deleteSalatLogs = async () => {
+    const first = await Swal.fire({
+      title: 'Delete all Salat logs?',
+      html: 'This will <b>permanently delete</b> all your prayer tracking history. The Salat Tracker will start fresh from today.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete',
+      cancelButtonText: 'Cancel',
+      background: '#141e2e',
+      color: '#f1f5f9',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#1e2d42',
+      customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
+    });
+    if (!first.isConfirmed) return;
+
+    const second = await Swal.fire({
+      title: 'Are you absolutely sure?',
+      text: 'This action cannot be undone.',
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonText: 'Delete forever',
+      cancelButtonText: 'Cancel',
+      background: '#141e2e',
+      color: '#f1f5f9',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#1e2d42',
+      customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
+    });
+    if (!second.isConfirmed) return;
+
+    const idToken = localStorage.getItem('ihsan_idToken');
+    if (!idToken) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/salat/all`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      if (res.ok) {
+        // Invalidate all salat-related React Query caches so UI reflects empty state
+        await queryClient.invalidateQueries({ queryKey: ['salat'] });
+        await Swal.fire({ title: 'Deleted', text: 'All salat logs have been removed.', icon: 'success', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#10b981', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
+      } else {
+        await Swal.fire({ title: 'Error', text: 'Could not delete. Try again.', icon: 'error', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
+      }
+    } catch {
+      await Swal.fire({ title: 'Network error', text: 'Check your connection and try again.', icon: 'error', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
+    }
+  };
+
+  const deleteZikrData = async () => {
+    const first = await Swal.fire({
+      title: 'Delete all Zikr data?',
+      html: 'This will <b>permanently delete</b> all your zikr counts, streaks, and history. Your goal setting will be kept.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete',
+      cancelButtonText: 'Cancel',
+      background: '#141e2e',
+      color: '#f1f5f9',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#1e2d42',
+      customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
+    });
+    if (!first.isConfirmed) return;
+
+    const second = await Swal.fire({
+      title: 'Are you absolutely sure?',
+      text: 'Streak, lifetime totals, and all daily counts will be erased permanently.',
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonText: 'Delete forever',
+      cancelButtonText: 'Cancel',
+      background: '#141e2e',
+      color: '#f1f5f9',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#1e2d42',
+      customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
+    });
+    if (!second.isConfirmed) return;
+
+    const idToken = localStorage.getItem('ihsan_idToken');
+    if (!idToken) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/all`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      if (res.ok) {
+        resetZikrStore(); // clear local Zustand optimistic state
+        // Invalidate all analytics + zikr React Query caches so UI reflects zeroed state
+        await queryClient.invalidateQueries({ queryKey: ['analytics'] });
+        await queryClient.invalidateQueries({ queryKey: ['zikr'] });
+        await Swal.fire({ title: 'Deleted', text: 'All zikr data has been removed.', icon: 'success', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#10b981', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
+      } else {
+        await Swal.fire({ title: 'Error', text: 'Could not delete. Try again.', icon: 'error', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
+      }
+    } catch {
+      await Swal.fire({ title: 'Network error', text: 'Check your connection and try again.', icon: 'error', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
     }
   };
 
@@ -796,6 +904,56 @@ export default function Profile() {
                   'No changes'
                 )}
               </button>
+            </div>
+          </motion.div>
+
+          {/* ── Danger Zone ─────────────────────────────────────────────────── */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="card bg-red-950/20 border border-red-500/25 rounded-2xl"
+          >
+            <div className="card-body p-5 sm:p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <ExclamationTriangleIcon className="w-5 h-5 text-red-400/80 shrink-0" />
+                <h2 className="text-base font-black text-red-400/80">Danger Zone</h2>
+              </div>
+              <p className="text-white/30 text-xs leading-relaxed">
+                These actions permanently delete your data and cannot be undone. You will be asked to confirm twice before anything is deleted.
+              </p>
+              <div className="space-y-3">
+                {/* Delete Salat logs */}
+                <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-brand-surface border border-brand-border">
+                  <div className="min-w-0">
+                    <p className="text-white/70 text-sm font-semibold leading-tight">Delete Salat History</p>
+                    <p className="text-white/30 text-xs mt-0.5 leading-snug">All prayer logs will be removed. Tracking restarts from today.</p>
+                  </div>
+                  <button
+                    onClick={() => void deleteSalatLogs()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/60 transition-all shrink-0"
+                  >
+                    <TrashIcon className="w-3.5 h-3.5" /> Delete
+                  </button>
+                </div>
+
+                {/* Delete Zikr data */}
+                <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-brand-surface border border-brand-border">
+                  <div className="min-w-0">
+                    <p className="text-white/70 text-sm font-semibold leading-tight">Delete Zikr Data</p>
+                    <p className="text-white/30 text-xs mt-0.5 leading-snug">All counts, streaks, and history deleted. Your daily goal is kept.</p>
+                  </div>
+                  <button
+                    onClick={() => void deleteZikrData()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/60 transition-all shrink-0"
+                  >
+                    <TrashIcon className="w-3.5 h-3.5" /> Delete
+                  </button>
+                </div>
+
+                {/* Fasting & Quran — coming soon */}
+                <p className="text-white/15 text-[10px] text-center">Fasting and Quran data controls coming soon</p>
+              </div>
             </div>
           </motion.div>
 

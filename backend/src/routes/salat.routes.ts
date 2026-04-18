@@ -21,4 +21,7 @@ router.get('/history', requireAuth, validate(salatHistorySchema), salatControlle
 // GET /api/salat/analytics
 router.get('/analytics', requireAuth, validate(salatHistorySchema), salatController.getAnalytics);
 
+// DELETE /api/salat/all — delete all salat logs for the authenticated user
+router.delete('/all', requireAuth, salatController.deleteAllLogs);
+
 export default router;

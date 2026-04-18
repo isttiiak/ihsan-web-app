@@ -115,3 +115,16 @@ export async function addZikrType(userId: string, name: string): Promise<unknown
   }
   return user.zikrTypes;
 }
+
+export async function deleteAllUserZikrData(userId: string): Promise<void> {
+  // Delete all daily records
+  await ZikrDaily.deleteMany({ userId });
+  // Reset lifetime totals on User document
+  await User.updateOne({ uid: userId }, { $set: { totalCount: 0, zikrTotals: {} } });
+  // Reset streak (keep the doc, just zero it out)
+  const ZikrStreak = (await import('../models/ZikrStreak.js')).default;
+  await ZikrStreak.updateOne(
+    { userId },
+    { $set: { currentStreak: 0, longestStreak: 0, lastCompletedDate: null, isPaused: false } }
+  );
+}

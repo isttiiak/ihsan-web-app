@@ -272,3 +272,8 @@ export async function getSalatAnalytics(userId: string, days: number): Promise<S
     calendarData,
   };
 }
+
+export async function deleteAllUserSalatLogs(userId: string): Promise<{ deletedCount: number }> {
+  const result = await SalatLog.deleteMany({ userId });
+  return { deletedCount: result.deletedCount ?? 0 };
+}
