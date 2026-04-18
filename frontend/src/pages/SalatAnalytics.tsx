@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { ArrowLeftIcon, ChartBarIcon, FireIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, FireIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useSalatAnalytics } from '../hooks/useSalatLog.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
 
@@ -39,7 +38,6 @@ function calendarCellStyle(completed: number, hasData: boolean) {
 }
 
 export default function SalatAnalytics() {
-  const navigate = useNavigate();
   const [days, setDays] = useState(30);
   const { data, isLoading, isError } = useSalatAnalytics(days);
 
@@ -79,14 +77,7 @@ export default function SalatAnalytics() {
         <div className="max-w-4xl mx-auto space-y-8">
 
           {/* Nav */}
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <motion.button
-              onClick={() => navigate(-1)}
-              whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
-              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand-surface/90 backdrop-blur-md border border-brand-border text-white text-sm font-semibold"
-            >
-              <ArrowLeftIcon className="w-4 h-4" /> Back
-            </motion.button>
+          <div className="flex items-center justify-end flex-wrap gap-3">
             <div className="tabs tabs-boxed bg-brand-deep border border-brand-border">
               {PERIOD_OPTIONS.map((p) => (
                 <button

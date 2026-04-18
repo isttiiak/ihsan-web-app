@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { ArrowLeftIcon, MapPinIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import {
   calcPrayerTimes,
   formatTime,
@@ -117,27 +116,27 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
       time: times.asr,
     },
 
-    // ── Forbidden: After Asr ──────────────────────────────────────────────
-    // Start 1 min AFTER Asr so the Asr prayer row sits above this window in the list.
-    // Ends at SUNSET — the hadith says "until the sun sets" (Bukhārī 586, Muslim 827),
-    // not "until Maghrib". Maghrib begins a few minutes after sunset.
+    // ── Forbidden: ~17 min before sunset ─────────────────────────────────
+    // The "forbidden time at sunset" is the ~17 minutes when the sun visibly
+    // descends and turns yellow — NOT the full period from Asr to sunset.
+    // Between Asr and this window, nafl prayer is permitted.
     {
       kind: 'forbidden',
-      label: 'Nafl Restricted — After ʿAsr until Sunset',
-      note: 'ʿAsr fard prayer is performed at ʿAsr time. After completing it, voluntary (nafl) prayers are not permitted until the sun fully sets. Making up missed obligatory (qaḍā) prayers is permitted. ⚠️ For safety: stop nafl at least 17 minutes before the calculated sunset — this is when the sun begins to turn yellow and descend, marking the start of the disliked window.',
-      hadith: '"There is no prayer after ʿAsr until the sun sets." — Ṣaḥīḥ al-Bukhārī 586; Ṣaḥīḥ Muslim 827',
-      hadithUrl: 'https://sunnah.com/bukhari:586',
-      start: new Date(times.asr.getTime() + MIN),
+      label: 'Forbidden — At Sunset',
+      note: 'Prayer is forbidden during the ~17 minutes the sun visibly sets (turns yellow and descends to the horizon). This is the "time of sunset" mentioned in the hadith. Nafl is allowed between Asr and this window. Obligatory (qaḍā) make-up prayers are permitted. Maghrib begins shortly after sunset.',
+      hadith: '"At three times the Prophet ﷺ forbade us to pray: … when it is about to set." — Ṣaḥīḥ Muslim 831; Ṣaḥīḥ al-Bukhārī 586',
+      hadithUrl: 'https://sunnah.com/muslim:831',
+      start: new Date(times.sunset.getTime() - 17 * MIN),
       end: times.sunset,
     },
 
-    // ── Sunset — forbidden window ends here ───────────────────────────────
+    // ── Sunset ────────────────────────────────────────────────────────────
     {
       kind: 'event',
-      label: 'Sunset — Nafl Restriction Ends',
+      label: 'Sunset — Forbidden Window Ends',
       icon: '🌇',
       time: times.sunset,
-      note: 'Sun sets. The post-Asr nafl restriction ends. Maghrib begins shortly after.',
+      note: 'Sun sets. The sunset forbidden window ends. Maghrib begins shortly after.',
     },
 
     // ── Maghrib ───────────────────────────────────────────────────────────
@@ -195,7 +194,6 @@ interface StoredLocation {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function PrayerTimes() {
-  const navigate = useNavigate();
   const [now, setNow] = useState(new Date());
   const [location, setLocation] = useState<StoredLocation | null>(() => {
     const s = localStorage.getItem('ihsan_location');
@@ -314,16 +312,8 @@ export default function PrayerTimes() {
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto space-y-5">
 
-          {/* Top row: Back + Location */}
-          <div className="flex items-center justify-between gap-3">
-            <motion.button
-              onClick={() => navigate(-1)}
-              whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
-              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand-surface/90 backdrop-blur-md border border-brand-border text-white text-sm font-semibold shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
-            >
-              <ArrowLeftIcon className="w-4 h-4" /> Back
-            </motion.button>
-
+          {/* Top row: Location */}
+          <div className="flex items-center justify-end gap-3">
             <div className="flex items-center gap-2 min-w-0">
               {location && (
                 <div className="flex items-center gap-1.5 text-white/50 text-xs min-w-0">

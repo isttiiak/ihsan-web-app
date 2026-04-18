@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { ArrowLeftIcon, ChartBarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import {
   useSalatLog,
   useUpdatePrayer,
@@ -22,11 +22,14 @@ import {
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-function todayStr() { return new Date().toISOString().substring(0, 10); }
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 function offsetDate(base: string, delta: number): string {
   const d = new Date(base + 'T12:00:00');
   d.setDate(d.getDate() + delta);
-  return d.toISOString().substring(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 function isFuturePrayer(prayerId: string, todayTimes: Record<string, Date> | null | undefined): boolean {
   if (!todayTimes) return false;
@@ -69,9 +72,23 @@ const STATUS_STYLE: Record<PrayerStatus, { bg: string; border: string; text: str
 
 // ─── component ───────────────────────────────────────────────────────────────
 
+function getDefaultDate(): string {
+  const today = todayStr();
+  try {
+    const stored = localStorage.getItem('ihsan_location');
+    if (!stored) return today;
+    const loc = JSON.parse(stored) as { latitude: number; longitude: number };
+    const times = calcPrayerTimes(loc.latitude, loc.longitude, new Date());
+    const now = new Date();
+    // If it's between midnight and Fajr, the user is still in the "previous" Islamic evening
+    if (now < times.fajr && now.getHours() < 12) return offsetDate(today, -1);
+  } catch { /* ignore */ }
+  return today;
+}
+
 export default function SalatTracker() {
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState(todayStr());
+  const [selectedDate, setSelectedDate] = useState(getDefaultDate);
   const [expandedPrayer, setExpandedPrayer] = useState<PrayerId | null>(null);
 
   const isToday = selectedDate === todayStr();
@@ -197,14 +214,7 @@ export default function SalatTracker() {
         <div className="max-w-xl mx-auto space-y-5">
 
           {/* Nav row */}
-          <div className="flex items-center justify-between">
-            <motion.button
-              onClick={() => navigate(-1)}
-              whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
-              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand-surface/90 backdrop-blur-md border border-brand-border text-white text-sm font-semibold"
-            >
-              <ArrowLeftIcon className="w-4 h-4" /> Back
-            </motion.button>
+          <div className="flex items-center justify-end">
             <motion.button
               onClick={() => navigate('/salat/analytics')}
               whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}

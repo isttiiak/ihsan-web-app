@@ -1,45 +1,94 @@
 import React, { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup, updateProfile, AuthError } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase.js';
 import { useNavigate } from 'react-router-dom';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, EyeSlashIcon, ExclamationCircleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
+
+function mapFirebaseError(code: string): string {
+  switch (code) {
+    case 'auth/email-already-in-use':
+      return 'An account with this email already exists. Try signing in instead.';
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.';
+    case 'auth/weak-password':
+      return 'Password must be at least 6 characters.';
+    case 'auth/too-many-requests':
+      return 'Too many attempts. Please wait a moment and try again.';
+    case 'auth/network-request-failed':
+      return 'Network error. Check your connection and try again.';
+    default:
+      return 'Account creation failed. Please try again.';
+  }
+}
+
+function getPasswordStrength(pw: string): { score: number; label: string; color: string } {
+  if (!pw) return { score: 0, label: '', color: '' };
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  if (score <= 1) return { score, label: 'Weak', color: 'bg-red-500' };
+  if (score === 2) return { score, label: 'Fair', color: 'bg-brand-gold' };
+  if (score === 3) return { score, label: 'Good', color: 'bg-teal-400' };
+  return { score, label: 'Strong', color: 'bg-brand-emerald' };
+}
 
 export default function AuthSignUp() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [confirmTouched, setConfirmTouched] = useState(false);
+
+  const strength = getPasswordStrength(password);
+  const confirmMismatch = confirmTouched && confirm !== password;
 
   const google = async () => {
+    setError('');
     setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      console.error(err);
-      alert((err as Error).message);
+      const code = (err as AuthError).code ?? '';
+      if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+        setError(mapFirebaseError(code));
+      }
       setLoading(false);
     }
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
+    setError('');
+
     const form = e.currentTarget;
     const firstName = (form.elements.namedItem('firstName') as HTMLInputElement).value.trim();
     const lastName = (form.elements.namedItem('lastName') as HTMLInputElement).value.trim();
-    const email = (form.elements.namedItem('email') as HTMLInputElement).value;
-    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value.trim();
+
+    if (password !== confirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await createUserWithEmailAndPassword(auth, email, password);
       const fullName = [firstName, lastName].filter(Boolean).join(' ');
       if (fullName) {
-        try {
-          await updateProfile(res.user, { displayName: fullName });
-        } catch {}
+        try { await updateProfile(res.user, { displayName: fullName }); } catch { /* non-fatal */ }
       }
     } catch (err) {
-      console.error(err);
-      alert((err as Error).message);
+      setError(mapFirebaseError((err as AuthError).code ?? ''));
       setLoading(false);
     }
   };
@@ -56,11 +105,6 @@ export default function AuthSignUp() {
         animate={{ x: [0, -100, 0], y: [0, -50, 0], scale: [1, 1.2, 1] }}
         transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <motion.div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-gradient-to-r from-brand-gold/15 to-amber-500/15 blur-3xl"
-        animate={{ scale: [1, 1.3, 1], rotate: [0, 180, 360] }}
-        transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
-      />
 
       <div className="relative min-h-screen flex items-center justify-center p-4 sm:p-6">
         <motion.div
@@ -69,25 +113,18 @@ export default function AuthSignUp() {
           transition={{ duration: 0.6 }}
           className="w-full max-w-md"
         >
-          <div className="relative backdrop-blur-xl bg-brand-surface/80 rounded-3xl shadow-2xl border border-brand-border/60 overflow-hidden">
-            <div className="relative p-8 space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="text-center space-y-2"
-              >
+          <div className="backdrop-blur-xl bg-brand-surface/80 rounded-3xl shadow-2xl border border-brand-border/60 overflow-hidden">
+            <div className="p-8 space-y-6">
+
+              <div className="text-center space-y-2">
                 <h2 className="text-4xl sm:text-5xl font-bold text-brand-emerald">Join Ihsan</h2>
                 <p className="text-white/60 text-sm sm:text-base">Start your spiritual journey today</p>
-              </motion.div>
+              </div>
 
               <motion.button
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-3 px-4 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 border border-white/20"
+                className="w-full py-3 px-4 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 border border-white/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={google}
                 disabled={loading}
               >
@@ -115,15 +152,16 @@ export default function AuthSignUp() {
                 </div>
               </div>
 
-              <motion.form
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-                onSubmit={onSubmit}
-                className="space-y-4"
-              >
+              <form onSubmit={onSubmit} className="space-y-4">
+                {error && (
+                  <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                    <ExclamationCircleIcon className="w-5 h-5 shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label className="text-white/70 text-sm font-medium">First Name</label>
                     <input
                       name="firstName"
@@ -132,7 +170,7 @@ export default function AuthSignUp() {
                       className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-transparent transition-all"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label className="text-white/70 text-sm font-medium">Last Name</label>
                     <input
                       name="lastName"
@@ -143,24 +181,27 @@ export default function AuthSignUp() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-white/70 text-sm font-medium">Email</label>
                   <input
                     name="email"
                     type="email"
                     placeholder="your.email@example.com"
                     className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-transparent transition-all"
+                    onChange={() => error && setError('')}
                     required
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-white/70 text-sm font-medium">Password</label>
                   <div className="relative">
                     <input
                       name="password"
                       type={showPassword ? 'text' : 'password'}
                       placeholder="Create a strong password"
+                      value={password}
+                      onChange={(e) => { setPassword(e.target.value); error && setError(''); }}
                       className="w-full px-4 py-3 pr-12 bg-white/5 border border-brand-border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-transparent transition-all"
                       required
                     />
@@ -173,34 +214,81 @@ export default function AuthSignUp() {
                       {showPassword ? <EyeSlashIcon className="w-5 h-5 text-white/50" /> : <EyeIcon className="w-5 h-5 text-white/50" />}
                     </button>
                   </div>
+                  {password && (
+                    <div className="space-y-1">
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div
+                            key={i}
+                            className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= strength.score ? strength.color : 'bg-white/10'}`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-xs text-white/40">{strength.label} password</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-white/70 text-sm font-medium">Confirm Password</label>
+                  <div className="relative">
+                    <input
+                      name="confirmPassword"
+                      type={showConfirm ? 'text' : 'password'}
+                      placeholder="Repeat your password"
+                      value={confirm}
+                      onChange={(e) => { setConfirm(e.target.value); error && setError(''); }}
+                      onBlur={() => setConfirmTouched(true)}
+                      className={`w-full px-4 py-3 pr-12 bg-white/5 border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                        confirmMismatch
+                          ? 'border-red-500/60 focus:ring-red-500/40'
+                          : confirmTouched && confirm && confirm === password
+                          ? 'border-brand-emerald/60 focus:ring-brand-emerald/50'
+                          : 'border-brand-border focus:ring-brand-emerald/50'
+                      }`}
+                      required
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      {confirmTouched && confirm && (
+                        confirm === password
+                          ? <CheckCircleIcon className="w-4 h-4 text-brand-emerald" />
+                          : <ExclamationCircleIcon className="w-4 h-4 text-red-400" />
+                      )}
+                      <button
+                        type="button"
+                        className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                        onClick={() => setShowConfirm(!showConfirm)}
+                        tabIndex={-1}
+                      >
+                        {showConfirm ? <EyeSlashIcon className="w-5 h-5 text-white/50" /> : <EyeIcon className="w-5 h-5 text-white/50" />}
+                      </button>
+                    </div>
+                  </div>
+                  {confirmMismatch && (
+                    <p className="text-xs text-red-400">Passwords do not match.</p>
+                  )}
                 </div>
 
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full py-3 px-4 bg-brand-emerald hover:bg-brand-emerald-dim text-white rounded-xl font-semibold shadow-lg transition-all duration-300"
+                  className="w-full py-3 px-4 bg-brand-emerald hover:bg-brand-emerald-dim text-white rounded-xl font-semibold shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || confirmMismatch}
                 >
                   {loading ? <span className="loading loading-spinner loading-md" /> : 'Create Account'}
                 </motion.button>
-              </motion.form>
+              </form>
 
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7, duration: 0.5 }}
-                className="text-center text-sm"
-              >
+              <div className="text-center text-sm">
                 <span className="text-white/50">Already have an account? </span>
-                <a
+                <button
                   className="text-brand-emerald font-semibold hover:text-brand-emerald-dim transition-colors cursor-pointer"
-                  href="/login"
-                  onClick={(e) => { e.preventDefault(); navigate('/login'); }}
+                  onClick={() => navigate('/login')}
                 >
                   Log in
-                </a>
-              </motion.div>
+                </button>
+              </div>
             </div>
           </div>
         </motion.div>

@@ -1,28 +1,52 @@
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, AuthError } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase.js';
 import { useNavigate } from 'react-router-dom';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, EyeSlashIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
+
+function mapFirebaseError(code: string): string {
+  switch (code) {
+    case 'auth/user-not-found':
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+      return 'Invalid email or password. Please try again.';
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.';
+    case 'auth/user-disabled':
+      return 'This account has been disabled. Contact support.';
+    case 'auth/too-many-requests':
+      return 'Too many sign-in attempts. Please wait a moment and try again.';
+    case 'auth/network-request-failed':
+      return 'Network error. Check your connection and try again.';
+    default:
+      return 'Sign in failed. Please try again.';
+  }
+}
 
 export default function AuthSignIn() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const google = async () => {
+    setError('');
     setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      console.error(err);
-      alert((err as Error).message);
+      const code = (err as AuthError).code ?? '';
+      if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+        setError(mapFirebaseError(code));
+      }
       setLoading(false);
     }
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
     const form = e.currentTarget;
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
@@ -30,8 +54,7 @@ export default function AuthSignIn() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err) {
-      console.error(err);
-      alert((err as Error).message);
+      setError(mapFirebaseError((err as AuthError).code ?? ''));
       setLoading(false);
     }
   };
@@ -80,7 +103,7 @@ export default function AuthSignIn() {
                 variants={itemVariants}
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full relative group bg-white hover:bg-gray-50 text-gray-700 font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-3"
+                className="w-full relative group bg-white hover:bg-gray-50 text-gray-700 font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={google}
                 disabled={loading}
               >
@@ -109,12 +132,20 @@ export default function AuthSignIn() {
               </motion.div>
 
               <motion.form variants={itemVariants} onSubmit={onSubmit} className="space-y-5">
+                {error && (
+                  <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                    <ExclamationCircleIcon className="w-5 h-5 shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/70">Email</label>
                   <input
                     type="email"
                     name="email"
                     required
+                    onChange={() => error && setError('')}
                     className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm border border-brand-border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-transparent transition-all duration-300"
                     placeholder="you@example.com"
                   />
@@ -127,6 +158,7 @@ export default function AuthSignIn() {
                       type={showPassword ? 'text' : 'password'}
                       name="password"
                       required
+                      onChange={() => error && setError('')}
                       className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm border border-brand-border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-transparent transition-all duration-300 pr-12"
                       placeholder="••••••••"
                     />
@@ -147,7 +179,7 @@ export default function AuthSignIn() {
                   disabled={loading}
                   className="w-full bg-brand-emerald hover:bg-brand-emerald-dim text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Signing in...' : 'Sign In'}
+                  {loading ? <span className="loading loading-spinner loading-sm" /> : 'Sign In'}
                 </motion.button>
               </motion.form>
 

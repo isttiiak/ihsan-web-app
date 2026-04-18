@@ -11,13 +11,17 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally — clear auth and redirect to login
+// Handle 401 globally — only redirect if the user HAD a token (session expired)
+// Guest users (no token) make unauthenticated requests that return 401 — don't redirect them
 api.interceptors.response.use(
   (res) => res,
   (err: unknown) => {
     if (axios.isAxiosError(err) && err.response?.status === 401) {
+      const hadToken = !!localStorage.getItem('ihsan_idToken');
       localStorage.removeItem('ihsan_idToken');
-      window.location.href = '/login';
+      if (hadToken) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }

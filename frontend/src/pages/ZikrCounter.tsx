@@ -9,7 +9,7 @@ import { useAuthStore } from '../store/useAuthStore.js';
 import { useZikrTypes, useAddZikrType } from '../hooks/useZikrTypes.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { PlusIcon, MinusIcon, ArrowPathIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MinusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
 // Meanings for the 4 default dhikr
 const DEFAULT_MEANINGS: Record<string, { arabic: string; transliteration: string; meaning: string }> = {
@@ -180,54 +180,6 @@ export default function ZikrCounter() {
   return (
     <AnimatedBackground variant="ocean">
       <Toaster />
-
-      {/* ── Compact top bar ── */}
-      <div className="bg-black/25 backdrop-blur-md border-b border-white/10 sticky top-0 z-30">
-        <div className="max-w-2xl mx-auto px-3 py-2.5 flex items-center gap-2">
-          {/* Left: back + title */}
-          <button
-            onClick={() => {
-              const hasPending = Object.values(pending ?? {}).reduce((a, b) => a + b, 0) > 0;
-              if (!user && hasPending) { setShowGuestDialog(true); return; }
-              navigate('/');
-            }}
-            className="btn btn-ghost btn-xs text-white/70 hover:text-white hover:bg-white/10 gap-1 flex-shrink-0"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="hidden sm:inline">Back</span>
-          </button>
-          <div className="flex items-center gap-1.5 text-white font-bold text-sm flex-shrink-0">
-            <span>📿</span>
-            <span className="hidden sm:inline">Zikr Counter</span>
-          </div>
-
-          {/* Center: streak + goal */}
-          <div className="flex-1 flex items-center justify-center gap-2">
-            {streakCount !== null && (
-              <div className="tooltip" data-tip={`${streakCount} day streak`}>
-                <div className="px-2 py-0.5 rounded-full bg-brand-gold/20 border border-brand-gold/40 text-white text-xs font-bold flex items-center gap-1">
-                  🔥 <span>{streakCount}</span>
-                </div>
-              </div>
-            )}
-            {goalProgress !== null && (
-              <div className="tooltip" data-tip={goalMet ? 'Daily goal achieved! 🏆' : `${effectiveTotal} / ${dailyGoal ?? '?'} today`}>
-                <div className={`px-2 py-0.5 rounded-full border text-white text-xs font-bold flex items-center gap-1 ${goalMet ? 'bg-brand-emerald/30 border-brand-emerald/50' : 'bg-white/10 border-white/20'}`}>
-                  {goalMet ? '✅' : '🎯'} <span>{goalProgress}%</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right: analytics */}
-          <button onClick={() => navigate('/zikr/analytics')} className="btn btn-ghost btn-xs text-white/70 hover:text-white hover:bg-white/10 gap-1 flex-shrink-0">
-            <ChartBarIcon className="w-4 h-4" />
-            <span className="hidden sm:inline">Analytics</span>
-          </button>
-        </div>
-      </div>
 
       <div className="max-w-2xl mx-auto px-4 pb-10 pt-4 space-y-5">
 

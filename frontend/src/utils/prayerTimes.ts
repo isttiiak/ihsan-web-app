@@ -74,9 +74,12 @@ export function getForbiddenWindows(times: PrayerTimesResult): ForbiddenWindow[]
       end: times.dhuhr,
     },
     {
-      label: 'After ʿAsr (nafl restricted)',
-      note: 'ʿAsr fard prayer is performed at ʿAsr time. After completing it, voluntary (nafl) prayers are not permitted until the sun fully sets. The hadith says "until the sun sets" (Bukhārī 586). For safety, stop nafl prayers at least 17 minutes before the calculated sunset to avoid the transition window when the sun begins to turn yellow and set.',
-      start: new Date(times.asr.getTime() + MIN),   // 1 min after Asr so the Asr row is not inside the window
+      // The forbidden window is the ~17 minutes when the sun visibly descends and turns yellow.
+      // This is the "time of sunset" described in the hadith — not the full period from Asr.
+      // Reference: "At three times … when it is about to set." — Ṣaḥīḥ Muslim 831
+      label: 'Forbidden — At Sunset',
+      note: 'Prayer is forbidden during the ~17 minutes the sun is visibly setting (turning yellow and descending). This is the actual "time of sunset" mentioned in the hadith. You may perform nafl between Asr and this window. Maghrib begins shortly after sunset.',
+      start: new Date(times.sunset.getTime() - 17 * MIN),
       end: times.sunset,
     },
   ];
@@ -84,6 +87,57 @@ export function getForbiddenWindows(times: PrayerTimesResult): ForbiddenWindow[]
 
 export function formatTime(date: Date): string {
   return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+export interface NaflWindow {
+  name: string;
+  icon: string;
+  start: Date;
+  end: Date;
+}
+
+/**
+ * Returns the currently active nafl (voluntary) prayer window, if any.
+ * Windows (non-overlapping, in daily order):
+ *  1. Tahajjud — last third of night until 30 min before Fajr
+ *  2. Ishraq   — 20–45 min after sunrise
+ *  3. Dhuha    — 45 min after sunrise until 15 min before Dhuhr
+ *  4. Awabeen  — after Maghrib until Isha
+ */
+export function getCurrentNaflWindow(times: PrayerTimesResult, now: Date = new Date()): NaflWindow | null {
+  const MIN = 60_000;
+  const { fajr, sunrise, dhuhr, maghrib, isha } = times;
+  const nextDayFajr = new Date(fajr.getTime() + 86_400_000);
+
+  // Tahajjud: last third of night → 30 min before Fajr
+  const nightDuration = nextDayFajr.getTime() - isha.getTime();
+  const tahajjudStart = new Date(isha.getTime() + (2 / 3) * nightDuration);
+  const tahajjudEnd   = new Date(fajr.getTime() - 30 * MIN);
+  if (now >= tahajjudStart && now < tahajjudEnd) {
+    return { name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: tahajjudEnd };
+  }
+
+  // Ishraq: 20–45 min after sunrise
+  const ishraakStart = new Date(sunrise.getTime() + 20 * MIN);
+  const ishraakEnd   = new Date(sunrise.getTime() + 45 * MIN);
+  if (now >= ishraakStart && now < ishraakEnd) {
+    return { name: 'Ishraq', icon: '🌅', start: ishraakStart, end: ishraakEnd };
+  }
+
+  // Dhuha: 45 min after sunrise → 15 min before Dhuhr
+  const dhuhaStart = new Date(sunrise.getTime() + 45 * MIN);
+  const dhuhaEnd   = new Date(dhuhr.getTime() - 15 * MIN);
+  if (now >= dhuhaStart && now < dhuhaEnd) {
+    return { name: 'Dhuha', icon: '☀️', start: dhuhaStart, end: dhuhaEnd };
+  }
+
+  // Awabeen: 5 min after Maghrib → Isha
+  const awabeenStart = new Date(maghrib.getTime() + 5 * MIN);
+  if (now >= awabeenStart && now < isha) {
+    return { name: 'Awabeen', icon: '🌆', start: awabeenStart, end: isha };
+  }
+
+  return null;
 }
 
 /** Returns the current prayer period and the next upcoming prayer */

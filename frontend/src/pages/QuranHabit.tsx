@@ -1,24 +1,12 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 export default function QuranHabit() {
-  const navigate = useNavigate();
-
   return (
     <AnimatedBackground variant="dark">
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-xl mx-auto space-y-8">
-
-          <motion.button
-            onClick={() => navigate(-1)}
-            whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
-            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand-surface/90 backdrop-blur-md border border-brand-border text-white text-sm font-semibold"
-          >
-            <ArrowLeftIcon className="w-4 h-4" /> Back
-          </motion.button>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}

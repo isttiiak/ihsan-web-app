@@ -15,7 +15,6 @@ import {
   EyeDropperIcon,
   EyeIcon,
 } from '@heroicons/react/24/outline';
-import BackButton from '../components/BackButton.js';
 
 interface AiSuggestionsResponse {
   suggestions?: string[];
@@ -80,7 +79,6 @@ export default function Settings() {
     <AnimatedBackground variant="dark">
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex justify-start"><BackButton /></div>
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-2">
               <Cog6ToothIcon className="w-8 h-8 sm:w-10 sm:h-10 text-brand-emerald" />

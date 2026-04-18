@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { ChartBarIcon, ArrowLeftIcon, FireIcon } from '@heroicons/react/24/outline';
-import { useNavigate } from 'react-router-dom';
+import { ChartBarIcon, FireIcon } from '@heroicons/react/24/outline';
 import StreakCard from '../components/analytics/StreakCard.js';
 import GoalCard from '../components/analytics/GoalCard.js';
 import TrendChart from '../components/analytics/TrendChart.js';
@@ -14,7 +13,6 @@ import {
 } from '../hooks/useAnalytics.js';
 
 export default function ZikrAnalytics() {
-  const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState(7);
   const [activeTab, setActiveTab] = useState<'today' | 'all'>('today');
   const [showGoalModal, setShowGoalModal] = useState(false);
@@ -95,17 +93,6 @@ export default function ZikrAnalytics() {
     <AnimatedBackground variant="dark">
       <div className="p-4 sm:p-6 lg:p-8 relative">
         <div className="max-w-7xl mx-auto space-y-8 relative z-10">
-
-          <div className="flex justify-start">
-            <motion.button
-              onClick={() => navigate(-1)}
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.94 }}
-              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand-surface/90 backdrop-blur-md border border-brand-border text-white text-sm font-semibold shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
-            >
-              <ArrowLeftIcon className="w-4 h-4" /> Back
-            </motion.button>
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <StreakCard streak={streak} onPause={handlePauseStreak} onResume={handleResumeStreak} isLoading={isUpdating} />

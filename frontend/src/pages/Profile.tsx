@@ -12,8 +12,92 @@ import {
   CalendarDaysIcon,
   MapPinIcon,
   BriefcaseIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
-import BackButton from '../components/BackButton.js';
+import { useAnalytics } from '../hooks/useAnalytics.js';
+
+// ── Country → Cities data ─────────────────────────────────────────────────────
+const COUNTRIES_CITIES: Record<string, string[]> = {
+  'Afghanistan': ['Kabul', 'Kandahar', 'Herat', 'Mazar-i-Sharif', 'Kunduz'],
+  'Algeria': ['Algiers', 'Oran', 'Constantine', 'Annaba', 'Blida', 'Batna'],
+  'Australia': ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Gold Coast', 'Canberra'],
+  'Azerbaijan': ['Baku', 'Ganja', 'Sumqayit'],
+  'Bangladesh': ['Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Barisal', 'Mymensingh', 'Comilla', 'Rangpur', 'Narayanganj'],
+  'Belgium': ['Brussels', 'Antwerp', 'Ghent', 'Liège', 'Bruges'],
+  'Bosnia and Herzegovina': ['Sarajevo', 'Banja Luka', 'Tuzla', 'Zenica'],
+  'Brazil': ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Fortaleza', 'Manaus'],
+  'Brunei': ['Bandar Seri Begawan', 'Kuala Belait', 'Seria'],
+  'Canada': ['Toronto', 'Montreal', 'Vancouver', 'Calgary', 'Edmonton', 'Ottawa', 'Winnipeg', 'Mississauga'],
+  'China': ['Beijing', 'Shanghai', 'Guangzhou', 'Shenzhen', 'Chengdu', "Xi'an", 'Urumqi', 'Kunming'],
+  'Egypt': ['Cairo', 'Alexandria', 'Giza', 'Port Said', 'Luxor', 'Aswan', 'Sharm el-Sheikh'],
+  'France': ['Paris', 'Marseille', 'Lyon', 'Toulouse', 'Nice', 'Strasbourg', 'Bordeaux', 'Nantes'],
+  'Germany': ['Berlin', 'Hamburg', 'Munich', 'Cologne', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 'Bremen'],
+  'Ghana': ['Accra', 'Kumasi', 'Tamale', 'Cape Coast', 'Sekondi-Takoradi'],
+  'India': ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Ahmedabad', 'Pune', 'Surat', 'Lucknow', 'Jaipur', 'Srinagar'],
+  'Indonesia': ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Makassar', 'Palembang', 'Yogyakarta'],
+  'Iran': ['Tehran', 'Mashhad', 'Isfahan', 'Karaj', 'Tabriz', 'Shiraz', 'Ahvaz'],
+  'Iraq': ['Baghdad', 'Basra', 'Mosul', 'Erbil', 'Najaf', 'Karbala', 'Sulaymaniyah'],
+  'Jordan': ['Amman', 'Zarqa', 'Irbid', 'Aqaba', 'Madaba'],
+  'Kazakhstan': ['Almaty', 'Astana', 'Shymkent', 'Karaganda'],
+  'Kenya': ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret'],
+  'Kuwait': ['Kuwait City', 'Hawalli', 'Salmiya', 'Farwaniya', 'Jahra'],
+  'Kyrgyzstan': ['Bishkek', 'Osh', 'Jalal-Abad'],
+  'Lebanon': ['Beirut', 'Tripoli', 'Sidon', 'Tyre', 'Baalbek'],
+  'Libya': ['Tripoli', 'Benghazi', 'Misrata', 'Bayda'],
+  'Malaysia': ['Kuala Lumpur', 'George Town', 'Johor Bahru', 'Ipoh', 'Shah Alam', 'Petaling Jaya', 'Kota Kinabalu'],
+  'Maldives': ['Malé', 'Addu City', 'Fuvahmulah'],
+  'Mali': ['Bamako', 'Sikasso', 'Mopti', 'Timbuktu'],
+  'Mauritania': ['Nouakchott', 'Nouadhibou', 'Rosso'],
+  'Morocco': ['Casablanca', 'Rabat', 'Fez', 'Marrakech', 'Agadir', 'Tangier', 'Meknes', 'Oujda'],
+  'Netherlands': ['Amsterdam', 'Rotterdam', 'The Hague', 'Utrecht', 'Eindhoven'],
+  'Niger': ['Niamey', 'Zinder', 'Maradi', 'Agadez'],
+  'Nigeria': ['Lagos', 'Kano', 'Ibadan', 'Abuja', 'Port Harcourt', 'Kaduna', 'Benin City', 'Maiduguri'],
+  'Oman': ['Muscat', 'Salalah', 'Sohar', 'Nizwa', 'Sur'],
+  'Pakistan': ['Karachi', 'Lahore', 'Faisalabad', 'Rawalpindi', 'Islamabad', 'Gujranwala', 'Peshawar', 'Multan', 'Hyderabad', 'Quetta', 'Sialkot'],
+  'Palestine': ['Gaza', 'Jerusalem', 'Ramallah', 'Hebron', 'Nablus', 'Jenin'],
+  'Philippines': ['Manila', 'Quezon City', 'Davao', 'Cebu', 'Zamboanga', 'Cotabato'],
+  'Qatar': ['Doha', 'Al Rayyan', 'Al Wakrah', 'Al Khor'],
+  'Russia': ['Moscow', 'Saint Petersburg', 'Kazan', 'Ufa', 'Novosibirsk', 'Grozny', 'Makhachkala'],
+  'Saudi Arabia': ["Riyadh", 'Jeddah', 'Mecca', 'Medina', 'Dammam', "Ta'if", 'Tabuk', 'Abha'],
+  'Senegal': ['Dakar', 'Touba', 'Thiès', 'Kaolack', 'Saint-Louis'],
+  'Sierra Leone': ['Freetown', 'Bo', 'Kenema'],
+  'Somalia': ['Mogadishu', 'Hargeisa', 'Bosaso', 'Kismayo', 'Berbera'],
+  'South Africa': ['Johannesburg', 'Cape Town', 'Durban', 'Pretoria', 'Port Elizabeth', 'Bloemfontein'],
+  'Spain': ['Madrid', 'Barcelona', 'Valencia', 'Seville', 'Bilbao', 'Málaga', 'Zaragoza'],
+  'Sudan': ['Khartoum', 'Omdurman', 'Port Sudan', 'Kassala', 'Obeid'],
+  'Syria': ['Damascus', 'Aleppo', 'Homs', 'Latakia', 'Hama'],
+  'Tajikistan': ['Dushanbe', 'Khujand', 'Kulob', 'Qurghonteppa'],
+  'Tanzania': ['Dar es Salaam', 'Zanzibar City', 'Mwanza', 'Arusha', 'Dodoma'],
+  'Tunisia': ['Tunis', 'Sfax', 'Sousse', 'Kairouan', 'Bizerte'],
+  'Turkey': ['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya', 'Adana', 'Konya', 'Gaziantep', 'Mersin', 'Diyarbakır'],
+  'Turkmenistan': ['Ashgabat', 'Turkmenabat', 'Dashoguz'],
+  'Uganda': ['Kampala', 'Gulu', 'Lira', 'Mbarara', 'Jinja'],
+  'United Arab Emirates': ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Al Ain', 'Ras al-Khaimah', 'Fujairah'],
+  'United Kingdom': ['London', 'Birmingham', 'Manchester', 'Leeds', 'Glasgow', 'Liverpool', 'Newcastle', 'Sheffield', 'Bradford', 'Leicester'],
+  'United States': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'Detroit', 'Dearborn', 'Jersey City', 'Paterson'],
+  'Uzbekistan': ['Tashkent', 'Samarkand', 'Namangan', 'Andijan', 'Bukhara', 'Fergana'],
+  'Yemen': ['Sanaa', 'Aden', 'Taiz', 'Hudaydah', 'Mukalla', 'Ibb'],
+};
+
+const SORTED_COUNTRIES = Object.keys(COUNTRIES_CITIES).sort();
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function calcFullAge(birthDate: string): { years: number; months: number } | null {
+  if (!birthDate) return null;
+  const birth = new Date(birthDate);
+  const now = new Date();
+  let years = now.getFullYear() - birth.getFullYear();
+  let months = now.getMonth() - birth.getMonth();
+  if (now.getDate() < birth.getDate()) months--;
+  if (months < 0) { years--; months += 12; }
+  if (years < 0) return null;
+  return { years, months };
+}
+
+function formatFullDate(iso: string): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+}
 
 interface ProfileData {
   displayName: string;
@@ -47,16 +131,10 @@ interface UserResponse {
   user?: DBUser;
 }
 
-function calcAge(birthDate: string): number | null {
-  if (!birthDate) return null;
-  const diff = Date.now() - new Date(birthDate).getTime();
-  return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
-}
-
 export default function Profile() {
   const { user, setUser } = useAuthStore();
+  const { data: analyticsData } = useAnalytics(1);
 
-  // Parse first/last name from Google display name as initial placeholder values
   const googleFirstName = useMemo(() => {
     const parts = (user?.displayName ?? '').trim().split(' ');
     return parts[0] ?? '';
@@ -87,6 +165,15 @@ export default function Profile() {
   const [saveError, setSaveError] = useState('');
   const saveSuccessTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Load prayer-times location for city/country pre-fill
+  const locationFromStorage = useMemo(() => {
+    try {
+      const s = localStorage.getItem('ihsan_location');
+      if (!s) return null;
+      return JSON.parse(s) as { latitude: number; longitude: number; name?: string };
+    } catch { return null; }
+  }, []);
+
   useEffect(() => {
     const idToken = localStorage.getItem('ihsan_idToken');
     if (!idToken) return;
@@ -97,6 +184,16 @@ export default function Profile() {
       .then((d: UserResponse) => {
         if (d?.user) {
           setDbUser(d.user);
+          // Pre-fill city/country from prayer-times location if DB has none
+          let city = d.user.city || '';
+          let country = d.user.country || '';
+          if (!city && !country && locationFromStorage?.name) {
+            const parts = locationFromStorage.name.split(', ');
+            if (parts.length >= 2) {
+              city = parts[0] ?? '';
+              country = parts[parts.length - 1] ?? '';
+            }
+          }
           const loaded: ProfileData = {
             displayName: d.user.displayName || user?.displayName || '',
             firstName: d.user.firstName || googleFirstName,
@@ -106,8 +203,8 @@ export default function Profile() {
             birthDate: d.user.birthDate ? d.user.birthDate.substring(0, 10) : '',
             occupation: d.user.occupation || '',
             bio: d.user.bio || '',
-            city: d.user.city || '',
-            country: d.user.country || '',
+            city,
+            country,
           };
           setProfile(loaded);
           setOriginalProfile(loaded);
@@ -118,7 +215,6 @@ export default function Profile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Dirty detection — save button is highlighted only when something changed
   const isDirty = useMemo(() => {
     if (!originalProfile) return false;
     return (Object.keys(profile) as Array<keyof ProfileData>).some(
@@ -167,10 +263,12 @@ export default function Profile() {
         }));
         setSaveSuccess(true);
         if (saveSuccessTimeout.current) clearTimeout(saveSuccessTimeout.current);
-        saveSuccessTimeout.current = setTimeout(() => setSaveSuccess(false), 3000);
+        saveSuccessTimeout.current = setTimeout(() => setSaveSuccess(false), 4000);
+      } else {
+        setSaveError('Save failed. Please try again.');
       }
     } catch {
-      setSaveError('Failed to save. Please try again.');
+      setSaveError('Failed to save. Please check your connection.');
     }
     setSaving(false);
   };
@@ -194,40 +292,22 @@ export default function Profile() {
     }
   };
 
-  const age = calcAge(profile.birthDate);
-  const memberSince = dbUser?.createdAt
-    ? new Date(dbUser.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    : null;
+  const ageInfo = calcFullAge(profile.birthDate);
   const totalZikr = (dbUser?.totalCount ?? 0).toLocaleString();
+  const longestStreak = analyticsData?.streak?.longestStreak ?? null;
+  const memberSince = dbUser?.createdAt ? formatFullDate(dbUser.createdAt) : null;
 
-  const field = (
-    key: keyof ProfileData,
-    label: string,
-    opts?: { placeholder?: string; type?: string; icon?: React.ReactNode }
-  ) => (
-    <div className="form-control">
-      <label className="label py-1">
-        <span className="label-text text-white/60 text-sm flex items-center gap-1">
-          {opts?.icon}{label}
-        </span>
-      </label>
-      <input
-        type={opts?.type ?? 'text'}
-        className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-        placeholder={opts?.placeholder ?? ''}
-        value={profile[key]}
-        onChange={(e) => setProfile((p) => ({ ...p, [key]: e.target.value }))}
-      />
-    </div>
-  );
+  // City list for selected country
+  const cityOptions = profile.country ? (COUNTRIES_CITIES[profile.country] ?? []) : [];
+
+  const handleCountryChange = (country: string) => {
+    setProfile((p) => ({ ...p, country, city: '' })); // clear city when country changes
+  };
 
   return (
     <AnimatedBackground variant="dark">
-      <div className="p-4 sm:p-6 lg:p-8 pb-12">
+      <div className="p-4 sm:p-6 lg:p-8 pb-16">
         <div className="max-w-2xl mx-auto space-y-5">
-
-          {/* Back */}
-          <div className="flex justify-start"><BackButton /></div>
 
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="text-center">
@@ -236,15 +316,12 @@ export default function Profile() {
           </motion.div>
 
           {/* Avatar + summary card */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
             className="card bg-brand-surface border border-brand-border rounded-2xl"
           >
             <div className="card-body p-5 sm:p-6">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-                {/* Avatar with upload */}
+                {/* Avatar */}
                 <div className="relative shrink-0">
                   <div className="avatar">
                     <div className="w-24 rounded-full ring ring-brand-emerald ring-offset-brand-deep ring-offset-2">
@@ -258,15 +335,12 @@ export default function Profile() {
                     </div>
                   </div>
                   <label className="absolute bottom-0 right-0 btn btn-circle btn-xs bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 shadow-lg cursor-pointer">
-                    {uploading
-                      ? <span className="loading loading-spinner loading-xs" />
-                      : <CameraIcon className="w-3.5 h-3.5" />
-                    }
+                    {uploading ? <span className="loading loading-spinner loading-xs" /> : <CameraIcon className="w-3.5 h-3.5" />}
                     <input type="file" accept="image/*" className="hidden" onChange={onFileChange} disabled={uploading} />
                   </label>
                 </div>
 
-                {/* Name + info */}
+                {/* Info */}
                 <div className="flex-1 min-w-0 text-center sm:text-left space-y-1">
                   <p className="text-xl font-black text-white leading-tight">
                     {profile.displayName || profile.firstName || user?.email?.split('@')[0] || 'Anonymous'}
@@ -279,8 +353,7 @@ export default function Profile() {
                   )}
                   {profile.occupation && (
                     <p className="flex items-center justify-center sm:justify-start gap-1 text-white/40 text-sm">
-                      <BriefcaseIcon className="w-3.5 h-3.5" />
-                      {profile.occupation}
+                      <BriefcaseIcon className="w-3.5 h-3.5" /> {profile.occupation}
                     </p>
                   )}
                   {profile.bio && (
@@ -289,31 +362,36 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Quick stats */}
-              <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-brand-border">
+              {/* Quick stats — 4 columns */}
+              <div className="grid grid-cols-4 gap-2 mt-5 pt-5 border-t border-brand-border">
                 <div className="text-center">
-                  <p className="text-brand-emerald font-black text-lg tabular-nums">{totalZikr}</p>
-                  <p className="text-white/30 text-xs uppercase tracking-wide">Total Zikr</p>
+                  <p className="text-brand-emerald font-black text-base tabular-nums">{totalZikr}</p>
+                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">Total Zikr</p>
                 </div>
                 <div className="text-center border-x border-brand-border">
-                  <p className="text-brand-gold font-black text-lg">
-                    {age !== null ? `${age}y` : '—'}
+                  <p className="text-brand-gold font-black text-base">
+                    {longestStreak !== null ? longestStreak : '—'}
                   </p>
-                  <p className="text-white/30 text-xs uppercase tracking-wide">Age</p>
+                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">Best Streak</p>
+                </div>
+                <div className="text-center border-r border-brand-border">
+                  <p className="text-white/70 font-black text-base leading-tight">
+                    {ageInfo ? `${ageInfo.years}y ${ageInfo.months}m` : '—'}
+                  </p>
+                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">Age</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-white/60 font-black text-sm leading-tight">{memberSince ?? '—'}</p>
-                  <p className="text-white/30 text-xs uppercase tracking-wide">Member</p>
+                  <p className="text-white/50 font-bold text-xs leading-tight">
+                    {memberSince ?? '—'}
+                  </p>
+                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">Member Since</p>
                 </div>
               </div>
             </div>
           </motion.div>
 
           {/* Account info (read-only) */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08 }}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
             className="card bg-brand-surface border border-brand-border rounded-2xl"
           >
             <div className="card-body p-5 sm:p-6">
@@ -330,22 +408,54 @@ export default function Profile() {
           </motion.div>
 
           {/* Edit form */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.11 }}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.11 }}
             className="card bg-brand-surface border border-brand-border rounded-2xl"
           >
             <div className="card-body p-5 sm:p-6 space-y-4">
               <p className="text-white/30 text-xs font-bold uppercase tracking-widest">Edit Details</p>
 
+              {/* Save success banner at top of form */}
+              <AnimatePresence>
+                {saveSuccess && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                    transition={{ type: 'spring', damping: 20 }}
+                    className="flex items-center gap-2 py-2.5 px-4 rounded-xl bg-brand-emerald/15 border border-brand-emerald/40"
+                  >
+                    <CheckCircleIcon className="w-4 h-4 text-brand-emerald shrink-0" />
+                    <span className="text-brand-emerald text-sm font-semibold">Profile saved successfully!</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Display name */}
-              {field('displayName', 'Display Name', { placeholder: 'How you appear in the app (used for greeting)' })}
+              <div className="form-control">
+                <label className="label py-1"><span className="label-text text-white/60 text-sm">Display Name</span></label>
+                <input
+                  type="text"
+                  className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                  placeholder="How you appear in the app"
+                  value={profile.displayName}
+                  onChange={(e) => setProfile((p) => ({ ...p, displayName: e.target.value }))}
+                />
+              </div>
 
               {/* First / Last name */}
               <div className="grid grid-cols-2 gap-3">
-                {field('firstName', 'First Name', { placeholder: googleFirstName || 'First' })}
-                {field('lastName', 'Last Name', { placeholder: googleLastName || 'Last' })}
+                <div className="form-control">
+                  <label className="label py-1"><span className="label-text text-white/60 text-sm">First Name</span></label>
+                  <input type="text" className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                    placeholder={googleFirstName || 'First'} value={profile.firstName}
+                    onChange={(e) => setProfile((p) => ({ ...p, firstName: e.target.value }))} />
+                </div>
+                <div className="form-control">
+                  <label className="label py-1"><span className="label-text text-white/60 text-sm">Last Name</span></label>
+                  <input type="text" className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                    placeholder={googleLastName || 'Last'} value={profile.lastName}
+                    onChange={(e) => setProfile((p) => ({ ...p, lastName: e.target.value }))} />
+                </div>
               </div>
 
               {/* Bio */}
@@ -364,14 +474,67 @@ export default function Profile() {
                 />
               </div>
 
-              {/* City / Country */}
+              {/* Country → City dropdowns */}
               <div className="grid grid-cols-2 gap-3">
-                {field('city', 'City', { placeholder: 'e.g. Dhaka', icon: <MapPinIcon className="w-3.5 h-3.5" /> })}
-                {field('country', 'Country', { placeholder: 'e.g. Bangladesh' })}
+                <div className="form-control">
+                  <label className="label py-1">
+                    <span className="label-text text-white/60 text-sm flex items-center gap-1">
+                      <MapPinIcon className="w-3.5 h-3.5" /> Country
+                    </span>
+                  </label>
+                  <select
+                    className="select select-sm select-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                    value={profile.country}
+                    onChange={(e) => handleCountryChange(e.target.value)}
+                  >
+                    <option value="">Select country</option>
+                    {SORTED_COUNTRIES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label py-1">
+                    <span className="label-text text-white/60 text-sm">City</span>
+                  </label>
+                  {cityOptions.length > 0 ? (
+                    <select
+                      className="select select-sm select-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                      value={profile.city}
+                      onChange={(e) => setProfile((p) => ({ ...p, city: e.target.value }))}
+                    >
+                      <option value="">Select city</option>
+                      {cityOptions.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                      placeholder={profile.country ? 'Enter city' : 'Select country first'}
+                      value={profile.city}
+                      onChange={(e) => setProfile((p) => ({ ...p, city: e.target.value }))}
+                    />
+                  )}
+                </div>
               </div>
 
               {/* Occupation */}
-              {field('occupation', 'Occupation', { placeholder: 'Your profession or field', icon: <BriefcaseIcon className="w-3.5 h-3.5" /> })}
+              <div className="form-control">
+                <label className="label py-1">
+                  <span className="label-text text-white/60 text-sm flex items-center gap-1">
+                    <BriefcaseIcon className="w-3.5 h-3.5" /> Occupation
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                  placeholder="Your profession or field"
+                  value={profile.occupation}
+                  onChange={(e) => setProfile((p) => ({ ...p, occupation: e.target.value }))}
+                />
+              </div>
 
               {/* Gender / Birth date */}
               <div className="grid grid-cols-2 gap-3">
@@ -387,28 +550,45 @@ export default function Profile() {
                     <option value="female">Female</option>
                   </select>
                 </div>
+
                 <div className="form-control">
                   <label className="label py-1">
                     <span className="label-text text-white/60 text-sm flex items-center gap-1">
                       <CalendarDaysIcon className="w-3.5 h-3.5" /> Birth Date
                     </span>
+                    {profile.birthDate && (
+                      <button
+                        type="button"
+                        className="label-text-alt flex items-center gap-0.5 text-white/30 hover:text-red-400 text-xs transition-colors"
+                        onClick={() => setProfile((p) => ({ ...p, birthDate: '' }))}
+                        title="Clear birth date"
+                      >
+                        <XMarkIcon className="w-3 h-3" /> Clear
+                      </button>
+                    )}
                   </label>
                   <input
                     type="date"
-                    className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                    className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors [color-scheme:dark]"
                     value={profile.birthDate}
+                    max={new Date().toISOString().substring(0, 10)}
                     onChange={(e) => setProfile((p) => ({ ...p, birthDate: e.target.value }))}
                   />
+                  {ageInfo && (
+                    <p className="text-white/30 text-xs mt-1">
+                      Age: {ageInfo.years} years, {ageInfo.months} month{ageInfo.months !== 1 ? 's' : ''}
+                    </p>
+                  )}
                 </div>
               </div>
 
               {saveError && <p className="text-red-400 text-xs">{saveError}</p>}
 
-              {/* Save button — dim when nothing changed, bright when dirty */}
+              {/* Save button */}
               <button
                 className={`btn btn-sm w-full mt-1 gap-2 transition-all duration-300 border-0 ${
-                  isDirty
-                    ? 'bg-brand-emerald hover:bg-brand-emerald-dim text-white shadow-[0_0_16px_rgba(16,185,129,0.4)]'
+                  isDirty && !saving
+                    ? 'bg-brand-emerald hover:bg-brand-emerald-dim text-white shadow-[0_0_20px_rgba(16,185,129,0.35)]'
                     : 'bg-brand-surface border border-brand-border text-white/30 cursor-not-allowed'
                 }`}
                 onClick={saveProfile}
@@ -416,26 +596,12 @@ export default function Profile() {
               >
                 {saving ? (
                   <><span className="loading loading-spinner loading-xs" /> Saving…</>
-                ) : (
+                ) : isDirty ? (
                   'Save Changes'
+                ) : (
+                  'No changes'
                 )}
               </button>
-
-              {/* Success animation */}
-              <AnimatePresence>
-                {saveSuccess && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                    transition={{ type: 'spring', damping: 18 }}
-                    className="flex items-center justify-center gap-2 py-2 rounded-xl bg-brand-emerald/15 border border-brand-emerald/30"
-                  >
-                    <CheckCircleIcon className="w-4 h-4 text-brand-emerald" />
-                    <span className="text-brand-emerald text-sm font-semibold">Profile saved!</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
           </motion.div>
 

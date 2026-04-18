@@ -172,8 +172,9 @@ export default function App() {
   }, [setUser, init, navigate, location.pathname, resetAll, hydrate, setAuthLoading]);
 
   const { authLoading } = useAuthStore();
-  const focusModeRoutes = ['/zikr', '/salat', '/salat/analytics', '/fasting', '/prayer-times', '/quran'];
-  const isFocusMode = focusModeRoutes.includes(location.pathname);
+  const isAuthPage = ['/login', '/signup'].includes(location.pathname);
+  const noFooterRoutes = ['/zikr', '/salat', '/salat/analytics', '/fasting', '/prayer-times', '/quran'];
+  const showFooter = !isAuthPage && !noFooterRoutes.includes(location.pathname);
 
   return (
     <div className="min-h-screen flex flex-col bg-base-100">
@@ -186,8 +187,8 @@ export default function App() {
         </div>
       ) : (
         <>
-          {!isFocusMode && <Navbar />}
-          {!isFocusMode && <UnsavedWarning />}
+          {!isAuthPage && <Navbar />}
+          {!isAuthPage && <UnsavedWarning />}
           <div className="flex-1">
             <Routes>
               <Route path="/" element={<Home />} />
@@ -205,7 +206,7 @@ export default function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
-          {!isFocusMode && <Footer />}
+          {showFooter && <Footer />}
         </>
       )}
     </div>
