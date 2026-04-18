@@ -7,7 +7,7 @@ export const updateUserSchema = z.object({
     firstName: z.string().max(100).optional(),
     lastName: z.string().max(100).optional(),
     gender: z.enum(['male', 'female', 'other', 'prefer_not_say']).optional(),
-    birthDate: z.string().datetime().optional(),
+    birthDate: z.string().date().optional(),
     occupation: z.string().max(100).optional(),
     bio: z.string().max(250).optional(),
     city: z.string().max(100).optional(),

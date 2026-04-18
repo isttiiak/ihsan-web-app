@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { ChartBarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import {
   useSalatLog,
   useUpdatePrayer,
@@ -21,6 +20,16 @@ import {
 } from '../utils/prayerTimes.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
+
+function isRamadanNow(): boolean {
+  try {
+    const month = parseInt(
+      new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', { month: 'numeric' }).format(new Date()),
+      10
+    );
+    return month === 9;
+  } catch { return false; }
+}
 
 function todayStr() {
   const d = new Date();
@@ -87,7 +96,6 @@ function getDefaultDate(): string {
 }
 
 export default function SalatTracker() {
-  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(getDefaultDate);
   const [expandedPrayer, setExpandedPrayer] = useState<PrayerId | null>(null);
 
@@ -212,17 +220,6 @@ export default function SalatTracker() {
     <AnimatedBackground variant="dark">
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-xl mx-auto space-y-5">
-
-          {/* Nav row */}
-          <div className="flex items-center justify-end">
-            <motion.button
-              onClick={() => navigate('/salat/analytics')}
-              whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
-              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand-surface/90 backdrop-blur-md border border-brand-border text-white text-sm font-semibold"
-            >
-              <ChartBarIcon className="w-4 h-4" /> Analytics
-            </motion.button>
-          </div>
 
           {/* Date navigator */}
           <div className="flex items-center justify-between gap-3">
@@ -441,6 +438,28 @@ export default function SalatTracker() {
                         {entry?.tasbeeh && <span className="text-cyan-400/60">📿</span>}
                       </button>
                     )}
+
+                    {/* Witr reminder — always shown on Isha card */}
+                    {prayerId === 'isha' && (
+                      <div className="px-3 py-2.5 border-t border-brand-gold/20 flex items-start gap-2 bg-brand-gold/5">
+                        <span className="text-base shrink-0">🕯️</span>
+                        <div className="min-w-0">
+                          <p className="text-brand-gold font-bold text-xs leading-tight">Don't forget Witr — it's wājib!</p>
+                          <p className="text-white/35 text-xs leading-relaxed mt-0.5">
+                            Pray Witr after Isha before Fajr — usually 3 rak'ahs with Qunūt du'ā. The Prophet ﷺ never abandoned it, even while travelling.
+                          </p>
+                          <a
+                            href="https://sunnah.com/bukhari:998"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-brand-gold/50 text-xs underline hover:text-brand-gold/80 transition-colors mt-0.5 inline-block"
+                          >
+                            📖 Ṣaḥīḥ al-Bukhārī 998
+                          </a>
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}
@@ -501,7 +520,11 @@ export default function SalatTracker() {
                       <div>
                         <p className="text-white/30 text-xs mb-2">Type of prayer <span className="text-white/20">(select all that apply)</span></p>
                         <div className="flex flex-wrap gap-1.5">
-                          {NAFL_TYPE_META.map((t) => {
+                          {NAFL_TYPE_META.filter((t) => {
+                            if (t.id === 'witr') return false;       // shown as Isha note
+                            if (t.id === 'tarawih') return isRamadanNow(); // only in Ramadan
+                            return true;
+                          }).map((t) => {
                             const selected = (naflEntry.types ?? []).includes(t.id);
                             return (
                               <div key={t.id} className="flex flex-col gap-0">

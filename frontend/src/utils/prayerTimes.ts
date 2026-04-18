@@ -140,6 +140,87 @@ export function getCurrentNaflWindow(times: PrayerTimesResult, now: Date = new D
   return null;
 }
 
+// ── Mandatory prayer widget helpers ─────────────────────────────────────────
+
+/** End time of each mandatory prayer period */
+export function getPrayerEndTime(prayer: PrayerKey, times: PrayerTimesResult): Date {
+  const MIN = 60_000;
+  switch (prayer) {
+    case 'fajr':    return times.sunrise;
+    case 'dhuhr':   return times.asr;
+    case 'asr':     return new Date(times.sunset.getTime() - 17 * MIN);
+    case 'maghrib': return times.isha;
+    case 'isha': {
+      const nextFajr = new Date(times.fajr.getTime() + 86_400_000);
+      // Best to complete before midnight (midpoint between Isha & next Fajr)
+      return new Date((times.isha.getTime() + nextFajr.getTime()) / 2);
+    }
+    default: return times.fajr;
+  }
+}
+
+/** Current mandatory prayer period (null if between periods or in a forbidden window) */
+function getCurrentMandatoryPeriod(times: PrayerTimesResult, now: Date): PrayerKey | null {
+  const asrEnd = getPrayerEndTime('asr', times);
+  if (now >= times.fajr    && now < times.sunrise) return 'fajr';
+  if (now >= times.dhuhr   && now < times.asr)     return 'dhuhr';
+  if (now >= times.asr     && now < asrEnd)         return 'asr';
+  if (now >= times.maghrib && now < times.isha)     return 'maghrib';
+  if (now >= times.isha)                            return 'isha';
+  return null;
+}
+
+/** Next mandatory prayer (fajr/dhuhr/asr/maghrib/isha), wraps to tomorrow's fajr */
+function getNextMandatoryPrayer(times: PrayerTimesResult, now: Date): { id: PrayerKey; time: Date } {
+  const ordered: { id: PrayerKey; time: Date }[] = [
+    { id: 'fajr',    time: times.fajr },
+    { id: 'dhuhr',   time: times.dhuhr },
+    { id: 'asr',     time: times.asr },
+    { id: 'maghrib', time: times.maghrib },
+    { id: 'isha',    time: times.isha },
+  ];
+  for (const p of ordered) {
+    if (now < p.time) return p;
+  }
+  return { id: 'fajr', time: new Date(times.fajr.getTime() + 86_400_000) };
+}
+
+export interface MandatoryWidgetData {
+  forbiddenWindow:     ForbiddenWindow | null;
+  currentMandatory:    PrayerKey | null;
+  currentMandatoryEnd: Date | null;
+  naflWindow:          NaflWindow | null;
+  nextMandatory:       PrayerKey;
+  nextMandatoryTime:   Date;
+  nextHh: number; nextMm: number; nextSs: number;
+}
+
+/** All data needed by the compact prayer widget on the Home page */
+export function getMandatoryWidget(times: PrayerTimesResult, now: Date = new Date()): MandatoryWidgetData {
+  const forbidden       = getForbiddenWindows(times);
+  const forbiddenWindow = forbidden.find((w) => now >= w.start && now < w.end) ?? null;
+
+  const currentMandatory    = getCurrentMandatoryPeriod(times, now);
+  const currentMandatoryEnd = currentMandatory ? getPrayerEndTime(currentMandatory, times) : null;
+  const naflWindow          = getCurrentNaflWindow(times, now);
+
+  const next     = getNextMandatoryPrayer(times, now);
+  const ms       = Math.max(0, next.time.getTime() - now.getTime());
+  const totalSec = Math.floor(ms / 1000);
+
+  return {
+    forbiddenWindow,
+    currentMandatory,
+    currentMandatoryEnd,
+    naflWindow,
+    nextMandatory:     next.id,
+    nextMandatoryTime: next.time,
+    nextHh: Math.floor(totalSec / 3600),
+    nextMm: Math.floor((totalSec % 3600) / 60),
+    nextSs: totalSec % 60,
+  };
+}
+
 /** Returns the current prayer period and the next upcoming prayer */
 export function getCurrentAndNextPrayer(times: PrayerTimesResult, now: Date = new Date()) {
   const ordered: { id: PrayerKey; time: Date }[] = [

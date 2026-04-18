@@ -142,10 +142,10 @@ export default function Navbar() {
           )}
           <Link
             to="/zikr/analytics"
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/12 border border-white/10 hover:border-brand-emerald/40 text-white/60 hover:text-white transition-all text-xs font-semibold"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-emerald/15 hover:bg-brand-emerald/25 border border-brand-emerald/40 hover:border-brand-emerald/70 text-brand-emerald hover:text-white transition-all text-xs font-bold"
           >
             <ChartBarIcon className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden sm:inline">Analytics</span>
+            <span>Zikr Analytics</span>
           </Link>
         </div>
       );
@@ -158,10 +158,10 @@ export default function Navbar() {
           </span>
           <Link
             to="/salat/analytics"
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/12 border border-white/10 hover:border-brand-emerald/40 text-white/60 hover:text-white transition-all text-xs font-semibold"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-emerald/15 hover:bg-brand-emerald/25 border border-brand-emerald/40 hover:border-brand-emerald/70 text-brand-emerald hover:text-white transition-all text-xs font-bold"
           >
             <ChartBarIcon className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden sm:inline">Analytics</span>
+            <span>Prayer Analytics</span>
           </Link>
         </div>
       );

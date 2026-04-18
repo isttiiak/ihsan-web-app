@@ -9,8 +9,7 @@ import AnimatedBackground from '../components/AnimatedBackground.js';
 import {
   calcPrayerTimes,
   formatTime,
-  getCurrentAndNextPrayer,
-  getCurrentNaflWindow,
+  getMandatoryWidget,
   PRAYER_META,
 } from '../utils/prayerTimes.js';
 
@@ -101,10 +100,18 @@ export default function Home() {
     if (!stored) return null;
     try {
       const loc = JSON.parse(stored) as { latitude: number; longitude: number };
-      const times = calcPrayerTimes(loc.latitude, loc.longitude, prayerNow);
-      const info  = getCurrentAndNextPrayer(times, prayerNow);
-      const nafl  = getCurrentNaflWindow(times, prayerNow);
-      return { times, ...info, nafl };
+      const times  = calcPrayerTimes(loc.latitude, loc.longitude, prayerNow);
+      const widget = getMandatoryWidget(times, prayerNow);
+
+      // "Ends in" countdown for the currently active state
+      const endTarget = widget.forbiddenWindow?.end ?? widget.currentMandatoryEnd ?? widget.naflWindow?.end;
+      let endHh = 0, endMm = 0;
+      if (endTarget) {
+        const sec = Math.max(0, Math.floor((endTarget.getTime() - prayerNow.getTime()) / 1000));
+        endHh = Math.floor(sec / 3600);
+        endMm = Math.floor((sec % 3600) / 60);
+      }
+      return { ...widget, times, endHh, endMm };
     } catch { return null; }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prayerNow.getMinutes()]); // recalc every minute is enough for widget
@@ -172,67 +179,107 @@ export default function Home() {
                 whileHover={{ scale: 1.005 }}
                 className="flex items-stretch gap-0 rounded-2xl bg-brand-surface/80 backdrop-blur-md border border-brand-border hover:border-brand-emerald/30 transition-all overflow-hidden"
               >
-                {/* LEFT: current prayer + ends-in */}
+                {/* LEFT: current status (forbidden / mandatory / nafl / free) */}
                 <div className="flex-1 flex items-center gap-3 px-4 py-3 min-w-0">
+                  {/* Icon */}
                   <span className="text-2xl shrink-0 leading-none">
-                    {PRAYER_META.find((p) => p.id === prayerWidgetData.current)?.icon ?? '🕌'}
+                    {prayerWidgetData.forbiddenWindow
+                      ? '🚫'
+                      : prayerWidgetData.currentMandatory
+                      ? (PRAYER_META.find((p) => p.id === prayerWidgetData.currentMandatory)?.icon ?? '🕌')
+                      : prayerWidgetData.naflWindow
+                      ? prayerWidgetData.naflWindow.icon
+                      : '🕊️'}
                   </span>
+
+                  {/* Content */}
                   <div className="min-w-0 flex-1">
-                    <p className="text-white/35 text-[10px] uppercase tracking-widest leading-none mb-0.5">Current</p>
-                    <p className="text-white font-black text-sm leading-tight">
-                      {PRAYER_META.find((p) => p.id === prayerWidgetData.current)?.name}
-                    </p>
-                    <p className="text-white/35 text-[10px] mt-0.5">
-                      ends {formatTime(prayerWidgetData.nextTime)}
-                    </p>
+                    {prayerWidgetData.forbiddenWindow ? (
+                      <>
+                        <p className="text-red-400/60 text-[10px] uppercase tracking-widest leading-none mb-0.5">Forbidden Time</p>
+                        <p className="text-red-300 font-black text-sm leading-tight">
+                          {prayerWidgetData.forbiddenWindow.label.replace('Forbidden — ', '')}
+                        </p>
+                        <p className="text-white/35 text-[10px] mt-0.5">
+                          ends {formatTime(prayerWidgetData.forbiddenWindow.end)} — no prayer
+                        </p>
+                      </>
+                    ) : prayerWidgetData.currentMandatory ? (
+                      <>
+                        <p className="text-white/35 text-[10px] uppercase tracking-widest leading-none mb-0.5">Current</p>
+                        <p className="text-white font-black text-sm leading-tight">
+                          {PRAYER_META.find((p) => p.id === prayerWidgetData.currentMandatory)?.name}
+                        </p>
+                        <p className="text-white/35 text-[10px] mt-0.5">
+                          ends {formatTime(prayerWidgetData.currentMandatoryEnd!)}
+                        </p>
+                        {/* Nafl alongside mandatory (Awabeen during Maghrib, Tahajjud during Isha) */}
+                        {prayerWidgetData.naflWindow && (
+                          <div className="mt-1 pt-1 border-t border-brand-border/40">
+                            <p className="text-brand-magenta/80 text-[10px] font-semibold leading-none">
+                              {prayerWidgetData.naflWindow.icon} {prayerWidgetData.naflWindow.name} time
+                            </p>
+                            <p className="text-white/25 text-[10px] leading-none mt-0.5">
+                              until {formatTime(prayerWidgetData.naflWindow.end)}
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    ) : prayerWidgetData.naflWindow ? (
+                      <>
+                        <p className="text-cyan-400/60 text-[10px] uppercase tracking-widest leading-none mb-0.5">Nafl Time</p>
+                        <p className="text-cyan-300 font-black text-sm leading-tight">{prayerWidgetData.naflWindow.name}</p>
+                        <p className="text-white/35 text-[10px] mt-0.5">
+                          {formatTime(prayerWidgetData.naflWindow.start)} – {formatTime(prayerWidgetData.naflWindow.end)}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-white/25 text-[10px] uppercase tracking-widest leading-none mb-0.5">Free Time</p>
+                        <p className="text-white/50 font-semibold text-sm leading-tight">Next prayer coming up</p>
+                        <p className="text-white/25 text-[10px] mt-0.5">
+                          in {prayerWidgetData.nextHh > 0 ? `${prayerWidgetData.nextHh}h ` : ''}
+                          {String(prayerWidgetData.nextMm).padStart(2, '0')}m
+                        </p>
+                      </>
+                    )}
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-white/35 text-[10px] uppercase tracking-widest leading-none mb-0.5">Ends in</p>
-                    <p className="text-brand-gold font-black text-base tabular-nums leading-tight">
-                      {prayerWidgetData.hh > 0 ? `${prayerWidgetData.hh}h ` : ''}
-                      {String(prayerWidgetData.mm).padStart(2, '0')}m
-                    </p>
-                  </div>
+
+                  {/* Ends-in counter (right side of left section) */}
+                  {(prayerWidgetData.endHh > 0 || prayerWidgetData.endMm > 0) && (
+                    <div className="text-right shrink-0">
+                      <p className="text-white/35 text-[10px] uppercase tracking-widest leading-none mb-0.5">Ends in</p>
+                      <p className={`font-black text-base tabular-nums leading-tight ${
+                        prayerWidgetData.forbiddenWindow ? 'text-red-400' : 'text-brand-gold'
+                      }`}>
+                        {prayerWidgetData.endHh > 0 ? `${prayerWidgetData.endHh}h ` : ''}
+                        {String(prayerWidgetData.endMm).padStart(2, '0')}m
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* DIVIDER */}
                 <div className="w-px bg-brand-border/60 self-stretch my-2" />
 
-                {/* RIGHT: nafl (if any) + next prayer */}
-                <div className="flex flex-col justify-center gap-1.5 px-4 py-3 shrink-0 min-w-[120px] sm:min-w-[150px]">
-                  {/* Nafl window */}
-                  {prayerWidgetData.nafl && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm leading-none">{prayerWidgetData.nafl.icon}</span>
-                      <div className="min-w-0">
-                        <p className="text-brand-magenta font-bold text-xs leading-tight">
-                          {prayerWidgetData.nafl.name}
-                        </p>
-                        <p className="text-white/30 text-[10px] leading-none">
-                          {formatTime(prayerWidgetData.nafl.start)} – {formatTime(prayerWidgetData.nafl.end)}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Separator only if nafl is showing */}
-                  {prayerWidgetData.nafl && <div className="h-px bg-brand-border/50" />}
-
-                  {/* Next prayer */}
+                {/* RIGHT: next mandatory prayer */}
+                <div className="flex flex-col justify-center px-4 py-3 shrink-0 min-w-[110px] sm:min-w-[130px]">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm leading-none">
-                      {PRAYER_META.find((p) => p.id === prayerWidgetData.next)?.icon}
+                      {PRAYER_META.find((p) => p.id === prayerWidgetData.nextMandatory)?.icon}
                     </span>
                     <div className="min-w-0">
                       <p className="text-white/35 text-[10px] uppercase tracking-widest leading-none mb-0.5">Next</p>
                       <p className="text-brand-emerald font-bold text-xs leading-tight">
-                        {PRAYER_META.find((p) => p.id === prayerWidgetData.next)?.name}
+                        {PRAYER_META.find((p) => p.id === prayerWidgetData.nextMandatory)?.name}
                       </p>
-                      <p className="text-white/30 text-[10px] leading-none">
-                        {formatTime(prayerWidgetData.nextTime)}
-                      </p>
+                      <p className="text-white/30 text-[10px] leading-none">{formatTime(prayerWidgetData.nextMandatoryTime)}</p>
                     </div>
                   </div>
+                  <p className="text-white/20 text-[10px] mt-1">
+                    in {prayerWidgetData.nextHh > 0 ? `${prayerWidgetData.nextHh}h ` : ''}
+                    {String(prayerWidgetData.nextMm).padStart(2, '0')}m
+                  </p>
                 </div>
               </motion.div>
             </Link>

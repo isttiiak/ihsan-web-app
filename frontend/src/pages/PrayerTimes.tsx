@@ -6,8 +6,10 @@ import {
   calcPrayerTimes,
   formatTime,
   getCurrentAndNextPrayer,
+  getPrayerEndTime,
   PRAYER_META,
   PrayerTimesResult,
+  PrayerKey,
 } from '../utils/prayerTimes.js';
 
 // ─── Timeline types ───────────────────────────────────────────────────────────
@@ -18,6 +20,7 @@ interface PrayerTLEntry {
   name: string;
   icon: string;
   time: Date;
+  endTime?: Date;
   isTrackable: boolean;
 }
 interface EventTLEntry {
@@ -64,7 +67,7 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     {
       kind: 'prayer',
       id: 'fajr', name: 'Fajr', icon: '🌅', isTrackable: true,
-      time: times.fajr,
+      time: times.fajr, endTime: getPrayerEndTime('fajr' as PrayerKey, times),
     },
 
     // ── Forbidden: Around Sunrise ─────────────────────────────────────────
@@ -106,14 +109,14 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     {
       kind: 'prayer',
       id: 'dhuhr', name: 'Dhuhr', icon: '☀️', isTrackable: true,
-      time: times.dhuhr,
+      time: times.dhuhr, endTime: getPrayerEndTime('dhuhr' as PrayerKey, times),
     },
 
     // ── Asr ───────────────────────────────────────────────────────────────
     {
       kind: 'prayer',
       id: 'asr', name: 'Asr', icon: '🌤️', isTrackable: true,
-      time: times.asr,
+      time: times.asr, endTime: getPrayerEndTime('asr' as PrayerKey, times),
     },
 
     // ── Forbidden: ~17 min before sunset ─────────────────────────────────
@@ -143,7 +146,7 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     {
       kind: 'prayer',
       id: 'maghrib', name: 'Maghrib', icon: '🌆', isTrackable: true,
-      time: times.maghrib,
+      time: times.maghrib, endTime: getPrayerEndTime('maghrib' as PrayerKey, times),
     },
 
     // ── Nafl: Awwabin ─────────────────────────────────────────────────────
@@ -163,7 +166,7 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     {
       kind: 'prayer',
       id: 'isha', name: 'Isha', icon: '🌙', isTrackable: true,
-      time: times.isha,
+      time: times.isha, endTime: getPrayerEndTime('isha' as PrayerKey, times),
     },
 
     // ── Nafl: Tahajjud (last third of night) ─────────────────────────────
@@ -455,7 +458,10 @@ export default function PrayerTimes() {
                         <p className="text-brand-emerald/80 font-bold text-base leading-none">{nextMeta.name}</p>
                       </div>
                     </div>
-                    <p className="text-white/60 font-semibold text-sm tabular-nums">{formatTime(info.nextTime)}</p>
+                    <div className="text-right">
+                      <p className="text-white/30 text-xs leading-none mb-0.5">starts at</p>
+                      <p className="text-white/60 font-semibold text-sm tabular-nums">{formatTime(info.nextTime)}</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -544,11 +550,17 @@ export default function PrayerTimes() {
                               {isNext && <span className="text-xs text-brand-emerald/40 font-semibold uppercase tracking-wide">Next</span>}
                             </div>
                           </div>
-                          <p className={`text-xl font-black tabular-nums ${
-                            isActiveNow ? 'text-brand-emerald' : isNext ? 'text-brand-emerald/60' : 'text-white/80'
-                          }`}>
-                            {formatTime(entry.time)}
-                          </p>
+                          <div className="text-right shrink-0">
+                            <p className="text-white/30 text-xs leading-none mb-0.5">starts at</p>
+                            <p className={`text-xl font-black tabular-nums ${
+                              isActiveNow ? 'text-brand-emerald' : isNext ? 'text-brand-emerald/60' : 'text-white/80'
+                            }`}>
+                              {formatTime(entry.time)}
+                            </p>
+                            {entry.endTime && entry.isTrackable && (
+                              <p className="text-white/25 text-xs leading-none mt-0.5">→ {formatTime(entry.endTime)}</p>
+                            )}
+                          </div>
                         </div>
                       </motion.div>
                     );
