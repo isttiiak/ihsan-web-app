@@ -81,6 +81,28 @@ const COUNTRIES_CITIES: Record<string, string[]> = {
 
 const SORTED_COUNTRIES = Object.keys(COUNTRIES_CITIES).sort();
 
+const COUNTRY_CODES: Record<string, string> = {
+  'Afghanistan': 'AF', 'Algeria': 'DZ', 'Australia': 'AU', 'Azerbaijan': 'AZ',
+  'Bangladesh': 'BD', 'Belgium': 'BE', 'Bosnia and Herzegovina': 'BA', 'Brazil': 'BR',
+  'Brunei': 'BN', 'Canada': 'CA', 'China': 'CN', 'Egypt': 'EG', 'France': 'FR',
+  'Germany': 'DE', 'Ghana': 'GH', 'India': 'IN', 'Indonesia': 'ID', 'Iran': 'IR',
+  'Iraq': 'IQ', 'Jordan': 'JO', 'Kazakhstan': 'KZ', 'Kenya': 'KE', 'Kuwait': 'KW',
+  'Kyrgyzstan': 'KG', 'Lebanon': 'LB', 'Libya': 'LY', 'Malaysia': 'MY', 'Maldives': 'MV',
+  'Mali': 'ML', 'Mauritania': 'MR', 'Morocco': 'MA', 'Netherlands': 'NL', 'Niger': 'NE',
+  'Nigeria': 'NG', 'Oman': 'OM', 'Pakistan': 'PK', 'Palestine': 'PS', 'Philippines': 'PH',
+  'Qatar': 'QA', 'Russia': 'RU', 'Saudi Arabia': 'SA', 'Senegal': 'SN', 'Sierra Leone': 'SL',
+  'Somalia': 'SO', 'South Africa': 'ZA', 'Spain': 'ES', 'Sudan': 'SD', 'Syria': 'SY',
+  'Tajikistan': 'TJ', 'Tanzania': 'TZ', 'Tunisia': 'TN', 'Turkey': 'TR', 'Turkmenistan': 'TM',
+  'Uganda': 'UG', 'United Arab Emirates': 'AE', 'United Kingdom': 'GB', 'United States': 'US',
+  'Uzbekistan': 'UZ', 'Yemen': 'YE',
+};
+
+function countryFlag(countryName: string): string {
+  const code = COUNTRY_CODES[countryName];
+  if (!code) return '';
+  return Array.from(code).map((c) => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join('');
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function calcFullAge(birthDate: string): { years: number; months: number } | null {
   if (!birthDate) return null;
@@ -160,6 +182,9 @@ export default function Profile() {
   const [dbUser, setDbUser] = useState<DBUser | null>(null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(user?.photoUrl || '');
+  const [photoModalOpen, setPhotoModalOpen] = useState(false);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState('');
+  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -273,23 +298,86 @@ export default function Profile() {
     setSaving(false);
   };
 
+  const compressImage = (file: File): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const src = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 400;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { URL.revokeObjectURL(src); reject(new Error('canvas')); return; }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(src);
+          if (blob) resolve(blob); else reject(new Error('compression'));
+        }, 'image/jpeg', 0.75);
+      };
+      img.onerror = () => { URL.revokeObjectURL(src); reject(new Error('load')); };
+      img.src = src;
+    });
+
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const objectUrl = URL.createObjectURL(file);
-    setPreview(objectUrl);
+    e.target.value = '';
+    setSaveError('');
     try {
-      setUploading(true);
+      const blob = await compressImage(file);
+      setPhotoBlob(blob);
+      setPhotoPreviewUrl(URL.createObjectURL(blob));
+      setPhotoModalOpen(true);
+    } catch {
+      setSaveError('Could not process image. Try a different file.');
+    }
+  };
+
+  const uploadPhoto = async () => {
+    if (!photoBlob) return;
+    setSaveError('');
+    setUploading(true);
+    try {
       const uid = user?.uid || 'anon';
-      const fileRef = ref(storage, `profile/${uid}/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
+      const fileRef = ref(storage, `profile/${uid}/${Date.now()}.jpg`);
+      await uploadBytes(fileRef, photoBlob);
       const url = await getDownloadURL(fileRef);
+      setPreview(url);
       setProfile((p) => ({ ...p, photoUrl: url }));
-    } catch (err) {
-      console.error(err);
+      setPhotoModalOpen(false);
+      URL.revokeObjectURL(photoPreviewUrl);
+      setPhotoBlob(null);
+      setPhotoPreviewUrl('');
+      const idToken = localStorage.getItem('ihsan_idToken');
+      if (idToken) {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+          body: JSON.stringify({ photoUrl: url }),
+        });
+        if (res.ok) {
+          setOriginalProfile((p) => p ? { ...p, photoUrl: url } : null);
+          const updated = { ...(user ?? { uid: '', email: null }), displayName: user?.displayName ?? null, photoUrl: url };
+          setUser(updated);
+          localStorage.setItem('ihsan_user', JSON.stringify({ ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'), photoUrl: url }));
+        } else {
+          setSaveError('Uploaded but could not save — click "Save Changes" to retry.');
+        }
+      }
+    } catch {
+      setSaveError('Upload failed. Check your connection and try again.');
     } finally {
       setUploading(false);
     }
+  };
+
+  const cancelPhotoModal = () => {
+    URL.revokeObjectURL(photoPreviewUrl);
+    setPhotoModalOpen(false);
+    setPhotoBlob(null);
+    setPhotoPreviewUrl('');
   };
 
   const ageInfo = calcFullAge(profile.birthDate);
@@ -305,6 +393,7 @@ export default function Profile() {
   };
 
   return (
+    <>
     <AnimatedBackground variant="dark">
       <div className="p-4 sm:p-6 lg:p-8 pb-16">
         <div className="max-w-2xl mx-auto space-y-5">
@@ -334,16 +423,24 @@ export default function Profile() {
                       )}
                     </div>
                   </div>
-                  <label className="absolute bottom-0 right-0 btn btn-circle btn-xs bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 shadow-lg cursor-pointer">
-                    {uploading ? <span className="loading loading-spinner loading-xs" /> : <CameraIcon className="w-3.5 h-3.5" />}
+                  <label className="absolute bottom-0 right-0 group cursor-pointer">
+                    <div className="w-8 h-8 rounded-full bg-brand-emerald hover:bg-brand-emerald-dim text-white shadow-lg flex items-center justify-center transition-colors">
+                      <CameraIcon className="w-4 h-4" />
+                    </div>
+                    <span className="absolute -top-7 right-0 bg-brand-deep border border-brand-border text-white/70 text-[10px] px-2 py-0.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      Change Photo
+                    </span>
                     <input type="file" accept="image/*" className="hidden" onChange={onFileChange} disabled={uploading} />
                   </label>
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0 text-center sm:text-left space-y-1">
-                  <p className="text-xl font-black text-white leading-tight">
+                  <p className="text-xl font-black text-white leading-tight flex items-center gap-2 flex-wrap">
                     {profile.displayName || profile.firstName || user?.email?.split('@')[0] || 'Anonymous'}
+                    {profile.country && (
+                      <span className="text-lg" title={profile.country}>{countryFlag(profile.country)}</span>
+                    )}
                   </p>
                   {(profile.city || profile.country) && (
                     <p className="flex items-center justify-center sm:justify-start gap-1 text-white/40 text-sm">
@@ -608,5 +705,58 @@ export default function Profile() {
         </div>
       </div>
     </AnimatedBackground>
+
+    {/* ── Photo upload preview modal ── */}
+    <AnimatePresence>
+      {photoModalOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.92, opacity: 0, y: 20 }}
+            transition={{ type: 'spring', damping: 22 }}
+            className="bg-brand-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-border text-center space-y-4"
+          >
+            <h3 className="text-lg font-black text-white">Upload Profile Photo</h3>
+
+            {/* Preview */}
+            <div className="flex justify-center">
+              <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-brand-emerald/40">
+                <img src={photoPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+              </div>
+            </div>
+
+            {/* Size note */}
+            <p className="text-white/35 text-xs leading-relaxed px-2">
+              📦 Image compressed to ~400px JPEG for free-tier storage.
+              For the best experience, <span className="text-brand-emerald/70">sign in with Google</span> — your Google profile photo is used automatically.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={cancelPhotoModal}
+                disabled={uploading}
+                className="btn flex-1 btn-ghost text-white/60 border-brand-border disabled:opacity-40"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={uploadPhoto}
+                disabled={uploading}
+                className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold"
+              >
+                {uploading ? <span className="loading loading-spinner loading-sm" /> : 'Upload'}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </>
   );
 }

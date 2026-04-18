@@ -7,6 +7,8 @@ const FLUSH_DELAY = 800; // ms
 export interface CustomMeaning {
   arabic?: string;
   meaning: string;
+  source?: string;
+  sourceUrl?: string;
 }
 
 interface ZikrState {

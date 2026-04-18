@@ -20,6 +20,7 @@ import SalatAnalytics from './pages/SalatAnalytics.js';
 import FastingTracker from './pages/FastingTracker.js';
 import PrayerTimes from './pages/PrayerTimes.js';
 import QuranHabit from './pages/QuranHabit.js';
+import IslamicSpecialDay from './pages/IslamicSpecialDay.js';
 import type { AuthUser } from './types/api.js';
 
 interface ProtectedProps {
@@ -201,6 +202,7 @@ export default function App() {
               <Route path="/zikr/analytics" element={<Protected><ZikrAnalytics /></Protected>} />
               <Route path="/settings" element={<Protected><Settings /></Protected>} />
               <Route path="/profile" element={<Protected><Profile /></Protected>} />
+              <Route path="/special-day/:id" element={<IslamicSpecialDay />} />
               <Route path="/login" element={<AuthSignIn />} />
               <Route path="/signup" element={<AuthSignUp />} />
               <Route path="*" element={<NotFound />} />

@@ -12,6 +12,11 @@ import {
   getMandatoryWidget,
   PRAYER_META,
 } from '../utils/prayerTimes.js';
+import {
+  getTodaySpecialDays,
+  getHijriDate,
+  formatHijriDate,
+} from '../utils/islamicCalendar.js';
 
 interface ActivityItem {
   id: string;
@@ -94,6 +99,9 @@ export default function Home() {
       { timeout: 10000 }
     );
   }, [navigate]);
+
+  const todaySpecialDays = useMemo(() => getTodaySpecialDays(), []);
+  const hijriDate = useMemo(() => getHijriDate(), []);
 
   const prayerWidgetData = useMemo(() => {
     const stored = localStorage.getItem('ihsan_location');
@@ -308,6 +316,46 @@ export default function Home() {
             </motion.button>
           )}
         </motion.div>
+
+        {/* Hijri date — always visible */}
+        {hijriDate && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.05 }}
+            className="text-brand-gold/40 text-xs text-center font-medium tracking-wide mb-4 -mt-2"
+          >
+            {formatHijriDate(hijriDate)}
+          </motion.p>
+        )}
+
+        {/* Islamic special day widget */}
+        {todaySpecialDays.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="mb-6 space-y-2"
+          >
+            {todaySpecialDays.map((day) => (
+              <Link key={day.id} to={`/special-day/${day.id}`}>
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl border overflow-hidden transition-all"
+                  style={{ background: `${day.color}12`, borderColor: `${day.color}40` }}
+                >
+                  <span className="text-2xl shrink-0">{day.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white font-bold text-sm leading-tight">{day.name}</p>
+                    <p className="text-white/45 text-xs leading-snug truncate mt-0.5">{day.shortDesc}</p>
+                  </div>
+                  <span className="text-white/30 text-xs shrink-0 font-bold">→</span>
+                </motion.div>
+              </Link>
+            ))}
+          </motion.div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
           {activities.map((a, i) => {

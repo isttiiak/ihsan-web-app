@@ -12,15 +12,16 @@ export const getLog = async (req: Request, res: Response, next: NextFunction): P
 
 export const updatePrayer = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { prayer, status, date, location, tasbeeh } = req.body as {
+    const { prayer, status, date, location, tasbeeh, ayatulKursi } = req.body as {
       prayer: PrayerId;
       status: PrayerStatus;
       date?: string;
       location?: PrayerLocation;
       tasbeeh?: boolean;
+      ayatulKursi?: boolean;
     };
     const log = await salatService.updatePrayerStatus(
-      req.user.uid, prayer, status, date, location, tasbeeh
+      req.user.uid, prayer, status, date, location, tasbeeh, ayatulKursi
     );
     res.json({ ok: true, log });
   } catch (err) { next(err); }

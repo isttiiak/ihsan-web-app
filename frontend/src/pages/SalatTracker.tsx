@@ -18,8 +18,17 @@ import {
   getCurrentAndNextPrayer,
   formatTime,
 } from '../utils/prayerTimes.js';
+import { isFriday, getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
+
+function computeMinRakat(types: NaflType[]): number {
+  if (types.length === 0) return 2;
+  return types.reduce((sum, id) => {
+    const meta = NAFL_TYPE_META.find((m) => m.id === id);
+    return sum + (meta?.defaultRakat ?? 2);
+  }, 0);
+}
 
 function isRamadanNow(): boolean {
   try {
@@ -147,19 +156,23 @@ export default function SalatTracker() {
 
   const handleNaflTypeToggle = (type: NaflType) => {
     const currentTypes = naflEntry.types ?? [];
-    const next = currentTypes.includes(type)
-      ? currentTypes.filter((t) => t !== type)
-      : [...currentTypes, type];
+    const adding = !currentTypes.includes(type);
+    const next = adding
+      ? [...currentTypes, type]
+      : currentTypes.filter((t) => t !== type);
+    const minRakat = computeMinRakat(next);
     updateNafl.mutate({
       completed: naflEntry.completed,
       types: next,
-      rakat: naflEntry.rakat,
+      // Adding: keep user's count if already above new min; removing: snap to new min
+      rakat: adding ? Math.max(minRakat, naflEntry.rakat ?? 2) : minRakat,
       date: isToday ? undefined : selectedDate,
     });
   };
 
   const handleNaflRakat = (delta: number) => {
-    const next = Math.max(2, (naflEntry.rakat ?? 2) + delta);
+    const minRakat = computeMinRakat(naflEntry.types ?? []);
+    const next = Math.max(minRakat, (naflEntry.rakat ?? minRakat) + delta);
     updateNafl.mutate({
       completed: naflEntry.completed,
       types: naflEntry.types ?? [],
@@ -205,7 +218,7 @@ export default function SalatTracker() {
   };
 
   // Handle sub-tag change
-  const handleSubTag = (prayer: PrayerId, type: 'location' | 'tasbeeh', value: PrayerLocation | boolean) => {
+  const handleSubTag = (prayer: PrayerId, type: 'location' | 'tasbeeh' | 'ayatulKursi', value: PrayerLocation | boolean) => {
     const current = log?.prayers[prayer];
     updatePrayer.mutate({
       prayer,
@@ -213,6 +226,7 @@ export default function SalatTracker() {
       date: isToday ? undefined : selectedDate,
       location: type === 'location' ? (value as PrayerLocation) : (current?.location ?? 'home'),
       tasbeeh: type === 'tasbeeh' ? (value as boolean) : (current?.tasbeeh ?? false),
+      ayatulKursi: type === 'ayatulKursi' ? (value as boolean) : (current?.ayatulKursi ?? false),
     });
   };
 
@@ -233,6 +247,7 @@ export default function SalatTracker() {
             <div className="text-center">
               <p className="text-white font-bold text-base">{friendlyDate(selectedDate)}</p>
               <p className="text-white/30 text-xs">{new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+              {(() => { const h = getHijriDate(new Date(selectedDate + 'T12:00:00')); return h ? <p className="text-brand-gold/40 text-[10px] mt-0.5">{formatHijriDate(h)}</p> : null; })()}
             </div>
             <motion.button
               whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}
@@ -315,11 +330,17 @@ export default function SalatTracker() {
                         <span className="text-2xl shrink-0">{prayer.icon}</span>
                         <div className="min-w-0">
                           <p className={`font-bold text-sm leading-none ${isCurrent ? 'text-brand-emerald' : style.text}`}>
-                            {prayer.name}
+                            {prayerId === 'dhuhr' && isToday && isFriday() ? "Jumu'ah" : prayer.name}
                             {isCurrent && <span className="ml-2 text-xs font-normal text-brand-emerald/70">● now</span>}
+                            {prayerId === 'dhuhr' && isToday && isFriday() && (
+                              <span className="ml-2 text-xs font-normal text-brand-emerald/60">🕌 congregation</span>
+                            )}
                           </p>
                           {prayerStartTime && isToday && (
                             <p className="text-white/30 text-xs mt-0.5">{prayerStartTime}</p>
+                          )}
+                          {prayerId === 'dhuhr' && isToday && isFriday() && (
+                            <p className="text-brand-emerald/50 text-xs mt-0.5">replaces Dhuhr — attend at mosque</p>
                           )}
                         </div>
                       </div>
@@ -405,9 +426,9 @@ export default function SalatTracker() {
                                 ))}
                               </div>
                             )}
-                            {/* Tasbeeh toggle */}
-                            <div className="flex items-center gap-2">
-                              <span className="text-white/30 text-xs">After salat:</span>
+                            {/* After-salat toggles */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-white/30 text-xs shrink-0">After salat:</span>
                               <motion.button
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => handleSubTag(prayerId, 'tasbeeh', !(entry?.tasbeeh ?? false))}
@@ -418,6 +439,17 @@ export default function SalatTracker() {
                                 }`}
                               >
                                 📿 Tasbeeh
+                              </motion.button>
+                              <motion.button
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => handleSubTag(prayerId, 'ayatulKursi', !(entry?.ayatulKursi ?? false))}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
+                                  entry?.ayatulKursi
+                                    ? 'bg-brand-gold/20 border-brand-gold/60 text-brand-gold'
+                                    : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
+                                }`}
+                              >
+                                📖 Ayatul Kursi
                               </motion.button>
                             </div>
                           </div>
@@ -436,6 +468,7 @@ export default function SalatTracker() {
                           <span className="text-brand-emerald/60">{LOCATION_TAGS.find((t) => t.value === entry.location)?.emoji}</span>
                         )}
                         {entry?.tasbeeh && <span className="text-cyan-400/60">📿</span>}
+                        {entry?.ayatulKursi && <span className="text-brand-gold/60">📖</span>}
                       </button>
                     )}
 
@@ -579,26 +612,32 @@ export default function SalatTracker() {
                       </div>
 
                       {/* Rakat counter */}
-                      <div className="flex items-center gap-3">
-                        <p className="text-white/30 text-xs">Rak\'ahs prayed:</p>
-                        <div className="flex items-center gap-2">
-                          <motion.button
-                            whileTap={{ scale: 0.85 }}
-                            onClick={() => handleNaflRakat(-2)}
-                            disabled={(naflEntry.rakat ?? 2) <= 2}
-                            className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center disabled:opacity-25 hover:border-cyan-400/40 hover:text-white transition-all"
-                          >−</motion.button>
-                          <span className="text-white font-black text-lg tabular-nums w-6 text-center">
-                            {naflEntry.rakat ?? 2}
-                          </span>
-                          <motion.button
-                            whileTap={{ scale: 0.85 }}
-                            onClick={() => handleNaflRakat(2)}
-                            className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center hover:border-cyan-400/40 hover:text-white transition-all"
-                          >+</motion.button>
-                        </div>
-                        <p className="text-white/20 text-xs">min 2, steps of 2</p>
-                      </div>
+                      {(() => {
+                        const minRakat = computeMinRakat(naflEntry.types ?? []);
+                        const currentRakat = naflEntry.rakat ?? minRakat;
+                        return (
+                          <div className={`flex items-center gap-3 px-2 py-1.5 rounded-xl transition-colors ${minRakat > 2 ? 'bg-cyan-500/8 border border-cyan-400/20' : ''}`}>
+                            <p className="text-white/30 text-xs">Rak'ahs prayed:</p>
+                            <div className="flex items-center gap-2">
+                              <motion.button
+                                whileTap={{ scale: 0.85 }}
+                                onClick={() => handleNaflRakat(-2)}
+                                disabled={currentRakat <= minRakat}
+                                className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center disabled:opacity-25 hover:border-cyan-400/40 hover:text-white transition-all"
+                              >−</motion.button>
+                              <span className="text-white font-black text-lg tabular-nums w-8 text-center">
+                                {currentRakat}
+                              </span>
+                              <motion.button
+                                whileTap={{ scale: 0.85 }}
+                                onClick={() => handleNaflRakat(2)}
+                                className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center hover:border-cyan-400/40 hover:text-white transition-all"
+                              >+</motion.button>
+                            </div>
+                            <p className="text-white/20 text-xs">min {minRakat}r</p>
+                          </div>
+                        );
+                      })()}
 
                     </div>
                   </motion.div>
@@ -635,6 +674,7 @@ export default function SalatTracker() {
                 <p>❌ <span className="text-white/70 font-medium">Missed</span> — not prayed</p>
                 <p>🕌 <span className="text-white/70 font-medium">Mosque</span> or 👥 <span className="text-white/70 font-medium">Jamat</span> — tap ▾ Details after marking done</p>
                 <p>🔒 Future prayers are locked until their time begins</p>
+                <p>📖 <span className="text-white/70 font-medium">Ayatul Kursi</span> — toggle after marking Done/Kaza (tap ▾ Details)</p>
                 <p>📿 <span className="text-white/70 font-medium">Nafl</span> — mark voluntary prayers and pick type + rak\'ahs</p>
               </div>
             </div>

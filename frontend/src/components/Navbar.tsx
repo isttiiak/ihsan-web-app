@@ -8,6 +8,7 @@ import { useZikrStore } from '../store/useZikrStore.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useSalatLog } from '../hooks/useSalatLog.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
+import { getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
 import {
   Cog6ToothIcon,
   UserCircleIcon,
@@ -28,6 +29,19 @@ const PAGE_META: Record<string, { title: string; emoji: string }> = {
   '/quran':           { title: 'Quran Habit',     emoji: '📖' },
   '/settings':        { title: 'Settings',        emoji: '⚙️'  },
   '/profile':         { title: 'My Profile',      emoji: '👤' },
+};
+
+// Maps each page to its logical parent for the back button
+const PARENT_ROUTES: Record<string, string> = {
+  '/zikr':            '/',
+  '/zikr/analytics':  '/zikr',
+  '/salat':           '/',
+  '/salat/analytics': '/salat',
+  '/fasting':         '/',
+  '/prayer-times':    '/',
+  '/quran':           '/',
+  '/settings':        '/',
+  '/profile':         '/',
 };
 
 // ── Typewriter greeting ───────────────────────────────────────────────────────
@@ -70,8 +84,10 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const isHome   = location.pathname === '/';
-  const pageMeta = PAGE_META[location.pathname];
+  const isHome     = location.pathname === '/';
+  const pageMeta   = PAGE_META[location.pathname];
+  const parentPath = PARENT_ROUTES[location.pathname] ?? '/';
+  const parentMeta = parentPath === '/' ? { title: 'Home', emoji: '🏠' } : (PAGE_META[parentPath] ?? { title: 'Home', emoji: '🏠' });
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -115,11 +131,14 @@ export default function Navbar() {
   };
 
   // ── Center content by route ───────────────────────────────────────────────
+  const hijriToday = (() => { const h = getHijriDate(); return h ? formatHijriDate(h) : null; })();
+
   const centerContent = (() => {
     if (isHome && user) {
       return (
-        <div className="hidden sm:block truncate text-sm font-bold">
-          <TextType text={greeting} speed={50} />
+        <div className="hidden sm:flex flex-col items-center truncate">
+          <span className="text-sm font-bold leading-tight"><TextType text={greeting} speed={50} /></span>
+          {hijriToday && <span className="text-[10px] text-brand-gold/50 leading-none mt-0.5">{hijriToday}</span>}
         </div>
       );
     }
@@ -187,11 +206,11 @@ export default function Navbar() {
             {!isHome && (
               <div className="flex items-center gap-0.5 min-w-0">
                 <button
-                  onClick={() => navigate(-1)}
+                  onClick={() => navigate(parentPath)}
                   className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/8 transition-all text-xs font-medium flex-shrink-0"
                 >
                   <ArrowLeftIcon className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Back</span>
+                  <span className="hidden sm:inline">{parentMeta.emoji} {parentMeta.title}</span>
                 </button>
 
                 {pageMeta && (

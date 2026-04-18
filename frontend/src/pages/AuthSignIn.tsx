@@ -184,6 +184,11 @@ export default function AuthSignIn() {
               </motion.form>
 
               <motion.div variants={itemVariants} className="text-center">
+                <p className="text-brand-gold/50 text-xs italic mb-3 px-2">
+                  💡 For the most flexible experience (instant photo, easier sign-in), use <span className="font-semibold text-brand-gold/70">Continue with Google</span>.
+                </p>
+              </motion.div>
+              <motion.div variants={itemVariants} className="text-center">
                 <p className="text-white/40 text-sm">
                   Don't have an account?{' '}
                   <button

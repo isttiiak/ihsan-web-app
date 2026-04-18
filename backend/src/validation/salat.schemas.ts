@@ -7,6 +7,7 @@ export const updatePrayerSchema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     location: z.enum(['home', 'mosque', 'jamat']).optional(),
     tasbeeh: z.boolean().optional(),
+    ayatulKursi: z.boolean().optional(),
   }),
 });
 

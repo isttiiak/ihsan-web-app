@@ -11,7 +11,7 @@ import { useAnalytics } from '../hooks/useAnalytics.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import { PlusIcon, MinusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
-// Meanings for the 4 default dhikr
+// Meanings for all built-in dhikr
 const DEFAULT_MEANINGS: Record<string, { arabic: string; transliteration: string; meaning: string }> = {
   SubhanAllah: {
     arabic: 'سُبْحَانَ اللَّهِ',
@@ -33,7 +33,108 @@ const DEFAULT_MEANINGS: Record<string, { arabic: string; transliteration: string
     transliteration: 'Lā ilāha illā-llāh',
     meaning: 'There is no god but Allah — the declaration of Tawhid, key to Jannah',
   },
+  Astaghfirullah: {
+    arabic: 'أَسْتَغْفِرُ اللَّهَ',
+    transliteration: 'Astaghfiru-llāh',
+    meaning: 'I seek forgiveness from Allah — the Prophet ﷺ sought forgiveness 70–100 times a day',
+  },
+  'SubhanAllah wa bihamdihi': {
+    arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',
+    transliteration: 'Subḥāna-llāhi wa bi-ḥamdih',
+    meaning: 'Glory be to Allah and all praise is His — light on the tongue, heavy on the scales, beloved to the Most Merciful',
+  },
+  'La hawla wa la quwwata illa billah': {
+    arabic: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
+    transliteration: 'Lā ḥawla wa lā quwwata illā bi-llāh',
+    meaning: 'There is no power and no strength except with Allah — a treasure from the treasures of Jannah',
+  },
+  'SubhanAllah wal hamdulillah wa la ilaha illAllah wa Allahu akbar': {
+    arabic: 'سُبْحَانَ اللَّهِ وَالْحَمْدُ لِلَّهِ وَلَا إِلَهَ إِلَّا اللَّهُ وَاللَّهُ أَكْبَرُ',
+    transliteration: 'Subḥāna-llāhi wal-ḥamdu li-llāhi wa lā ilāha illā-llāhu wa-llāhu akbar',
+    meaning: 'The four most beloved words to Allah — whoever says them, sins fall as leaves fall from a dry tree',
+  },
+  'Ayatul Kursi': {
+    arabic: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ',
+    transliteration: "Allāhu lā ilāha illā huwal-ḥayyul-qayyūm... (Quran 2:255)",
+    meaning: "The Verse of the Throne — the greatest verse in the Quran. Recite after every prayer; nothing prevents entry to Jannah except death",
+  },
+  'Durud Ibrahim': {
+    arabic: 'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ',
+    transliteration: "Allāhumma ṣalli ʿalā Muḥammadin wa ʿalā āli Muḥammad...",
+    meaning: 'Salutations upon the Prophet ﷺ and his family — Allah sends tenfold blessings upon the one who sends one salutation',
+  },
 };
+
+// Hadith references for built-in dhikr (shown at bottom of counter)
+const DHIKR_HADITHS: Record<string, { text: string; source: string; url: string; grade?: string }> = {
+  SubhanAllah: {
+    text: '"Two words are light on the tongue, heavy on the scale, beloved to the Most Merciful: SubhanAllah wa bihamdihi, SubhanAllah al-Azim."',
+    source: 'Ṣaḥīḥ al-Bukhārī 6682',
+    url: 'https://sunnah.com/bukhari:6682',
+    grade: 'Ṣaḥīḥ',
+  },
+  Alhamdulillah: {
+    text: '"Al-ḥamdu li-llāh fills the scale."',
+    source: 'Ṣaḥīḥ Muslim 223',
+    url: 'https://sunnah.com/muslim:223',
+    grade: 'Ṣaḥīḥ',
+  },
+  'Allahu Akbar': {
+    text: '"The best dhikr is Lā ilāha illā-llāh, and the best supplication is Al-ḥamdu li-llāh."',
+    source: 'Sunan al-Tirmidhī 3383',
+    url: 'https://sunnah.com/tirmidhi:3383',
+    grade: 'Ḥasan',
+  },
+  'La ilaha illallah': {
+    text: '"Renew your faith." They asked: "How?" He said: "Say: Lā ilāha illā-llāh frequently."',
+    source: 'Musnad Aḥmad 8695',
+    url: 'https://sunnah.com/ahmad:8695',
+    grade: 'Ḥasan',
+  },
+  Astaghfirullah: {
+    text: '"I seek forgiveness from Allah and turn to Him in repentance more than seventy times a day."',
+    source: 'Ṣaḥīḥ al-Bukhārī 6307',
+    url: 'https://sunnah.com/bukhari:6307',
+    grade: 'Ṣaḥīḥ',
+  },
+  'SubhanAllah wa bihamdihi': {
+    text: '"Whoever says \'SubhanAllahi wa bihamdihi\' 100 times, his sins will be forgiven even if they were as much as the foam of the sea."',
+    source: 'Ṣaḥīḥ al-Bukhārī 6405',
+    url: 'https://sunnah.com/bukhari:6405',
+    grade: 'Ṣaḥīḥ',
+  },
+  'La hawla wa la quwwata illa billah': {
+    text: '"Shall I not guide you to a treasure from the treasures of Paradise? Say: Lā ḥawla wa lā quwwata illā bi-llāh."',
+    source: 'Ṣaḥīḥ al-Bukhārī 4205',
+    url: 'https://sunnah.com/bukhari:4205',
+    grade: 'Ṣaḥīḥ',
+  },
+  'SubhanAllah wal hamdulillah wa la ilaha illAllah wa Allahu akbar': {
+    text: '"The most beloved words to Allah are four: SubhanAllah, Alhamdulillah, La ilaha illallah, Allahu Akbar — it does not matter which you begin with."',
+    source: 'Ṣaḥīḥ Muslim 2137',
+    url: 'https://sunnah.com/muslim:2137',
+    grade: 'Ṣaḥīḥ',
+  },
+  'Ayatul Kursi': {
+    text: '"Whoever recites Āyat al-Kursī after every obligatory prayer, nothing prevents him from entering Jannah except death."',
+    source: 'al-Nasā\'ī (al-Sunan al-Kubrā) — Ṣaḥīḥ by al-Albānī',
+    url: 'https://sunnah.com/nasai:9928',
+    grade: 'Ṣaḥīḥ',
+  },
+  'Durud Ibrahim': {
+    text: '"Whoever sends blessings upon me once, Allah will send blessings upon him tenfold, and erase ten sins, and raise him ten degrees."',
+    source: 'al-Nasā\'ī 1297',
+    url: 'https://sunnah.com/nasai:1297',
+    grade: 'Ṣaḥīḥ',
+  },
+};
+
+const PREDEFINED_TYPES = [
+  'SubhanAllah', 'Alhamdulillah', 'Allahu Akbar', 'La ilaha illallah',
+  'Astaghfirullah', 'SubhanAllah wa bihamdihi', 'La hawla wa la quwwata illa billah',
+  'SubhanAllah wal hamdulillah wa la ilaha illAllah wa Allahu akbar',
+  'Ayatul Kursi', 'Durud Ibrahim',
+];
 
 const GLOW_PALETTE = [
   { glow: 'rgba(16,185,129,0.9)', ring: 'rgba(16,185,129,0.3)', bar: 'bg-brand-emerald' },
@@ -59,6 +160,8 @@ export default function ZikrCounter() {
   const [customName, setCustomName] = useState('');
   const [customArabic, setCustomArabic] = useState('');
   const [customMeaningText, setCustomMeaningText] = useState('');
+  const [customSource, setCustomSource] = useState('');
+  const [customSourceUrl, setCustomSourceUrl] = useState('');
   const [showGuestDialog, setShowGuestDialog] = useState(false);
 
   // Real-time goal progress:
@@ -105,11 +208,12 @@ export default function ZikrCounter() {
     ? { arabic: customMeanings[selected].arabic ?? '', transliteration: '', meaning: customMeanings[selected].meaning }
     : null);
 
-  // Merge server types into local store
+  // Merge predefined + server types into local store
   useEffect(() => {
-    if (fetchedTypes?.length) {
-      const serverNames = fetchedTypes.map((t) => t.name).filter(Boolean);
-      setTypes([...new Set([...serverNames, ...types])]);
+    const serverNames = (fetchedTypes ?? []).map((t) => t.name).filter(Boolean);
+    const merged = [...new Set([...PREDEFINED_TYPES, ...serverNames, ...types])];
+    if (merged.length !== types.length || merged.some((t, i) => t !== types[i])) {
+      setTypes(merged);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchedTypes?.length]);
@@ -164,12 +268,16 @@ export default function ZikrCounter() {
     if (!name || !meaning) return;
     addZikrType.mutate(name, {
       onSuccess: () => {
-        if (customArabic.trim() || meaning) {
-          setCustomMeaning(name, { arabic: customArabic.trim() || undefined, meaning });
-        }
+        setCustomMeaning(name, {
+          arabic: customArabic.trim() || undefined,
+          meaning,
+          source: customSource.trim() || undefined,
+          sourceUrl: customSourceUrl.trim() || undefined,
+        });
         setTypes([...types, name]);
         selectType(name);
         setCustomName(''); setCustomArabic(''); setCustomMeaningText('');
+        setCustomSource(''); setCustomSourceUrl('');
         setShowAddCustom(false);
         toast.success(`${name} added!`, { icon: '✨', duration: 3000 });
       },
@@ -329,6 +437,52 @@ export default function ZikrCounter() {
           )}
         </motion.div>
 
+        {/* ── Hadith reference for selected dhikr ── */}
+        {(() => {
+          const builtin = DHIKR_HADITHS[selected];
+          const custom = customMeanings[selected];
+          const hasRef = builtin || (custom?.source || custom?.sourceUrl);
+          if (!hasRef) return null;
+          return (
+            <motion.div
+              key={selected}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.25 }}
+              className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm px-4 py-3 space-y-1.5"
+            >
+              <p className="text-white/25 text-[10px] uppercase tracking-widest font-bold">📖 Hadith Reference</p>
+              {builtin ? (
+                <>
+                  <p className="text-white/60 text-xs italic leading-relaxed">{builtin.text}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {builtin.grade && (
+                      <span className="text-brand-emerald/60 text-[10px] font-semibold bg-brand-emerald/10 px-2 py-0.5 rounded-full">
+                        {builtin.grade}
+                      </span>
+                    )}
+                    <a href={builtin.url} target="_blank" rel="noopener noreferrer"
+                      className="text-brand-gold/60 text-[10px] underline hover:text-brand-gold/90 transition-colors">
+                      {builtin.source} ↗
+                    </a>
+                  </div>
+                </>
+              ) : custom?.source ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {custom.sourceUrl ? (
+                    <a href={custom.sourceUrl} target="_blank" rel="noopener noreferrer"
+                      className="text-brand-gold/60 text-[10px] underline hover:text-brand-gold/90 transition-colors">
+                      {custom.source} ↗
+                    </a>
+                  ) : (
+                    <span className="text-white/40 text-xs">{custom.source}</span>
+                  )}
+                </div>
+              ) : null}
+            </motion.div>
+          );
+        })()}
+
         {/* ── Action buttons ── */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -435,6 +589,23 @@ export default function ZikrCounter() {
                     onKeyDown={(e) => { if (e.key === 'Enter') submitCustomZikr(); if (e.key === 'Escape') setShowAddCustom(false); }}
                     placeholder="e.g. I seek forgiveness from Allah"
                     className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm"
+                  />
+                </div>
+
+                {/* Hadith reference (optional) */}
+                <div className="border-t border-brand-border/60 pt-3 space-y-2">
+                  <p className="text-white/30 text-[10px] uppercase tracking-wider">Hadith Reference <span className="normal-case text-white/20">(optional)</span></p>
+                  <input
+                    value={customSource}
+                    onChange={(e) => setCustomSource(e.target.value)}
+                    placeholder="e.g. Ṣaḥīḥ al-Bukhārī 6307"
+                    className="input input-sm input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-xs"
+                  />
+                  <input
+                    value={customSourceUrl}
+                    onChange={(e) => setCustomSourceUrl(e.target.value)}
+                    placeholder="https://sunnah.com/..."
+                    className="input input-sm input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-xs"
                   />
                 </div>
               </div>

@@ -17,6 +17,7 @@ export interface IPrayerEntry {
   prayedAt?: Date;
   location?: PrayerLocation;
   tasbeeh?: boolean;
+  ayatulKursi?: boolean;
 }
 
 export interface INaflEntry {
@@ -41,6 +42,7 @@ const prayerEntrySchema = new Schema<IPrayerEntry>(
     prayedAt: { type: Date },
     location: { type: String, enum: ['home', 'mosque', 'jamat'] },
     tasbeeh: { type: Boolean, default: false },
+    ayatulKursi: { type: Boolean, default: false },
   },
   { _id: false }
 );

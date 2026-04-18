@@ -11,6 +11,7 @@ import {
   PrayerTimesResult,
   PrayerKey,
 } from '../utils/prayerTimes.js';
+import { getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
 
 // ─── Timeline types ───────────────────────────────────────────────────────────
 
@@ -413,6 +414,9 @@ export default function PrayerTimes() {
             <p className="text-white/50 text-sm">
               {now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
+            {(() => { const h = getHijriDate(now); return h ? (
+              <p className="text-brand-gold/50 text-xs mt-0.5">{formatHijriDate(h)}</p>
+            ) : null; })()}
           </motion.div>
 
           {/* Live clock card */}

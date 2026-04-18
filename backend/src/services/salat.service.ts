@@ -54,7 +54,8 @@ export async function updatePrayerStatus(
   status: PrayerStatus,
   date?: string,
   location?: PrayerLocation,
-  tasbeeh?: boolean
+  tasbeeh?: boolean,
+  ayatulKursi?: boolean
 ) {
   const d = date ?? todayDateString();
   const log = await getOrCreateLog(userId, d);
@@ -66,9 +67,11 @@ export async function updatePrayerStatus(
   if (status === 'completed' || status === 'kaza') {
     entry.location = location ?? 'home';
     entry.tasbeeh = tasbeeh ?? false;
+    entry.ayatulKursi = ayatulKursi ?? false;
   } else {
     entry.location = undefined;
     entry.tasbeeh = false;
+    entry.ayatulKursi = false;
   }
 
   await log.save();

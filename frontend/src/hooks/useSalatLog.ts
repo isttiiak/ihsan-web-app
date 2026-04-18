@@ -141,6 +141,7 @@ export interface PrayerEntry {
   prayedAt?: string;
   location?: PrayerLocation;
   tasbeeh?: boolean;
+  ayatulKursi?: boolean;
 }
 
 export interface NaflEntry {
@@ -164,6 +165,7 @@ export interface UpdatePrayerVars {
   date?: string;
   location?: PrayerLocation;
   tasbeeh?: boolean;
+  ayatulKursi?: boolean;
 }
 
 export interface UpdateNaflVars {
@@ -250,6 +252,8 @@ export function useUpdatePrayer() {
                 ? (vars.location ?? 'home') : undefined,
               tasbeeh: (vars.status === 'completed' || vars.status === 'kaza')
                 ? (vars.tasbeeh ?? false) : false,
+              ayatulKursi: (vars.status === 'completed' || vars.status === 'kaza')
+                ? (vars.ayatulKursi ?? false) : false,
             },
           },
         };
