@@ -138,12 +138,36 @@ const PREDEFINED_TYPES = [
 ];
 
 const GLOW_PALETTE = [
-  { glow: 'rgba(16,185,129,0.9)', ring: 'rgba(16,185,129,0.3)', bar: 'bg-brand-emerald' },
-  { glow: 'rgba(245,158,11,0.9)', ring: 'rgba(245,158,11,0.3)', bar: 'bg-brand-gold' },
-  { glow: 'rgba(99,102,241,0.9)', ring: 'rgba(99,102,241,0.3)', bar: 'bg-indigo-500' },
-  { glow: 'rgba(236,72,153,0.9)', ring: 'rgba(236,72,153,0.3)', bar: 'bg-pink-500' },
-  { glow: 'rgba(6,182,212,0.9)', ring: 'rgba(6,182,212,0.3)', bar: 'bg-cyan-500' },
-  { glow: 'rgba(168,85,247,0.9)', ring: 'rgba(168,85,247,0.3)', bar: 'bg-purple-500' },
+  { glow: 'rgba(16,185,129,0.9)',  ring: 'rgba(16,185,129,0.3)',  bar: 'bg-brand-emerald', solid: '#10b981' },
+  { glow: 'rgba(245,158,11,0.9)',  ring: 'rgba(245,158,11,0.3)',  bar: 'bg-brand-gold',    solid: '#f59e0b' },
+  { glow: 'rgba(99,102,241,0.9)',  ring: 'rgba(99,102,241,0.3)',  bar: 'bg-indigo-500',    solid: '#6366f1' },
+  { glow: 'rgba(236,72,153,0.9)',  ring: 'rgba(236,72,153,0.3)',  bar: 'bg-pink-500',      solid: '#ec4899' },
+  { glow: 'rgba(6,182,212,0.9)',   ring: 'rgba(6,182,212,0.3)',   bar: 'bg-cyan-500',      solid: '#06b6d4' },
+  { glow: 'rgba(168,85,247,0.9)',  ring: 'rgba(168,85,247,0.3)',  bar: 'bg-purple-500',    solid: '#a855f7' },
+];
+
+// Sparkle positions for the full-screen focus overlay — spread across the whole viewport
+const FS_SPARKLES = [
+  { x: '4%',  y: '8%',  size: 3, dur: 3.2, del: 0.0 },
+  { x: '14%', y: '82%', size: 2, dur: 4.1, del: 0.5 },
+  { x: '24%', y: '28%', size: 4, dur: 2.8, del: 1.0 },
+  { x: '33%', y: '68%', size: 2, dur: 3.7, del: 0.3 },
+  { x: '41%', y: '13%', size: 3, dur: 4.5, del: 0.8 },
+  { x: '54%', y: '90%', size: 2, dur: 3.0, del: 1.5 },
+  { x: '63%', y: '22%', size: 4, dur: 2.5, del: 0.2 },
+  { x: '71%', y: '58%', size: 3, dur: 4.2, del: 1.1 },
+  { x: '79%', y: '8%',  size: 2, dur: 3.8, del: 0.7 },
+  { x: '89%', y: '78%', size: 3, dur: 3.3, del: 0.4 },
+  { x: '7%',  y: '48%', size: 2, dur: 4.8, del: 1.3 },
+  { x: '17%', y: '18%', size: 3, dur: 2.9, del: 0.9 },
+  { x: '47%', y: '42%', size: 2, dur: 4.0, del: 0.6 },
+  { x: '59%', y: '75%', size: 4, dur: 3.5, del: 1.2 },
+  { x: '87%', y: '38%', size: 2, dur: 2.7, del: 1.6 },
+  { x: '29%', y: '93%', size: 3, dur: 3.9, del: 0.1 },
+  { x: '77%', y: '32%', size: 2, dur: 4.3, del: 0.8 },
+  { x: '51%', y: '62%', size: 3, dur: 3.1, del: 1.4 },
+  { x: '93%', y: '12%', size: 2, dur: 4.6, del: 0.5 },
+  { x: '11%', y: '70%', size: 4, dur: 2.6, del: 1.0 },
 ];
 
 export default function ZikrCounter() {
@@ -209,6 +233,22 @@ export default function ZikrCounter() {
     const handler = (e: KeyboardEvent) => { if (e.code === 'Escape') setFullScreen(false); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+  }, [fullScreen]);
+
+  // Lower navbar z-index while in full-screen so the portal overlay covers it
+  useEffect(() => {
+    const navbar = document.querySelector<HTMLElement>('nav');
+    if (fullScreen) {
+      if (navbar) navbar.style.zIndex = '0';
+      document.body.style.overflow = 'hidden';
+    } else {
+      if (navbar) navbar.style.zIndex = '';
+      document.body.style.overflow = '';
+    }
+    return () => {
+      if (navbar) navbar.style.zIndex = '';
+      document.body.style.overflow = '';
+    };
   }, [fullScreen]);
 
   const color = GLOW_PALETTE[colorIdx % GLOW_PALETTE.length]!;
@@ -561,7 +601,7 @@ export default function ZikrCounter() {
         })()}
       </div>
 
-      {/* ── Full-screen focus mode overlay (portal → above Navbar stacking context) ── */}
+      {/* ── Full-screen focus mode overlay (portal → truly above Navbar) ── */}
       {createPortal(
         <AnimatePresence>
         {fullScreen && (
@@ -569,120 +609,193 @@ export default function ZikrCounter() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[9999] flex flex-col"
-            style={{
-              background: `radial-gradient(circle at 50% 55%, ${color.glow}22 0%, ${color.glow}07 38%, #080c12 72%)`,
-              transition: 'background 0.35s ease',
-            }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 flex flex-col overflow-hidden"
+            style={{ zIndex: 99999, background: '#030609' }}
           >
-            {/* Top bar: zikr selector (left) + close (right) */}
-            <div className="flex items-center justify-between px-6 pt-6 pb-2 flex-shrink-0">
-              <div className="flex items-center gap-1 opacity-50 hover:opacity-80 transition-opacity">
-                <span className="text-white text-sm font-medium truncate max-w-[180px] sm:max-w-xs"
-                  style={{ color: color.glow, textShadow: `0 0 10px ${color.glow}50` }}>
+            {/* ── Animated color orbs ── */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <motion.div
+                className="absolute rounded-full"
+                style={{
+                  width: '70vw', height: '70vw',
+                  left: '5%', top: '-10%',
+                  background: `radial-gradient(circle, ${color.solid}18 0%, transparent 70%)`,
+                  filter: 'blur(60px)',
+                  transition: 'background 0.6s ease',
+                }}
+                animate={{ x: [0, 60, -30, 0], y: [0, 40, -20, 0] }}
+                transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <motion.div
+                className="absolute rounded-full"
+                style={{
+                  width: '55vw', height: '55vw',
+                  right: '-5%', bottom: '-5%',
+                  background: `radial-gradient(circle, ${color.solid}12 0%, transparent 70%)`,
+                  filter: 'blur(50px)',
+                  transition: 'background 0.6s ease',
+                }}
+                animate={{ x: [0, -50, 25, 0], y: [0, -35, 20, 0] }}
+                transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+              />
+              <motion.div
+                className="absolute rounded-full"
+                style={{
+                  width: '40vw', height: '40vw',
+                  left: '40%', top: '30%',
+                  background: `radial-gradient(circle, ${color.solid}08 0%, transparent 70%)`,
+                  filter: 'blur(40px)',
+                  transition: 'background 0.6s ease',
+                }}
+                animate={{ x: [0, 30, -40, 0], y: [0, -25, 35, 0] }}
+                transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+              />
+            </div>
+
+            {/* ── Sparkle particles ── */}
+            <div className="absolute inset-0 pointer-events-none">
+              {FS_SPARKLES.map((s, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute rounded-full"
+                  style={{
+                    left: s.x, top: s.y,
+                    width: s.size, height: s.size,
+                    background: color.solid,
+                    boxShadow: `0 0 ${s.size * 4}px ${color.solid}`,
+                    transition: 'background 0.6s ease, box-shadow 0.6s ease',
+                  }}
+                  animate={{ opacity: [0, 0.85, 0], scale: [0.4, 1.6, 0.4] }}
+                  transition={{ duration: s.dur, delay: s.del, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              ))}
+            </div>
+
+            {/* ── Top bar: zikr selector + close ── */}
+            <div className="relative z-10 flex items-center justify-between px-5 sm:px-8 pt-5 pb-2 flex-shrink-0">
+              <div className="flex items-center gap-1.5 opacity-55 hover:opacity-90 transition-opacity cursor-pointer">
+                <span className="text-sm font-bold truncate max-w-[160px] sm:max-w-[260px]"
+                  style={{ color: color.solid, textShadow: `0 0 12px ${color.solid}80`, transition: 'color 0.4s ease' }}>
                   {selected}
                 </span>
                 <select
                   value={selected}
                   onChange={(e) => selectType(e.target.value)}
-                  className="bg-transparent border-none text-white/40 text-xs focus:outline-none cursor-pointer appearance-none ml-0.5"
+                  className="bg-transparent border-none text-white/30 text-xs focus:outline-none cursor-pointer appearance-none"
                   style={{ backgroundImage: 'none' }}
                 >
                   {types.map((t) => (
-                    <option key={t} value={t} className="bg-brand-deep text-white">{t}</option>
+                    <option key={t} value={t} className="bg-[#030609] text-white">{t}</option>
                   ))}
                 </select>
-                <svg className="w-3 h-3 text-white/30 -ml-3 pointer-events-none flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 text-white/25 -ml-3 pointer-events-none flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
               <button
                 onClick={() => setFullScreen(false)}
-                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/50 hover:text-white transition-all"
+                className="p-2 rounded-xl bg-white/6 hover:bg-white/14 text-white/35 hover:text-white/80 transition-all"
                 title="Exit focus mode (Esc)"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Center content */}
-            <div className="flex-1 flex flex-col items-center justify-center gap-5 px-8 pb-12">
-              {/* Arabic + meaning (muted, above counter) */}
-              {meaning && (
-                <motion.div
-                  key={`fs-meaning:${selected}`}
-                  initial={{ opacity: 0, y: -8 }}
+            {/* ── Center content ── */}
+            <div className="relative z-10 flex-1 flex flex-col items-center justify-center gap-5 px-6 -mt-6">
+
+              {/* Arabic text — very faint, above number */}
+              {meaning?.arabic && (
+                <motion.p
+                  key={`fs-ar:${selected}`}
+                  initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-center opacity-35 space-y-1.5 max-w-sm"
+                  dir="rtl"
+                  className="text-white/18 text-center"
+                  style={{
+                    fontFamily: "'Amiri', 'Scheherazade New', serif",
+                    fontSize: 'clamp(22px, 5vw, 40px)',
+                  }}
                 >
-                  {meaning.arabic && (
-                    <p
-                      dir="rtl"
-                      className="text-3xl sm:text-4xl text-white"
-                      style={{
-                        fontFamily: "'Amiri', 'Scheherazade New', serif",
-                        textShadow: `0 0 20px ${color.glow}50`,
-                      }}
-                    >
-                      {meaning.arabic}
-                    </p>
-                  )}
-                  <p className="text-white text-xs leading-relaxed">{meaning.meaning}</p>
-                </motion.div>
+                  {meaning.arabic}
+                </motion.p>
               )}
 
-              {/* Counter number */}
+              {/* Huge counter number */}
               <AnimatePresence mode="wait">
-                <motion.div
+                <motion.span
                   key={`fs:${selected}:${currentCount}`}
                   initial={{ scale: 0.82, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 1.18, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  exit={{ scale: 1.15, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 520, damping: 30 }}
+                  className="font-black text-white tabular-nums leading-none block text-center"
+                  style={{
+                    fontSize: 'clamp(100px, 28vw, 260px)',
+                    textShadow: `0 0 80px ${color.solid}, 0 0 200px ${color.solid}50`,
+                    transition: 'text-shadow 0.4s ease',
+                  }}
                 >
-                  <div
-                    className="text-[9rem] sm:text-[13rem] font-black text-white leading-none text-center tabular-nums"
-                    style={{
-                      textShadow: `0 0 60px ${color.glow}, 0 0 120px ${color.glow}50`,
-                      transition: 'text-shadow 0.25s ease',
-                    }}
-                  >
-                    {currentCount}
-                  </div>
-                </motion.div>
+                  {currentCount}
+                </motion.span>
               </AnimatePresence>
 
-              {/* Count button */}
-              <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onIncrement}
-                className="flex items-center justify-center gap-2.5 w-56 sm:w-72 h-16 rounded-2xl text-brand-deep font-bold text-xl cursor-pointer select-none outline-none border-0"
-                style={{
-                  backgroundColor: 'white',
-                  boxShadow: `0 8px 48px ${color.glow}55`,
-                  transition: 'box-shadow 0.3s ease',
-                }}
-              >
-                <PlusIcon className="w-7 h-7" />
-                Count
-              </motion.button>
+              {/* Transliteration — faint caption below number */}
+              {meaning?.transliteration && (
+                <p className="text-white/20 text-xs sm:text-sm italic tracking-widest -mt-2">
+                  {meaning.transliteration}
+                </p>
+              )}
 
-              {/* Streak + goal% (subtle, below button) */}
+              {/* Long colored count button with ripple */}
+              <div className="relative" style={{ width: 'min(88vw, 520px)' }}>
+                {/* Ripple effect on each count */}
+                <motion.div
+                  key={`ripple:${currentCount}`}
+                  className="absolute inset-0 rounded-3xl pointer-events-none"
+                  initial={{ scale: 1, opacity: 0.45 }}
+                  animate={{ scale: 1.35, opacity: 0 }}
+                  transition={{ duration: 0.55, ease: 'easeOut' }}
+                  style={{ background: color.solid }}
+                />
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={onIncrement}
+                  className="relative flex items-center justify-center gap-3 font-black rounded-3xl w-full select-none outline-none border-0"
+                  style={{
+                    height: '76px',
+                    fontSize: 'clamp(20px, 3vw, 28px)',
+                    background: color.solid,
+                    color: '#030609',
+                    boxShadow: `0 0 50px ${color.solid}55, 0 16px 60px ${color.solid}25`,
+                    transition: 'background 0.4s ease, box-shadow 0.4s ease',
+                  }}
+                >
+                  <PlusIcon className="w-8 h-8 sm:w-9 sm:h-9" />
+                  Count
+                </motion.button>
+              </div>
+
+              {/* Streak + goal — very subtle */}
               {(streakCount !== null || goalProgress !== null) && (
-                <div className="flex items-center gap-5 opacity-50">
+                <div className="flex items-center gap-6 opacity-35">
                   {streakCount !== null && (
-                    <span className="text-brand-gold text-xs font-bold">🔥 {streakCount} day streak</span>
+                    <span className="text-brand-gold text-xs font-bold">🔥 {streakCount} day</span>
                   )}
                   {goalProgress !== null && (
-                    <span className={`text-xs font-bold ${goalMet ? 'text-brand-emerald' : 'text-white/70'}`}>
-                      {goalMet ? '🏆 Goal Achieved!' : `🎯 ${goalProgress}%`}
+                    <span className={`text-xs font-bold ${goalMet ? 'text-brand-emerald' : 'text-white/60'}`}>
+                      {goalMet ? '🏆 Goal!' : `🎯 ${goalProgress}%`}
                     </span>
                   )}
                 </div>
               )}
             </div>
+
+            {/* Bottom hint */}
+            <p className="relative z-10 text-center text-white/18 text-[11px] pb-5 flex-shrink-0 tracking-wider">
+              SPACE to count · ESC to exit
+            </p>
           </motion.div>
         )}
       </AnimatePresence>,
