@@ -209,19 +209,26 @@ const EMPTY_PRAYERS: Record<PrayerId, PrayerEntry> = {
 
 const EMPTY_NAFL: NaflEntry = { completed: false, types: [], rakat: 2 };
 
+// Always use local device date — never let the backend guess (backend runs UTC which
+// diverges from local date for users ahead/behind UTC).
+function localTodayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export function useSalatLog(date?: string) {
+  const resolvedDate = date ?? localTodayStr();
   return useQuery({
-    queryKey: ['salat', 'log', date ?? 'today'],
+    queryKey: ['salat', 'log', resolvedDate],
     queryFn: async () => {
-      const params = date ? `?date=${date}` : '';
-      const { data } = await api.get<{ ok: boolean; log: SalatLog }>(`/api/salat${params}`);
+      const { data } = await api.get<{ ok: boolean; log: SalatLog }>(`/api/salat?date=${resolvedDate}`);
       return data.log;
     },
     staleTime: 30_000,
     placeholderData: {
       _id: '',
       userId: '',
-      date: date ?? new Date().toISOString().substring(0, 10),
+      date: resolvedDate,
       prayers: EMPTY_PRAYERS,
       nafl: EMPTY_NAFL,
     },
@@ -236,7 +243,7 @@ export function useUpdatePrayer() {
       return data.log;
     },
     onMutate: async (vars) => {
-      const key = ['salat', 'log', vars.date ?? 'today'];
+      const key = ['salat', 'log', vars.date ?? localTodayStr()];
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<SalatLog>(key);
       qc.setQueryData<SalatLog>(key, (old) => {
@@ -264,7 +271,7 @@ export function useUpdatePrayer() {
       if (context?.previous !== undefined) qc.setQueryData(context.key, context.previous);
     },
     onSettled: (_data, _err, vars) => {
-      void qc.invalidateQueries({ queryKey: ['salat', 'log', vars.date ?? 'today'] });
+      void qc.invalidateQueries({ queryKey: ['salat', 'log', vars.date ?? localTodayStr()] });
       void qc.invalidateQueries({ queryKey: ['salat', 'analytics'] });
     },
   });
@@ -278,7 +285,7 @@ export function useUpdateNafl() {
       return data.log;
     },
     onMutate: async (vars) => {
-      const key = ['salat', 'log', vars.date ?? 'today'];
+      const key = ['salat', 'log', vars.date ?? localTodayStr()];
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<SalatLog>(key);
       qc.setQueryData<SalatLog>(key, (old) => {
@@ -299,7 +306,7 @@ export function useUpdateNafl() {
       if (context?.previous !== undefined) qc.setQueryData(context.key, context.previous);
     },
     onSettled: (_data, _err, vars) => {
-      void qc.invalidateQueries({ queryKey: ['salat', 'log', vars.date ?? 'today'] });
+      void qc.invalidateQueries({ queryKey: ['salat', 'log', vars.date ?? localTodayStr()] });
       void qc.invalidateQueries({ queryKey: ['salat', 'analytics'] });
     },
   });

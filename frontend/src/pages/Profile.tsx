@@ -519,6 +519,10 @@ export default function Profile() {
         headers: { Authorization: `Bearer ${idToken}` },
       });
       if (res.ok) {
+        // Record deletion date — SalatTracker uses this to block back-navigation before it
+        const d = new Date();
+        const localToday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        localStorage.setItem('ihsan_salat_start_date', localToday);
         // Invalidate all salat-related React Query caches so UI reflects empty state
         await queryClient.invalidateQueries({ queryKey: ['salat'] });
         await Swal.fire({ title: 'Deleted', text: 'All salat logs have been removed.', icon: 'success', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#10b981', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });

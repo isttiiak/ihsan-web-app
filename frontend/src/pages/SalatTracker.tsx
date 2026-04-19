@@ -110,6 +110,11 @@ export default function SalatTracker() {
 
   const isToday = selectedDate === todayStr();
 
+  // Start date: the day tracking began (or was reset after deletion).
+  // Prevents users from adding entries before this date after a data wipe.
+  const salatStartDate = localStorage.getItem('ihsan_salat_start_date') ?? null;
+  const isAtStartDate = salatStartDate ? selectedDate <= salatStartDate : false;
+
   // Prayer times for current-prayer detection (only needed for today)
   const todayPrayerTimes = useMemo(() => {
     const stored = localStorage.getItem('ihsan_location');
@@ -132,7 +137,7 @@ export default function SalatTracker() {
     } catch { return null; }
   }, []); // computed once on mount; fine for a session
 
-  const { data: log, isLoading } = useSalatLog(isToday ? undefined : selectedDate);
+  const { data: log, isLoading } = useSalatLog(selectedDate);
   const updatePrayer = useUpdatePrayer();
   const updateNafl = useUpdateNafl();
 
@@ -148,7 +153,7 @@ export default function SalatTracker() {
       completed: newCompleted,
       types: newCompleted ? naflEntry.types : [],
       rakat: 2, // always reset to default when toggling done/undone
-      date: isToday ? undefined : selectedDate,
+      date: selectedDate,
     });
     if (newCompleted) setNaflExpanded(true);
     else setNaflExpanded(false);
@@ -166,7 +171,7 @@ export default function SalatTracker() {
       types: next,
       // Adding: keep user's count if already above new min; removing: snap to new min
       rakat: adding ? Math.max(minRakat, naflEntry.rakat ?? 2) : minRakat,
-      date: isToday ? undefined : selectedDate,
+      date: selectedDate,
     });
   };
 
@@ -177,7 +182,7 @@ export default function SalatTracker() {
       completed: naflEntry.completed,
       types: naflEntry.types ?? [],
       rakat: next,
-      date: isToday ? undefined : selectedDate,
+      date: selectedDate,
     });
   };
 
@@ -202,7 +207,7 @@ export default function SalatTracker() {
       updatePrayer.mutate({
         prayer,
         status: newStatus,
-        date: isToday ? undefined : selectedDate,
+        date: selectedDate,
         location: current?.location ?? 'home',
         tasbeeh: current?.tasbeeh ?? false,
       });
@@ -211,7 +216,7 @@ export default function SalatTracker() {
       updatePrayer.mutate({
         prayer,
         status: newStatus,
-        date: isToday ? undefined : selectedDate,
+        date: selectedDate,
       });
       setExpandedPrayer(null);
     }
@@ -223,7 +228,7 @@ export default function SalatTracker() {
     updatePrayer.mutate({
       prayer,
       status: current?.status as PrayerStatus ?? 'completed',
-      date: isToday ? undefined : selectedDate,
+      date: selectedDate,
       location: type === 'location' ? (value as PrayerLocation) : (current?.location ?? 'home'),
       tasbeeh: type === 'tasbeeh' ? (value as boolean) : (current?.tasbeeh ?? false),
       ayatulKursi: type === 'ayatulKursi' ? (value as boolean) : (current?.ayatulKursi ?? false),
@@ -238,9 +243,12 @@ export default function SalatTracker() {
           {/* Date navigator */}
           <div className="flex items-center justify-between gap-3">
             <motion.button
-              whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}
-              onClick={() => { setSelectedDate((d) => offsetDate(d, -1)); setExpandedPrayer(null); }}
-              className="p-2 rounded-xl bg-brand-surface border border-brand-border text-white/60 hover:text-white hover:border-brand-emerald/40"
+              whileHover={isAtStartDate ? {} : { scale: 1.08 }}
+              whileTap={isAtStartDate ? {} : { scale: 0.92 }}
+              onClick={() => { if (!isAtStartDate) { setSelectedDate((d) => offsetDate(d, -1)); setExpandedPrayer(null); } }}
+              disabled={isAtStartDate}
+              title={isAtStartDate ? 'No logs before this date' : 'Previous day'}
+              className="p-2 rounded-xl bg-brand-surface border border-brand-border text-white/60 hover:text-white hover:border-brand-emerald/40 disabled:opacity-20 disabled:cursor-not-allowed"
             >
               <ChevronLeftIcon className="w-5 h-5" />
             </motion.button>
