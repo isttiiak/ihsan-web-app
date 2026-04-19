@@ -147,7 +147,7 @@ export default function Navbar() {
     }
     if (location.pathname === '/zikr') {
       return (
-        <div className="flex items-center gap-1.5">
+        <div className="hidden sm:flex items-center gap-1.5">
           {streak !== null && (
             <div className="tooltip tooltip-bottom" data-tip={`${streak} day streak`}>
               <span className="px-2 py-0.5 rounded-full bg-brand-gold/20 border border-brand-gold/40 text-white text-xs font-bold flex items-center gap-1">
@@ -174,7 +174,7 @@ export default function Navbar() {
     }
     if (location.pathname === '/salat') {
       return (
-        <div className="flex items-center gap-1.5">
+        <div className="hidden sm:flex items-center gap-1.5">
           <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-white text-xs font-bold whitespace-nowrap">
             🕌 {salatCount}/5 today
           </span>

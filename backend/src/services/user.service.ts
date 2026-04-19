@@ -1,4 +1,4 @@
-import User, { IUser } from '../models/User.js';
+import User, { IUser, ILinkedProvider } from '../models/User.js';
 
 export async function getUserById(uid: string): Promise<IUser | null> {
   return User.findOne({ uid });
@@ -15,6 +15,44 @@ export interface UserUpdateFields {
   bio?: string;
   city?: string;
   country?: string;
+}
+
+export async function linkGoogleProvider(
+  uid: string,
+  googleEmail: string,
+  googleUid: string,
+): Promise<IUser | null> {
+  // Prevent the same Google account being linked to two Ihsan accounts
+  const duplicate = await User.findOne({
+    'linkedProviders.providerUid': googleUid,
+    uid: { $ne: uid },
+  });
+  if (duplicate) {
+    const err = Object.assign(
+      new Error('This Google account is already linked to another Ihsan account.'),
+      { statusCode: 409 },
+    );
+    throw err;
+  }
+
+  const entry: ILinkedProvider = { provider: 'google.com', email: googleEmail, providerUid: googleUid };
+  return User.findOneAndUpdate(
+    { uid },
+    { $addToSet: { linkedProviders: entry } },
+    { new: true },
+  );
+}
+
+export async function unlinkGoogleProvider(uid: string, providerUid: string): Promise<IUser | null> {
+  return User.findOneAndUpdate(
+    { uid },
+    { $pull: { linkedProviders: { providerUid } } },
+    { new: true },
+  );
+}
+
+export async function setPrimaryEmail(uid: string, email: string): Promise<IUser | null> {
+  return User.findOneAndUpdate({ uid }, { $set: { primaryEmail: email } }, { new: true });
 }
 
 export async function updateUser(uid: string, fields: UserUpdateFields): Promise<IUser | null> {

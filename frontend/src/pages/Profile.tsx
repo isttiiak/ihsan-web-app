@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/useAuthStore.js';
-import { storage } from '../firebase.js';
+import { auth, storage, googleProvider } from '../firebase.js';
+import { linkWithPopup, unlink, AuthError } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -17,6 +18,7 @@ import {
   XMarkIcon,
   TrashIcon,
   ExclamationTriangleIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useZikrStore } from '../store/useZikrStore.js';
@@ -176,6 +178,12 @@ interface ProfileData {
   country: string;
 }
 
+interface LinkedProvider {
+  provider: string;
+  email: string;
+  providerUid: string;
+}
+
 interface DBUser {
   displayName?: string;
   firstName?: string;
@@ -189,6 +197,8 @@ interface DBUser {
   country?: string;
   totalCount?: number;
   createdAt?: string;
+  primaryEmail?: string;
+  linkedProviders?: LinkedProvider[];
 }
 
 interface UserResponse {
@@ -231,6 +241,8 @@ export default function Profile() {
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [linkingGoogle, setLinkingGoogle] = useState(false);
+  const [unlinkingGoogle, setUnlinkingGoogle] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -480,6 +492,100 @@ export default function Profile() {
     }
   };
 
+  const linkGoogle = async () => {
+    if (linkingGoogle || !auth.currentUser) return;
+    setLinkingGoogle(true);
+    try {
+      const result = await linkWithPopup(auth.currentUser, googleProvider);
+      const googleInfo = result.user.providerData.find((p) => p.providerId === 'google.com');
+      if (!googleInfo) { setLinkingGoogle(false); return; }
+
+      const idToken = localStorage.getItem('ihsan_idToken');
+      if (!idToken) { setLinkingGoogle(false); return; }
+
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/link-google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ googleEmail: googleInfo.email ?? '', googleUid: googleInfo.uid }),
+      });
+      const data = await res.json() as { ok: boolean; user?: DBUser; error?: string };
+      if (data.ok && data.user) {
+        setDbUser(data.user);
+      } else {
+        const msg = res.status === 409
+          ? 'This Google account is already linked to another Ihsan account.'
+          : (data.error ?? 'Failed to save linked account. Please try again.');
+        await Swal.fire({ title: 'Error', text: msg, icon: 'error', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
+      }
+    } catch (err) {
+      const code = (err as AuthError).code ?? '';
+      if (code === 'auth/credential-already-in-use') {
+        await Swal.fire({ title: 'Already linked', text: 'This Google account is already connected to a different Ihsan account.', icon: 'warning', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#f59e0b', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
+      } else if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+        await Swal.fire({ title: 'Error', text: 'Could not connect Google account. Please try again.', icon: 'error', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
+      }
+    }
+    setLinkingGoogle(false);
+  };
+
+  const unlinkGoogle = async (providerUid: string) => {
+    const confirm = await Swal.fire({
+      title: 'Disconnect Google account?',
+      text: 'You will no longer be able to sign in with this Google account.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Disconnect',
+      cancelButtonText: 'Cancel',
+      background: '#141e2e',
+      color: '#f1f5f9',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#1e2d42',
+      customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
+    });
+    if (!confirm.isConfirmed) return;
+    setUnlinkingGoogle(true);
+    try {
+      if (auth.currentUser) await unlink(auth.currentUser, 'google.com');
+      const idToken = localStorage.getItem('ihsan_idToken');
+      if (idToken) {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/unlink-google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+          body: JSON.stringify({ providerUid }),
+        });
+        const data = await res.json() as { ok: boolean; user?: DBUser };
+        if (data.ok && data.user) setDbUser(data.user);
+      }
+    } catch { /* non-fatal */ }
+    setUnlinkingGoogle(false);
+  };
+
+  const makePrimaryEmail = async (email: string) => {
+    const confirm = await Swal.fire({
+      title: 'Change primary email?',
+      html: `Set <b>${email}</b> as your primary email?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Make Primary',
+      cancelButtonText: 'Cancel',
+      background: '#141e2e',
+      color: '#f1f5f9',
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#1e2d42',
+      customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
+    });
+    if (!confirm.isConfirmed) return;
+    const idToken = localStorage.getItem('ihsan_idToken');
+    if (!idToken) return;
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/primary-email`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json() as { ok: boolean; user?: DBUser };
+    if (data.ok && data.user) setDbUser(data.user);
+  };
+
   const deleteSalatLogs = async () => {
     const first = await Swal.fire({
       title: 'Delete all Salat logs?',
@@ -696,20 +802,103 @@ export default function Profile() {
             </div>
           </motion.div>
 
-          {/* Account info (read-only) */}
+          {/* Account info + Google linking */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
             className="card bg-brand-surface border border-brand-border rounded-2xl"
           >
-            <div className="card-body p-5 sm:p-6">
-              <p className="text-white/30 text-xs font-bold uppercase tracking-widest mb-3">Account</p>
-              <div className="flex items-center gap-3">
-                <EnvelopeIcon className="w-4 h-4 text-white/30 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-white/30 text-xs">Email</p>
-                  <p className="text-white/60 text-sm truncate">{user?.email ?? '—'}</p>
-                </div>
-                <span className="badge badge-xs bg-brand-border text-white/30 border-none shrink-0">read-only</span>
-              </div>
+            <div className="card-body p-5 sm:p-6 space-y-4">
+              <p className="text-white/30 text-xs font-bold uppercase tracking-widest">Account & Linked Accounts</p>
+
+              {/* Email rows */}
+              {(() => {
+                const primaryEmail = dbUser?.primaryEmail ?? user?.email ?? null;
+                const linked = dbUser?.linkedProviders ?? [];
+                const googleLinked = linked.find((p) => p.provider === 'google.com');
+
+                return (
+                  <div className="space-y-2.5">
+                    {/* Primary email (email/password) */}
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-border">
+                      <EnvelopeIcon className="w-4 h-4 text-white/30 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-white/60 text-sm truncate">{user?.email ?? '—'}</p>
+                          {primaryEmail === user?.email || !primaryEmail ? (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald font-bold shrink-0">PRIMARY</span>
+                          ) : (
+                            <button
+                              onClick={() => user?.email && void makePrimaryEmail(user.email)}
+                              className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 border border-brand-border text-white/40 hover:border-brand-emerald/40 hover:text-brand-emerald font-bold shrink-0 transition-colors"
+                            >
+                              Make Primary
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-white/25 text-xs">Email / Password</p>
+                      </div>
+                    </div>
+
+                    {/* Linked Google account */}
+                    {googleLinked ? (
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-border">
+                        <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                        </svg>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-white/60 text-sm truncate">{googleLinked.email}</p>
+                            {primaryEmail === googleLinked.email ? (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald font-bold shrink-0">PRIMARY</span>
+                            ) : (
+                              <button
+                                onClick={() => void makePrimaryEmail(googleLinked.email)}
+                                className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 border border-brand-border text-white/40 hover:border-brand-emerald/40 hover:text-brand-emerald font-bold shrink-0 transition-colors"
+                              >
+                                Make Primary
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-white/25 text-xs">Google Account</p>
+                        </div>
+                        <button
+                          onClick={() => void unlinkGoogle(googleLinked.providerUid)}
+                          disabled={unlinkingGoogle}
+                          className="text-white/20 hover:text-red-400 transition-colors disabled:opacity-40 shrink-0 p-1"
+                          title="Disconnect Google account"
+                        >
+                          <XMarkIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      /* Connect Google button */
+                      <button
+                        onClick={() => void linkGoogle()}
+                        disabled={linkingGoogle}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-dashed border-brand-border hover:border-brand-emerald/40 text-white/40 hover:text-white/70 transition-all disabled:opacity-50 group"
+                      >
+                        {linkingGoogle ? (
+                          <span className="loading loading-spinner loading-xs text-brand-emerald" />
+                        ) : (
+                          <LinkIcon className="w-4 h-4 shrink-0 group-hover:text-brand-emerald transition-colors" />
+                        )}
+                        <div className="text-left min-w-0">
+                          <p className="text-sm font-medium leading-tight">Connect Google Account</p>
+                          <p className="text-xs text-white/25 leading-tight mt-0.5">Sign in with Google & sync your profile photo</p>
+                        </div>
+                        <svg className="w-4 h-4 ml-auto shrink-0 opacity-50" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </motion.div>
 

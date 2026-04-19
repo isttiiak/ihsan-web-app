@@ -1,8 +1,20 @@
 import React, { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithPopup, updateProfile, AuthError } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  updateProfile,
+  sendEmailVerification,
+  AuthError,
+} from 'firebase/auth';
 import { auth, googleProvider } from '../firebase.js';
 import { useNavigate } from 'react-router-dom';
-import { EyeIcon, EyeSlashIcon, ExclamationCircleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import {
+  EyeIcon,
+  EyeSlashIcon,
+  ExclamationCircleIcon,
+  CheckCircleIcon,
+  EnvelopeIcon,
+} from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 
 function mapFirebaseError(code: string): string {
@@ -35,6 +47,11 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
   return { score, label: 'Strong', color: 'bg-brand-emerald' };
 }
 
+// Stricter email regex: requires a real domain with a TLD of 2+ chars
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+}
+
 export default function AuthSignUp() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -44,9 +61,18 @@ export default function AuthSignUp() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [confirmTouched, setConfirmTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [emailValue, setEmailValue] = useState('');
+
+  // After successful account creation
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   const strength = getPasswordStrength(password);
   const confirmMismatch = confirmTouched && confirm !== password;
+  const emailInvalid = emailTouched && emailValue.length > 0 && !isValidEmail(emailValue);
 
   const google = async () => {
     setError('');
@@ -71,6 +97,10 @@ export default function AuthSignUp() {
     const lastName = (form.elements.namedItem('lastName') as HTMLInputElement).value.trim();
     const email = (form.elements.namedItem('email') as HTMLInputElement).value.trim();
 
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address (e.g. name@domain.com).');
+      return;
+    }
     if (password !== confirm) {
       setError('Passwords do not match.');
       return;
@@ -87,21 +117,122 @@ export default function AuthSignUp() {
       if (fullName) {
         try { await updateProfile(res.user, { displayName: fullName }); } catch { /* non-fatal */ }
       }
+      // Send verification email — non-fatal if it fails
+      try { await sendEmailVerification(res.user); } catch { /* non-fatal */ }
+      setVerificationEmail(email);
+      setVerificationSent(true);
+      setLoading(false);
     } catch (err) {
       setError(mapFirebaseError((err as AuthError).code ?? ''));
       setLoading(false);
     }
   };
 
+  const resendVerification = async () => {
+    if (resendLoading) return;
+    setResendLoading(true);
+    setResendSuccess(false);
+    try {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        await sendEmailVerification(currentUser);
+        setResendSuccess(true);
+      }
+    } catch { /* non-fatal */ }
+    setResendLoading(false);
+  };
+
+  // ── Verification sent screen ─────────────────────────────────────────────────
+  if (verificationSent) {
+    return (
+      <div className="min-h-screen relative overflow-hidden bg-brand-void flex items-center justify-center p-4">
+        <motion.div
+          className="absolute top-0 left-0 w-96 h-96 rounded-full bg-gradient-to-r from-brand-emerald/20 to-teal-500/20 blur-3xl pointer-events-none"
+          animate={{ x: [0, 60, 0], y: [0, 30, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-gradient-to-r from-brand-magenta/20 to-purple-500/20 blur-3xl pointer-events-none"
+          animate={{ x: [0, -60, 0], y: [0, -30, 0] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+        />
+
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative w-full max-w-md"
+        >
+          <div className="backdrop-blur-xl bg-brand-surface/80 rounded-3xl shadow-2xl border border-brand-border/60 p-8 sm:p-10 text-center space-y-6">
+            {/* Icon */}
+            <div className="flex justify-center">
+              <div className="w-20 h-20 rounded-full bg-brand-emerald/15 border border-brand-emerald/30 flex items-center justify-center">
+                <EnvelopeIcon className="w-10 h-10 text-brand-emerald" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-white">Check your inbox</h2>
+              <p className="text-white/50 text-sm leading-relaxed">
+                We sent a verification link to
+              </p>
+              <p className="text-brand-emerald font-semibold text-sm break-all">{verificationEmail}</p>
+              <p className="text-white/40 text-xs leading-relaxed pt-1">
+                Click the link in the email to verify your address. You can use the app now — some features require a verified email.
+              </p>
+            </div>
+
+            {/* Resend */}
+            <div className="space-y-2">
+              {resendSuccess ? (
+                <div className="flex items-center justify-center gap-2 text-brand-emerald text-sm">
+                  <CheckCircleIcon className="w-4 h-4" />
+                  Verification email resent!
+                </div>
+              ) : (
+                <button
+                  onClick={() => void resendVerification()}
+                  disabled={resendLoading}
+                  className="text-white/40 hover:text-brand-emerald text-sm transition-colors disabled:opacity-40"
+                >
+                  {resendLoading ? 'Sending…' : 'Resend verification email'}
+                </button>
+              )}
+            </div>
+
+            {/* Continue to app */}
+            <button
+              onClick={() => navigate('/')}
+              className="w-full py-3 px-4 bg-brand-emerald hover:bg-brand-emerald-dim text-white rounded-xl font-semibold shadow-lg transition-all duration-300"
+            >
+              Continue to App
+            </button>
+
+            <p className="text-white/30 text-xs">
+              Wrong email?{' '}
+              <button
+                className="text-brand-emerald hover:underline"
+                onClick={() => { setVerificationSent(false); setVerificationEmail(''); }}
+              >
+                Go back
+              </button>
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ── Sign-up form ─────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen relative overflow-hidden bg-brand-void">
       <motion.div
-        className="absolute top-0 left-0 w-96 h-96 rounded-full bg-gradient-to-r from-brand-emerald/20 to-teal-500/20 blur-3xl"
+        className="absolute top-0 left-0 w-96 h-96 rounded-full bg-gradient-to-r from-brand-emerald/20 to-teal-500/20 blur-3xl pointer-events-none"
         animate={{ x: [0, 100, 0], y: [0, 50, 0], scale: [1, 1.1, 1] }}
         transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div
-        className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-gradient-to-r from-brand-magenta/20 to-purple-500/20 blur-3xl"
+        className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-gradient-to-r from-brand-magenta/20 to-purple-500/20 blur-3xl pointer-events-none"
         animate={{ x: [0, -100, 0], y: [0, -50, 0], scale: [1, 1.2, 1] }}
         transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
       />
@@ -187,10 +318,21 @@ export default function AuthSignUp() {
                     name="email"
                     type="email"
                     placeholder="your.email@example.com"
-                    className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-transparent transition-all"
-                    onChange={() => error && setError('')}
+                    value={emailValue}
+                    onChange={(e) => { setEmailValue(e.target.value); error && setError(''); }}
+                    onBlur={() => setEmailTouched(true)}
+                    className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      emailInvalid
+                        ? 'border-red-500/60 focus:ring-red-500/40'
+                        : emailTouched && emailValue && isValidEmail(emailValue)
+                        ? 'border-brand-emerald/50 focus:ring-brand-emerald/50'
+                        : 'border-brand-border focus:ring-brand-emerald/50'
+                    }`}
                     required
                   />
+                  {emailInvalid && (
+                    <p className="text-xs text-red-400">Enter a valid email address (e.g. name@domain.com).</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -274,7 +416,7 @@ export default function AuthSignUp() {
                   whileTap={{ scale: 0.98 }}
                   className="w-full py-3 px-4 bg-brand-emerald hover:bg-brand-emerald-dim text-white rounded-xl font-semibold shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   type="submit"
-                  disabled={loading || confirmMismatch}
+                  disabled={loading || confirmMismatch || emailInvalid}
                 >
                   {loading ? <span className="loading loading-spinner loading-md" /> : 'Create Account'}
                 </motion.button>

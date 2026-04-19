@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast, { Toaster } from 'react-hot-toast';
 import { useZikrStore } from '../store/useZikrStore.js';
@@ -9,7 +9,7 @@ import { useAuthStore } from '../store/useAuthStore.js';
 import { useZikrTypes, useAddZikrType } from '../hooks/useZikrTypes.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { PlusIcon, MinusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowLeftIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 
 // Meanings for all built-in dhikr
 const DEFAULT_MEANINGS: Record<string, { arabic: string; transliteration: string; meaning: string }> = {
@@ -288,6 +288,34 @@ export default function ZikrCounter() {
   return (
     <AnimatedBackground variant="ocean">
       <Toaster />
+
+      {/* ── Mobile-only top strip: back + stats + analytics ── */}
+      <div className="sm:hidden flex items-center justify-between px-4 pt-3 pb-1 gap-2">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-1.5 text-white/50 hover:text-white text-xs font-medium transition-colors py-1"
+        >
+          <ArrowLeftIcon className="w-4 h-4" /> Home
+        </button>
+        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+          {streakCount !== null && (
+            <span className="px-2 py-0.5 rounded-full bg-brand-gold/20 border border-brand-gold/40 text-white text-xs font-bold whitespace-nowrap">
+              🔥 {streakCount}
+            </span>
+          )}
+          {goalProgress !== null && (
+            <span className={`px-2 py-0.5 rounded-full border text-white text-xs font-bold whitespace-nowrap ${goalMet ? 'bg-brand-emerald/25 border-brand-emerald/50' : 'bg-white/10 border-white/20'}`}>
+              {goalMet ? '✅' : '🎯'} {goalProgress}%
+            </span>
+          )}
+          <Link
+            to="/zikr/analytics"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-brand-emerald/15 border border-brand-emerald/40 text-brand-emerald text-xs font-bold whitespace-nowrap"
+          >
+            <ChartBarIcon className="w-3.5 h-3.5" /> Analytics
+          </Link>
+        </div>
+      </div>
 
       <div className="max-w-2xl mx-auto px-4 pb-10 pt-4 space-y-5">
 

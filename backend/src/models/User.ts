@@ -6,9 +6,17 @@ export interface IZikrTypeItem {
   createdAt: Date;
 }
 
+export interface ILinkedProvider {
+  provider: string;    // 'google.com'
+  email: string;
+  providerUid: string; // Google's sub-UID
+}
+
 export interface IUser extends Document {
   uid: string;
   email: string;
+  primaryEmail?: string;
+  linkedProviders?: ILinkedProvider[];
   displayName?: string;
   photoUrl?: string;
   firstName?: string;
@@ -31,6 +39,17 @@ const userSchema = new Schema(
   {
     uid: { type: String, required: true, unique: true },
     email: { type: String, required: true },
+    primaryEmail: { type: String },
+    linkedProviders: {
+      type: [
+        {
+          provider: { type: String, required: true },
+          email: { type: String, required: true },
+          providerUid: { type: String, required: true },
+        },
+      ],
+      default: [],
+    },
     displayName: { type: String },
     photoUrl: { type: String },
     firstName: { type: String },

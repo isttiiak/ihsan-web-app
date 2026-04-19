@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import {
   useSalatLog,
   useUpdatePrayer,
@@ -237,6 +238,19 @@ export default function SalatTracker() {
 
   return (
     <AnimatedBackground variant="dark">
+      {/* ── Mobile-only top strip: salat count + analytics ── */}
+      <div className="sm:hidden flex items-center justify-between px-4 pt-3 pb-1 gap-2">
+        <span className="px-2.5 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-white text-xs font-bold whitespace-nowrap">
+          🕌 {completedCount}/5 today
+        </span>
+        <Link
+          to="/salat/analytics"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-brand-emerald/15 border border-brand-emerald/40 text-brand-emerald text-xs font-bold whitespace-nowrap"
+        >
+          <ChartBarIcon className="w-3.5 h-3.5" /> Analytics
+        </Link>
+      </div>
+
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-xl mx-auto space-y-5">
 
