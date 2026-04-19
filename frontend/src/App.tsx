@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, sendEmailVerification } from 'firebase/auth';
 import { auth } from './firebase.js';
 import { useAuthStore } from './store/useAuthStore.js';
 import { useZikrStore } from './store/useZikrStore.js';
@@ -13,6 +13,7 @@ import Footer from './components/Footer.js';
 import NotFound from './pages/NotFound.js';
 import AuthSignIn from './pages/AuthSignIn.js';
 import AuthSignUp from './pages/AuthSignUp.js';
+import AuthAction from './pages/AuthAction.js';
 import UnsavedWarning from './components/UnsavedWarning.js';
 import Profile from './pages/Profile.js';
 import SalatTracker from './pages/SalatTracker.js';
@@ -22,6 +23,46 @@ import PrayerTimes from './pages/PrayerTimes.js';
 import QuranHabit from './pages/QuranHabit.js';
 import IslamicSpecialDay from './pages/IslamicSpecialDay.js';
 import type { AuthUser } from './types/api.js';
+
+function VerifyEmailGate({ email }: { email: string | null }) {
+  const [resent, setResent] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  const resend = async () => {
+    if (resending || !auth.currentUser) return;
+    setResending(true);
+    try {
+      await sendEmailVerification(auth.currentUser);
+      setResent(true);
+    } catch { /* non-fatal */ }
+    setResending(false);
+  };
+
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center px-4">
+      <div className="text-center space-y-5 max-w-sm w-full">
+        <div className="text-6xl">📧</div>
+        <h2 className="text-2xl font-black text-white">Verify your email</h2>
+        <p className="text-white/50 text-sm leading-relaxed">
+          A verification link was sent to{' '}
+          <span className="text-brand-emerald font-medium">{email}</span>.
+          Check your inbox (and spam folder) and click the link to unlock this page.
+        </p>
+        {resent ? (
+          <p className="text-brand-emerald text-sm font-medium">Email resent! Check your inbox.</p>
+        ) : (
+          <button
+            className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
+            onClick={() => void resend()}
+            disabled={resending}
+          >
+            {resending ? <span className="loading loading-spinner loading-xs" /> : 'Resend verification email'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface ProtectedProps {
   children: React.ReactNode;
@@ -65,6 +106,9 @@ const Protected = ({ children }: ProtectedProps) => {
         </div>
       </div>
     );
+  }
+  if (user.emailVerified === false) {
+    return <VerifyEmailGate email={user.email} />;
   }
   return <>{children}</>;
 };
@@ -150,13 +194,15 @@ export default function App() {
           email: u.email,
           displayName: dbDisplayName ?? u.displayName,
           photoUrl: dbPhotoUrl,
+          emailVerified: u.emailVerified,
         };
         localStorage.setItem('ihsan_user', JSON.stringify(authUser));
         setUser(authUser);
         try { await hydrate(); } catch { /* hydrate errors are non-fatal */ }
 
-        // Always navigate away from /login or /signup after a successful sign-in
-        if (['/login', '/signup'].includes(location.pathname)) {
+        // Only navigate away from /login or /signup once the email is verified.
+        // Unverified email/password accounts stay on /signup so the verification screen shows.
+        if (['/login', '/signup'].includes(location.pathname) && u.emailVerified) {
           const redirect = sessionStorage.getItem('ihsan_redirect');
           sessionStorage.removeItem('ihsan_redirect');
           navigate(redirect || '/', { replace: true });
@@ -173,7 +219,7 @@ export default function App() {
   }, [setUser, init, navigate, location.pathname, resetAll, hydrate, setAuthLoading]);
 
   const { authLoading } = useAuthStore();
-  const isAuthPage = ['/login', '/signup'].includes(location.pathname);
+  const isAuthPage = ['/login', '/signup', '/auth/action'].includes(location.pathname);
   const noFooterRoutes = ['/zikr', '/salat', '/salat/analytics', '/fasting', '/prayer-times', '/quran'];
   const showFooter = !isAuthPage && !noFooterRoutes.includes(location.pathname);
 
@@ -205,6 +251,7 @@ export default function App() {
               <Route path="/special-day/:id" element={<IslamicSpecialDay />} />
               <Route path="/login" element={<AuthSignIn />} />
               <Route path="/signup" element={<AuthSignUp />} />
+              <Route path="/auth/action" element={<AuthAction />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

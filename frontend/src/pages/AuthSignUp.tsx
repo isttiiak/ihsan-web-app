@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   createUserWithEmailAndPassword,
   signInWithPopup,
@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase.js';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/useAuthStore.js';
 import {
   EyeIcon,
   EyeSlashIcon,
@@ -54,6 +55,7 @@ function isValidEmail(email: string): boolean {
 
 export default function AuthSignUp() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -69,6 +71,14 @@ export default function AuthSignUp() {
   const [verificationEmail, setVerificationEmail] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+
+  // If the user navigates back to /signup while already signed in but unverified, show the verification screen
+  useEffect(() => {
+    if (user && user.emailVerified === false && !verificationSent) {
+      setVerificationEmail(user.email ?? '');
+      setVerificationSent(true);
+    }
+  }, [user, verificationSent]);
 
   const strength = getPasswordStrength(password);
   const confirmMismatch = confirmTouched && confirm !== password;
@@ -117,8 +127,16 @@ export default function AuthSignUp() {
       if (fullName) {
         try { await updateProfile(res.user, { displayName: fullName }); } catch { /* non-fatal */ }
       }
-      // Send verification email — non-fatal if it fails
-      try { await sendEmailVerification(res.user); } catch { /* non-fatal */ }
+      // Send verification email — redirect to home after verification
+      try {
+        // continueUrl = home so that after Firebase verifies the email and the
+        // user clicks "Continue", they land on the app — not on /auth/action which
+        // would show "Invalid Link" because Firebase strips the oobCode params.
+        await sendEmailVerification(res.user, {
+          url: window.location.origin,
+          handleCodeInApp: false,
+        });
+      } catch { /* non-fatal */ }
       setVerificationEmail(email);
       setVerificationSent(true);
       setLoading(false);

@@ -2,9 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/useAuthStore.js';
-import { auth, storage, googleProvider } from '../firebase.js';
+import { auth, googleProvider } from '../firebase.js';
 import { linkWithPopup, unlink, AuthError } from 'firebase/auth';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import {
@@ -19,6 +18,7 @@ import {
   TrashIcon,
   ExclamationTriangleIcon,
   LinkIcon,
+  PhotoIcon,
 } from '@heroicons/react/24/outline';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useZikrStore } from '../store/useZikrStore.js';
@@ -104,10 +104,19 @@ const COUNTRY_CODES: Record<string, string> = {
   'Uzbekistan': 'UZ', 'Yemen': 'YE',
 };
 
-function countryFlag(countryName: string): string {
+function CountryFlag({ countryName }: { countryName: string }) {
   const code = COUNTRY_CODES[countryName];
-  if (!code) return '';
-  return Array.from(code).map((c) => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join('');
+  if (!code) return null;
+  return (
+    <img
+      src={`https://flagcdn.com/w20/${code.toLowerCase()}.png`}
+      srcSet={`https://flagcdn.com/w40/${code.toLowerCase()}.png 2x`}
+      width="20"
+      alt={countryName}
+      title={countryName}
+      className="inline-block rounded-sm align-middle"
+    />
+  );
 }
 
 // ── Preset avatars ────────────────────────────────────────────────────────────
@@ -165,6 +174,18 @@ function formatFullDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+// Animated sparkle dots for the profile card header
+const SPARKLE_POSITIONS = [
+  { left: '8%',  top: '18%', delay: 0 },
+  { left: '22%', top: '72%', delay: 0.4 },
+  { left: '40%', top: '12%', delay: 0.8 },
+  { left: '58%', top: '80%', delay: 0.3 },
+  { left: '72%', top: '20%', delay: 1.1 },
+  { left: '85%', top: '55%', delay: 0.6 },
+  { left: '92%', top: '25%', delay: 1.5 },
+  { left: '15%', top: '45%', delay: 0.9 },
+];
+
 interface ProfileData {
   displayName: string;
   firstName: string;
@@ -205,6 +226,18 @@ interface UserResponse {
   user?: DBUser;
 }
 
+// Inline Google logo SVG
+function GoogleLogo({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+    </svg>
+  );
+}
+
 export default function Profile() {
   const { user, setUser } = useAuthStore();
   const { data: analyticsData } = useAnalytics(1);
@@ -236,6 +269,7 @@ export default function Profile() {
   const [dbUser, setDbUser] = useState<DBUser | null>(null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(user?.photoUrl || '');
+  const [showPhotoChoice, setShowPhotoChoice] = useState(false);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState('');
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
@@ -243,6 +277,7 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [linkingGoogle, setLinkingGoogle] = useState(false);
   const [unlinkingGoogle, setUnlinkingGoogle] = useState(false);
+  const [primaryEmailLoading, setPrimaryEmailLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -267,7 +302,6 @@ export default function Profile() {
       .then((d: UserResponse) => {
         if (d?.user) {
           setDbUser(d.user);
-          // Pre-fill city/country from prayer-times location if DB has none
           let city = d.user.city || '';
           let country = d.user.country || '';
           if (!city && !country && locationFromStorage?.name) {
@@ -393,33 +427,38 @@ export default function Profile() {
     }
   };
 
+  // Stores photo as base64 data URL in MongoDB — no Firebase Storage required
   const uploadPhoto = async () => {
     if (!photoBlob) return;
     setSaveError('');
     setUploading(true);
     try {
-      const uid = user?.uid || 'anon';
-      const fileRef = ref(storage, `profile/${uid}/${Date.now()}.jpg`);
-      await uploadBytes(fileRef, photoBlob);
-      const url = await getDownloadURL(fileRef);
-      setPreview(url);
-      setProfile((p) => ({ ...p, photoUrl: url }));
+      const reader = new FileReader();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('read'));
+        reader.readAsDataURL(photoBlob);
+      });
+
+      setPreview(dataUrl);
+      setProfile((p) => ({ ...p, photoUrl: dataUrl }));
       setPhotoModalOpen(false);
       URL.revokeObjectURL(photoPreviewUrl);
       setPhotoBlob(null);
       setPhotoPreviewUrl('');
+
       const idToken = localStorage.getItem('ihsan_idToken');
       if (idToken) {
         const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify({ photoUrl: url }),
+          body: JSON.stringify({ photoUrl: dataUrl }),
         });
         if (res.ok) {
-          setOriginalProfile((p) => p ? { ...p, photoUrl: url } : null);
-          const updated = { ...(user ?? { uid: '', email: null }), displayName: user?.displayName ?? null, photoUrl: url };
+          setOriginalProfile((p) => p ? { ...p, photoUrl: dataUrl } : null);
+          const updated = { ...(user ?? { uid: '', email: null }), displayName: user?.displayName ?? null, photoUrl: dataUrl };
           setUser(updated);
-          localStorage.setItem('ihsan_user', JSON.stringify({ ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'), photoUrl: url }));
+          localStorage.setItem('ihsan_user', JSON.stringify({ ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'), photoUrl: dataUrl }));
         } else {
           setSaveError('Uploaded but could not save — click "Save Changes" to retry.');
         }
@@ -438,59 +477,52 @@ export default function Profile() {
     setPhotoPreviewUrl('');
   };
 
-  const handleCameraClick = async () => {
-    const result = await Swal.fire({
-      title: 'Change Profile Photo',
-      text: 'How would you like to update your photo?',
-      showConfirmButton: true,
-      showDenyButton: true,
-      showCancelButton: true,
-      confirmButtonText: '📷 Upload Photo',
-      denyButtonText: '🎨 Choose Avatar',
-      cancelButtonText: 'Cancel',
-      background: '#141e2e',
-      color: '#f1f5f9',
-      confirmButtonColor: '#10b981',
-      denyButtonColor: '#6366f1',
-      cancelButtonColor: '#1e2d42',
-      customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
-    });
-    if (result.isConfirmed) fileInputRef.current?.click();
-    else if (result.isDenied) setAvatarModalOpen(true);
-  };
-
-  const selectAvatar = async (av: { emoji: string; bg: string }) => {
-    const dataUrl = createAvatarDataUrl(av.emoji, av.bg);
-    if (!dataUrl) return;
+  const applyPhotoUrl = async (url: string) => {
     setSaveError('');
     setUploading(true);
     try {
-      setPreview(dataUrl);
-      setProfile((p) => ({ ...p, photoUrl: dataUrl }));
-      setAvatarModalOpen(false);
+      setPreview(url);
+      setProfile((p) => ({ ...p, photoUrl: url }));
       const idToken = localStorage.getItem('ihsan_idToken');
       if (idToken) {
         const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify({ photoUrl: dataUrl }),
+          body: JSON.stringify({ photoUrl: url }),
         });
         if (res.ok) {
-          setOriginalProfile((p) => p ? { ...p, photoUrl: dataUrl } : null);
-          const updated = { ...(user ?? { uid: '', email: null }), displayName: user?.displayName ?? null, photoUrl: dataUrl };
+          setOriginalProfile((p) => p ? { ...p, photoUrl: url } : null);
+          const updated = { ...(user ?? { uid: '', email: null }), displayName: user?.displayName ?? null, photoUrl: url };
           setUser(updated);
-          localStorage.setItem('ihsan_user', JSON.stringify({
-            ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'),
-            photoUrl: dataUrl,
-          }));
+          localStorage.setItem('ihsan_user', JSON.stringify({ ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'), photoUrl: url }));
         }
       }
-    } catch {
-      setSaveError('Failed to save avatar. Please try again.');
-    } finally {
+    } catch { /* non-fatal */ } finally {
       setUploading(false);
     }
   };
+
+  const selectAvatar = async (av: { emoji: string; bg: string }) => {
+    const dataUrl = createAvatarDataUrl(av.emoji, av.bg);
+    if (!dataUrl) return;
+    setAvatarModalOpen(false);
+    await applyPhotoUrl(dataUrl);
+  };
+
+  // Get Google profile photo from Firebase Auth provider data
+  const googlePhotoUrl = useMemo(() => {
+    return auth.currentUser?.providerData.find((p) => p.providerId === 'google.com')?.photoURL ?? null;
+  }, []);
+
+  const useGoogleAccountPhoto = async () => {
+    if (!googlePhotoUrl) return;
+    setShowPhotoChoice(false);
+    await applyPhotoUrl(googlePhotoUrl);
+  };
+
+  const linked = dbUser?.linkedProviders ?? [];
+  const googleLinked = linked.find((p) => p.provider === 'google.com');
+  const hasGoogle = !!googleLinked;
 
   const linkGoogle = async () => {
     if (linkingGoogle || !auth.currentUser) return;
@@ -561,29 +593,27 @@ export default function Profile() {
   };
 
   const makePrimaryEmail = async (email: string) => {
-    const confirm = await Swal.fire({
-      title: 'Change primary email?',
-      html: `Set <b>${email}</b> as your primary email?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Make Primary',
-      cancelButtonText: 'Cancel',
-      background: '#141e2e',
-      color: '#f1f5f9',
-      confirmButtonColor: '#10b981',
-      cancelButtonColor: '#1e2d42',
-      customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
-    });
-    if (!confirm.isConfirmed) return;
     const idToken = localStorage.getItem('ihsan_idToken');
-    if (!idToken) return;
-    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/primary-email`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-      body: JSON.stringify({ email }),
-    });
-    const data = await res.json() as { ok: boolean; user?: DBUser };
-    if (data.ok && data.user) setDbUser(data.user);
+    if (!idToken || primaryEmailLoading) return;
+    setPrimaryEmailLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/primary-email`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) return;
+      // Re-fetch full user to get authoritative linkedProviders + primaryEmail state
+      const meRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      if (meRes.ok) {
+        const data = await meRes.json() as { user?: DBUser };
+        if (data.user) setDbUser(data.user);
+      }
+    } catch { /* non-fatal */ } finally {
+      setPrimaryEmailLoading(false);
+    }
   };
 
   const deleteSalatLogs = async () => {
@@ -601,7 +631,6 @@ export default function Profile() {
       customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
     });
     if (!first.isConfirmed) return;
-
     const second = await Swal.fire({
       title: 'Are you absolutely sure?',
       text: 'This action cannot be undone.',
@@ -616,7 +645,6 @@ export default function Profile() {
       customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
     });
     if (!second.isConfirmed) return;
-
     const idToken = localStorage.getItem('ihsan_idToken');
     if (!idToken) return;
     try {
@@ -625,11 +653,9 @@ export default function Profile() {
         headers: { Authorization: `Bearer ${idToken}` },
       });
       if (res.ok) {
-        // Record deletion date — SalatTracker uses this to block back-navigation before it
         const d = new Date();
         const localToday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         localStorage.setItem('ihsan_salat_start_date', localToday);
-        // Invalidate all salat-related React Query caches so UI reflects empty state
         await queryClient.invalidateQueries({ queryKey: ['salat'] });
         await Swal.fire({ title: 'Deleted', text: 'All salat logs have been removed.', icon: 'success', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#10b981', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
       } else {
@@ -655,7 +681,6 @@ export default function Profile() {
       customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
     });
     if (!first.isConfirmed) return;
-
     const second = await Swal.fire({
       title: 'Are you absolutely sure?',
       text: 'Streak, lifetime totals, and all daily counts will be erased permanently.',
@@ -670,7 +695,6 @@ export default function Profile() {
       customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
     });
     if (!second.isConfirmed) return;
-
     const idToken = localStorage.getItem('ihsan_idToken');
     if (!idToken) return;
     try {
@@ -679,8 +703,7 @@ export default function Profile() {
         headers: { Authorization: `Bearer ${idToken}` },
       });
       if (res.ok) {
-        resetZikrStore(); // clear local Zustand optimistic state
-        // Invalidate all analytics + zikr React Query caches so UI reflects zeroed state
+        resetZikrStore();
         await queryClient.invalidateQueries({ queryKey: ['analytics'] });
         await queryClient.invalidateQueries({ queryKey: ['zikr'] });
         await Swal.fire({ title: 'Deleted', text: 'All zikr data has been removed.', icon: 'success', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#10b981', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
@@ -697,11 +720,18 @@ export default function Profile() {
   const longestStreak = analyticsData?.streak?.longestStreak ?? null;
   const memberSince = dbUser?.createdAt ? formatFullDate(dbUser.createdAt) : null;
 
+  // Determine primary/secondary: if primaryEmail is not set, password account is default primary
+  const explicitPrimary = dbUser?.primaryEmail ?? null;
+  const googleIsPrimary = explicitPrimary !== null &&
+    googleLinked !== undefined &&
+    explicitPrimary === googleLinked.email &&
+    explicitPrimary !== user?.email;
+
   // City list for selected country
   const cityOptions = profile.country ? (COUNTRIES_CITIES[profile.country] ?? []) : [];
 
   const handleCountryChange = (country: string) => {
-    setProfile((p) => ({ ...p, country, city: '' })); // clear city when country changes
+    setProfile((p) => ({ ...p, country, city: '' }));
   };
 
   return (
@@ -716,16 +746,35 @@ export default function Profile() {
             <p className="text-white/40 text-sm">Manage your personal information</p>
           </motion.div>
 
-          {/* Avatar + summary card */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-            className="card bg-brand-surface border border-brand-border rounded-2xl"
+          {/* ── Avatar + summary card ─── gradient with star animation */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="relative rounded-2xl border border-brand-emerald/20 overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0e2040 25%, #112244 50%, #0a1a30 75%, #080c12 100%)' }}
           >
-            <div className="card-body p-5 sm:p-6">
+            {/* Animated sparkle dots */}
+            <div className="absolute inset-0 pointer-events-none">
+              {SPARKLE_POSITIONS.map((s, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute rounded-full bg-brand-emerald"
+                  style={{ left: s.left, top: s.top, width: i % 3 === 0 ? 3 : 2, height: i % 3 === 0 ? 3 : 2 }}
+                  animate={{ opacity: [0.1, 0.7, 0.1], scale: [0.8, 1.6, 0.8], y: [-3, 3, -3] }}
+                  transition={{ duration: 2.5 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: s.delay }}
+                />
+              ))}
+              {/* Subtle gradient shimmer line */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-emerald/30 to-transparent" />
+            </div>
+
+            <div className="relative p-5 sm:p-6">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
                 {/* Avatar */}
                 <div className="relative shrink-0">
                   <div className="avatar">
-                    <div className="w-24 rounded-full ring ring-brand-emerald ring-offset-brand-deep ring-offset-2">
+                    <div className="w-24 rounded-full ring-2 ring-brand-emerald ring-offset-2 ring-offset-[#0a1628]">
                       {preview || profile.photoUrl ? (
                         <img src={preview || profile.photoUrl} alt="profile" className="object-cover" />
                       ) : (
@@ -737,7 +786,7 @@ export default function Profile() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => void handleCameraClick()}
+                    onClick={() => setShowPhotoChoice(true)}
                     disabled={uploading}
                     className="absolute bottom-0 right-0 group w-8 h-8 rounded-full bg-brand-emerald hover:bg-brand-emerald-dim text-white shadow-lg flex items-center justify-center transition-colors disabled:opacity-50"
                   >
@@ -751,11 +800,9 @@ export default function Profile() {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0 text-center sm:text-left space-y-1">
-                  <p className="text-xl font-black text-white leading-tight flex items-center gap-2 flex-wrap">
+                  <p className="text-xl font-black text-white leading-tight flex items-center gap-2 flex-wrap justify-center sm:justify-start">
                     {profile.displayName || profile.firstName || user?.email?.split('@')[0] || 'Anonymous'}
-                    {profile.country && (
-                      <span className="text-lg" title={profile.country}>{countryFlag(profile.country)}</span>
-                    )}
+                    {profile.country && <CountryFlag countryName={profile.country} />}
                   </p>
                   {(profile.city || profile.country) && (
                     <p className="flex items-center justify-center sm:justify-start gap-1 text-white/40 text-sm">
@@ -775,18 +822,18 @@ export default function Profile() {
               </div>
 
               {/* Quick stats — 4 columns */}
-              <div className="grid grid-cols-4 gap-2 mt-5 pt-5 border-t border-brand-border">
+              <div className="grid grid-cols-4 gap-2 mt-5 pt-5 border-t border-brand-emerald/15">
                 <div className="text-center">
                   <p className="text-brand-emerald font-black text-base tabular-nums">{totalZikr}</p>
                   <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">Total Zikr</p>
                 </div>
-                <div className="text-center border-x border-brand-border">
+                <div className="text-center border-x border-brand-emerald/10">
                   <p className="text-brand-gold font-black text-base">
                     {longestStreak !== null ? longestStreak : '—'}
                   </p>
                   <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">Best Streak</p>
                 </div>
-                <div className="text-center border-r border-brand-border">
+                <div className="text-center border-r border-brand-emerald/10">
                   <p className="text-white/70 font-black text-base leading-tight">
                     {ageInfo ? `${ageInfo.years}y ${ageInfo.months}m` : '—'}
                   </p>
@@ -802,103 +849,124 @@ export default function Profile() {
             </div>
           </motion.div>
 
-          {/* Account info + Google linking */}
+          {/* ── Account & Linked Accounts ── */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
             className="card bg-brand-surface border border-brand-border rounded-2xl"
           >
             <div className="card-body p-5 sm:p-6 space-y-4">
-              <p className="text-white/30 text-xs font-bold uppercase tracking-widest">Account & Linked Accounts</p>
+              <div>
+                <p className="text-white/30 text-xs font-bold uppercase tracking-widest mb-1">Account & Linked Accounts</p>
+                <p className="text-white/25 text-xs">Primary email is used for password reset and notifications.</p>
+              </div>
 
-              {/* Email rows */}
-              {(() => {
-                const primaryEmail = dbUser?.primaryEmail ?? user?.email ?? null;
-                const linked = dbUser?.linkedProviders ?? [];
-                const googleLinked = linked.find((p) => p.provider === 'google.com');
+              <div className="space-y-2.5">
+                {/* ── Email/Password row ── */}
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-border">
+                  <EnvelopeIcon className="w-4 h-4 text-white/30 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-white/70 text-sm truncate">{user?.email ?? '—'}</p>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${
+                        !googleIsPrimary
+                          ? 'bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald'
+                          : 'bg-white/5 border border-brand-border text-white/35'
+                      }`}>
+                        {!googleIsPrimary ? 'PRIMARY' : 'SECONDARY'}
+                      </span>
+                    </div>
+                    <p className="text-white/25 text-xs">Email / Password</p>
+                  </div>
+                  {/* Make Primary — only when password is secondary */}
+                  {googleIsPrimary && user?.email && (
+                    <button
+                      onClick={() => void makePrimaryEmail(user.email!)}
+                      disabled={primaryEmailLoading}
+                      className="text-xs px-2.5 py-1 rounded-lg bg-brand-emerald/10 border border-brand-emerald/30 text-brand-emerald/80 hover:bg-brand-emerald/20 hover:text-brand-emerald transition-all shrink-0 font-medium whitespace-nowrap disabled:opacity-50"
+                    >
+                      {primaryEmailLoading ? <span className="loading loading-spinner loading-xs" /> : 'Make Primary'}
+                    </button>
+                  )}
+                </div>
 
-                return (
-                  <div className="space-y-2.5">
-                    {/* Primary email (email/password) */}
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-border">
-                      <EnvelopeIcon className="w-4 h-4 text-white/30 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-white/60 text-sm truncate">{user?.email ?? '—'}</p>
-                          {primaryEmail === user?.email || !primaryEmail ? (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald font-bold shrink-0">PRIMARY</span>
-                          ) : (
-                            <button
-                              onClick={() => user?.email && void makePrimaryEmail(user.email)}
-                              className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 border border-brand-border text-white/40 hover:border-brand-emerald/40 hover:text-brand-emerald font-bold shrink-0 transition-colors"
-                            >
-                              Make Primary
-                            </button>
-                          )}
-                        </div>
-                        <p className="text-white/25 text-xs">Email / Password</p>
+                {/* ── Google row (linked) or Connect button ── */}
+                {googleLinked ? (
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-border">
+                    <GoogleLogo className="w-4 h-4 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-white/70 text-sm truncate">{googleLinked.email}</p>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${
+                          googleIsPrimary
+                            ? 'bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald'
+                            : 'bg-white/5 border border-brand-border text-white/35'
+                        }`}>
+                          {googleIsPrimary ? 'PRIMARY' : 'SECONDARY'}
+                        </span>
                       </div>
+                      <p className="text-white/25 text-xs">Google Account</p>
                     </div>
 
-                    {/* Linked Google account */}
-                    {googleLinked ? (
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-border">
-                        <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                        </svg>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-white/60 text-sm truncate">{googleLinked.email}</p>
-                            {primaryEmail === googleLinked.email ? (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald font-bold shrink-0">PRIMARY</span>
-                            ) : (
-                              <button
-                                onClick={() => void makePrimaryEmail(googleLinked.email)}
-                                className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 border border-brand-border text-white/40 hover:border-brand-emerald/40 hover:text-brand-emerald font-bold shrink-0 transition-colors"
-                              >
-                                Make Primary
-                              </button>
-                            )}
-                          </div>
-                          <p className="text-white/25 text-xs">Google Account</p>
-                        </div>
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Make Primary / Make Secondary toggle */}
+                      {googleIsPrimary ? (
                         <button
-                          onClick={() => void unlinkGoogle(googleLinked.providerUid)}
-                          disabled={unlinkingGoogle}
-                          className="text-white/20 hover:text-red-400 transition-colors disabled:opacity-40 shrink-0 p-1"
-                          title="Disconnect Google account"
+                          onClick={() => user?.email && void makePrimaryEmail(user.email)}
+                          disabled={primaryEmailLoading}
+                          className="text-xs px-2.5 py-1 rounded-lg bg-white/5 border border-brand-border text-white/40 hover:bg-white/10 hover:text-white/70 transition-all font-medium whitespace-nowrap disabled:opacity-50"
                         >
-                          <XMarkIcon className="w-4 h-4" />
+                          {primaryEmailLoading ? <span className="loading loading-spinner loading-xs" /> : 'Make Secondary'}
                         </button>
-                      </div>
-                    ) : (
-                      /* Connect Google button */
-                      <button
-                        onClick={() => void linkGoogle()}
-                        disabled={linkingGoogle}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-dashed border-brand-border hover:border-brand-emerald/40 text-white/40 hover:text-white/70 transition-all disabled:opacity-50 group"
-                      >
-                        {linkingGoogle ? (
-                          <span className="loading loading-spinner loading-xs text-brand-emerald" />
-                        ) : (
-                          <LinkIcon className="w-4 h-4 shrink-0 group-hover:text-brand-emerald transition-colors" />
+                      ) : (
+                        <button
+                          onClick={() => void makePrimaryEmail(googleLinked.email)}
+                          disabled={primaryEmailLoading}
+                          className="text-xs px-2.5 py-1 rounded-lg bg-brand-emerald/10 border border-brand-emerald/30 text-brand-emerald/80 hover:bg-brand-emerald/20 hover:text-brand-emerald transition-all font-medium whitespace-nowrap disabled:opacity-50"
+                        >
+                          {primaryEmailLoading ? <span className="loading loading-spinner loading-xs" /> : 'Make Primary'}
+                        </button>
+                      )}
+
+                      {/* Disconnect — only enabled when Google is SECONDARY */}
+                      <div className="relative group/dis">
+                        <button
+                          onClick={() => !googleIsPrimary && void unlinkGoogle(googleLinked.providerUid)}
+                          disabled={unlinkingGoogle || googleIsPrimary}
+                          className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all whitespace-nowrap ${
+                            googleIsPrimary
+                              ? 'bg-white/3 border border-brand-border text-white/20 cursor-not-allowed'
+                              : 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/60'
+                          }`}
+                        >
+                          {unlinkingGoogle ? <span className="loading loading-spinner loading-xs" /> : 'Disconnect'}
+                        </button>
+                        {googleIsPrimary && (
+                          <div className="absolute -top-9 right-0 bg-brand-deep border border-brand-border text-white/60 text-[10px] px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover/dis:opacity-100 transition-opacity pointer-events-none z-10">
+                            Make secondary first to disconnect
+                          </div>
                         )}
-                        <div className="text-left min-w-0">
-                          <p className="text-sm font-medium leading-tight">Connect Google Account</p>
-                          <p className="text-xs text-white/25 leading-tight mt-0.5">Sign in with Google & sync your profile photo</p>
-                        </div>
-                        <svg className="w-4 h-4 ml-auto shrink-0 opacity-50" viewBox="0 0 24 24">
-                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                        </svg>
-                      </button>
-                    )}
+                      </div>
+                    </div>
                   </div>
-                );
-              })()}
+                ) : (
+                  <button
+                    onClick={() => void linkGoogle()}
+                    disabled={linkingGoogle}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-dashed border-brand-border hover:border-brand-emerald/40 text-white/40 hover:text-white/70 transition-all disabled:opacity-50 group"
+                  >
+                    {linkingGoogle ? (
+                      <span className="loading loading-spinner loading-xs text-brand-emerald" />
+                    ) : (
+                      <LinkIcon className="w-4 h-4 shrink-0 group-hover:text-brand-emerald transition-colors" />
+                    )}
+                    <div className="text-left min-w-0 flex-1">
+                      <p className="text-sm font-medium leading-tight">Connect Google Account</p>
+                      <p className="text-xs text-white/25 leading-tight mt-0.5">Sign in with Google &amp; sync your profile photo</p>
+                    </div>
+                    <GoogleLogo className="w-4 h-4 ml-auto shrink-0 opacity-50" />
+                  </button>
+                )}
+              </div>
             </div>
           </motion.div>
 
@@ -909,7 +977,6 @@ export default function Profile() {
             <div className="card-body p-5 sm:p-6 space-y-4">
               <p className="text-white/30 text-xs font-bold uppercase tracking-widest">Edit Details</p>
 
-              {/* Save success banner at top of form */}
               <AnimatePresence>
                 {saveSuccess && (
                   <motion.div
@@ -1079,7 +1146,6 @@ export default function Profile() {
 
               {saveError && <p className="text-red-400 text-xs">{saveError}</p>}
 
-              {/* Save button */}
               <button
                 className={`btn btn-sm w-full mt-1 gap-2 transition-all duration-300 border-0 ${
                   isDirty && !saving
@@ -1100,7 +1166,7 @@ export default function Profile() {
             </div>
           </motion.div>
 
-          {/* ── Danger Zone ─────────────────────────────────────────────────── */}
+          {/* ── Danger Zone ── */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1116,7 +1182,6 @@ export default function Profile() {
                 These actions permanently delete your data and cannot be undone. You will be asked to confirm twice before anything is deleted.
               </p>
               <div className="space-y-3">
-                {/* Delete Salat logs */}
                 <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-brand-surface border border-brand-border">
                   <div className="min-w-0">
                     <p className="text-white/70 text-sm font-semibold leading-tight">Delete Salat History</p>
@@ -1130,7 +1195,6 @@ export default function Profile() {
                   </button>
                 </div>
 
-                {/* Delete Zikr data */}
                 <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-brand-surface border border-brand-border">
                   <div className="min-w-0">
                     <p className="text-white/70 text-sm font-semibold leading-tight">Delete Zikr Data</p>
@@ -1144,7 +1208,6 @@ export default function Profile() {
                   </button>
                 </div>
 
-                {/* Fasting & Quran — coming soon */}
                 <p className="text-white/15 text-[10px] text-center">Fasting and Quran data controls coming soon</p>
               </div>
             </div>
@@ -1154,7 +1217,81 @@ export default function Profile() {
       </div>
     </AnimatedBackground>
 
-    {/* ── Photo upload preview modal ── */}
+    {/* ── Photo choice modal ── */}
+    <AnimatePresence>
+      {showPhotoChoice && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowPhotoChoice(false); }}
+        >
+          <motion.div
+            initial={{ y: 30, opacity: 0, scale: 0.96 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 30, opacity: 0, scale: 0.96 }}
+            transition={{ type: 'spring', damping: 24 }}
+            className="bg-brand-surface rounded-3xl p-6 w-full max-w-xs shadow-2xl border border-brand-border"
+          >
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-lg font-black text-white">Change Profile Photo</h3>
+                <p className="text-white/35 text-xs mt-0.5">How would you like to update?</p>
+              </div>
+              <button onClick={() => setShowPhotoChoice(false)} className="text-white/40 hover:text-white p-1 transition-colors">
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-2.5">
+              <button
+                onClick={() => { setShowPhotoChoice(false); fileInputRef.current?.click(); }}
+                className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-brand-emerald/40 hover:bg-brand-emerald/5 text-white/70 hover:text-white transition-all text-left group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-brand-emerald/15 flex items-center justify-center shrink-0 group-hover:bg-brand-emerald/25 transition-colors">
+                  <CameraIcon className="w-5 h-5 text-brand-emerald" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Upload Photo</p>
+                  <p className="text-white/30 text-xs">From your device</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => { setShowPhotoChoice(false); setAvatarModalOpen(true); }}
+                className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-purple-500/40 hover:bg-purple-500/5 text-white/70 hover:text-white transition-all text-left group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-purple-500/15 flex items-center justify-center shrink-0 group-hover:bg-purple-500/25 transition-colors">
+                  <PhotoIcon className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Choose Avatar</p>
+                  <p className="text-white/30 text-xs">Themed emoji icons</p>
+                </div>
+              </button>
+
+              {hasGoogle && googlePhotoUrl && (
+                <button
+                  onClick={() => void useGoogleAccountPhoto()}
+                  disabled={uploading}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-blue-500/40 hover:bg-blue-500/5 text-white/70 hover:text-white transition-all text-left group disabled:opacity-50"
+                >
+                  <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-brand-border">
+                    <img src={googlePhotoUrl} alt="Google" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Use Google Account Photo</p>
+                    <p className="text-white/30 text-xs">{googleLinked?.email}</p>
+                  </div>
+                  {uploading && <span className="loading loading-spinner loading-xs ml-auto" />}
+                </button>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
     {/* ── Avatar selection modal ── */}
     <AnimatePresence>
       {avatarModalOpen && (
@@ -1209,6 +1346,7 @@ export default function Profile() {
       )}
     </AnimatePresence>
 
+    {/* ── Photo upload preview modal ── */}
     <AnimatePresence>
       {photoModalOpen && (
         <motion.div
@@ -1226,17 +1364,14 @@ export default function Profile() {
           >
             <h3 className="text-lg font-black text-white">Upload Profile Photo</h3>
 
-            {/* Preview */}
             <div className="flex justify-center">
               <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-brand-emerald/40">
                 <img src={photoPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
               </div>
             </div>
 
-            {/* Size note */}
             <p className="text-white/35 text-xs leading-relaxed px-2">
-              📦 Image compressed to ~400px JPEG for free-tier storage.
-              For the best experience, <span className="text-brand-emerald/70">sign in with Google</span> — your Google profile photo is used automatically.
+              Compressed to 400px JPEG. Stored securely in your account.
             </p>
 
             <div className="flex gap-3">
@@ -1252,7 +1387,7 @@ export default function Profile() {
                 disabled={uploading}
                 className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold"
               >
-                {uploading ? <span className="loading loading-spinner loading-sm" /> : 'Upload'}
+                {uploading ? <span className="loading loading-spinner loading-sm" /> : 'Use This Photo'}
               </button>
             </div>
           </motion.div>

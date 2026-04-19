@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast, { Toaster } from 'react-hot-toast';
 import { useZikrStore } from '../store/useZikrStore.js';
@@ -9,7 +10,7 @@ import { useAuthStore } from '../store/useAuthStore.js';
 import { useZikrTypes, useAddZikrType } from '../hooks/useZikrTypes.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowLeftIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowsPointingOutIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 // Meanings for all built-in dhikr
 const DEFAULT_MEANINGS: Record<string, { arabic: string; transliteration: string; meaning: string }> = {
@@ -163,6 +164,7 @@ export default function ZikrCounter() {
   const [customSource, setCustomSource] = useState('');
   const [customSourceUrl, setCustomSourceUrl] = useState('');
   const [showGuestDialog, setShowGuestDialog] = useState(false);
+  const [fullScreen, setFullScreen] = useState(false);
 
   // Real-time goal progress:
   // confirmedTotal = what the server last told us (stale until RQ refetch).
@@ -200,6 +202,14 @@ export default function ZikrCounter() {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [user, pending]);
+
+  // Escape key closes full-screen mode
+  useEffect(() => {
+    if (!fullScreen) return;
+    const handler = (e: KeyboardEvent) => { if (e.code === 'Escape') setFullScreen(false); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [fullScreen]);
 
   const color = GLOW_PALETTE[colorIdx % GLOW_PALETTE.length]!;
 
@@ -289,34 +299,6 @@ export default function ZikrCounter() {
     <AnimatedBackground variant="ocean">
       <Toaster />
 
-      {/* ── Mobile-only top strip: back + stats + analytics ── */}
-      <div className="sm:hidden flex items-center justify-between px-4 pt-3 pb-1 gap-2">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-1.5 text-white/50 hover:text-white text-xs font-medium transition-colors py-1"
-        >
-          <ArrowLeftIcon className="w-4 h-4" /> Home
-        </button>
-        <div className="flex items-center gap-1.5 flex-wrap justify-end">
-          {streakCount !== null && (
-            <span className="px-2 py-0.5 rounded-full bg-brand-gold/20 border border-brand-gold/40 text-white text-xs font-bold whitespace-nowrap">
-              🔥 {streakCount}
-            </span>
-          )}
-          {goalProgress !== null && (
-            <span className={`px-2 py-0.5 rounded-full border text-white text-xs font-bold whitespace-nowrap ${goalMet ? 'bg-brand-emerald/25 border-brand-emerald/50' : 'bg-white/10 border-white/20'}`}>
-              {goalMet ? '✅' : '🎯'} {goalProgress}%
-            </span>
-          )}
-          <Link
-            to="/zikr/analytics"
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-brand-emerald/15 border border-brand-emerald/40 text-brand-emerald text-xs font-bold whitespace-nowrap"
-          >
-            <ChartBarIcon className="w-3.5 h-3.5" /> Analytics
-          </Link>
-        </div>
-      </div>
-
       <div className="max-w-2xl mx-auto px-4 pb-10 pt-4 space-y-5">
 
         {/* Motivational subtitle */}
@@ -378,9 +360,18 @@ export default function ZikrCounter() {
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.08 }}
-          className="rounded-3xl border border-white/20 bg-white/8 backdrop-blur-lg shadow-2xl overflow-hidden"
+          className="relative rounded-3xl border border-white/20 bg-white/8 backdrop-blur-lg shadow-2xl overflow-hidden"
           style={{ background: 'rgba(255,255,255,0.07)' }}
         >
+          {/* Focus mode button */}
+          <button
+            onClick={() => setFullScreen(true)}
+            className="absolute top-3 right-3 p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/40 hover:text-white/80 transition-all z-10"
+            title="Focus mode (full screen)"
+          >
+            <ArrowsPointingOutIcon className="w-4 h-4" />
+          </button>
+
           {/* Number */}
           <div className="pt-10 pb-4 text-center">
             <AnimatePresence mode="wait">
@@ -444,26 +435,84 @@ export default function ZikrCounter() {
             </AnimatePresence>
           </div>
 
-          {/* Goal progress bar */}
-          {dailyGoal !== null && (
-            <div className="px-6 pb-6 pt-1">
-              <div className="flex justify-between text-xs text-white/40 mb-1.5">
-                <span>Today: {effectiveTotal}{pendingTotal > 0 ? <span className="text-brand-gold/60"> (+{pendingTotal} syncing)</span> : ''}</span>
-                <span>Goal: {dailyGoal}</span>
-              </div>
-              <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
-                <motion.div
-                  animate={{ width: `${goalProgress}%` }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                  className={`h-full rounded-full ${color.bar}`}
-                />
-              </div>
-              {goalMet && (
-                <p className="text-xs text-brand-emerald font-semibold text-center mt-2">🏆 Daily goal achieved!</p>
+          {/* ── Card bottom: progress bar + streak + goal% ── */}
+          {(dailyGoal !== null || streakCount !== null) && (
+            <div className="px-6 pb-5 pt-1">
+              {dailyGoal !== null && !goalMet && (
+                <>
+                  <div className="flex justify-between text-xs text-white/40 mb-1.5">
+                    <span>Today: {effectiveTotal}{pendingTotal > 0 ? <span className="text-brand-gold/60"> (+{pendingTotal} syncing)</span> : ''}</span>
+                    <span>Goal: {dailyGoal}</span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                    <motion.div
+                      animate={{ width: `${goalProgress}%` }}
+                      transition={{ duration: 0.5, ease: 'easeOut' }}
+                      className={`h-full rounded-full ${color.bar}`}
+                    />
+                  </div>
+                </>
               )}
+              {goalMet && (
+                <p className="text-sm text-brand-emerald font-bold text-center py-1">🏆 Goal Achieved!</p>
+              )}
+              <div className="flex items-center justify-between mt-2.5">
+                {streakCount !== null ? (
+                  <span className="text-brand-gold text-xs font-bold">🔥 {streakCount} day streak</span>
+                ) : <span />}
+                {goalProgress !== null ? (
+                  <span className={`text-xs font-bold ${goalMet ? 'text-brand-emerald' : 'text-white/50'}`}>
+                    {goalMet ? '✓ 100%' : `🎯 ${goalProgress}%`}
+                  </span>
+                ) : <span />}
+              </div>
             </div>
           )}
         </motion.div>
+
+        {/* ── Action buttons ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="flex gap-3 justify-center items-center"
+        >
+          <motion.button
+            whileHover={{ scale: 1.1, rotate: -5 }}
+            whileTap={{ scale: 0.93 }}
+            onClick={onDecrement}
+            disabled={currentCount === 0}
+            className="btn btn-circle bg-white/15 hover:bg-white/25 border-white/20 text-white backdrop-blur-sm disabled:opacity-25"
+          >
+            <MinusIcon className="w-6 h-6" />
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.04, backgroundColor: '#e6faf4' }}
+            whileTap={{ scale: 0.96, backgroundColor: '#d1fae5' }}
+            onClick={onIncrement}
+            className="flex items-center justify-center gap-2 w-44 sm:w-56 h-14 rounded-2xl text-brand-deep font-bold text-lg cursor-pointer select-none outline-none border-0"
+            style={{ backgroundColor: 'white', boxShadow: `0 8px 32px ${color.glow}50` }}
+          >
+            <PlusIcon className="w-6 h-6" />
+            Count
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.1, rotate: 180 }}
+            whileTap={{ scale: 0.93 }}
+            onClick={onReset}
+            disabled={currentCount === 0}
+            className="btn btn-circle bg-white/15 hover:bg-red-500/70 border-white/20 text-white backdrop-blur-sm disabled:opacity-25 transition-colors"
+          >
+            <ArrowPathIcon className="w-6 h-6" />
+          </motion.button>
+        </motion.div>
+
+        {/* Keyboard hint */}
+        <p className="text-center text-white/35 text-xs">
+          Press <kbd className="kbd kbd-xs bg-white/15 text-white border-white/20">Space</kbd> to count
+        </p>
 
         {/* ── Hadith reference for selected dhikr ── */}
         {(() => {
@@ -510,51 +559,135 @@ export default function ZikrCounter() {
             </motion.div>
           );
         })()}
-
-        {/* ── Action buttons ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="flex gap-3 justify-center items-center"
-        >
-          <motion.button
-            whileHover={{ scale: 1.1, rotate: -5 }}
-            whileTap={{ scale: 0.93 }}
-            onClick={onDecrement}
-            disabled={currentCount === 0}
-            className="btn btn-circle bg-white/15 hover:bg-white/25 border-white/20 text-white backdrop-blur-sm disabled:opacity-25"
-          >
-            <MinusIcon className="w-6 h-6" />
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.04, backgroundColor: '#e6faf4' }}
-            whileTap={{ scale: 0.96, backgroundColor: '#d1fae5' }}
-            onClick={onIncrement}
-            className="flex items-center justify-center gap-2 w-44 sm:w-56 h-14 rounded-2xl text-brand-deep font-bold text-lg cursor-pointer select-none outline-none border-0"
-            style={{ backgroundColor: 'white', boxShadow: `0 8px 32px ${color.glow}50` }}
-          >
-            <PlusIcon className="w-6 h-6" />
-            Count
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.1, rotate: 180 }}
-            whileTap={{ scale: 0.93 }}
-            onClick={onReset}
-            disabled={currentCount === 0}
-            className="btn btn-circle bg-white/15 hover:bg-red-500/70 border-white/20 text-white backdrop-blur-sm disabled:opacity-25 transition-colors"
-          >
-            <ArrowPathIcon className="w-6 h-6" />
-          </motion.button>
-        </motion.div>
-
-        {/* Keyboard hint */}
-        <p className="text-center text-white/35 text-xs">
-          Press <kbd className="kbd kbd-xs bg-white/15 text-white border-white/20">Space</kbd> to count
-        </p>
       </div>
+
+      {/* ── Full-screen focus mode overlay (portal → above Navbar stacking context) ── */}
+      {createPortal(
+        <AnimatePresence>
+        {fullScreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[9999] flex flex-col"
+            style={{
+              background: `radial-gradient(circle at 50% 55%, ${color.glow}22 0%, ${color.glow}07 38%, #080c12 72%)`,
+              transition: 'background 0.35s ease',
+            }}
+          >
+            {/* Top bar: zikr selector (left) + close (right) */}
+            <div className="flex items-center justify-between px-6 pt-6 pb-2 flex-shrink-0">
+              <div className="flex items-center gap-1 opacity-50 hover:opacity-80 transition-opacity">
+                <span className="text-white text-sm font-medium truncate max-w-[180px] sm:max-w-xs"
+                  style={{ color: color.glow, textShadow: `0 0 10px ${color.glow}50` }}>
+                  {selected}
+                </span>
+                <select
+                  value={selected}
+                  onChange={(e) => selectType(e.target.value)}
+                  className="bg-transparent border-none text-white/40 text-xs focus:outline-none cursor-pointer appearance-none ml-0.5"
+                  style={{ backgroundImage: 'none' }}
+                >
+                  {types.map((t) => (
+                    <option key={t} value={t} className="bg-brand-deep text-white">{t}</option>
+                  ))}
+                </select>
+                <svg className="w-3 h-3 text-white/30 -ml-3 pointer-events-none flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+              <button
+                onClick={() => setFullScreen(false)}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/50 hover:text-white transition-all"
+                title="Exit focus mode (Esc)"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Center content */}
+            <div className="flex-1 flex flex-col items-center justify-center gap-5 px-8 pb-12">
+              {/* Arabic + meaning (muted, above counter) */}
+              {meaning && (
+                <motion.div
+                  key={`fs-meaning:${selected}`}
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center opacity-35 space-y-1.5 max-w-sm"
+                >
+                  {meaning.arabic && (
+                    <p
+                      dir="rtl"
+                      className="text-3xl sm:text-4xl text-white"
+                      style={{
+                        fontFamily: "'Amiri', 'Scheherazade New', serif",
+                        textShadow: `0 0 20px ${color.glow}50`,
+                      }}
+                    >
+                      {meaning.arabic}
+                    </p>
+                  )}
+                  <p className="text-white text-xs leading-relaxed">{meaning.meaning}</p>
+                </motion.div>
+              )}
+
+              {/* Counter number */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`fs:${selected}:${currentCount}`}
+                  initial={{ scale: 0.82, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 1.18, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                >
+                  <div
+                    className="text-[9rem] sm:text-[13rem] font-black text-white leading-none text-center tabular-nums"
+                    style={{
+                      textShadow: `0 0 60px ${color.glow}, 0 0 120px ${color.glow}50`,
+                      transition: 'text-shadow 0.25s ease',
+                    }}
+                  >
+                    {currentCount}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Count button */}
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onIncrement}
+                className="flex items-center justify-center gap-2.5 w-56 sm:w-72 h-16 rounded-2xl text-brand-deep font-bold text-xl cursor-pointer select-none outline-none border-0"
+                style={{
+                  backgroundColor: 'white',
+                  boxShadow: `0 8px 48px ${color.glow}55`,
+                  transition: 'box-shadow 0.3s ease',
+                }}
+              >
+                <PlusIcon className="w-7 h-7" />
+                Count
+              </motion.button>
+
+              {/* Streak + goal% (subtle, below button) */}
+              {(streakCount !== null || goalProgress !== null) && (
+                <div className="flex items-center gap-5 opacity-50">
+                  {streakCount !== null && (
+                    <span className="text-brand-gold text-xs font-bold">🔥 {streakCount} day streak</span>
+                  )}
+                  {goalProgress !== null && (
+                    <span className={`text-xs font-bold ${goalMet ? 'text-brand-emerald' : 'text-white/70'}`}>
+                      {goalMet ? '🏆 Goal Achieved!' : `🎯 ${goalProgress}%`}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>,
+      document.body,
+      )}
 
       {/* ── Add custom dhikr modal ── */}
       <AnimatePresence>

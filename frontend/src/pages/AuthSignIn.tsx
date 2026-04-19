@@ -106,7 +106,12 @@ export default function AuthSignIn() {
     if (!resetEmail.trim()) return;
     setResetLoading(true);
     try {
-      await sendPasswordResetEmail(auth, resetEmail.trim());
+      // After Firebase resets the password on their own page, "Continue" lands on /login.
+      // Using /auth/action here caused "Invalid Link" because Firebase strips oobCode params.
+      await sendPasswordResetEmail(auth, resetEmail.trim(), {
+        url: `${window.location.origin}/login`,
+        handleCodeInApp: false,
+      });
       setResetSent(true);
     } catch (err) {
       setResetError(mapResetError((err as AuthError).code ?? ''));

@@ -22,7 +22,7 @@ export const setPrimaryEmailSchema = z.object({
 export const updateUserSchema = z.object({
   body: z.object({
     displayName: z.string().min(1).max(100).optional(),
-    photoUrl: z.string().url().optional(),
+    photoUrl: z.string().min(1).optional(),
     firstName: z.string().max(100).optional(),
     lastName: z.string().max(100).optional(),
     gender: z.enum(['male', 'female', 'other', 'prefer_not_say']).optional(),
