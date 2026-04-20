@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import { ChartBarIcon, FireIcon } from '@heroicons/react/24/outline';
@@ -93,6 +94,19 @@ export default function ZikrAnalytics() {
     <AnimatedBackground variant="dark">
       <div className="p-4 sm:p-6 lg:p-8 relative">
         <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+
+          {/* Tab navigation */}
+          <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-white/10 max-w-xs">
+            <Link
+              to="/zikr"
+              className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all"
+            >
+              📿 Counter
+            </Link>
+            <span className="flex-1 text-center text-xs font-bold py-1.5 rounded-lg bg-white/10 text-white">
+              📊 Analytics
+            </span>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <StreakCard streak={streak} onPause={handlePauseStreak} onResume={handleResumeStreak} isLoading={isUpdating} />

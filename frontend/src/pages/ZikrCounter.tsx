@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast, { Toaster } from 'react-hot-toast';
 import { useZikrStore } from '../store/useZikrStore.js';
@@ -340,6 +340,19 @@ export default function ZikrCounter() {
       <Toaster />
 
       <div className="max-w-2xl mx-auto px-4 pb-10 pt-4 space-y-5">
+
+        {/* Tab navigation */}
+        <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-white/10">
+          <span className="flex-1 text-center text-xs font-bold py-1.5 rounded-lg bg-white/10 text-white">
+            📿 Counter
+          </span>
+          <Link
+            to="/zikr/analytics"
+            className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all"
+          >
+            📊 Analytics
+          </Link>
+        </div>
 
         {/* Motivational subtitle */}
         <motion.p
