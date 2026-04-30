@@ -224,7 +224,7 @@ export function useSalatLog(date?: string) {
       const { data } = await api.get<{ ok: boolean; log: SalatLog }>(`/api/salat?date=${resolvedDate}`);
       return data.log;
     },
-    staleTime: 30_000,
+    staleTime: 60_000,
     placeholderData: {
       _id: '',
       userId: '',
@@ -319,6 +319,6 @@ export function useSalatAnalytics(days = 30) {
       const { data } = await api.get<SalatAnalytics & { ok: boolean }>(`/api/salat/analytics?days=${days}`);
       return data;
     },
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
   });
 }

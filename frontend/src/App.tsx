@@ -119,6 +119,12 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Warm up the Render free-tier backend — fire once on mount, ignore response.
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/health`).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const onVisibility = () => { if (!document.hidden) checkAndResetIfNewDay(); };
     const onFocus = () => checkAndResetIfNewDay();

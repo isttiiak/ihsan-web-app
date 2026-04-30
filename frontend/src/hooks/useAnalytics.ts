@@ -13,7 +13,7 @@ export function useAnalytics(days = 7) {
       });
       return res.data;
     },
-    staleTime: 30_000,
+    staleTime: 2 * 60_000,
     retry: 1,
   });
 }

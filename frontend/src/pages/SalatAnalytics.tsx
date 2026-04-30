@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import { ChartBarIcon, FireIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
@@ -74,10 +75,27 @@ export default function SalatAnalytics() {
   return (
     <AnimatedBackground variant="dark">
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto space-y-6">
 
-          {/* Nav */}
-          <div className="flex items-center justify-end flex-wrap gap-3">
+          {/* Tab navigation — mirrors SalatTracker */}
+          <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-white/10 max-w-xs">
+            <Link
+              to="/salat"
+              className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all"
+            >
+              🕌 Tracker
+            </Link>
+            <span className="flex-1 text-center text-xs font-bold py-1.5 rounded-lg bg-white/10 text-white">
+              📊 Analytics
+            </span>
+          </div>
+
+          {/* Title + period selector on the same row */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <motion.h1 initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
+              className="text-3xl sm:text-4xl font-black text-brand-emerald flex items-center gap-3">
+              <ChartBarIcon className="w-8 h-8" /> Salat Analytics
+            </motion.h1>
             <div className="tabs tabs-boxed bg-brand-deep border border-brand-border">
               {PERIOD_OPTIONS.map((p) => (
                 <button
@@ -90,11 +108,6 @@ export default function SalatAnalytics() {
               ))}
             </div>
           </div>
-
-          <motion.h1 initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
-            className="text-3xl sm:text-4xl font-black text-brand-emerald flex items-center gap-3">
-            <ChartBarIcon className="w-8 h-8" /> Salat Analytics
-          </motion.h1>
 
           {isLoading && (
             <div className="flex justify-center py-20">

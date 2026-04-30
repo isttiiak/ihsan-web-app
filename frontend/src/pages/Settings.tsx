@@ -51,15 +51,40 @@ export default function Settings() {
     }
   };
 
-  const exportProfile = () => {
-    const data = JSON.stringify(JSON.parse(localStorage.getItem('ihsan_user') || '{}'), null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'ihsan-user.json';
-    a.click();
-    URL.revokeObjectURL(url);
+  const [exporting, setExporting] = useState(false);
+
+  const exportProfile = async () => {
+    setExporting(true);
+    const idToken = localStorage.getItem('ihsan_idToken');
+    try {
+      const headers: Record<string, string> = idToken ? { Authorization: `Bearer ${idToken}` } : {};
+      const [profileRes, zikrRes] = await Promise.allSettled([
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, { headers }),
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/summary`, { headers }),
+      ]);
+      const profile = profileRes.status === 'fulfilled' && profileRes.value.ok
+        ? await profileRes.value.json() as unknown
+        : null;
+      const zikr = zikrRes.status === 'fulfilled' && zikrRes.value.ok
+        ? await zikrRes.value.json() as unknown
+        : null;
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        profile,
+        zikr,
+      };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ihsan-export-${new Date().toISOString().substring(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Export failed. Please check your connection and try again.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const importProfile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,8 +263,15 @@ export default function Settings() {
                 <h2 className="text-xl sm:text-2xl font-bold text-brand-emerald">Data Management</h2>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
-                <button className="btn btn-outline border-brand-border text-white/80 hover:border-brand-emerald hover:text-brand-emerald gap-2 flex-1" onClick={exportProfile}>
-                  <ArrowDownTrayIcon className="w-5 h-5" /> Export Profile
+                <button
+                  className="btn btn-outline border-brand-border text-white/80 hover:border-brand-emerald hover:text-brand-emerald gap-2 flex-1 disabled:opacity-50"
+                  onClick={() => void exportProfile()}
+                  disabled={exporting}
+                >
+                  {exporting
+                    ? <><span className="loading loading-spinner loading-sm" /> Exporting…</>
+                    : <><ArrowDownTrayIcon className="w-5 h-5" /> Export Data</>
+                  }
                 </button>
                 <label className="btn btn-outline border-brand-border text-white/80 hover:border-brand-emerald hover:text-brand-emerald gap-2 flex-1">
                   <ArrowUpTrayIcon className="w-5 h-5" /> Import Profile

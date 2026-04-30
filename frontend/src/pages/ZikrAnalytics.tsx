@@ -46,12 +46,14 @@ export default function ZikrAnalytics() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-brand-void flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-4">
-          <span className="loading loading-spinner loading-lg text-brand-emerald" />
-          <p className="text-sm text-brand-emerald font-semibold">Loading analytics...</p>
+      <AnimatedBackground variant="dark">
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="flex flex-col items-center gap-4">
+            <span className="loading loading-spinner loading-lg text-brand-emerald" />
+            <p className="text-sm text-brand-emerald font-semibold">Loading analytics…</p>
+          </div>
         </div>
-      </div>
+      </AnimatedBackground>
     );
   }
 
@@ -59,27 +61,29 @@ export default function ZikrAnalytics() {
     const errMsg = (error as Error)?.message ?? 'Failed to load analytics data.';
     const isRateLimit = errMsg.includes('429') || errMsg.toLowerCase().includes('too many');
     return (
-      <div className="min-h-screen bg-brand-void flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-6 max-w-sm text-center">
-          <div className="text-5xl">{isRateLimit ? '⏳' : '⚠️'}</div>
-          <div>
-            <p className="text-lg font-bold text-white mb-1">
-              {isRateLimit ? 'Too many requests' : 'Could not load analytics'}
-            </p>
-            <p className="text-sm text-white/50">
-              {isRateLimit
-                ? 'You\'ve hit the rate limit. Please wait a minute and try again.'
-                : errMsg}
-            </p>
+      <AnimatedBackground variant="dark">
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="flex flex-col items-center gap-6 max-w-sm text-center">
+            <div className="text-5xl">{isRateLimit ? '⏳' : '⚠️'}</div>
+            <div>
+              <p className="text-lg font-bold text-white mb-1">
+                {isRateLimit ? 'Too many requests' : 'Could not load analytics'}
+              </p>
+              <p className="text-sm text-white/50">
+                {isRateLimit
+                  ? "You've hit the rate limit. Please wait a minute and try again."
+                  : errMsg}
+              </p>
+            </div>
+            <button
+              className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-none"
+              onClick={() => void refetch()}
+            >
+              Try again
+            </button>
           </div>
-          <button
-            className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-none"
-            onClick={() => void refetch()}
-          >
-            Try again
-          </button>
         </div>
-      </div>
+      </AnimatedBackground>
     );
   }
 

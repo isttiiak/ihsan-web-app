@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AnimatedBackground from '../components/AnimatedBackground.js';
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -210,19 +211,8 @@ export default function AuthSignIn() {
 
   // ── Sign-in form ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen relative overflow-hidden bg-brand-void">
-      <motion.div
-        animate={{ y: [0, -20, 0], opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute top-0 left-0 w-96 h-96 rounded-full bg-gradient-to-br from-brand-emerald/25 to-teal-500/25 blur-3xl pointer-events-none"
-      />
-      <motion.div
-        animate={{ y: [0, -20, 0], opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-        className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-gradient-to-br from-brand-magenta/25 to-purple-500/25 blur-3xl pointer-events-none"
-      />
-
-      <div className="relative min-h-screen flex items-center justify-center p-4 sm:p-6">
+    <AnimatedBackground variant="dark">
+      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6">
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -366,6 +356,6 @@ export default function AuthSignIn() {
           </motion.div>
         </motion.div>
       </div>
-    </div>
+    </AnimatedBackground>
   );
 }

@@ -522,7 +522,10 @@ export default function Profile() {
 
   const linked = dbUser?.linkedProviders ?? [];
   const googleLinked = linked.find((p) => p.provider === 'google.com');
-  const hasGoogle = !!googleLinked;
+  // Also check Firebase-level provider data: Google sign-in users have google.com
+  // in their providerData before the backend has stored it in linkedProviders.
+  const firebaseHasGoogle = auth.currentUser?.providerData.some((p) => p.providerId === 'google.com') ?? false;
+  const hasGoogle = !!googleLinked || firebaseHasGoogle;
 
   const linkGoogle = async () => {
     if (linkingGoogle || !auth.currentUser) return;

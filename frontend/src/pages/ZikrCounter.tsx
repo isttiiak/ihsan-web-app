@@ -335,7 +335,7 @@ export default function ZikrCounter() {
   };
 
   return (
-    <AnimatedBackground variant="ocean">
+    <AnimatedBackground variant="dark">
       <Toaster />
 
       <div className="max-w-2xl mx-auto px-4 pb-10 pt-4 space-y-5">
@@ -813,10 +813,18 @@ export default function ZikrCounter() {
               )}
             </div>
 
-            {/* Bottom hint */}
-            <p className="relative z-10 text-center text-white/18 text-[11px] pb-5 flex-shrink-0 tracking-wider">
-              SPACE to count · ESC to exit
-            </p>
+            {/* Bottom: keyboard hint on desktop, tap-to-close button on mobile */}
+            <div className="relative z-10 flex flex-col items-center gap-3 pb-6 flex-shrink-0">
+              <p className="hidden sm:block text-white/18 text-[11px] tracking-wider">
+                SPACE to count · ESC to exit
+              </p>
+              <button
+                onClick={() => setFullScreen(false)}
+                className="sm:hidden flex items-center gap-2 px-8 py-3 rounded-2xl bg-white/10 border border-white/15 text-white/50 text-sm font-semibold active:scale-95 transition-transform"
+              >
+                ✕ Close
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>,

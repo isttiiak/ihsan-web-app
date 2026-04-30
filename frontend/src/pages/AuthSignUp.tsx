@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import AnimatedBackground from '../components/AnimatedBackground.js';
 import {
   createUserWithEmailAndPassword,
   signInWithPopup,
@@ -163,18 +164,8 @@ export default function AuthSignUp() {
   // ── Verification sent screen ─────────────────────────────────────────────────
   if (verificationSent) {
     return (
-      <div className="min-h-screen relative overflow-hidden bg-brand-void flex items-center justify-center p-4">
-        <motion.div
-          className="absolute top-0 left-0 w-96 h-96 rounded-full bg-gradient-to-r from-brand-emerald/20 to-teal-500/20 blur-3xl pointer-events-none"
-          animate={{ x: [0, 60, 0], y: [0, 30, 0] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-gradient-to-r from-brand-magenta/20 to-purple-500/20 blur-3xl pointer-events-none"
-          animate={{ x: [0, -60, 0], y: [0, -30, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
+      <AnimatedBackground variant="dark">
+        <div className="min-h-screen flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -237,25 +228,15 @@ export default function AuthSignUp() {
             </p>
           </div>
         </motion.div>
-      </div>
+        </div>
+      </AnimatedBackground>
     );
   }
 
   // ── Sign-up form ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen relative overflow-hidden bg-brand-void">
-      <motion.div
-        className="absolute top-0 left-0 w-96 h-96 rounded-full bg-gradient-to-r from-brand-emerald/20 to-teal-500/20 blur-3xl pointer-events-none"
-        animate={{ x: [0, 100, 0], y: [0, 50, 0], scale: [1, 1.1, 1] }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-gradient-to-r from-brand-magenta/20 to-purple-500/20 blur-3xl pointer-events-none"
-        animate={{ x: [0, -100, 0], y: [0, -50, 0], scale: [1, 1.2, 1] }}
-        transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
-      <div className="relative min-h-screen flex items-center justify-center p-4 sm:p-6">
+    <AnimatedBackground variant="dark">
+      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -453,6 +434,6 @@ export default function AuthSignUp() {
           </div>
         </motion.div>
       </div>
-    </div>
+    </AnimatedBackground>
   );
 }
