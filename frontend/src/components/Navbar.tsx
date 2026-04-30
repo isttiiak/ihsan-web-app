@@ -162,13 +162,6 @@ export default function Navbar() {
               </span>
             </div>
           )}
-          <Link
-            to="/zikr/analytics"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-emerald/15 hover:bg-brand-emerald/25 border border-brand-emerald/40 hover:border-brand-emerald/70 text-brand-emerald hover:text-white transition-all text-xs font-bold"
-          >
-            <ChartBarIcon className="w-3.5 h-3.5 shrink-0" />
-            <span>Zikr Analytics</span>
-          </Link>
         </div>
       );
     }
@@ -178,13 +171,6 @@ export default function Navbar() {
           <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-white text-xs font-bold whitespace-nowrap">
             🕌 {salatCount}/5 today
           </span>
-          <Link
-            to="/salat/analytics"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-emerald/15 hover:bg-brand-emerald/25 border border-brand-emerald/40 hover:border-brand-emerald/70 text-brand-emerald hover:text-white transition-all text-xs font-bold"
-          >
-            <ChartBarIcon className="w-3.5 h-3.5 shrink-0" />
-            <span>Prayer Analytics</span>
-          </Link>
         </div>
       );
     }

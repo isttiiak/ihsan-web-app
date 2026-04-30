@@ -891,7 +891,7 @@ export default function Profile() {
                   )}
                 </div>
 
-                {/* ── Google row (linked) or Connect button ── */}
+                {/* ── Google row (linked / already signed-in with Google / not connected) ── */}
                 {googleLinked ? (
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-border">
                     <GoogleLogo className="w-4 h-4 shrink-0" />
@@ -951,7 +951,24 @@ export default function Profile() {
                       </div>
                     </div>
                   </div>
+                ) : firebaseHasGoogle ? (
+                  // User signed in with Google — their account IS Google, no linking needed.
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-emerald/20 opacity-80 cursor-default">
+                    <GoogleLogo className="w-4 h-4 shrink-0" />
+                    <div className="text-left min-w-0 flex-1">
+                      <p className="text-sm font-medium leading-tight text-white/70">
+                        {auth.currentUser?.email ?? 'Google Account'}
+                      </p>
+                      <p className="text-xs text-white/30 leading-tight mt-0.5">
+                        You're signed in with Google — this is your primary account
+                      </p>
+                    </div>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald font-bold shrink-0">
+                      PRIMARY
+                    </span>
+                  </div>
                 ) : (
+                  // Email/password user — offer to link Google
                   <button
                     onClick={() => void linkGoogle()}
                     disabled={linkingGoogle}

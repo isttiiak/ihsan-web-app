@@ -116,8 +116,9 @@ export default function Settings() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -4, scale: 1.01 }}
             transition={{ delay: 0.1 }}
-            className="card bg-brand-surface border border-brand-border shadow-glass"
+            className="card bg-brand-surface border border-brand-border shadow-glass hover:border-brand-emerald/30 transition-colors"
           >
             <div className="card-body p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-4">
@@ -169,7 +170,7 @@ export default function Settings() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="card bg-brand-surface border border-brand-border shadow-glass"
+            className="card bg-brand-surface border border-brand-border shadow-glass hover:border-brand-emerald/30 transition-colors"
           >
             <div className="card-body p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-4">
@@ -236,7 +237,7 @@ export default function Settings() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="card bg-brand-surface border border-brand-border shadow-glass"
+            className="card bg-brand-surface border border-brand-border shadow-glass hover:border-brand-emerald/30 transition-colors"
           >
             <div className="card-body p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-4">
@@ -255,7 +256,7 @@ export default function Settings() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="card bg-brand-surface border border-brand-border shadow-glass"
+            className="card bg-brand-surface border border-brand-border shadow-glass hover:border-brand-emerald/30 transition-colors"
           >
             <div className="card-body p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-4">

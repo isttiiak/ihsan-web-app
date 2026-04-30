@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { ChartBarIcon, FireIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, FireIcon, PlusCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import StreakCard from '../components/analytics/StreakCard.js';
 import GoalCard from '../components/analytics/GoalCard.js';
 import TrendChart from '../components/analytics/TrendChart.js';
@@ -12,13 +13,295 @@ import {
   usePauseStreak,
   useResumeStreak,
 } from '../hooks/useAnalytics.js';
+import { useZikrTypes, useAddZikrType } from '../hooks/useZikrTypes.js';
+import { useZikrStore } from '../store/useZikrStore.js';
+import api from '../lib/api.js';
+import { getUserTimezoneOffset } from '../utils/timezone.js';
+
+// ─── Manual Entry Modal ───────────────────────────────────────────────────────
+
+interface ManualEntryModalProps {
+  onClose: () => void;
+  todayPerType: Array<{ zikrType: string; total: number }>;
+  localCounts: Record<string, number>;
+}
+
+function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryModalProps) {
+  const queryClient = useQueryClient();
+  const { types, addConfirmedCounts, setTypes, setCustomMeaning } = useZikrStore();
+  const { data: fetchedTypes } = useZikrTypes();
+  const addZikrType = useAddZikrType();
+
+  // Merge store types + server types deduplicated
+  const allTypes = [...new Set([...types, ...(fetchedTypes ?? []).map((t) => t.name)])];
+
+  const [selectedType, setSelectedType] = useState(allTypes[0] ?? 'SubhanAllah');
+  const [amount, setAmount] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  // Add-new-type sub-form
+  const [showAddNew, setShowAddNew] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newArabic, setNewArabic] = useState('');
+  const [newMeaning, setNewMeaning] = useState('');
+  const [newSource, setNewSource] = useState('');
+  const [newSourceUrl, setNewSourceUrl] = useState('');
+
+  // Existing count for the selected type today
+  const serverCount = todayPerType.find((t) => t.zikrType === selectedType)?.total ?? 0;
+  const localCount = localCounts[selectedType] ?? 0;
+  const existingCount = Math.max(serverCount, localCount);
+
+  const parsedAmount = Math.max(0, parseInt(amount) || 0);
+  const newTotal = existingCount + parsedAmount;
+
+  const handleSubmit = async () => {
+    if (parsedAmount <= 0) return;
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      await api.post('/api/zikr/increment/batch', {
+        increments: [{ zikrType: selectedType, amount: parsedAmount, timezoneOffset: getUserTimezoneOffset() }],
+        timezoneOffset: getUserTimezoneOffset(),
+      });
+      addConfirmedCounts(selectedType, parsedAmount);
+      await queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      onClose();
+    } catch {
+      setSubmitError('Failed to save. Check your connection and try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAddNewType = () => {
+    const name = newName.trim();
+    const meaning = newMeaning.trim();
+    if (!name || !meaning) return;
+    addZikrType.mutate(name, {
+      onSuccess: () => {
+        setCustomMeaning(name, {
+          arabic: newArabic.trim() || undefined,
+          meaning,
+          source: newSource.trim() || undefined,
+          sourceUrl: newSourceUrl.trim() || undefined,
+        });
+        setTypes([...types, name]);
+        setSelectedType(name);
+        setShowAddNew(false);
+        setNewName(''); setNewArabic(''); setNewMeaning(''); setNewSource(''); setNewSourceUrl('');
+        setSubmitError('');
+      },
+      onError: () => setSubmitError('Failed to add dhikr type. Try again.'),
+    });
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 40, opacity: 0 }}
+        transition={{ type: 'spring', damping: 25 }}
+        className="bg-brand-surface rounded-3xl w-full max-w-md shadow-2xl border border-brand-border overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-brand-border/60">
+          <div>
+            <h3 className="text-lg font-black text-brand-emerald">Log Missed Counts</h3>
+            <p className="text-white/35 text-xs mt-0.5">Add zikr you counted outside the app today</p>
+          </div>
+          <button onClick={onClose} className="text-white/40 hover:text-white p-1 transition-colors">
+            <XMarkIcon className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {!showAddNew ? (
+            <>
+              {/* Type selector */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-white/50 uppercase tracking-wider font-bold">Zikr Type</label>
+                <select
+                  value={selectedType}
+                  onChange={(e) => { setSelectedType(e.target.value); setAmount(''); setSubmitError(''); }}
+                  className="select select-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm"
+                >
+                  {allTypes.map((t) => (
+                    <option key={t} value={t} className="bg-brand-deep">{t}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => { setShowAddNew(true); setSubmitError(''); }}
+                  className="flex items-center gap-1.5 text-brand-emerald/70 hover:text-brand-emerald text-xs font-semibold transition-colors"
+                >
+                  <PlusCircleIcon className="w-3.5 h-3.5" />
+                  Add a new dhikr type
+                </button>
+              </div>
+
+              {/* Today's existing count */}
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+                <span className="text-white/50 text-sm">Today's count so far</span>
+                <span className="text-white font-black text-lg tabular-nums">{existingCount.toLocaleString()}</span>
+              </div>
+
+              {/* Amount to add */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-white/50 uppercase tracking-wider font-bold">Counts to add</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={amount}
+                  onChange={(e) => { setAmount(e.target.value); setSubmitError(''); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') void handleSubmit(); }}
+                  placeholder="e.g. 100"
+                  className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-lg font-bold"
+                  autoFocus
+                />
+              </div>
+
+              {/* Total preview */}
+              {parsedAmount > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center justify-between px-4 py-3 rounded-xl bg-brand-emerald/10 border border-brand-emerald/30"
+                >
+                  <span className="text-brand-emerald/80 text-sm font-semibold">
+                    {existingCount.toLocaleString()} + {parsedAmount.toLocaleString()}
+                  </span>
+                  <span className="text-brand-emerald font-black text-xl tabular-nums">
+                    = {newTotal.toLocaleString()}
+                  </span>
+                </motion.div>
+              )}
+
+              {submitError && <p className="text-red-400 text-xs">{submitError}</p>}
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-1">
+                <button onClick={onClose} className="btn flex-1 btn-ghost text-white/60 border-brand-border">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => void handleSubmit()}
+                  disabled={parsedAmount <= 0 || submitting}
+                  className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold disabled:opacity-40"
+                >
+                  {submitting ? <span className="loading loading-spinner loading-sm" /> : 'Save Counts'}
+                </button>
+              </div>
+            </>
+          ) : (
+            // ── Add new dhikr sub-form ─────────────────────────────────────────
+            <>
+              <div className="flex items-center gap-2 mb-1">
+                <button
+                  onClick={() => { setShowAddNew(false); setSubmitError(''); }}
+                  className="text-white/40 hover:text-white text-xs transition-colors flex items-center gap-1"
+                >
+                  ← Back
+                </button>
+                <span className="text-white/25 text-xs">New Dhikr Type</span>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-white/50 uppercase tracking-wider mb-1 block">
+                    Name <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="e.g. Hasbunallah"
+                    className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-white/50 uppercase tracking-wider mb-1 block">
+                    Arabic <span className="text-white/25">(optional)</span>
+                  </label>
+                  <input
+                    value={newArabic}
+                    onChange={(e) => setNewArabic(e.target.value)}
+                    placeholder="حَسْبُنَا اللَّهُ"
+                    dir="rtl"
+                    className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-base"
+                    style={{ fontFamily: "'Amiri', serif" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-white/50 uppercase tracking-wider mb-1 block">
+                    English Meaning <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    value={newMeaning}
+                    onChange={(e) => setNewMeaning(e.target.value)}
+                    placeholder="Allah is sufficient for us"
+                    className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm"
+                  />
+                </div>
+                <div className="border-t border-brand-border/60 pt-3 space-y-2">
+                  <p className="text-white/25 text-[10px] uppercase tracking-wider">Source <span className="normal-case text-white/20">(optional)</span></p>
+                  <input
+                    value={newSource}
+                    onChange={(e) => setNewSource(e.target.value)}
+                    placeholder="e.g. Quran 3:173"
+                    className="input input-sm input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-xs"
+                  />
+                  <input
+                    value={newSourceUrl}
+                    onChange={(e) => setNewSourceUrl(e.target.value)}
+                    placeholder="https://quran.com/3/173"
+                    className="input input-sm input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-xs"
+                  />
+                </div>
+              </div>
+
+              {submitError && <p className="text-red-400 text-xs">{submitError}</p>}
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => { setShowAddNew(false); setSubmitError(''); }}
+                  className="btn flex-1 btn-ghost text-white/60 border-brand-border"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddNewType}
+                  disabled={!newName.trim() || !newMeaning.trim() || addZikrType.isPending}
+                  className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold disabled:opacity-40"
+                >
+                  {addZikrType.isPending ? <span className="loading loading-spinner loading-sm" /> : 'Add Dhikr'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ZikrAnalytics() {
   const [selectedPeriod, setSelectedPeriod] = useState(7);
   const [activeTab, setActiveTab] = useState<'today' | 'all'>('today');
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [newGoal, setNewGoal] = useState(100);
+  const [showManualEntry, setShowManualEntry] = useState(false);
 
+  const { counts: localCounts } = useZikrStore();
   const { data: analyticsData, isLoading, isError, error, refetch } = useAnalytics(selectedPeriod);
   const updateGoal = useUpdateGoal();
   const pauseStreak = usePauseStreak();
@@ -39,9 +322,7 @@ export default function ZikrAnalytics() {
 
   const handleUpdateGoal = () => {
     if (!newGoal || newGoal < 1) return;
-    updateGoal.mutate(newGoal, {
-      onSuccess: () => setShowGoalModal(false),
-    });
+    updateGoal.mutate(newGoal, { onSuccess: () => setShowGoalModal(false) });
   };
 
   if (isLoading) {
@@ -70,15 +351,10 @@ export default function ZikrAnalytics() {
                 {isRateLimit ? 'Too many requests' : 'Could not load analytics'}
               </p>
               <p className="text-sm text-white/50">
-                {isRateLimit
-                  ? "You've hit the rate limit. Please wait a minute and try again."
-                  : errMsg}
+                {isRateLimit ? "You've hit the rate limit. Please wait a minute and try again." : errMsg}
               </p>
             </div>
-            <button
-              className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-none"
-              onClick={() => void refetch()}
-            >
+            <button className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-none" onClick={() => void refetch()}>
               Try again
             </button>
           </div>
@@ -94,26 +370,51 @@ export default function ZikrAnalytics() {
   const displayData = activeTab === 'today' ? todayTypes : allTimeTypes;
   const displayTotal = activeTab === 'today' ? todayTotal : allTime?.totalCount ?? 0;
 
+  // Last 7 days from chartData for the heatmap
+  const last7Days = chartData?.slice(-7) ?? [];
+
   return (
     <AnimatedBackground variant="dark">
       <div className="p-4 sm:p-6 lg:p-8 relative">
         <div className="max-w-7xl mx-auto space-y-8 relative z-10">
 
           {/* Tab navigation */}
-          <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-white/10 max-w-xs">
-            <Link
-              to="/zikr"
-              className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all"
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-white/10 max-w-xs">
+              <Link
+                to="/zikr"
+                className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all"
+              >
+                📿 Counter
+              </Link>
+              <span className="flex-1 text-center text-xs font-bold py-1.5 rounded-lg bg-white/10 text-white">
+                📊 Analytics
+              </span>
+            </div>
+
+            {/* Log missed counts button */}
+            <motion.button
+              whileHover={{ scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setShowManualEntry(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-emerald/15 hover:bg-brand-emerald/25 border border-brand-emerald/40 hover:border-brand-emerald/70 text-brand-emerald text-sm font-bold transition-all"
             >
-              📿 Counter
-            </Link>
-            <span className="flex-1 text-center text-xs font-bold py-1.5 rounded-lg bg-white/10 text-white">
-              📊 Analytics
-            </span>
+              <PlusCircleIcon className="w-4 h-4" />
+              Log Missed Counts
+            </motion.button>
           </div>
 
+          {/* Streak + Goal cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <StreakCard streak={streak} onPause={handlePauseStreak} onResume={handleResumeStreak} isLoading={isUpdating} />
+            <StreakCard
+              streak={streak}
+              onPause={handlePauseStreak}
+              onResume={handleResumeStreak}
+              isLoading={isUpdating}
+              chartData={last7Days}
+              dailyGoal={goal?.dailyTarget}
+              todayTotal={todayTotal}
+            />
             <GoalCard
               goal={goal}
               today={today}
@@ -121,6 +422,7 @@ export default function ZikrAnalytics() {
             />
           </div>
 
+          {/* Overview Statistics */}
           <div className="space-y-6">
             <motion.h2
               initial={{ opacity: 0, y: -20 }}
@@ -197,6 +499,7 @@ export default function ZikrAnalytics() {
             </div>
           </div>
 
+          {/* Breakdown by Type */}
           <div className="space-y-6">
             <div className="flex items-center justify-between px-2 flex-wrap gap-4">
               <h2 className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 via-pink-400 to-rose-400 bg-clip-text text-transparent flex items-center gap-3">
@@ -259,6 +562,7 @@ export default function ZikrAnalytics() {
             )}
           </div>
 
+          {/* Trends & Insights */}
           <div className="space-y-6 mt-12 pt-8 border-t-2 border-brand-border">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <h2 className="text-3xl sm:text-4xl font-black text-brand-emerald flex items-center gap-3">
@@ -280,6 +584,7 @@ export default function ZikrAnalytics() {
           </div>
         </div>
 
+        {/* Set Goal modal */}
         {showGoalModal && (
           <div className="modal modal-open">
             <motion.div
@@ -316,6 +621,17 @@ export default function ZikrAnalytics() {
           </div>
         )}
       </div>
+
+      {/* Manual entry modal */}
+      <AnimatePresence>
+        {showManualEntry && (
+          <ManualEntryModal
+            onClose={() => setShowManualEntry(false)}
+            todayPerType={todayTypes}
+            localCounts={localCounts}
+          />
+        )}
+      </AnimatePresence>
     </AnimatedBackground>
   );
 }

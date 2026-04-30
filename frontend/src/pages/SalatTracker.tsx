@@ -339,6 +339,7 @@ export default function SalatTracker() {
                     key={prayer.id}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ scale: 1.01, y: -2 }}
                     transition={{ delay: 0.04 * i }}
                     layout
                     className={`rounded-2xl border overflow-hidden transition-colors ${

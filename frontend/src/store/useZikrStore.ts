@@ -54,6 +54,7 @@ interface ZikrState {
   increment: () => void;
   decrement: () => void;
   reset: () => void;
+  addConfirmedCounts: (type: string, amount: number) => void;
   scheduleFlush: () => void;
   flush: () => Promise<void>;
 }
@@ -170,6 +171,14 @@ export const useZikrStore = create<ZikrState>()(
             total: Math.max(0, s.total - cleared),
           };
         }),
+
+      // Used after manual API-confirmed entry — updates local counts without touching pending
+      addConfirmedCounts: (type, amount) =>
+        set((s) => ({
+          counts: { ...s.counts, [type]: (s.counts[type] ?? 0) + amount },
+          lifetimeTotals: { ...s.lifetimeTotals, [type]: (s.lifetimeTotals[type] ?? 0) + amount },
+          total: s.total + amount,
+        })),
 
       scheduleFlush: () => {
         clearTimeout(get()._flushTimer);
