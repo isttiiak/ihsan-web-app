@@ -79,7 +79,9 @@ export default function Navbar() {
   const location  = useLocation();
   const navigate  = useNavigate();
   const { user, setUser } = useAuthStore();
-  const { reset, counts, pending } = useZikrStore();
+  const reset = useZikrStore((s) => s.reset);
+  const localTotal = useZikrStore((s) => Object.values(s.counts).reduce((a, b) => a + b, 0));
+  const pendingTotal = useZikrStore((s) => Object.values(s.pending).reduce((a, b) => a + b, 0));
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -108,8 +110,6 @@ export default function Navbar() {
 
   const streak        = analyticsData?.streak?.currentStreak ?? null;
   const dailyGoal     = analyticsData?.goal?.dailyTarget ?? null;
-  const localTotal    = Object.values(counts ?? {}).reduce((a, b) => a + b, 0);
-  const pendingTotal  = Object.values(pending ?? {}).reduce((a, b) => a + b, 0);
   const confirmedTotal = analyticsData?.today?.total ?? 0;
   const effectiveTotal = Math.max(localTotal, confirmedTotal + pendingTotal);
   const goalPct  = dailyGoal ? Math.min(100, Math.round((effectiveTotal / dailyGoal) * 100)) : null;

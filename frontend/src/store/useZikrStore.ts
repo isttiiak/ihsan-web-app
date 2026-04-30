@@ -1,8 +1,28 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { getUserTimezoneOffset, getTodayLocal } from '../utils/timezone.js';
 
 const FLUSH_DELAY = 800; // ms
+
+// Timezone offset is stable for the whole session — compute once.
+const SESSION_TZ_OFFSET = getUserTimezoneOffset();
+
+// Debounce localStorage writes so rapid tapping doesn't block the main thread.
+// Reads are always synchronous (needed for hydration on mount).
+const PERSIST_DEBOUNCE_MS = 400;
+const _persistTimers: Record<string, ReturnType<typeof setTimeout>> = {};
+const rawDebouncedStorage = {
+  getItem: (name: string) => localStorage.getItem(name),
+  setItem: (name: string, value: string) => {
+    clearTimeout(_persistTimers[name]);
+    _persistTimers[name] = setTimeout(() => localStorage.setItem(name, value), PERSIST_DEBOUNCE_MS);
+  },
+  removeItem: (name: string) => {
+    clearTimeout(_persistTimers[name]);
+    localStorage.removeItem(name);
+  },
+};
+const debouncedStorage = createJSONStorage(() => rawDebouncedStorage);
 
 export interface CustomMeaning {
   arabic?: string;
@@ -114,8 +134,8 @@ export const useZikrStore = create<ZikrState>()(
       },
 
       increment: () => {
-        get().checkAndResetIfNewDay();
-        const timezoneOffset = getUserTimezoneOffset();
+        // checkAndResetIfNewDay is intentionally NOT called here — App.tsx handles it on
+        // mount/focus/visibility. Calling it on every tap added unnecessary work per count.
         set((s) => {
           const type = s.selected;
           return {
@@ -123,7 +143,6 @@ export const useZikrStore = create<ZikrState>()(
             lifetimeTotals: { ...s.lifetimeTotals, [type]: (s.lifetimeTotals[type] ?? 0) + 1 },
             pending: { ...s.pending, [type]: (s.pending[type] ?? 0) + 1 },
             total: s.total + 1,
-            timezoneOffset,
           };
         });
       },
@@ -135,6 +154,7 @@ export const useZikrStore = create<ZikrState>()(
           if (current <= 0) return {};
           return {
             counts: { ...s.counts, [type]: current - 1 },
+            lifetimeTotals: { ...s.lifetimeTotals, [type]: Math.max(0, (s.lifetimeTotals[type] ?? 0) - 1) },
             pending: { ...s.pending, [type]: Math.max(0, (s.pending[type] ?? 0) - 1) },
             total: Math.max(0, s.total - 1),
           };
@@ -142,10 +162,14 @@ export const useZikrStore = create<ZikrState>()(
 
       // Reset clears only this session's local count — server-confirmed data in analytics is unaffected
       reset: () =>
-        set((s) => ({
-          counts: { ...s.counts, [s.selected]: 0 },
-          pending: { ...s.pending, [s.selected]: 0 },
-        })),
+        set((s) => {
+          const cleared = s.counts[s.selected] ?? 0;
+          return {
+            counts: { ...s.counts, [s.selected]: 0 },
+            pending: { ...s.pending, [s.selected]: 0 },
+            total: Math.max(0, s.total - cleared),
+          };
+        }),
 
       scheduleFlush: () => {
         clearTimeout(get()._flushTimer);
@@ -165,7 +189,7 @@ export const useZikrStore = create<ZikrState>()(
         const idToken = localStorage.getItem('ihsan_idToken');
         if (!idToken) return;
 
-        const resolvedOffset = get().timezoneOffset ?? getUserTimezoneOffset();
+        const resolvedOffset = get().timezoneOffset ?? SESSION_TZ_OFFSET;
         const payload = entries.map(([zikrType, amount]) => ({
           zikrType,
           amount,
@@ -203,6 +227,7 @@ export const useZikrStore = create<ZikrState>()(
     }),
     {
       name: 'ihsan_zikr_store',
+      storage: debouncedStorage,
       partialize: (state) => ({
         selected: state.selected,
         types: state.types,

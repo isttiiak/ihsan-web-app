@@ -555,7 +555,7 @@ export default function SalatTracker() {
                       : 'bg-brand-deep border-brand-border text-white/50 hover:border-cyan-400/50 hover:text-white/80'
                   }`}
                 >
-                  {naflEntry.completed ? '✅ Done' : '✅ Done'}
+                  {naflEntry.completed ? '✅ Done' : 'Mark Done'}
                 </motion.button>
               </div>
 

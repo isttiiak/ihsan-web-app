@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
@@ -268,6 +268,14 @@ export default function ZikrCounter() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchedTypes?.length]);
 
+  const onIncrement = useCallback(() => {
+    increment();
+    scheduleFlush();
+    setColorIdx((i) => (i + 1) % GLOW_PALETTE.length);
+  }, [increment, scheduleFlush]);
+
+  const onDecrement = useCallback(() => { if (currentCount > 0) decrement(); }, [currentCount, decrement]);
+
   // Keyboard: Space = increment
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -278,16 +286,7 @@ export default function ZikrCounter() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const onIncrement = () => {
-    increment();
-    scheduleFlush();
-    setColorIdx((i) => (i + 1) % GLOW_PALETTE.length);
-  };
-
-  const onDecrement = () => { if (currentCount > 0) decrement(); };
+  }, [onIncrement]);
 
   const onReset = () => {
     if (currentCount === 0) return;
@@ -346,12 +345,21 @@ export default function ZikrCounter() {
           <span className="flex-1 text-center text-xs font-bold py-1.5 rounded-lg bg-white/10 text-white">
             📿 Counter
           </span>
-          <Link
-            to="/zikr/analytics"
-            className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all"
-          >
-            📊 Analytics
-          </Link>
+          {!user && Object.values(pending ?? {}).reduce((a, b) => a + b, 0) > 0 ? (
+            <button
+              onClick={() => setShowGuestDialog(true)}
+              className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all"
+            >
+              📊 Analytics
+            </button>
+          ) : (
+            <Link
+              to="/zikr/analytics"
+              className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all"
+            >
+              📊 Analytics
+            </Link>
+          )}
         </div>
 
         {/* Motivational subtitle */}

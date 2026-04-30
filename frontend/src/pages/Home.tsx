@@ -68,8 +68,9 @@ export default function Home() {
   // Prayer times widget state
   const [prayerNow, setPrayerNow] = useState(new Date());
   const [locLoading, setLocLoading] = useState(false);
+  // Widget shows hours+minutes only — 60s granularity is sufficient.
   useEffect(() => {
-    const t = setInterval(() => setPrayerNow(new Date()), 1000);
+    const t = setInterval(() => setPrayerNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
 
