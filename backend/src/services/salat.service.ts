@@ -48,6 +48,32 @@ export async function getOrCreateLog(userId: string, date?: string) {
   return log;
 }
 
+const EMPTY_ENTRY = { status: 'pending' as PrayerStatus };
+
+/**
+ * Read-only fetch: returns the stored log or a virtual empty one WITHOUT
+ * writing to the database. Previously every GET (e.g. browsing back through
+ * past dates) created a permanent empty row per day viewed.
+ */
+export async function getLogReadOnly(userId: string, date?: string) {
+  const d = date ?? todayDateString();
+  const log = await SalatLog.findOne({ userId, date: d });
+  if (log) {
+    normaliseLegacyPrayers(log);
+    return log;
+  }
+  return {
+    _id: '',
+    userId,
+    date: d,
+    prayers: {
+      fajr: EMPTY_ENTRY, dhuhr: EMPTY_ENTRY, asr: EMPTY_ENTRY,
+      maghrib: EMPTY_ENTRY, isha: EMPTY_ENTRY,
+    },
+    nafl: { completed: false, types: [] as NaflType[], rakat: 2 },
+  };
+}
+
 export async function updatePrayerStatus(
   userId: string,
   prayer: PrayerId,
@@ -99,11 +125,18 @@ export async function updateNafl(
   return log;
 }
 
-export async function getSalatHistory(userId: string, days: number) {
-  const since = new Date();
-  since.setDate(since.getDate() - days + 1);
-  const sinceStr = since.toISOString().substring(0, 10);
-  return SalatLog.find({ userId, date: { $gte: sinceStr } }).sort({ date: 1 });
+/** Shift a YYYY-MM-DD date string by `delta` days (pure string math, no TZ). */
+function shiftDateStr(dateStr: string, delta: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1));
+  dt.setUTCDate(dt.getUTCDate() + delta);
+  return dt.toISOString().substring(0, 10);
+}
+
+export async function getSalatHistory(userId: string, days: number, today?: string) {
+  const end = today ?? todayDateString();
+  const sinceStr = shiftDateStr(end, -(days - 1));
+  return SalatLog.find({ userId, date: { $gte: sinceStr, $lte: end } }).sort({ date: 1 });
 }
 
 export interface SalatAnalyticsResult {
@@ -130,15 +163,15 @@ export interface SalatAnalyticsResult {
   calendarData: Array<{ date: string; completed: number; total: number }>;
 }
 
-export async function getSalatAnalytics(userId: string, days: number): Promise<SalatAnalyticsResult> {
+export async function getSalatAnalytics(userId: string, days: number, clientToday?: string): Promise<SalatAnalyticsResult> {
+  // "Today" must come from the user's device — the server runs UTC, which is
+  // a different calendar date than the user's for part of every day.
+  const today = clientToday ?? todayDateString();
   const calendarDays = Math.max(days, 90);
-  const logs = await getSalatHistory(userId, calendarDays);
+  const logs = await getSalatHistory(userId, calendarDays, today);
 
-  const statsLogs = logs.filter((l) => {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days + 1);
-    return l.date >= cutoff.toISOString().substring(0, 10);
-  });
+  const statsCutoff = shiftDateStr(today, -(days - 1));
+  const statsLogs = logs.filter((l) => l.date >= statsCutoff);
 
   let completedCount = 0;
   let kazaCount = 0;
@@ -180,71 +213,57 @@ export async function getSalatAnalytics(userId: string, days: number): Promise<S
   const prayedTotal = completedCount + kazaCount;
 
   const logMap = new Map(logs.map((l) => [l.date, l]));
-  const statsMap = new Map(statsLogs.map((l) => [l.date, l]));
 
-  const sortedDates = statsLogs.map((l) => l.date).sort();
-  let bestStreak = 0;
-  let runStreak = 0;
-
-  for (const date of sortedDates) {
-    const log = statsMap.get(date);
-    const allDone = PRAYER_IDS.every((pid) => {
-      const s = log?.prayers[pid]?.status;
+  const isAllDone = (date: string): boolean => {
+    const log = logMap.get(date);
+    if (!log) return false; // a day with no log breaks the streak
+    return PRAYER_IDS.every((pid) => {
+      const s = log.prayers[pid]?.status;
       return s === 'completed' || s === 'kaza';
     });
-    runStreak = allDone ? runStreak + 1 : 0;
+  };
+
+  // Best streak: walk the window day by day so gap days (no log at all)
+  // correctly break the run. The old version only iterated existing rows,
+  // silently skipping missed days.
+  let bestStreak = 0;
+  let runStreak = 0;
+  for (let i = 0; i < days; i++) {
+    const date = shiftDateStr(statsCutoff, i);
+    runStreak = isAllDone(date) ? runStreak + 1 : 0;
     if (runStreak > bestStreak) bestStreak = runStreak;
   }
 
+  // Current streak: walk backwards from today. Today itself may be
+  // incomplete (day in progress) — start from yesterday in that case.
   let currentStreak = 0;
-  const today = todayDateString();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().substring(0, 10);
-  const lastDate = sortedDates[sortedDates.length - 1];
-
-  if (lastDate === today || lastDate === yesterdayStr) {
-    for (let i = sortedDates.length - 1; i >= 0; i--) {
-      const log = statsMap.get(sortedDates[i]);
-      const allDone = PRAYER_IDS.every((pid) => {
-        const s = log?.prayers[pid]?.status;
-        return s === 'completed' || s === 'kaza';
-      });
-      if (!allDone) break;
-      currentStreak++;
-    }
+  let cursor = isAllDone(today) ? today : shiftDateStr(today, -1);
+  while (isAllDone(cursor)) {
+    currentStreak++;
+    cursor = shiftDateStr(cursor, -1);
   }
+
+  const countDone = (dateStr: string): number => {
+    const log = logMap.get(dateStr);
+    if (!log) return 0;
+    let done = 0;
+    for (const pid of PRAYER_IDS) {
+      const s = log.prayers[pid]?.status;
+      if (s === 'completed' || s === 'kaza') done++;
+    }
+    return done;
+  };
 
   const last7Days = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().substring(0, 10);
-    const log = logMap.get(dateStr);
-    let done = 0;
-    if (log) {
-      for (const pid of PRAYER_IDS) {
-        const s = log.prayers[pid]?.status;
-        if (s === 'completed' || s === 'kaza') done++;
-      }
-    }
-    last7Days.push({ date: dateStr, completed: done, total: 5 });
+    const dateStr = shiftDateStr(today, -i);
+    last7Days.push({ date: dateStr, completed: countDone(dateStr), total: 5 });
   }
 
   const calendarData = [];
   for (let i = calendarDays - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().substring(0, 10);
-    const log = logMap.get(dateStr);
-    let done = 0;
-    if (log) {
-      for (const pid of PRAYER_IDS) {
-        const s = log.prayers[pid]?.status;
-        if (s === 'completed' || s === 'kaza') done++;
-      }
-    }
-    calendarData.push({ date: dateStr, completed: done, total: 5 });
+    const dateStr = shiftDateStr(today, -i);
+    calendarData.push({ date: dateStr, completed: countDone(dateStr), total: 5 });
   }
 
   const completionRate = totalPossiblePrayers > 0

@@ -30,9 +30,16 @@ export function truncateToTimezone(dateLike: number | Date = Date.now(), offsetM
     date.setUTCDate(day - 1);
   }
 
-  // Calculate UTC hours for local midnight
-  const utcHourForLocalMidnight = (24 - Math.floor(offsetMinutes / 60)) % 24;
-  date.setUTCHours(utcHourForLocalMidnight, 0, 0, 0);
+  // UTC time of local midnight, in minutes — keep the minute component so
+  // half-hour offsets (India +5:30, Nepal +5:45, Iran +3:30) get a correct
+  // day boundary instead of one shifted by 30–45 minutes.
+  const DAY_MIN = 24 * 60;
+  const utcMinutesForLocalMidnight = ((DAY_MIN - offsetMinutes) % DAY_MIN + DAY_MIN) % DAY_MIN;
+  date.setUTCHours(
+    Math.floor(utcMinutesForLocalMidnight / 60),
+    utcMinutesForLocalMidnight % 60,
+    0, 0
+  );
 
   return date;
 }

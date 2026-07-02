@@ -315,14 +315,30 @@ const HIJRI_MONTH_NAMES = [
   'Ramaḍān', 'Shawwāl', "Dhul Qa'dah", 'Dhul Ḥijjah',
 ];
 
+// ── Regional moon-sighting adjustment ───────────────────────────────────────
+// Umm al-Qura follows Saudi sighting; Bangladesh/India/Pakistan are often one
+// day behind. The user can correct this in Settings (-1, 0, +1 days).
+
+const HIJRI_ADJUSTMENT_KEY = 'ihsan_hijri_offset';
+
+export function getHijriAdjustment(): number {
+  const raw = parseInt(localStorage.getItem(HIJRI_ADJUSTMENT_KEY) ?? '0', 10);
+  return raw === -1 || raw === 1 ? raw : 0;
+}
+
+export function setHijriAdjustment(days: number): void {
+  localStorage.setItem(HIJRI_ADJUSTMENT_KEY, String(days === -1 || days === 1 ? days : 0));
+}
+
 export function getHijriDate(date: Date = new Date()): HijriDate | null {
   try {
+    const adjusted = new Date(date.getTime() + getHijriAdjustment() * 86_400_000);
     const fmt = new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', {
       day: 'numeric',
       month: 'numeric',
       year: 'numeric',
     });
-    const parts = fmt.formatToParts(date);
+    const parts = fmt.formatToParts(adjusted);
     const day   = parseInt(parts.find((p) => p.type === 'day')?.value  ?? '0');
     const month = parseInt(parts.find((p) => p.type === 'month')?.value ?? '0');
     const year  = parseInt(parts.find((p) => p.type === 'year')?.value  ?? '0');

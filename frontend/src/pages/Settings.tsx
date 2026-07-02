@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { getIdToken } from '../lib/api.js';
+import { getHijriAdjustment, setHijriAdjustment, getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useUiStore } from '../store/useUiStore.js';
 import { Link } from 'react-router-dom';
@@ -27,6 +29,12 @@ export default function Settings() {
   const [theme, setTheme] = useState(localStorage.getItem('ihsan_theme') || 'ihsan');
   const [suggestions, setSuggestions] = useState<AiSuggestionsResponse | null>(null);
   const [loadingSuggest, setLoadingSuggest] = useState(false);
+  const [hijriAdj, setHijriAdjState] = useState(getHijriAdjustment());
+
+  const applyHijriAdj = (days: number) => {
+    setHijriAdjustment(days);
+    setHijriAdjState(days);
+  };
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -36,7 +44,7 @@ export default function Settings() {
   const getSuggestions = async () => {
     setLoadingSuggest(true);
     try {
-      const idToken = localStorage.getItem('ihsan_idToken');
+      const idToken = await getIdToken();
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/ai/suggest`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken ?? ''}` },
@@ -55,7 +63,7 @@ export default function Settings() {
 
   const exportProfile = async () => {
     setExporting(true);
-    const idToken = localStorage.getItem('ihsan_idToken');
+    const idToken = await getIdToken();
     try {
       const headers: Record<string, string> = idToken ? { Authorization: `Bearer ${idToken}` } : {};
       const [profileRes, zikrRes] = await Promise.allSettled([
@@ -139,6 +147,33 @@ export default function Settings() {
                   <option value="ihsan">🌑 Ihsan Dark (Default)</option>
                   <option value="light">☀️ Light</option>
                 </select>
+              </div>
+
+              {/* Hijri date adjustment — regional moon sighting */}
+              <div className="form-control mt-6">
+                <label className="label">
+                  <span className="label-text font-medium text-white/80">Hijri date adjustment</span>
+                  <span className="label-text-alt text-xs text-white/40">Match your local moon sighting</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  {[-1, 0, 1].map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => applyHijriAdj(d)}
+                      className={`btn btn-sm flex-1 border ${
+                        hijriAdj === d
+                          ? 'bg-brand-emerald text-white border-brand-emerald'
+                          : 'bg-brand-deep text-white/50 border-brand-border hover:text-white'
+                      }`}
+                    >
+                      {d === 0 ? 'Default' : d > 0 ? '+1 day' : '−1 day'}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-brand-gold/60 text-xs mt-2">
+                  Today: {(() => { const h = getHijriDate(); return h ? formatHijriDate(h) : '—'; })()}
+                  <span className="text-white/30"> · Bangladesh, India &amp; Pakistan are often −1 day from the default (Umm al-Qura) calendar</span>
+                </p>
               </div>
 
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">

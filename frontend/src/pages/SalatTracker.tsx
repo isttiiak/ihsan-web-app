@@ -1,8 +1,10 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-import { ChevronLeftIcon, ChevronRightIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import TabNav from '../components/TabNav.js';
+import { useAuthStore } from '../store/useAuthStore.js';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import {
   useSalatLog,
   useUpdatePrayer,
@@ -106,8 +108,11 @@ function getDefaultDate(): string {
 }
 
 export default function SalatTracker() {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [selectedDate, setSelectedDate] = useState(getDefaultDate);
   const [expandedPrayer, setExpandedPrayer] = useState<PrayerId | null>(null);
+  const [showGuestDialog, setShowGuestDialog] = useState(false);
 
   const isToday = selectedDate === todayStr();
 
@@ -116,14 +121,22 @@ export default function SalatTracker() {
   const salatStartDate = localStorage.getItem('ihsan_salat_start_date') ?? null;
   const isAtStartDate = salatStartDate ? selectedDate <= salatStartDate : false;
 
+  // Minute tick so the "current prayer" highlight and 🔒 future locks don't
+  // go stale when the tab stays open across a prayer-time boundary.
+  const [minuteNow, setMinuteNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setMinuteNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+
   // Prayer times for current-prayer detection (only needed for today)
   const todayPrayerTimes = useMemo(() => {
     const stored = localStorage.getItem('ihsan_location');
     if (!stored) return null;
     try {
       const loc = JSON.parse(stored) as { latitude: number; longitude: number };
-      const times = calcPrayerTimes(loc.latitude, loc.longitude, new Date());
-      const info = getCurrentAndNextPrayer(times, new Date());
+      const times = calcPrayerTimes(loc.latitude, loc.longitude, minuteNow);
+      const info = getCurrentAndNextPrayer(times, minuteNow);
       return {
         times: {
           fajr:    times.fajr,
@@ -136,7 +149,7 @@ export default function SalatTracker() {
         current: info.current as string,
       };
     } catch { return null; }
-  }, []); // computed once on mount; fine for a session
+  }, [minuteNow]);
 
   const { data: log, isLoading } = useSalatLog(selectedDate);
   const updatePrayer = useUpdatePrayer();
@@ -149,6 +162,7 @@ export default function SalatTracker() {
   const naflEntry = log?.nafl ?? { completed: false, types: [], rakat: 2 };
 
   const handleNaflToggle = () => {
+    if (!user) { setShowGuestDialog(true); return; }
     const newCompleted = !naflEntry.completed;
     updateNafl.mutate({
       completed: newCompleted,
@@ -161,6 +175,7 @@ export default function SalatTracker() {
   };
 
   const handleNaflTypeToggle = (type: NaflType) => {
+    if (!user) { setShowGuestDialog(true); return; }
     const currentTypes = naflEntry.types ?? [];
     const adding = !currentTypes.includes(type);
     const next = adding
@@ -177,6 +192,7 @@ export default function SalatTracker() {
   };
 
   const handleNaflRakat = (delta: number) => {
+    if (!user) { setShowGuestDialog(true); return; }
     const minRakat = computeMinRakat(naflEntry.types ?? []);
     const next = Math.max(minRakat, (naflEntry.rakat ?? minRakat) + delta);
     updateNafl.mutate({
@@ -197,11 +213,19 @@ export default function SalatTracker() {
     }).length;
   }, [log, trackablePrayers]);
 
+  // Normalise legacy DB values ('prayed'/'mosque' from the old schema) so we
+  // never send them back to the API, which now rejects them.
+  const normaliseStatus = (raw: string | undefined): PrayerStatus => {
+    if (raw === 'prayed' || raw === 'mosque') return 'completed';
+    return raw && raw in STATUS_STYLE ? (raw as PrayerStatus) : 'pending';
+  };
+
   // Handle primary status tap
   const handleStatus = (prayer: PrayerId, status: PrayerStatus) => {
+    if (!user) { setShowGuestDialog(true); return; }
     const current = log?.prayers[prayer];
     // If tapping the already-active status, clear it (toggle off)
-    const newStatus: PrayerStatus = current?.status === status ? 'pending' : status;
+    const newStatus: PrayerStatus = normaliseStatus(current?.status) === status ? 'pending' : status;
 
     // If setting to completed/kaza, open sub-tag row; keep existing location if re-selecting
     if (newStatus === 'completed' || newStatus === 'kaza') {
@@ -225,10 +249,12 @@ export default function SalatTracker() {
 
   // Handle sub-tag change
   const handleSubTag = (prayer: PrayerId, type: 'location' | 'tasbeeh' | 'ayatulKursi', value: PrayerLocation | boolean) => {
+    if (!user) { setShowGuestDialog(true); return; }
     const current = log?.prayers[prayer];
+    const normalised = normaliseStatus(current?.status);
     updatePrayer.mutate({
       prayer,
-      status: current?.status as PrayerStatus ?? 'completed',
+      status: normalised === 'pending' ? 'completed' : normalised,
       date: selectedDate,
       location: type === 'location' ? (value as PrayerLocation) : (current?.location ?? 'home'),
       tasbeeh: type === 'tasbeeh' ? (value as boolean) : (current?.tasbeeh ?? false),
@@ -239,18 +265,14 @@ export default function SalatTracker() {
   return (
     <AnimatedBackground variant="dark">
       {/* ── Tab navigation ── */}
+      <h1 className="sr-only">Salat Tracker</h1>
       <div className="px-4 pt-3 pb-0">
-        <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-white/10 max-w-xs">
-          <span className="flex-1 text-center text-xs font-bold py-1.5 rounded-lg bg-white/10 text-white">
-            🕌 Tracker
-          </span>
-          <Link
-            to="/salat/analytics"
-            className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all"
-          >
-            📊 Analytics
-          </Link>
-        </div>
+        <TabNav
+          items={[
+            { label: '🕌 Tracker', to: '/salat', active: true },
+            { label: '📊 Analytics', to: '/salat/analytics' },
+          ]}
+        />
       </div>
 
       <div className="p-4 sm:p-6 lg:p-8">
@@ -597,11 +619,15 @@ export default function SalatTracker() {
                                 >
                                   <span>{t.emoji}</span>
                                   <span>{t.label}</span>
-                                  {/* Info toggle */}
-                                  <button
+                                  {/* Info toggle — span, not a nested <button> (invalid HTML) */}
+                                  <span
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={`About ${t.label}`}
                                     onClick={(e) => { e.stopPropagation(); setNaflInfoExpanded(naflInfoExpanded === t.id ? null : t.id); }}
-                                    className="text-white/20 hover:text-white/50 text-xs ml-0.5"
-                                  >ⓘ</button>
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setNaflInfoExpanded(naflInfoExpanded === t.id ? null : t.id); } }}
+                                    className="text-white/20 hover:text-white/50 text-xs ml-0.5 cursor-pointer"
+                                  >ⓘ</span>
                                 </motion.button>
                                 {/* Short note always visible */}
                                 <p className="text-white/20 text-xs px-1 mt-0.5">{t.shortNote}</p>
@@ -707,6 +733,60 @@ export default function SalatTracker() {
 
         </div>
       </div>
+
+      {/* ── Guest sign-in dialog — salat logs are server-side only ── */}
+      <AnimatePresence>
+        {showGuestDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowGuestDialog(false); }}
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', damping: 22 }}
+              className="bg-brand-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-border text-center"
+            >
+              <div className="text-5xl mb-4">🕌</div>
+              <h3 className="text-xl font-black text-white mb-2">Sign in to track prayers</h3>
+              <p className="text-white/50 text-sm mb-6 leading-relaxed">
+                Your salat log is saved to your account so it syncs across devices.
+                Create a free account to start tracking.
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 w-full"
+                  onClick={() => {
+                    sessionStorage.setItem('ihsan_redirect', '/salat');
+                    navigate('/login');
+                  }}
+                >
+                  Sign In
+                </button>
+                <button
+                  className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
+                  onClick={() => {
+                    sessionStorage.setItem('ihsan_redirect', '/salat');
+                    navigate('/signup');
+                  }}
+                >
+                  Create Free Account
+                </button>
+                <button
+                  className="btn btn-ghost text-white/50 text-sm w-full"
+                  onClick={() => setShowGuestDialog(false)}
+                >
+                  Just looking around
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </AnimatedBackground>
   );
 }

@@ -1,7 +1,8 @@
 import User from '../models/User.js';
 import ZikrDaily from '../models/ZikrDaily.js';
 import ZikrGoal, { IZikrGoal } from '../models/ZikrGoal.js';
-import ZikrStreak, { IZikrStreak } from '../models/ZikrStreak.js';
+import { IZikrStreak } from '../models/ZikrStreak.js';
+import { getStreak } from './streak.service.js';
 import { truncateToTimezone, DEFAULT_TIMEZONE_OFFSET } from '../utils/timezone-flexible.js';
 import { ChartDataPoint } from '../types/api.types.js';
 
@@ -21,9 +22,15 @@ export async function getAnalyticsData(
   days: number = 7,
   timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
 ): Promise<AnalyticsData> {
+  const DAY_MS = 86_400_000;
   const today = truncateToTimezone(Date.now(), timezoneOffset);
-  const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() - days + 1);
+  const startDate = new Date(today.getTime() - (days - 1) * DAY_MS);
+
+  // truncateToTimezone anchors every bucket so its UTC date part equals the
+  // user's LOCAL calendar date (positive offsets use an end-of-day anchor at
+  // 24:00−offset UTC on that date). The plain ISO date part is therefore the
+  // correct label — do NOT shift it by the offset again.
+  const dateKey = (d: Date): string => d.toISOString().split('T')[0] ?? '';
 
   const records = await ZikrDaily.find({
     userId,
@@ -34,7 +41,7 @@ export async function getAnalyticsData(
   const dailyBreakdown: Record<string, Record<string, number>> = {};
 
   records.forEach((r) => {
-    const dateStr = r.date.toISOString().split('T')[0] ?? '';
+    const dateStr = dateKey(r.date);
     if (!dailyTotals[dateStr]) {
       dailyTotals[dateStr] = 0;
       dailyBreakdown[dateStr] = {};
@@ -47,9 +54,7 @@ export async function getAnalyticsData(
 
   const chartData: ChartDataPoint[] = [];
   for (let i = 0; i < days; i++) {
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0] ?? '';
+    const dateStr = dateKey(new Date(startDate.getTime() + i * DAY_MS));
     chartData.push({
       date: dateStr,
       total: dailyTotals[dateStr] ?? 0,
@@ -64,14 +69,17 @@ export async function getAnalyticsData(
   );
   const average = totals.length > 0 ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
 
-  const goal = await ZikrGoal.findOne({ userId });
-  const streak = await ZikrStreak.findOne({ userId });
+  // getStreak (not a raw findOne) so stale streaks expire lazily —
+  // there is no cron on the free tier to break them.
+  const [goal, streak, todayRecords, user] = await Promise.all([
+    ZikrGoal.findOne({ userId }),
+    getStreak(userId, timezoneOffset),
+    ZikrDaily.find({ userId, date: today }),
+    User.findOne({ uid: userId }).select('totalCount zikrTotals'),
+  ]);
 
-  const todayRecords = await ZikrDaily.find({ userId, date: today });
   const todayTotal = todayRecords.reduce((sum, r) => sum + r.count, 0);
   const todayPerType = todayRecords.map((r) => ({ zikrType: r.zikrType, total: r.count }));
-
-  const user = await User.findOne({ uid: userId });
 
   let perType: Array<{ zikrType: string; total: number }> = [];
   if (user?.zikrTotals instanceof Map) {
@@ -94,8 +102,8 @@ export async function getAnalyticsData(
   return {
     period: {
       days,
-      startDate: startDate.toISOString().split('T')[0] ?? '',
-      endDate: today.toISOString().split('T')[0] ?? '',
+      startDate: dateKey(startDate),
+      endDate: dateKey(today),
     },
     chartData,
     stats: {

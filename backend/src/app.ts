@@ -13,10 +13,15 @@ import { globalErrorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
+// Behind Render/Vercel's proxy: without this, express-rate-limit keys every
+// request off the load balancer's IP — one heavy user rate-limits everyone.
+app.set('trust proxy', 1);
+
 // Core middleware
 app.use(helmet());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Profile photos are sent as base64 data URLs — the 100kb default rejects them
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 const isProd = process.env.NODE_ENV === 'production';
 app.use(morgan(isProd ? 'combined' : 'dev'));
@@ -37,7 +42,10 @@ app.use(
       const ok = allowedOrigins.includes(normalized) || vercelPreviewRegex.test(normalized);
       return callback(null, ok);
     },
-    credentials: true,
+    // Auth uses Bearer tokens, not cookies — credentials are never needed.
+    // Keeping this false limits the blast radius of the permissive preview
+    // regex above (any Vercel user can register an ihsan-web-app-main-* project).
+    credentials: false,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     optionsSuccessStatus: 204,

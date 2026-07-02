@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
+import { getIdToken } from '../lib/api.js';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { auth, googleProvider } from '../firebase.js';
@@ -293,11 +294,13 @@ export default function Profile() {
   }, []);
 
   useEffect(() => {
-    const idToken = localStorage.getItem('ihsan_idToken');
-    if (!idToken) return;
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
-      headers: { Authorization: `Bearer ${idToken}` },
-    })
+    getIdToken()
+      .then((idToken) => {
+        if (!idToken) throw new Error('no session');
+        return fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+      })
       .then((r) => r.json())
       .then((d: UserResponse) => {
         if (d?.user) {
@@ -344,7 +347,7 @@ export default function Profile() {
     setSaving(true);
     setSaveSuccess(false);
     setSaveError('');
-    const idToken = localStorage.getItem('ihsan_idToken');
+    const idToken = await getIdToken();
     if (!idToken) { setSaving(false); return; }
     try {
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
@@ -447,7 +450,7 @@ export default function Profile() {
       setPhotoBlob(null);
       setPhotoPreviewUrl('');
 
-      const idToken = localStorage.getItem('ihsan_idToken');
+      const idToken = await getIdToken();
       if (idToken) {
         const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
           method: 'PATCH',
@@ -483,7 +486,7 @@ export default function Profile() {
     try {
       setPreview(url);
       setProfile((p) => ({ ...p, photoUrl: url }));
-      const idToken = localStorage.getItem('ihsan_idToken');
+      const idToken = await getIdToken();
       if (idToken) {
         const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
           method: 'PATCH',
@@ -535,7 +538,7 @@ export default function Profile() {
       const googleInfo = result.user.providerData.find((p) => p.providerId === 'google.com');
       if (!googleInfo) { setLinkingGoogle(false); return; }
 
-      const idToken = localStorage.getItem('ihsan_idToken');
+      const idToken = await getIdToken();
       if (!idToken) { setLinkingGoogle(false); return; }
 
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/link-google`, {
@@ -581,7 +584,7 @@ export default function Profile() {
     setUnlinkingGoogle(true);
     try {
       if (auth.currentUser) await unlink(auth.currentUser, 'google.com');
-      const idToken = localStorage.getItem('ihsan_idToken');
+      const idToken = await getIdToken();
       if (idToken) {
         const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/unlink-google`, {
           method: 'POST',
@@ -596,7 +599,7 @@ export default function Profile() {
   };
 
   const makePrimaryEmail = async (email: string) => {
-    const idToken = localStorage.getItem('ihsan_idToken');
+    const idToken = await getIdToken();
     if (!idToken || primaryEmailLoading) return;
     setPrimaryEmailLoading(true);
     try {
@@ -648,7 +651,7 @@ export default function Profile() {
       customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
     });
     if (!second.isConfirmed) return;
-    const idToken = localStorage.getItem('ihsan_idToken');
+    const idToken = await getIdToken();
     if (!idToken) return;
     try {
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/salat/all`, {
@@ -698,7 +701,7 @@ export default function Profile() {
       customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
     });
     if (!second.isConfirmed) return;
-    const idToken = localStorage.getItem('ihsan_idToken');
+    const idToken = await getIdToken();
     if (!idToken) return;
     try {
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/all`, {

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { getUserTimezoneOffset, getTodayLocal } from '../utils/timezone.js';
+import { getIdToken } from '../lib/api.js';
 
 const FLUSH_DELAY = 800; // ms
 
@@ -103,7 +104,7 @@ export const useZikrStore = create<ZikrState>()(
 
       hydrate: async () => {
         get().checkAndResetIfNewDay();
-        const idToken = localStorage.getItem('ihsan_idToken');
+        const idToken = await getIdToken();
         if (!idToken) return;
         try {
           const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/summary`, {
@@ -195,7 +196,7 @@ export const useZikrStore = create<ZikrState>()(
         const entries = Object.entries(snapshot).filter(([, a]) => a > 0);
         if (!entries.length) return;
 
-        const idToken = localStorage.getItem('ihsan_idToken');
+        const idToken = await getIdToken();
         if (!idToken) return;
 
         const resolvedOffset = get().timezoneOffset ?? SESSION_TZ_OFFSET;

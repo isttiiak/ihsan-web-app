@@ -200,7 +200,7 @@ No configuration needed - it just works! ✨
 - `POST /api/zikr/increment/batch` - Batch increment
 - `GET /api/zikr/summary` - Get user summary
 - `GET /api/zikr/types` - Get Zikr types
-- `POST /api/zikr/type` - Add custom Zikr type
+- `POST /api/zikr/types` - Add custom Zikr type
 
 ### Analytics
 

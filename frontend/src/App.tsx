@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged, sendEmailVerification } from 'firebase/auth';
 import { auth } from './firebase.js';
@@ -7,22 +8,33 @@ import { useZikrStore } from './store/useZikrStore.js';
 import Navbar from './components/Navbar.js';
 import Home from './pages/Home.js';
 import ZikrCounter from './pages/ZikrCounter.js';
-import ZikrAnalytics from './pages/ZikrAnalytics.js';
-import Settings from './pages/Settings.js';
 import Footer from './components/Footer.js';
 import NotFound from './pages/NotFound.js';
-import AuthSignIn from './pages/AuthSignIn.js';
-import AuthSignUp from './pages/AuthSignUp.js';
-import AuthAction from './pages/AuthAction.js';
 import UnsavedWarning from './components/UnsavedWarning.js';
-import Profile from './pages/Profile.js';
-import SalatTracker from './pages/SalatTracker.js';
-import SalatAnalytics from './pages/SalatAnalytics.js';
-import FastingTracker from './pages/FastingTracker.js';
-import PrayerTimes from './pages/PrayerTimes.js';
-import QuranHabit from './pages/QuranHabit.js';
-import IslamicSpecialDay from './pages/IslamicSpecialDay.js';
 import type { AuthUser } from './types/api.js';
+
+// Route-level code splitting — analytics pages pull in recharts (~130KB gz)
+// and Profile/Settings are large; keep them out of the initial bundle.
+const ZikrAnalytics = lazy(() => import('./pages/ZikrAnalytics.js'));
+const Settings = lazy(() => import('./pages/Settings.js'));
+const AuthSignIn = lazy(() => import('./pages/AuthSignIn.js'));
+const AuthSignUp = lazy(() => import('./pages/AuthSignUp.js'));
+const AuthAction = lazy(() => import('./pages/AuthAction.js'));
+const Profile = lazy(() => import('./pages/Profile.js'));
+const SalatTracker = lazy(() => import('./pages/SalatTracker.js'));
+const SalatAnalytics = lazy(() => import('./pages/SalatAnalytics.js'));
+const FastingTracker = lazy(() => import('./pages/FastingTracker.js'));
+const PrayerTimes = lazy(() => import('./pages/PrayerTimes.js'));
+const QuranHabit = lazy(() => import('./pages/QuranHabit.js'));
+const IslamicSpecialDay = lazy(() => import('./pages/IslamicSpecialDay.js'));
+
+function RouteFallback() {
+  return (
+    <div className="min-h-[60vh] grid place-items-center bg-brand-void">
+      <span className="loading loading-spinner loading-lg text-brand-emerald" />
+    </div>
+  );
+}
 
 function VerifyEmailGate({ email }: { email: string | null }) {
   const [resent, setResent] = useState(false);
@@ -119,23 +131,35 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Keep latest navigate/pathname in refs so the auth subscription below can
+  // use them without re-subscribing on every route change. Re-subscribing was
+  // forcing a token refresh + a /api/auth/verify roundtrip on EVERY navigation.
+  const navigateRef = useRef(navigate);
+  const pathnameRef = useRef(location.pathname);
+  useEffect(() => {
+    navigateRef.current = navigate;
+    pathnameRef.current = location.pathname;
+  });
+
   // Warm up the Render free-tier backend — fire once on mount, ignore response.
   useEffect(() => {
     fetch(`${import.meta.env.VITE_BACKEND_URL}/api/health`).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Daily-reset listeners registered once; route changes also trigger a check below.
   useEffect(() => {
     const onVisibility = () => { if (!document.hidden) checkAndResetIfNewDay(); };
     const onFocus = () => checkAndResetIfNewDay();
-    checkAndResetIfNewDay();
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('focus', onFocus);
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('focus', onFocus);
     };
-  }, [checkAndResetIfNewDay, location.pathname]);
+  }, [checkAndResetIfNewDay]);
+
+  useEffect(() => { checkAndResetIfNewDay(); }, [checkAndResetIfNewDay, location.pathname]);
 
   useEffect(() => {
     init();
@@ -153,7 +177,7 @@ export default function App() {
       }
 
       try {
-        const idToken = await u.getIdToken(true);
+        const idToken = await u.getIdToken();
         const verifyRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
@@ -205,13 +229,16 @@ export default function App() {
         localStorage.setItem('ihsan_user', JSON.stringify(authUser));
         setUser(authUser);
         try { await hydrate(); } catch { /* hydrate errors are non-fatal */ }
+        // Push any counts made while signed out — the guest dialog promises
+        // "Sign in to save", so save immediately rather than on the next tap.
+        try { await useZikrStore.getState().flush(); } catch { /* retried on next tap */ }
 
         // Only navigate away from /login or /signup once the email is verified.
         // Unverified email/password accounts stay on /signup so the verification screen shows.
-        if (['/login', '/signup'].includes(location.pathname) && u.emailVerified) {
+        if (['/login', '/signup'].includes(pathnameRef.current) && u.emailVerified) {
           const redirect = sessionStorage.getItem('ihsan_redirect');
           sessionStorage.removeItem('ihsan_redirect');
-          navigate(redirect || '/', { replace: true });
+          navigateRef.current(redirect || '/', { replace: true });
         }
       } catch (err) {
         // Network failure or unexpected error — don't leave the spinner running forever
@@ -222,7 +249,9 @@ export default function App() {
     });
 
     return () => unsub();
-  }, [setUser, init, navigate, location.pathname, resetAll, hydrate, setAuthLoading]);
+    // Subscribe exactly once — navigation is handled via refs above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setUser, init, resetAll, hydrate, setAuthLoading]);
 
   const { authLoading } = useAuthStore();
   const isAuthPage = ['/login', '/signup', '/auth/action'].includes(location.pathname);
@@ -231,6 +260,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-base-100">
+      {/* Single app-wide toaster — pages must not mount their own */}
+      <Toaster />
       {authLoading ? (
         <div className="flex-1 grid place-items-center bg-brand-void">
           <div className="flex flex-col items-center gap-4">
@@ -243,6 +274,7 @@ export default function App() {
           {!isAuthPage && <Navbar />}
           {!isAuthPage && <UnsavedWarning />}
           <div className="flex-1">
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/zikr" element={<ZikrCounter />} />
@@ -260,6 +292,7 @@ export default function App() {
               <Route path="/auth/action" element={<AuthAction />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </div>
           {showFooter && <Footer />}
         </>

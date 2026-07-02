@@ -3,13 +3,14 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { useZikrStore } from '../store/useZikrStore.js';
 import type { CustomMeaning } from '../store/useZikrStore.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useZikrTypes, useAddZikrType } from '../hooks/useZikrTypes.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import TabNav from '../components/TabNav.js';
 import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowsPointingOutIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 // Meanings for all built-in dhikr
@@ -272,6 +273,8 @@ export default function ZikrCounter() {
     increment();
     scheduleFlush();
     setColorIdx((i) => (i + 1) % GLOW_PALETTE.length);
+    // Subtle haptic pulse on supported mobile browsers
+    if ('vibrate' in navigator) navigator.vibrate(10);
   }, [increment, scheduleFlush]);
 
   const onDecrement = useCallback(() => { if (currentCount > 0) decrement(); }, [currentCount, decrement]);
@@ -336,31 +339,24 @@ export default function ZikrCounter() {
 
   return (
     <AnimatedBackground variant="dark">
-      <Toaster />
+      <h1 className="sr-only">Zikr Counter</h1>
 
       <div className="max-w-2xl mx-auto px-4 pb-10 pt-4 space-y-5">
 
         {/* Tab navigation */}
-        <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-white/10">
-          <span className="flex-1 text-center text-xs font-bold py-1.5 rounded-lg bg-white/10 text-white">
-            📿 Counter
-          </span>
-          {!user && Object.values(pending ?? {}).reduce((a, b) => a + b, 0) > 0 ? (
-            <button
-              onClick={() => setShowGuestDialog(true)}
-              className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all"
-            >
-              📊 Analytics
-            </button>
-          ) : (
-            <Link
-              to="/zikr/analytics"
-              className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all"
-            >
-              📊 Analytics
-            </Link>
-          )}
-        </div>
+        <TabNav
+          items={[
+            { label: '📿 Counter', to: '/zikr', active: true },
+            {
+              label: '📊 Analytics',
+              to: '/zikr/analytics',
+              // Guests with unsaved counts get the save dialog instead of navigation
+              ...(!user && Object.values(pending ?? {}).reduce((a, b) => a + b, 0) > 0
+                ? { onClick: () => setShowGuestDialog(true) }
+                : {}),
+            },
+          ]}
+        />
 
         {/* Motivational subtitle */}
         <motion.p
@@ -411,6 +407,7 @@ export default function ZikrCounter() {
             onClick={() => setShowAddCustom(true)}
             className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
             title="Add custom dhikr"
+            aria-label="Add custom dhikr"
           >
             <PlusIcon className="w-3.5 h-3.5" />
           </button>
@@ -429,6 +426,7 @@ export default function ZikrCounter() {
             onClick={() => setFullScreen(true)}
             className="absolute top-3 right-3 p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/40 hover:text-white/80 transition-all z-10"
             title="Focus mode (full screen)"
+            aria-label="Enter full-screen focus mode"
           >
             <ArrowsPointingOutIcon className="w-4 h-4" />
           </button>
@@ -543,6 +541,7 @@ export default function ZikrCounter() {
             whileTap={{ scale: 0.93 }}
             onClick={onDecrement}
             disabled={currentCount === 0}
+            aria-label="Decrease count by one"
             className="btn btn-circle bg-white/15 hover:bg-white/25 border-white/20 text-white backdrop-blur-sm disabled:opacity-25"
           >
             <MinusIcon className="w-6 h-6" />
@@ -564,6 +563,7 @@ export default function ZikrCounter() {
             whileTap={{ scale: 0.93 }}
             onClick={onReset}
             disabled={currentCount === 0}
+            aria-label="Reset counter"
             className="btn btn-circle bg-white/15 hover:bg-red-500/70 border-white/20 text-white backdrop-blur-sm disabled:opacity-25 transition-colors"
           >
             <ArrowPathIcon className="w-6 h-6" />
@@ -718,6 +718,7 @@ export default function ZikrCounter() {
                 onClick={() => setFullScreen(false)}
                 className="p-2 rounded-xl bg-white/6 hover:bg-white/14 text-white/35 hover:text-white/80 transition-all"
                 title="Exit focus mode (Esc)"
+                aria-label="Exit full-screen focus mode"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>

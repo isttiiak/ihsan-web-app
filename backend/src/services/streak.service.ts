@@ -40,12 +40,37 @@ export async function checkAndUpdateStreak(
   }
 }
 
-export async function getStreak(userId: string): Promise<IZikrStreak> {
+/** Whole-day difference using the same hour-zeroing convention updateStreak stores. */
+function daysBetween(earlier: Date, later: Date): number {
+  const a = new Date(earlier);
+  a.setUTCHours(0, 0, 0, 0);
+  const b = new Date(later);
+  b.setUTCHours(0, 0, 0, 0);
+  return Math.floor((b.getTime() - a.getTime()) / 86_400_000);
+}
+
+export async function getStreak(
+  userId: string,
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+): Promise<IZikrStreak> {
   let streak = await ZikrStreak.findOne({ userId });
   if (!streak) {
     streak = new ZikrStreak({ userId });
     await streak.save();
+    return streak;
   }
+
+  // No cron runs on the free tier, so expire stale streaks lazily on read.
+  // Beyond the 1-day grace (daysDiff > 2) the streak is broken.
+  if (!streak.isPaused && streak.currentStreak > 0 && streak.lastCompletedDate) {
+    const today = truncateToTimezone(Date.now(), timezoneOffset);
+    if (daysBetween(streak.lastCompletedDate, today) > 2) {
+      streak.currentStreak = 0;
+      streak.lastCompletedDate = null;
+      await streak.save();
+    }
+  }
+
   return streak;
 }
 

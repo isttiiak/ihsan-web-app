@@ -8,48 +8,23 @@ export interface IncrementResult {
   zikrTotals: Record<string, number>;
 }
 
-export async function incrementZikr(
-  userId: string,
-  zikrType: string,
-  amount: number,
-  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET,
-  ts?: number
-): Promise<IncrementResult> {
-  const date = truncateToTimezone(ts ?? Date.now(), timezoneOffset);
+// Fields needed by increment/summary paths. Excludes photoUrl (can be a large
+// base64 data URL) so hot paths never drag it out of the database.
+const ZIKR_PROJECTION = 'uid totalCount zikrTotals zikrTypes';
 
-  try {
-    await ZikrDaily.updateOne(
-      { userId, date, zikrType },
-      { $inc: { count: amount } },
-      { upsert: true }
-    );
-  } catch {
-    // Ignore duplicate key race conditions
-  }
-
-  const user = await User.findOne({ uid: userId });
-  if (!user) throw new Error('User not found');
-
-  if (!user.zikrTypes.some((t) => t.name.toLowerCase() === zikrType.toLowerCase())) {
-    user.zikrTypes.push({ name: zikrType } as never);
-  }
-  user.totalCount += amount;
-  user.zikrTotals.set(zikrType, (user.zikrTotals.get(zikrType) ?? 0) + amount);
-  await user.save();
-
-  return {
-    totalCount: user.totalCount,
-    zikrTotals: Object.fromEntries(user.zikrTotals ?? []),
-  };
-}
-
-export async function batchIncrementZikr(
+/**
+ * Applies increments atomically with $inc so concurrent flushes from two
+ * tabs/devices can't overwrite each other (the previous read-modify-write
+ * via user.save() lost counts under concurrency).
+ */
+async function applyIncrements(
   userId: string,
   increments: ZikrIncrementItem[],
-  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+  timezoneOffset: number
 ): Promise<IncrementResult> {
-  const user = await User.findOne({ uid: userId });
-  if (!user) throw new Error('User not found');
+  const userInc: Record<string, number> = {};
+  const newTypeNames = new Set<string>();
+  let totalAdded = 0;
 
   for (const item of increments) {
     const { zikrType, amount = 1, ts } = item;
@@ -66,22 +41,57 @@ export async function batchIncrementZikr(
       // Ignore duplicate key race conditions
     }
 
-    if (!user.zikrTypes.some((t) => t.name.toLowerCase() === zikrType.toLowerCase())) {
-      user.zikrTypes.push({ name: zikrType } as never);
-    }
-    user.totalCount += amount;
-    user.zikrTotals.set(zikrType, (user.zikrTotals.get(zikrType) ?? 0) + amount);
+    userInc[`zikrTotals.${zikrType}`] = (userInc[`zikrTotals.${zikrType}`] ?? 0) + amount;
+    totalAdded += amount;
+    newTypeNames.add(zikrType);
   }
 
-  await user.save();
+  if (totalAdded > 0) {
+    await User.updateOne(
+      { uid: userId },
+      { $inc: { ...userInc, totalCount: totalAdded } }
+    );
+  }
+
+  const user = await User.findOne({ uid: userId }).select(ZIKR_PROJECTION);
+  if (!user) throw new Error('User not found');
+
+  // Register any brand-new type names (case-insensitive, deduped by pre-save hook)
+  let typesChanged = false;
+  for (const name of newTypeNames) {
+    if (!user.zikrTypes.some((t) => t.name.toLowerCase() === name.toLowerCase())) {
+      user.zikrTypes.push({ name } as never);
+      typesChanged = true;
+    }
+  }
+  if (typesChanged) await user.save();
+
   return {
     totalCount: user.totalCount,
     zikrTotals: Object.fromEntries(user.zikrTotals ?? []),
   };
 }
 
+export async function incrementZikr(
+  userId: string,
+  zikrType: string,
+  amount: number,
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET,
+  ts?: number
+): Promise<IncrementResult> {
+  return applyIncrements(userId, [{ zikrType, amount, ts }], timezoneOffset);
+}
+
+export async function batchIncrementZikr(
+  userId: string,
+  increments: ZikrIncrementItem[],
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+): Promise<IncrementResult> {
+  return applyIncrements(userId, increments, timezoneOffset);
+}
+
 export async function getZikrSummary(userId: string): Promise<{ totalCount: number; perType: Array<{ zikrType: string; total: number }>; types: unknown[] }> {
-  const user = await User.findOne({ uid: userId });
+  const user = await User.findOne({ uid: userId }).select(ZIKR_PROJECTION);
   if (!user) throw new Error('User not found');
 
   let perType: Array<{ zikrType: string; total: number }> = [];
@@ -99,12 +109,12 @@ export async function getZikrSummary(userId: string): Promise<{ totalCount: numb
 }
 
 export async function getZikrTypes(userId: string): Promise<unknown[]> {
-  const user = await User.findOne({ uid: userId });
+  const user = await User.findOne({ uid: userId }).select('zikrTypes');
   return user?.zikrTypes ?? [];
 }
 
 export async function addZikrType(userId: string, name: string): Promise<unknown[]> {
-  const user = await User.findOne({ uid: userId });
+  const user = await User.findOne({ uid: userId }).select(ZIKR_PROJECTION);
   if (!user) throw new Error('User not found');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

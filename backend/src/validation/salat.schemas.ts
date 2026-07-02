@@ -21,6 +21,9 @@ export const getSalatLogSchema = z.object({
 export const salatHistorySchema = z.object({
   query: z.object({
     days: z.coerce.number().int().positive().max(365).default(30),
+    // The user's local calendar date — the server clock runs UTC and is the
+    // wrong "today" for part of every day in non-UTC timezones.
+    today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   }),
   body: z.object({}).optional(),
 });

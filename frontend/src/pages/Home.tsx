@@ -173,6 +173,7 @@ export default function Home() {
 
   return (
     <AnimatedBackground variant="dark">
+      <h1 className="sr-only">Ihsan — Islamic Productivity</h1>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         {/* Prayer times widget / location CTA */}
@@ -405,10 +406,12 @@ export default function Home() {
                         <div className="text-3xl sm:text-4xl font-black">{a.stats.value}</div>
                         <div className="text-xs sm:text-sm opacity-90 font-semibold mt-1 uppercase">{a.stats.label}</div>
                       </div>
-                      <motion.button
+                      {/* Styled as a button but rendered as a div — a real
+                          <button> inside the card's <Link> is invalid HTML */}
+                      <motion.div
                         whileHover={{ scale: 1.02, y: -2 }}
                         whileTap={{ scale: 0.98 }}
-                        className="mt-5 w-full py-3 rounded-xl text-white font-bold relative overflow-hidden"
+                        className="mt-5 w-full py-3 rounded-xl text-white font-bold relative overflow-hidden text-center"
                         style={{ background: `linear-gradient(135deg, ${a.accentColor}, ${a.accentColor}cc)` }}
                       >
                         <span className="relative z-10">{a.action}</span>
@@ -418,7 +421,7 @@ export default function Home() {
                           whileHover={{ x: '100%' }}
                           transition={{ duration: 0.6 }}
                         />
-                      </motion.button>
+                      </motion.div>
                     </div>
                   </motion.div>
                 </Link>

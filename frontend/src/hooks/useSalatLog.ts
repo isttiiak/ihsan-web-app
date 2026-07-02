@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api.js';
+import { useAuthStore } from '../store/useAuthStore.js';
 
 export type PrayerStatus = 'completed' | 'kaza' | 'missed' | 'pending';
 export type PrayerLocation = 'home' | 'mosque' | 'jamat';
@@ -217,6 +218,7 @@ function localTodayStr(): string {
 }
 
 export function useSalatLog(date?: string) {
+  const user = useAuthStore((s) => s.user);
   const resolvedDate = date ?? localTodayStr();
   return useQuery({
     queryKey: ['salat', 'log', resolvedDate],
@@ -224,6 +226,7 @@ export function useSalatLog(date?: string) {
       const { data } = await api.get<{ ok: boolean; log: SalatLog }>(`/api/salat?date=${resolvedDate}`);
       return data.log;
     },
+    enabled: !!user, // guests have no server log — placeholderData still renders the UI
     staleTime: 60_000,
     placeholderData: {
       _id: '',
@@ -313,12 +316,14 @@ export function useUpdateNafl() {
 }
 
 export function useSalatAnalytics(days = 30) {
+  const user = useAuthStore((s) => s.user);
   return useQuery({
     queryKey: ['salat', 'analytics', days],
     queryFn: async () => {
-      const { data } = await api.get<SalatAnalytics & { ok: boolean }>(`/api/salat/analytics?days=${days}`);
+      const { data } = await api.get<SalatAnalytics & { ok: boolean }>(`/api/salat/analytics?days=${days}&today=${localTodayStr()}`);
       return data;
     },
+    enabled: !!user,
     staleTime: 5 * 60_000,
   });
 }

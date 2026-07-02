@@ -22,7 +22,9 @@ export const setPrimaryEmailSchema = z.object({
 export const updateUserSchema = z.object({
   body: z.object({
     displayName: z.string().min(1).max(100).optional(),
-    photoUrl: z.string().min(1).optional(),
+    // Photos arrive as base64 data URLs stored in Mongo — cap the size so a
+    // single user document can't balloon (300k chars ≈ 225KB image).
+    photoUrl: z.string().min(1).max(300_000).optional(),
     firstName: z.string().max(100).optional(),
     lastName: z.string().max(100).optional(),
     gender: z.enum(['male', 'female', 'other', 'prefer_not_say']).optional(),

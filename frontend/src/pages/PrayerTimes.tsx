@@ -195,6 +195,146 @@ interface StoredLocation {
   name?: string;
 }
 
+// ─── Live clock card ─────────────────────────────────────────────────────────
+// Owns its own 1-second tick so the rest of the page (timeline, ~20 animated
+// cards) doesn't re-render every second.
+
+function formatCountdown(ms: number): string {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const hh = Math.floor(totalSec / 3600);
+  const mm = Math.floor((totalSec % 3600) / 60);
+  const ss = totalSec % 60;
+  return `${hh > 0 ? `${hh}h ` : ''}${String(mm).padStart(2, '0')}m ${String(ss).padStart(2, '0')}s`;
+}
+
+function LiveClockCard({ times, timeline, hasLocation }: {
+  times: PrayerTimesResult | null;
+  timeline: TLEntry[];
+  hasLocation: boolean;
+}) {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const info = times ? getCurrentAndNextPrayer(times, now) : null;
+  const currentMeta = PRAYER_META.find((p) => p.id === info?.current);
+  const nextMeta = PRAYER_META.find((p) => p.id === info?.next);
+
+  // The current prayer's own end time (Asr ends before the sunset forbidden
+  // window, Isha at Islamic midnight) — NOT the next prayer's start, which is
+  // what the old countdown showed.
+  const currentEnd = times && info && currentMeta?.isTrackable
+    ? getPrayerEndTime(info.current, times)
+    : null;
+  const endMs = currentEnd ? currentEnd.getTime() - now.getTime() : null;
+
+  const activeForbidden = timeline.find(
+    (e): e is ForbiddenTLEntry => e.kind === 'forbidden' && now >= e.start && now < e.end
+  ) ?? null;
+  const activeNafl = timeline.find(
+    (e): e is NaflTLEntry => e.kind === 'nafl' && now >= e.start && now < e.end
+  ) ?? null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="card bg-gradient-to-br from-brand-emerald/15 to-brand-deep border border-brand-emerald/25 rounded-2xl"
+    >
+      <div className="card-body p-5 text-center">
+        <div className="text-5xl sm:text-6xl font-black text-white tabular-nums tracking-tight">
+          {now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+        </div>
+
+        {info && currentMeta && nextMeta && (
+          <div className="mt-4 space-y-3">
+            {/* Row 1: Current prayer + Ends in — same line */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{currentMeta.icon}</span>
+                <div className="text-left">
+                  <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">
+                    {currentMeta.isTrackable ? 'Current' : 'After'}
+                  </p>
+                  <p className="text-white font-bold text-base leading-none">{currentMeta.name}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                {endMs !== null && endMs > 0 ? (
+                  <>
+                    <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">Ends in</p>
+                    <p className="text-brand-gold font-black text-lg tabular-nums leading-none">
+                      {formatCountdown(endMs)}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">Next in</p>
+                    <p className="text-brand-gold font-black text-lg tabular-nums leading-none">
+                      {formatCountdown(info.nextTime.getTime() - now.getTime())}
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="w-full h-px bg-white/10" />
+
+            {/* Row 2: Next prayer */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{nextMeta.icon}</span>
+                <div className="text-left">
+                  <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">Next</p>
+                  <p className="text-brand-emerald/80 font-bold text-base leading-none">{nextMeta.name}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-white/30 text-xs leading-none mb-0.5">starts at</p>
+                <p className="text-white/60 font-semibold text-sm tabular-nums">{formatTime(info.nextTime)}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Forbidden or nafl indicator */}
+        {activeForbidden && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+            className="mt-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-red-500/15 border border-red-400/30 text-left"
+          >
+            <span className="text-base shrink-0">🚫</span>
+            <div>
+              <p className="text-red-400 font-bold text-xs">{activeForbidden.label}</p>
+              <p className="text-red-300/60 text-xs">Ends at {formatTime(activeForbidden.end)}</p>
+            </div>
+          </motion.div>
+        )}
+        {activeNafl && !activeForbidden && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+            className="mt-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-left"
+          >
+            <span className="text-base shrink-0">{activeNafl.icon}</span>
+            <div>
+              <p className="text-cyan-300 font-bold text-xs">{activeNafl.label} time</p>
+              <p className="text-cyan-300/50 text-xs">Until {formatTime(activeNafl.end)}</p>
+            </div>
+          </motion.div>
+        )}
+
+        {!hasLocation && (
+          <p className="text-white/40 text-sm mt-4">
+            ↑ Set your location above to calculate prayer times
+          </p>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function PrayerTimes() {
@@ -214,8 +354,11 @@ export default function PrayerTimes() {
   const [cityError, setCityError] = useState('');
   const [showCitySearch, setShowCitySearch] = useState(false);
 
+  // 60-second tick for timeline active/past states — the live clock has its
+  // own 1-second tick inside LiveClockCard so the whole page isn't re-rendered
+  // (20+ animated cards) every second.
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
+    const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
 
@@ -292,24 +435,8 @@ export default function PrayerTimes() {
   }, [cityInput, saveLocation]);
 
   const info = times ? getCurrentAndNextPrayer(times, now) : null;
-  const currentMeta = PRAYER_META.find((p) => p.id === info?.current);
-  const nextMeta = PRAYER_META.find((p) => p.id === info?.next);
 
   const timeline = useMemo(() => (times ? buildTimeline(times) : []), [times]);
-
-  // Is current time in a forbidden window?
-  const activeForbidden = useMemo(() => {
-    return timeline.find(
-      (e): e is ForbiddenTLEntry => e.kind === 'forbidden' && now >= e.start && now < e.end
-    ) ?? null;
-  }, [timeline, now]);
-
-  // Is current time in a nafl window?
-  const activeNafl = useMemo(() => {
-    return timeline.find(
-      (e): e is NaflTLEntry => e.kind === 'nafl' && now >= e.start && now < e.end
-    ) ?? null;
-  }, [timeline, now]);
 
   return (
     <AnimatedBackground variant="dark">
@@ -419,90 +546,8 @@ export default function PrayerTimes() {
             ) : null; })()}
           </motion.div>
 
-          {/* Live clock card */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="card bg-gradient-to-br from-brand-emerald/15 to-brand-deep border border-brand-emerald/25 rounded-2xl"
-          >
-            <div className="card-body p-5 text-center">
-              <div className="text-5xl sm:text-6xl font-black text-white tabular-nums tracking-tight">
-                {now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
-              </div>
-
-              {info && currentMeta && nextMeta && (
-                <div className="mt-4 space-y-3">
-                  {/* Row 1: Current prayer + Ends in — same line */}
-                  <div className="flex items-center justify-between px-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{currentMeta.icon}</span>
-                      <div className="text-left">
-                        <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">Current</p>
-                        <p className="text-white font-bold text-base leading-none">{currentMeta.name}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">Ends in</p>
-                      <p className="text-brand-gold font-black text-lg tabular-nums leading-none">
-                        {info.hh > 0 ? `${info.hh}h ` : ''}
-                        {String(info.mm).padStart(2, '0')}m{' '}
-                        {String(info.ss).padStart(2, '0')}s
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="w-full h-px bg-white/10" />
-
-                  {/* Row 2: Next prayer */}
-                  <div className="flex items-center justify-between px-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{nextMeta.icon}</span>
-                      <div className="text-left">
-                        <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">Next</p>
-                        <p className="text-brand-emerald/80 font-bold text-base leading-none">{nextMeta.name}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white/30 text-xs leading-none mb-0.5">starts at</p>
-                      <p className="text-white/60 font-semibold text-sm tabular-nums">{formatTime(info.nextTime)}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Forbidden or nafl indicator */}
-              {activeForbidden && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-red-500/15 border border-red-400/30 text-left"
-                >
-                  <span className="text-base shrink-0">🚫</span>
-                  <div>
-                    <p className="text-red-400 font-bold text-xs">{activeForbidden.label}</p>
-                    <p className="text-red-300/60 text-xs">Ends at {formatTime(activeForbidden.end)}</p>
-                  </div>
-                </motion.div>
-              )}
-              {activeNafl && !activeForbidden && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-left"
-                >
-                  <span className="text-base shrink-0">{activeNafl.icon}</span>
-                  <div>
-                    <p className="text-cyan-300 font-bold text-xs">{activeNafl.label} time</p>
-                    <p className="text-cyan-300/50 text-xs">Until {formatTime(activeNafl.end)}</p>
-                  </div>
-                </motion.div>
-              )}
-
-              {!location && (
-                <p className="text-white/40 text-sm mt-4">
-                  ↑ Set your location above to calculate prayer times
-                </p>
-              )}
-            </div>
-          </motion.div>
+          {/* Live clock card — self-ticking, isolated from the timeline below */}
+          <LiveClockCard times={times} timeline={timeline} hasLocation={!!location} />
 
           {/* Interleaved timeline */}
           {location && times ? (

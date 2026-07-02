@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import TabNav from '../components/TabNav.js';
 import { ChartBarIcon, FireIcon, PlusCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import StreakCard from '../components/analytics/StreakCard.js';
 import GoalCard from '../components/analytics/GoalCard.js';
@@ -380,17 +381,12 @@ export default function ZikrAnalytics() {
 
           {/* Tab navigation */}
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-white/10 max-w-xs">
-              <Link
-                to="/zikr"
-                className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all"
-              >
-                📿 Counter
-              </Link>
-              <span className="flex-1 text-center text-xs font-bold py-1.5 rounded-lg bg-white/10 text-white">
-                📊 Analytics
-              </span>
-            </div>
+            <TabNav
+              items={[
+                { label: '📿 Counter', to: '/zikr' },
+                { label: '📊 Analytics', to: '/zikr/analytics', active: true },
+              ]}
+            />
 
             {/* Log missed counts button */}
             <motion.button

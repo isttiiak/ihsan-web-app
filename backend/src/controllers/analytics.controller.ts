@@ -36,7 +36,9 @@ export const setGoalHandler = async (req: Request, res: Response, next: NextFunc
 
 export const getStreakHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const streak = await streakService.getStreak(req.user.uid);
+    const { timezoneOffset } = req.query as { timezoneOffset?: string };
+    const userOffset = timezoneOffset !== undefined ? parseInt(timezoneOffset) : DEFAULT_TIMEZONE_OFFSET;
+    const streak = await streakService.getStreak(req.user.uid, userOffset);
     res.json({ ok: true, streak });
   } catch (err) {
     next(err);

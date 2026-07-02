@@ -107,13 +107,13 @@ describe("Zikr API", () => {
 
     // Add custom type
     await request(app)
-      .post(`/api/zikr/type`)
+      .post(`/api/zikr/types`)
       .set("Authorization", `Bearer ${token}`)
       .send({ name: "Morning Zikr" });
 
     // Duplicate with different case should be ignored
     await request(app)
-      .post(`/api/zikr/type`)
+      .post(`/api/zikr/types`)
       .set("Authorization", `Bearer ${token}`)
       .send({ name: "morning zikr" });
 

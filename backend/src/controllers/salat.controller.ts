@@ -5,7 +5,7 @@ import { PrayerId, PrayerStatus, PrayerLocation, NaflType } from '../models/Sala
 export const getLog = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const date = req.query['date'] as string | undefined;
-    const log = await salatService.getOrCreateLog(req.user.uid, date);
+    const log = await salatService.getLogReadOnly(req.user.uid, date);
     res.json({ ok: true, log });
   } catch (err) { next(err); }
 };
@@ -51,7 +51,8 @@ export const getHistory = async (req: Request, res: Response, next: NextFunction
 export const getAnalytics = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const days = Number(req.query['days'] ?? 30);
-    const analytics = await salatService.getSalatAnalytics(req.user.uid, days);
+    const today = req.query['today'] as string | undefined;
+    const analytics = await salatService.getSalatAnalytics(req.user.uid, days, today);
     res.json({ ok: true, ...analytics });
   } catch (err) { next(err); }
 };

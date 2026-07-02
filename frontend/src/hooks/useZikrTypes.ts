@@ -1,14 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api.js';
+import { useAuthStore } from '../store/useAuthStore.js';
 import type { ZikrTypeItem } from '../types/api.js';
 
 export function useZikrTypes() {
+  const user = useAuthStore((s) => s.user);
   return useQuery<ZikrTypeItem[]>({
     queryKey: ['zikr', 'types'],
     queryFn: async () => {
       const res = await api.get<{ types: ZikrTypeItem[] }>('/api/zikr/types');
       return res.data.types ?? [];
     },
+    enabled: !!user,
     staleTime: 60_000,
   });
 }

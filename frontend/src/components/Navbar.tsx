@@ -13,9 +13,7 @@ import {
   Cog6ToothIcon,
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
-  MoonIcon,
   ArrowLeftIcon,
-  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 
 // ── Page metadata ─────────────────────────────────────────────────────────────
@@ -122,13 +120,6 @@ export default function Navbar() {
 
   const firstName = user?.displayName?.split(' ')[0] ?? '';
   const greeting  = `Assalamu 'alaikum${firstName ? ', ' + firstName : ''}`;
-
-  const toggleTheme = () => {
-    const theme = document.documentElement.getAttribute('data-theme') ?? 'ihsan';
-    const next = theme === 'ihsan' ? 'light' : 'ihsan';
-    localStorage.setItem('ihsan_theme', next);
-    document.documentElement.setAttribute('data-theme', next);
-  };
 
   // ── Center content by route ───────────────────────────────────────────────
   const hijriToday = (() => { const h = getHijriDate(); return h ? formatHijriDate(h) : null; })();
@@ -248,18 +239,12 @@ export default function Navbar() {
               </div>
             )}
 
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/8 transition-all"
-              title="Toggle theme"
-            >
-              <MoonIcon className="w-4 h-4" />
-            </button>
-
             {user ? (
               <div className="relative ml-0.5" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen((o) => !o)}
+                  aria-label="Open account menu"
+                  aria-expanded={dropdownOpen}
                   className={`flex items-center justify-center w-8 h-8 rounded-full transition-all ring-2 ${dropdownOpen ? 'ring-brand-emerald scale-105' : 'ring-brand-emerald/30 hover:ring-brand-emerald/70'}`}
                 >
                   {user.photoUrl ? (
