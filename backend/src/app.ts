@@ -8,6 +8,8 @@ import aiRoutes from './routes/ai.routes.js';
 import userRoutes from './routes/user.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import salatRoutes from './routes/salat.routes.js';
+import fastingRoutes from './routes/fasting.routes.js';
+import quranRoutes from './routes/quran.routes.js';
 import { generalLimiter, authLimiter, zikrLimiter, aiLimiter } from './middleware/rateLimiter.js';
 import { globalErrorHandler } from './middleware/errorHandler.js';
 
@@ -67,6 +69,8 @@ app.use('/api/ai', aiLimiter, aiRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/salat', salatRoutes);
+app.use('/api/fasting', fastingRoutes);
+app.use('/api/quran', quranRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

@@ -1,0 +1,74 @@
+import { z } from 'zod';
+import { FASTING_CATEGORIES, VOLUNTARY_KINDS, FASTING_STATUSES } from '../models/FastingLog.js';
+
+const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+export const getFastingLogSchema = z.object({
+  query: z.object({
+    date: dateStr.optional(),
+  }),
+  body: z.object({}).optional(),
+});
+
+export const upsertFastingLogSchema = z.object({
+  body: z
+    .object({
+      date: dateStr,
+      category: z.enum(FASTING_CATEGORIES),
+      voluntaryKind: z.enum(VOLUNTARY_KINDS).optional(),
+      vowId: z.string().max(48).optional(),
+      status: z.enum(FASTING_STATUSES),
+      hijri: z.string().max(60).optional(),
+      note: z.string().max(200).optional(),
+    })
+    .refine((b) => b.category !== 'nadhr' || !!b.vowId, {
+      message: 'vowId is required for nadhr fasts',
+    })
+    // The dedicated Ramadan tracker is not built yet — reject its category so
+    // ordinary logging can't write ramadan rows prematurely.
+    .refine((b) => b.category !== 'ramadan', {
+      message: 'Ramadan fasts are tracked by the dedicated Ramadan tracker',
+    }),
+});
+
+export const clearFastingLogSchema = z.object({
+  query: z.object({
+    date: dateStr,
+  }),
+  body: z.object({}).optional(),
+});
+
+export const fastingSummarySchema = z.object({
+  query: z.object({
+    today: dateStr.optional(),
+  }),
+  body: z.object({}).optional(),
+});
+
+export const fastingHistorySchema = z.object({
+  query: z.object({
+    days: z.coerce.number().int().positive().max(400).default(60),
+    today: dateStr.optional(),
+  }),
+  body: z.object({}).optional(),
+});
+
+export const updateFastingProfileSchema = z.object({
+  body: z.object({
+    qadaOwed: z.number().int().min(0).max(10_000).optional(),
+    kaffarah: z
+      .object({
+        active: z.boolean(),
+        targetDays: z.number().int().min(1).max(10_000),
+        startDate: dateStr.optional(),
+      })
+      .optional(),
+  }),
+});
+
+export const addVowSchema = z.object({
+  body: z.object({
+    title: z.string().min(1).max(100).trim(),
+    targetDays: z.number().int().min(1).max(10_000),
+  }),
+});

@@ -10,6 +10,9 @@ const TYPE_BADGE: Record<string, string> = {
   ramadan: 'Ramadan Special',
 };
 
+// Special days whose primary act of worship is fasting → deep-link to the tracker
+const FASTING_DAY_IDS = new Set(['fast_mon_thu', 'ayyam_al_bid', 'ashura', 'arafah', 'dhul_hijjah_first10']);
+
 export default function IslamicSpecialDay() {
   const { id } = useParams<{ id: string }>();
   const day = SPECIAL_DAYS.find((d) => d.id === id);
@@ -60,6 +63,18 @@ export default function IslamicSpecialDay() {
               <h1 className="text-3xl sm:text-4xl font-black text-white mb-1">{day.name}</h1>
               <p className="font-arabic text-white/40 text-lg mb-3">{day.arabicName}</p>
               <p className="text-white/65 text-sm leading-relaxed max-w-lg mx-auto">{day.shortDesc}</p>
+
+              {FASTING_DAY_IDS.has(day.id) && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                  <Link
+                    to="/fasting"
+                    className="inline-flex items-center gap-2 mt-5 px-6 py-2.5 rounded-2xl font-bold text-sm text-white shadow-lg transition-transform hover:scale-105"
+                    style={{ background: day.color }}
+                  >
+                    🌙 Track this fast →
+                  </Link>
+                </motion.div>
+              )}
             </div>
           </motion.div>
 

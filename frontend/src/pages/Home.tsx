@@ -5,6 +5,8 @@ import { MapPinIcon } from '@heroicons/react/24/outline';
 import { useZikrStore } from '../store/useZikrStore.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useSalatLog } from '../hooks/useSalatLog.js';
+import { useFastingSummary } from '../hooks/useFasting.js';
+import { useQuranSummary } from '../hooks/useQuran.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import {
   calcPrayerTimes,
@@ -50,6 +52,8 @@ export default function Home() {
 
   const { data: analyticsData } = useAnalytics(1);
   const { data: salatLog } = useSalatLog();
+  const { data: fastingSummary } = useFastingSummary();
+  const { data: quranSummary } = useQuranSummary();
 
   const totalToday = useMemo(() => Object.values(counts).reduce((a, b) => a + b, 0), [counts]);
   const analyticsGoal = analyticsData?.goal?.dailyTarget ?? null;
@@ -149,25 +153,32 @@ export default function Home() {
       id: 'fasting',
       icon: '🌙',
       title: 'Fasting Tracker',
-      description: 'Monitor your fasting journey',
-      stats: { label: 'Streak', value: '0 days' },
-      action: 'Log Fast',
+      description: 'Sunnah fasts, qaḍā, kaffārah & vows',
+      stats: {
+        label: 'This month',
+        value: fastingSummary ? `${fastingSummary.stats.thisMonth} fasts` : '—',
+      },
+      action: 'Track Fasting',
       link: '/fasting',
-      accentColor: 'var(--brand-magenta, #c026d3)',
-      iconBg: 'bg-gradient-to-br from-brand-magenta/20 to-pink-500/30',
-      tag: 'Coming Soon…',
+      accentColor: 'var(--brand-gold, #f59e0b)',
+      iconBg: 'bg-gradient-to-br from-brand-gold/20 to-amber-500/30',
     },
     {
       id: 'quran',
       icon: '📖',
       title: 'Quran Habit',
-      description: 'Build a daily Quran reading habit',
-      stats: { label: 'Status', value: 'Coming Soon' },
-      action: 'Explore',
+      description: 'Daily reading, streaks & your khatm journey',
+      stats: {
+        label: 'Today',
+        value: quranSummary
+          ? `${quranSummary.todayPages}/${quranSummary.profile.dailyGoalPages} pages`
+          : '—',
+      },
+      action: 'Read & Track',
       link: '/quran',
-      accentColor: 'var(--brand-magenta, #c026d3)',
-      iconBg: 'bg-gradient-to-br from-brand-magenta/20 to-purple-500/30',
-      tag: 'Coming Soon…',
+      accentColor: 'var(--brand-emerald, #10b981)',
+      iconBg: 'bg-gradient-to-br from-teal-500/20 to-cyan-500/30',
+      streakCount: quranSummary?.streak ?? null,
     },
   ];
 
