@@ -24,6 +24,7 @@ const Profile = lazy(() => import('./pages/Profile.js'));
 const SalatTracker = lazy(() => import('./pages/SalatTracker.js'));
 const SalatAnalytics = lazy(() => import('./pages/SalatAnalytics.js'));
 const FastingTracker = lazy(() => import('./pages/FastingTracker.js'));
+const FastingAnalytics = lazy(() => import('./pages/FastingAnalytics.js'));
 const PrayerTimes = lazy(() => import('./pages/PrayerTimes.js'));
 const QuranHabit = lazy(() => import('./pages/QuranHabit.js'));
 const IslamicSpecialDay = lazy(() => import('./pages/IslamicSpecialDay.js'));
@@ -255,7 +256,7 @@ export default function App() {
 
   const { authLoading } = useAuthStore();
   const isAuthPage = ['/login', '/signup', '/auth/action'].includes(location.pathname);
-  const noFooterRoutes = ['/zikr', '/salat', '/salat/analytics', '/fasting', '/prayer-times', '/quran'];
+  const noFooterRoutes = ['/zikr', '/salat', '/salat/analytics', '/fasting', '/fasting/analytics', '/prayer-times', '/quran'];
   const showFooter = !isAuthPage && !noFooterRoutes.includes(location.pathname);
 
   return (
@@ -281,6 +282,7 @@ export default function App() {
               <Route path="/salat" element={<SalatTracker />} />
               <Route path="/salat/analytics" element={<Protected><SalatAnalytics /></Protected>} />
               <Route path="/fasting" element={<FastingTracker />} />
+              <Route path="/fasting/analytics" element={<Protected><FastingAnalytics /></Protected>} />
               <Route path="/prayer-times" element={<PrayerTimes />} />
               <Route path="/quran" element={<Protected><QuranHabit /></Protected>} />
               <Route path="/zikr/analytics" element={<Protected><ZikrAnalytics /></Protected>} />

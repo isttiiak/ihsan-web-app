@@ -127,4 +127,59 @@ describe("Zikr API", () => {
       1
     );
   });
+
+describe("Zikr streak (derived)", () => {
+  const token = fakeJwt({ uid: "s1", email: "s1@test.dev", name: "S1" });
+  const auth = (r) => r.set("Authorization", `Bearer ${token}`);
+  const DAY = 24 * 60 * 60 * 1000;
+
+  test("backfilling a missed day reconnects the streak", async () => {
+    await request(app).post(`/api/auth/verify`).send({ idToken: token });
+    await auth(request(app).post(`/api/analytics/goal`)).send({ dailyTarget: 10 });
+
+    // Meet the goal today only → streak 1
+    await auth(request(app).post(`/api/zikr/increment/batch`)).send({
+      increments: [{ zikrType: "SubhanAllah", amount: 10 }],
+      timezoneOffset: 360,
+    });
+    let res = await auth(request(app).get(`/api/analytics/streak?timezoneOffset=360`));
+    expect(res.body.streak.currentStreak).toBe(1);
+    expect(res.body.streak.state).toBe("active");
+
+    // Backfill the day BEFORE yesterday (2 days ago) → gap at yesterday is a
+    // single grace day, so the chain connects: streak = 2
+    await auth(request(app).post(`/api/zikr/increment/batch`)).send({
+      increments: [{ zikrType: "SubhanAllah", amount: 10, ts: Date.now() - 2 * DAY }],
+      timezoneOffset: 360,
+    });
+    res = await auth(request(app).get(`/api/analytics/streak?timezoneOffset=360`));
+    expect(res.body.streak.currentStreak).toBe(2);
+
+    // Now backfill yesterday too → no gaps at all: streak = 3
+    await auth(request(app).post(`/api/zikr/increment/batch`)).send({
+      increments: [{ zikrType: "SubhanAllah", amount: 10, ts: Date.now() - 1 * DAY }],
+      timezoneOffset: 360,
+    });
+    res = await auth(request(app).get(`/api/analytics/streak?timezoneOffset=360`));
+    expect(res.body.streak.currentStreak).toBe(3);
+  });
+
+  test("ts older than 2 days is rejected", async () => {
+    const res = await auth(request(app).post(`/api/zikr/increment/batch`)).send({
+      increments: [{ zikrType: "SubhanAllah", amount: 5, ts: Date.now() - 5 * DAY }],
+      timezoneOffset: 360,
+    });
+    expect(res.status).toBe(400);
+  });
+
+  test("analytics chart days carry streak statuses", async () => {
+    const res = await auth(request(app).get(`/api/analytics?days=7&timezoneOffset=360`));
+    expect(res.status).toBe(200);
+    const statuses = res.body.chartData.map((d) => d.status);
+    expect(statuses.every((s) => ["met", "pending", "grace", "missed"].includes(s))).toBe(true);
+    // today is met → last day status 'met'
+    expect(statuses[statuses.length - 1]).toBe("met");
+  });
+});
+
 });

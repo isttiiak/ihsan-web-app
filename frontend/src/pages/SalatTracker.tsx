@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
 import { useAuthStore } from '../store/useAuthStore.js';
+import { celebrateSmall, celebrateAllPrayers } from '../utils/celebrate.js';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import {
   useSalatLog,
@@ -236,6 +237,13 @@ export default function SalatTracker() {
         location: current?.location ?? 'home',
         tasbeeh: current?.tasbeeh ?? false,
       });
+      // Celebrate: small burst per prayer, big double burst when all 5 are in
+      const doneAfter = trackablePrayers.filter((p) => {
+        const s = p.id === prayer ? newStatus : log?.prayers[p.id as PrayerId]?.status;
+        return s === 'completed' || s === 'kaza';
+      }).length;
+      if (doneAfter >= 5) celebrateAllPrayers();
+      else celebrateSmall();
       setExpandedPrayer(prayer); // open sub-tags
     } else {
       updatePrayer.mutate({

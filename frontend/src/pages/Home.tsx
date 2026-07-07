@@ -7,6 +7,7 @@ import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useSalatLog } from '../hooks/useSalatLog.js';
 import { useFastingSummary } from '../hooks/useFasting.js';
 import { useQuranSummary } from '../hooks/useQuran.js';
+import { StreakBadge, GoalBadge } from '../components/StatusBadges.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import {
   calcPrayerTimes,
@@ -58,7 +59,10 @@ export default function Home() {
   const totalToday = useMemo(() => Object.values(counts).reduce((a, b) => a + b, 0), [counts]);
   const analyticsGoal = analyticsData?.goal?.dailyTarget ?? null;
   const streakCount = analyticsData?.streak?.currentStreak ?? null;
-  const goalCompleted = totalToday !== null && analyticsGoal !== null ? totalToday >= analyticsGoal : false;
+  // Show max(local, server) so the capsule never lags behind live taps
+  const effectiveToday = Math.max(totalToday, analyticsData?.today?.total ?? 0);
+  const goalCompleted = analyticsGoal !== null ? effectiveToday >= analyticsGoal : false;
+  const zikrGoalPct = analyticsGoal ? Math.min(100, Math.round((effectiveToday / analyticsGoal) * 100)) : null;
 
   // Salat completed count for today
   const salatCompletedToday = useMemo(() => {
@@ -383,24 +387,21 @@ export default function Home() {
 
                     {isZikr && (
                       <div className="absolute top-4 right-4 z-20 flex flex-row items-center gap-2">
-                        <div className="tooltip tooltip-left" data-tip={`Streak: ${a.streakCount ?? '-'} day${a.streakCount === 1 ? '' : 's'}`}>
-                          <div className="px-2 py-1 rounded-full flex items-center gap-1 font-bold shadow-lg border border-white/10 backdrop-blur-md bg-gradient-to-br from-brand-emerald/60 via-pink-400/30 to-brand-gold/40">
-                            <span className="text-base" role="img" aria-label="streak">🔥</span>
-                            <span className="text-xs text-white/90 font-bold">
-                              {a.streakCount !== null ? a.streakCount : <span className="loading loading-spinner loading-xs" />}
-                            </span>
-                          </div>
-                        </div>
-                        <div
-                          className="tooltip tooltip-left"
-                          data-tip={a.goalCompleted ? '🏆 Daily goal achieved!' : `🎯 Goal: ${analyticsGoal ?? '…'} zikr/day`}
-                        >
-                          <div className={`px-2 py-1 rounded-full flex items-center font-bold shadow-lg border border-white/10 backdrop-blur-md bg-gradient-to-br from-brand-gold/60 via-pink-400/30 to-brand-emerald/40 ${a.goalCompleted ? '' : 'opacity-70'}`}>
-                            <span className="text-base" role="img" aria-label="goal">
-                              {a.goalCompleted ? '✅' : '🎯'}
-                            </span>
-                          </div>
-                        </div>
+                        <StreakBadge
+                          streak={a.streakCount ?? 0}
+                          state={analyticsData?.streak?.state}
+                          size="md"
+                        />
+                        <GoalBadge pct={zikrGoalPct} met={goalCompleted} size="md" />
+                      </div>
+                    )}
+                    {a.id === 'quran' && quranSummary && (
+                      <div className="absolute top-4 right-4 z-20">
+                        <StreakBadge
+                          streak={quranSummary.streak}
+                          state={quranSummary.streak > 0 ? 'active' : 'none'}
+                          size="md"
+                        />
                       </div>
                     )}
 

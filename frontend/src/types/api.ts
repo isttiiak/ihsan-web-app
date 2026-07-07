@@ -17,7 +17,11 @@ export interface ChartDataPoint {
   date: string;
   total: number;
   breakdown: Record<string, number>;
+  /** Streak status for the day (from analytics): met | pending | grace | missed */
+  status?: 'met' | 'pending' | 'grace' | 'missed';
 }
+
+export type StreakState = 'active' | 'grace' | 'none' | 'paused';
 
 export interface ZikrGoal {
   userId?: string;
@@ -29,9 +33,11 @@ export interface ZikrStreak {
   userId?: string;
   currentStreak: number;
   longestStreak: number;
-  lastCompletedDate: string | null;
+  lastCompletedDate?: string | null;
   isPaused?: boolean;
   pausedAt?: string | null;
+  /** Derived live state: active (🔥) / grace (🧊 last chance) / none (0) / paused */
+  state?: StreakState;
   count?: number; // alias used in some response shapes
 }
 

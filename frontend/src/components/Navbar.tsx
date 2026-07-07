@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/useAuthStore.js';
 import { useZikrStore } from '../store/useZikrStore.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useSalatLog } from '../hooks/useSalatLog.js';
+import { StreakBadge, GoalBadge } from './StatusBadges.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
 import { getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
 import {
@@ -23,6 +24,7 @@ const PAGE_META: Record<string, { title: string; emoji: string }> = {
   '/salat':           { title: 'Salat Tracker',   emoji: '🕌' },
   '/salat/analytics': { title: 'Salat Analytics', emoji: '📊' },
   '/fasting':         { title: 'Fasting',         emoji: '🌙' },
+  '/fasting/analytics': { title: 'Fasting Analytics', emoji: '📊' },
   '/prayer-times':    { title: 'Prayer Times',    emoji: '🕐' },
   '/quran':           { title: 'Quran Habit',     emoji: '📖' },
   '/settings':        { title: 'Settings',        emoji: '⚙️'  },
@@ -36,6 +38,7 @@ const PARENT_ROUTES: Record<string, string> = {
   '/salat':           '/',
   '/salat/analytics': '/salat',
   '/fasting':         '/',
+  '/fasting/analytics': '/fasting',
   '/prayer-times':    '/',
   '/quran':           '/',
   '/settings':        '/',
@@ -140,19 +143,9 @@ export default function Navbar() {
       return (
         <div className="hidden sm:flex items-center gap-1.5">
           {streak !== null && (
-            <div className="tooltip tooltip-bottom" data-tip={`${streak} day streak`}>
-              <span className="px-2 py-0.5 rounded-full bg-brand-gold/20 border border-brand-gold/40 text-white text-xs font-bold flex items-center gap-1">
-                🔥 {streak}
-              </span>
-            </div>
+            <StreakBadge streak={streak} state={analyticsData?.streak?.state} />
           )}
-          {goalPct !== null && (
-            <div className="tooltip tooltip-bottom" data-tip={goalMet ? 'Daily goal achieved! 🏆' : `${effectiveTotal}/${dailyGoal} today`}>
-              <span className={`px-2 py-0.5 rounded-full border text-white text-xs font-bold flex items-center gap-1 ${goalMet ? 'bg-brand-emerald/25 border-brand-emerald/50' : 'bg-white/10 border-white/20'}`}>
-                {goalMet ? '✅' : '🎯'} {goalPct}%
-              </span>
-            </div>
-          )}
+          <GoalBadge pct={goalPct} met={goalMet} />
         </div>
       );
     }

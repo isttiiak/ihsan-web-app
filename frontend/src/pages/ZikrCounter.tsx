@@ -11,6 +11,8 @@ import { useZikrTypes, useAddZikrType } from '../hooks/useZikrTypes.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
+import { StreakBadge, GoalBadge } from '../components/StatusBadges.js';
+import { celebrateGoal } from '../utils/celebrate.js';
 import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowsPointingOutIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 // Meanings for all built-in dhikr
@@ -214,6 +216,13 @@ export default function ZikrCounter() {
     }
     wasFlushingRef.current = isFlushing;
   }, [isFlushing, queryClient]);
+
+  // Confetti the moment the daily goal is crossed (false → true transition)
+  const wasGoalMetRef = useRef(goalMet);
+  useEffect(() => {
+    if (!wasGoalMetRef.current && goalMet && dailyGoal !== null) celebrateGoal();
+    wasGoalMetRef.current = goalMet;
+  }, [goalMet, dailyGoal]);
 
   // Guest: warn before tab close if they have unsaved counts
   useEffect(() => {
@@ -517,13 +526,9 @@ export default function ZikrCounter() {
               )}
               <div className="flex items-center justify-between mt-2.5">
                 {streakCount !== null ? (
-                  <span className="text-brand-gold text-xs font-bold">🔥 {streakCount} day streak</span>
+                  <StreakBadge streak={streakCount} state={analyticsData?.streak?.state} />
                 ) : <span />}
-                {goalProgress !== null ? (
-                  <span className={`text-xs font-bold ${goalMet ? 'text-brand-emerald' : 'text-white/50'}`}>
-                    {goalMet ? '✓ 100%' : `🎯 ${goalProgress}%`}
-                  </span>
-                ) : <span />}
+                <GoalBadge pct={goalProgress} met={goalMet} />
               </div>
             </div>
           )}

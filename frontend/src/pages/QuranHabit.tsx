@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import { celebrateGoal, celebrateKhatm } from '../utils/celebrate.js';
 import { PencilIcon, CheckIcon } from '@heroicons/react/24/outline';
 import {
   useQuranSummary,
@@ -89,11 +90,13 @@ export default function QuranHabit() {
       onSuccess: (data) => {
         if (data.khatmCompleted) {
           toast.success('🎉 Khatm complete! May Allah accept your recitation!', { duration: 6000 });
+          celebrateKhatm();
         }
       },
     });
     if (willMeetGoal) {
       setCelebrate(true);
+      celebrateGoal();
       setTimeout(() => setCelebrate(false), 1600);
     }
     if ('vibrate' in navigator) navigator.vibrate(10);

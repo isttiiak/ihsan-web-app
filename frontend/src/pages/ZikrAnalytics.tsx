@@ -38,8 +38,19 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
 
   const [selectedType, setSelectedType] = useState(allTypes[0] ?? 'SubhanAllah');
   const [amount, setAmount] = useState('');
+  // 0 = today, 1 = yesterday, 2 = two days ago — matches the streak grace
+  // window, so backfilling can repair a broken chain.
+  const [daysBack, setDaysBack] = useState<0 | 1 | 2>(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+
+  const dayLabel = (n: number): string => {
+    if (n === 0) return 'Today';
+    if (n === 1) return 'Yesterday';
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
 
   // Add-new-type sub-form
   const [showAddNew, setShowAddNew] = useState(false);
@@ -62,11 +73,21 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
     setSubmitting(true);
     setSubmitError('');
     try {
+      // Backfilled days carry a midday timestamp so the count lands in the
+      // right daily bucket for any timezone.
+      let ts: number | undefined;
+      if (daysBack > 0) {
+        const d = new Date();
+        d.setDate(d.getDate() - daysBack);
+        d.setHours(12, 0, 0, 0);
+        ts = d.getTime();
+      }
       await api.post('/api/zikr/increment/batch', {
-        increments: [{ zikrType: selectedType, amount: parsedAmount, timezoneOffset: getUserTimezoneOffset() }],
+        increments: [{ zikrType: selectedType, amount: parsedAmount, ...(ts ? { ts } : {}) }],
         timezoneOffset: getUserTimezoneOffset(),
       });
-      addConfirmedCounts(selectedType, parsedAmount);
+      // Local live counter only reflects TODAY — don't inflate it with backfills
+      if (daysBack === 0) addConfirmedCounts(selectedType, parsedAmount);
       await queryClient.invalidateQueries({ queryKey: ['analytics'] });
       onClose();
     } catch {
@@ -127,6 +148,31 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
         <div className="p-6 space-y-5">
           {!showAddNew ? (
             <>
+              {/* Which day — today or up to 2 days back (streak grace window) */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-white/50 uppercase tracking-wider font-bold">Which day?</label>
+                <div className="flex gap-1.5">
+                  {([0, 1, 2] as const).map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => { setDaysBack(n); setSubmitError(''); }}
+                      className={`flex-1 px-2 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                        daysBack === n
+                          ? 'bg-brand-emerald/20 border-brand-emerald/60 text-brand-emerald'
+                          : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
+                      }`}
+                    >
+                      {dayLabel(n)}
+                    </button>
+                  ))}
+                </div>
+                {daysBack > 0 && (
+                  <p className="text-cyan-300/70 text-[11px]">
+                    🧊 Backfilling a missed day can restore your streak — the grace window covers up to 2 days back.
+                  </p>
+                )}
+              </div>
+
               {/* Type selector */}
               <div className="space-y-1.5">
                 <label className="text-xs text-white/50 uppercase tracking-wider font-bold">Zikr Type</label>
@@ -148,11 +194,13 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
                 </button>
               </div>
 
-              {/* Today's existing count */}
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-white/10">
-                <span className="text-white/50 text-sm">Today's count so far</span>
-                <span className="text-white font-black text-lg tabular-nums">{existingCount.toLocaleString()}</span>
-              </div>
+              {/* Today's existing count (only meaningful for today) */}
+              {daysBack === 0 && (
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+                  <span className="text-white/50 text-sm">Today's count so far</span>
+                  <span className="text-white font-black text-lg tabular-nums">{existingCount.toLocaleString()}</span>
+                </div>
+              )}
 
               {/* Amount to add */}
               <div className="space-y-1.5">
@@ -176,12 +224,20 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
                   animate={{ opacity: 1, y: 0 }}
                   className="flex items-center justify-between px-4 py-3 rounded-xl bg-brand-emerald/10 border border-brand-emerald/30"
                 >
-                  <span className="text-brand-emerald/80 text-sm font-semibold">
-                    {existingCount.toLocaleString()} + {parsedAmount.toLocaleString()}
-                  </span>
-                  <span className="text-brand-emerald font-black text-xl tabular-nums">
-                    = {newTotal.toLocaleString()}
-                  </span>
+                  {daysBack === 0 ? (
+                    <>
+                      <span className="text-brand-emerald/80 text-sm font-semibold">
+                        {existingCount.toLocaleString()} + {parsedAmount.toLocaleString()}
+                      </span>
+                      <span className="text-brand-emerald font-black text-xl tabular-nums">
+                        = {newTotal.toLocaleString()}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-brand-emerald font-bold text-sm">
+                      +{parsedAmount.toLocaleString()} will be added to {dayLabel(daysBack)}
+                    </span>
+                  )}
                 </motion.div>
               )}
 
