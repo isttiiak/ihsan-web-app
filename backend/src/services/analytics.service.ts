@@ -1,8 +1,7 @@
 import User from '../models/User.js';
 import ZikrDaily from '../models/ZikrDaily.js';
 import ZikrGoal, { IZikrGoal } from '../models/ZikrGoal.js';
-import { IZikrStreak } from '../models/ZikrStreak.js';
-import { getStreak } from './streak.service.js';
+import { getStreak, classifyDays, StreakResponse } from './streak.service.js';
 import { truncateToTimezone, DEFAULT_TIMEZONE_OFFSET } from '../utils/timezone-flexible.js';
 import { ChartDataPoint } from '../types/api.types.js';
 
@@ -12,7 +11,7 @@ export interface AnalyticsData {
   stats: { average: number; maxDay: string | null; maxCount: number; total: number };
   today: { total: number; goalMet: boolean; perType: Array<{ zikrType: string; total: number }> };
   goal: IZikrGoal | { dailyTarget: number; isActive: boolean };
-  streak: IZikrStreak | { currentStreak: number; longestStreak: number };
+  streak: StreakResponse;
   allTime: { totalCount: number; bestDay: { date: Date | null; count: number } };
   perType: Array<{ zikrType: string; total: number }>;
 }
@@ -52,6 +51,8 @@ export async function getAnalyticsData(
     dailyBreakdown[dateStr] = bd;
   });
 
+  // Per-day streak status (met / pending / grace / missed) for heatmap tags —
+  // needs the goal, so it's filled in after the goal loads below.
   const chartData: ChartDataPoint[] = [];
   for (let i = 0; i < days; i++) {
     const dateStr = dateKey(new Date(startDate.getTime() + i * DAY_MS));
@@ -69,8 +70,8 @@ export async function getAnalyticsData(
   );
   const average = totals.length > 0 ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
 
-  // getStreak (not a raw findOne) so stale streaks expire lazily —
-  // there is no cron on the free tier to break them.
+  // getStreak derives the live streak from buckets (2-consecutive-miss reset,
+  // single-day grace) and refreshes the checkpoint — no cron needed.
   const [goal, streak, todayRecords, user] = await Promise.all([
     ZikrGoal.findOne({ userId }),
     getStreak(userId, timezoneOffset),
@@ -80,6 +81,14 @@ export async function getAnalyticsData(
 
   const todayTotal = todayRecords.reduce((sum, r) => sum + r.count, 0);
   const todayPerType = todayRecords.map((r) => ({ zikrType: r.zikrType, total: r.count }));
+
+  // Tag each chart day for the weekly heatmap (grace days show a "chance" tag)
+  {
+    const dailyTarget = goal?.dailyTarget ?? 100;
+    const totalsMap = new Map<string, number>(chartData.map((d) => [d.date, d.total]));
+    const statuses = classifyDays(chartData.map((d) => d.date), totalsMap, dailyTarget, dateKey(today));
+    for (const d of chartData) d.status = statuses[d.date];
+  }
 
   let perType: Array<{ zikrType: string; total: number }> = [];
   if (user?.zikrTotals instanceof Map) {
@@ -118,7 +127,7 @@ export async function getAnalyticsData(
       perType: todayPerType.sort((a, b) => b.total - a.total),
     },
     goal: goal ?? { dailyTarget: 100, isActive: true },
-    streak: streak ?? { currentStreak: 0, longestStreak: 0 },
+    streak,
     allTime: { totalCount: user?.totalCount ?? 0, bestDay },
     perType: perType.sort((a, b) => b.total - a.total),
   };

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import api from '../lib/api.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import type { FastingCategory, FastingStatus, VoluntaryKind } from '../utils/fastingRules.js';
@@ -101,11 +102,14 @@ export function useUpsertFastingLog() {
       return { previous, key };
     },
     onError: (_e, _v, ctx) => {
+      // Roll back AND tell the user — a silent revert looks like a broken button
       if (ctx) qc.setQueryData(ctx.key, ctx.previous);
+      toast.error('Could not save your fast — check your connection and try again.', { id: 'fasting-save' });
     },
     onSettled: (_d, _e, vars) => {
       void qc.invalidateQueries({ queryKey: ['fasting', 'log', vars.date] });
       void qc.invalidateQueries({ queryKey: ['fasting', 'summary'] });
+      void qc.invalidateQueries({ queryKey: ['fasting', 'history'] });
     },
   });
 }
@@ -126,11 +130,30 @@ export function useClearFastingLog() {
     },
     onError: (_e, _v, ctx) => {
       if (ctx) qc.setQueryData(ctx.key, ctx.previous);
+      toast.error('Could not remove the log — try again.', { id: 'fasting-clear' });
     },
     onSettled: (date) => {
       void qc.invalidateQueries({ queryKey: ['fasting', 'log', date] });
       void qc.invalidateQueries({ queryKey: ['fasting', 'summary'] });
+      void qc.invalidateQueries({ queryKey: ['fasting', 'history'] });
     },
+  });
+}
+
+/** Full log history (calendar picker + analytics page). */
+export function useFastingHistory(days = 365, enabled = true) {
+  const user = useAuthStore((s) => s.user);
+  const today = localTodayStr();
+  return useQuery({
+    queryKey: ['fasting', 'history', days, today],
+    queryFn: async () => {
+      const { data } = await api.get<{ ok: boolean; logs: FastingLog[] }>(
+        `/api/fasting/history?days=${days}&today=${today}`
+      );
+      return data.logs;
+    },
+    enabled: !!user && enabled,
+    staleTime: 60_000,
   });
 }
 
@@ -147,6 +170,7 @@ export function useUpdateFastingProfile() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['fasting', 'summary'] });
     },
+    onError: () => toast.error('Could not update settings — try again.', { id: 'fasting-profile' }),
   });
 }
 
@@ -160,6 +184,7 @@ export function useAddVow() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['fasting', 'summary'] });
     },
+    onError: () => toast.error('Could not add the vow — try again.', { id: 'fasting-vow' }),
   });
 }
 
@@ -173,5 +198,6 @@ export function useDeleteVow() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['fasting', 'summary'] });
     },
+    onError: () => toast.error('Could not delete the vow — try again.', { id: 'fasting-vow' }),
   });
 }

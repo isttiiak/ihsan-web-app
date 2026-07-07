@@ -39,6 +39,8 @@ export interface ChartDataPoint {
   date: string;
   total: number;
   breakdown: Record<string, number>;
+  /** Streak status for the day: met | pending | grace | missed */
+  status?: 'met' | 'pending' | 'grace' | 'missed';
 }
 
 export interface AnalyticsResponse {

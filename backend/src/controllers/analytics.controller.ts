@@ -47,7 +47,9 @@ export const getStreakHandler = async (req: Request, res: Response, next: NextFu
 
 export const pauseStreakHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const result = await streakService.pauseStreak(req.user.uid);
+    const { timezoneOffset } = req.query as { timezoneOffset?: string };
+    const userOffset = timezoneOffset !== undefined ? parseInt(timezoneOffset) : DEFAULT_TIMEZONE_OFFSET;
+    const result = await streakService.pauseStreak(req.user.uid, userOffset);
     res.json(result);
   } catch (err) {
     next(err);
@@ -56,7 +58,9 @@ export const pauseStreakHandler = async (req: Request, res: Response, next: Next
 
 export const resumeStreakHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const result = await streakService.resumeStreak(req.user.uid);
+    const { timezoneOffset } = req.query as { timezoneOffset?: string };
+    const userOffset = timezoneOffset !== undefined ? parseInt(timezoneOffset) : DEFAULT_TIMEZONE_OFFSET;
+    const result = await streakService.resumeStreak(req.user.uid, userOffset);
     if (!result) {
       res.status(404).json({ ok: false, error: 'Streak not found' });
       return;

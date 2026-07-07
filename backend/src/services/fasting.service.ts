@@ -150,6 +150,15 @@ export async function getSummary(userId: string, today?: string): Promise<Fastin
   const monthPrefix = end.substring(0, 7); // YYYY-MM
   const last30Since = shiftDateStr(end, -29);
 
+  // Auto-complete past intentions: once the day has fully passed, an
+  // 'intended' fast counts as completed (the user corrects exceptions from
+  // the analytics history). Today's intention is finalised client-side after
+  // the local iftar time.
+  await FastingLog.updateMany(
+    { userId, status: 'intended', date: { $lt: end } },
+    { $set: { status: 'completed' } }
+  );
+
   const [profile, completedLogs, recentLogs] = await Promise.all([
     getOrCreateProfile(userId),
     FastingLog.find({ userId, status: 'completed' }).select('date category vowId').sort({ date: 1 }),

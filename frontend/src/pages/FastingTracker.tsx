@@ -1,12 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import TabNav from '../components/TabNav.js';
 import { useAuthStore } from '../store/useAuthStore.js';
-import { ChevronDownIcon, TrashIcon, XMarkIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { celebrateFast } from '../utils/celebrate.js';
+import {
+  ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, TrashIcon, XMarkIcon,
+  Cog6ToothIcon, CalendarDaysIcon,
+} from '@heroicons/react/24/outline';
 import {
   useFastingLog,
   useFastingSummary,
+  useFastingHistory,
   useUpsertFastingLog,
   useClearFastingLog,
   useUpdateFastingProfile,
@@ -62,6 +68,44 @@ function RefLink({ r }: { r: FastingRef }) {
         {r.source} ↗
       </a>
     </span>
+  );
+}
+
+/** Progress bar + countdown + finish estimate for the Manage sheet */
+function ManageProgress({ done, target, color, doneLabel, extra }: {
+  done: number;
+  target: number;
+  color: string;
+  doneLabel: string;
+  extra?: string;
+}) {
+  const pct = Math.min(100, Math.round((done / Math.max(1, target)) * 100));
+  const remaining = Math.max(0, target - done);
+  const finish = new Date();
+  finish.setDate(finish.getDate() + remaining);
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between items-baseline text-[11px]">
+        <span className="font-bold tabular-nums" style={{ color }}>{done}/{target} <span className="text-white/40 font-semibold">({pct}%)</span></span>
+        <span className={remaining === 0 ? 'text-brand-emerald font-bold' : 'text-white/50'}>{doneLabel}</span>
+      </div>
+      <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+        <motion.div
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="h-full rounded-full"
+          style={{ background: color, boxShadow: `0 0 8px ${color}70` }}
+        />
+      </div>
+      <div className="flex justify-between text-[10px] text-white/25">
+        <span>{extra ?? ''}</span>
+        {remaining > 0 && (
+          <span>
+            1 fast/day → done {finish.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, in shā&apos; Allāh
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -121,6 +165,11 @@ export default function FastingTracker() {
   const [celebrate, setCelebrate] = useState(false);
   const [learnOpen, setLearnOpen] = useState(false);
 
+  // Month calendar picker (full control over which day to mark)
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calMonth, setCalMonth] = useState(() => today.substring(0, 7)); // YYYY-MM
+  const { data: historyLogs } = useFastingHistory(365, calendarOpen);
+
   // Manage-sheet editors
   const [qadaInput, setQadaInput] = useState('');
   const [vowTitle, setVowTitle] = useState('');
@@ -149,8 +198,51 @@ export default function FastingTracker() {
   const logsByDate = useMemo(() => {
     const map: Record<string, { status: string; category: string }> = {};
     for (const l of summary?.recentLogs ?? []) map[l.date] = { status: l.status, category: l.category };
+    for (const l of historyLogs ?? []) map[l.date] = { status: l.status, category: l.category };
     return map;
-  }, [summary?.recentLogs]);
+  }, [summary?.recentLogs, historyLogs]);
+
+  // ── Auto-complete today's intention once iftar (maghrib) has passed ────────
+  // Past days are converted server-side when the summary loads; today's needs
+  // the local maghrib time, which only the client knows.
+  const autoCompletedRef = useRef(false);
+  useEffect(() => {
+    if (autoCompletedRef.current) return;
+    if (!log || log.status !== 'intended' || log.date !== today) return;
+    if (!dayTimes || selectedDate !== today) return;
+    if (new Date() <= dayTimes.maghrib) return;
+    autoCompletedRef.current = true;
+    upsert.mutate({
+      date: log.date,
+      category: log.category as FastingCategory,
+      voluntaryKind: log.voluntaryKind,
+      vowId: log.vowId,
+      status: 'completed',
+      hijri: log.hijri,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [log, dayTimes, selectedDate, today]);
+
+  // ── Active obligation countdowns (hero capsules) ───────────────────────────
+  const debtCapsules = useMemo(() => {
+    const caps: Array<{ id: string; label: string; emoji: string; color: string; done: number; target: number }> = [];
+    if (qadaOwed > 0) {
+      caps.push({ id: 'qada', label: 'Qaḍā', emoji: '🔄', color: '#f59e0b', done: qadaDone, target: qadaOwed });
+    }
+    if (kaffarahActive) {
+      caps.push({
+        id: 'kaffarah', label: 'Kaffārah', emoji: '⚖️', color: '#a855f7',
+        done: summary?.kaffarah.currentRun ?? 0,
+        target: summary?.profile.kaffarah.targetDays ?? 60,
+      });
+    }
+    for (const v of vows) {
+      if (v.completed < v.targetDays) {
+        caps.push({ id: `vow-${v.id}`, label: v.title, emoji: '🤝', color: '#06b6d4', done: v.completed, target: v.targetDays });
+      }
+    }
+    return caps;
+  }, [qadaOwed, qadaDone, kaffarahActive, summary, vows]);
 
   // Week strip: last 6 days + today + tomorrow
   const weekDays = useMemo(() => {
@@ -165,6 +257,7 @@ export default function FastingTracker() {
       onSuccess: () => {
         if (vars.status === 'completed') {
           setCelebrate(true);
+          celebrateFast();
           setTimeout(() => setCelebrate(false), 1600);
         }
       },
@@ -255,6 +348,114 @@ export default function FastingTracker() {
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-xl mx-auto space-y-4">
 
+          {/* ── Tabs + calendar toggle ── */}
+          <div className="flex items-center justify-between gap-2">
+            <TabNav
+              items={[
+                { label: '🌙 Tracker', to: '/fasting', active: true },
+                { label: '📊 Analytics', to: '/fasting/analytics' },
+              ]}
+            />
+            <button
+              onClick={() => setCalendarOpen((o) => !o)}
+              aria-label="Open month calendar"
+              aria-expanded={calendarOpen}
+              title="Pick any day from the calendar"
+              className={`p-2 rounded-xl border transition-all ${
+                calendarOpen
+                  ? 'bg-brand-emerald/20 border-brand-emerald/50 text-brand-emerald'
+                  : 'bg-white/[0.04] border-white/10 text-white/40 hover:text-white'
+              }`}
+            >
+              <CalendarDaysIcon className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* ── Month calendar (full control over any past day) ── */}
+          <AnimatePresence>
+            {calendarOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.22 }} className="overflow-hidden"
+              >
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <button
+                      onClick={() => {
+                        const [y, m] = calMonth.split('-').map(Number);
+                        const d = new Date(y!, m! - 2, 1);
+                        setCalMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+                      }}
+                      aria-label="Previous month"
+                      className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10"
+                    ><ChevronLeftIcon className="w-4 h-4" /></button>
+                    <p className="text-white font-bold text-sm">
+                      {new Date(calMonth + '-15T12:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </p>
+                    <button
+                      onClick={() => {
+                        const [y, m] = calMonth.split('-').map(Number);
+                        const d = new Date(y!, m!, 1);
+                        setCalMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+                      }}
+                      disabled={calMonth >= today.substring(0, 7)}
+                      aria-label="Next month"
+                      className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-20"
+                    ><ChevronRightIcon className="w-4 h-4" /></button>
+                  </div>
+                  <div className="grid grid-cols-7 gap-1 text-center">
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                      <span key={i} className="text-white/25 text-[9px] font-bold uppercase">{d}</span>
+                    ))}
+                    {(() => {
+                      const [y, m] = calMonth.split('-').map(Number);
+                      const first = new Date(y!, m! - 1, 1);
+                      const daysInMonth = new Date(y!, m!, 0).getDate();
+                      const blanks = first.getDay();
+                      const cells = [];
+                      for (let i = 0; i < blanks; i++) cells.push(<span key={`b${i}`} />);
+                      for (let d = 1; d <= daysInMonth; d++) {
+                        const dateStr = `${calMonth}-${String(d).padStart(2, '0')}`;
+                        const dayLog = logsByDate[dateStr];
+                        const disabled = dateStr > tomorrow;
+                        const isSel = dateStr === selectedDate;
+                        const isTod = dateStr === today;
+                        const dot = dayLog?.status === 'completed' ? '#10b981'
+                          : dayLog?.status === 'intended' ? '#06b6d4'
+                          : dayLog?.status === 'broken' ? '#f87171'
+                          : 'transparent';
+                        cells.push(
+                          <button
+                            key={dateStr}
+                            disabled={disabled}
+                            onClick={() => { setSelectedDate(dateStr); setCalendarOpen(false); }}
+                            aria-label={`Select ${dateStr}`}
+                            className={`relative h-8 rounded-lg text-xs font-semibold transition-all ${
+                              isSel ? 'bg-brand-emerald/25 text-brand-emerald border border-brand-emerald/50'
+                              : isTod ? 'bg-white/10 text-white border border-white/20'
+                              : disabled ? 'text-white/15 cursor-not-allowed'
+                              : 'text-white/60 hover:bg-white/10'
+                            }`}
+                          >
+                            {d}
+                            <span
+                              className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                              style={{ background: dot }}
+                            />
+                          </button>
+                        );
+                      }
+                      return cells;
+                    })()}
+                  </div>
+                  <p className="text-white/25 text-[10px] mt-2">
+                    Tap any past day to view or log it — 🟢 fasted · 🔵 intended · 🔴 broken
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* ── Week strip ── */}
           <div className="flex justify-between gap-1">
             {weekDays.map((d) => {
@@ -315,6 +516,42 @@ export default function FastingTracker() {
                   {ruling.hijriLabel && <span className="text-brand-gold/50"> · {ruling.hijriLabel}</span>}
                 </p>
               </div>
+
+              {/* Active obligation countdowns — one capsule per activated type.
+                  Tap to log the day against that obligation. */}
+              {debtCapsules.length > 0 && (
+                <div className="flex justify-center gap-1.5 flex-wrap">
+                  {debtCapsules.map((c) => {
+                    const remaining = Math.max(0, c.target - c.done);
+                    return (
+                      <motion.button
+                        key={c.id}
+                        whileTap={{ scale: 0.93 }}
+                        onClick={() => {
+                          if (!user) { setShowGuestDialog(true); return; }
+                          if (c.id === 'qada') setCategory('qada');
+                          else if (c.id === 'kaffarah') setCategory('kaffarah');
+                          else { setCategory('nadhr'); setVowId(c.id.replace('vow-', '')); }
+                        }}
+                        title={`${c.label}: ${c.done}/${c.target} done — tap to log this day as ${c.label}`}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all ${
+                          (c.id === 'qada' && category === 'qada') ||
+                          (c.id === 'kaffarah' && category === 'kaffarah') ||
+                          (c.id.startsWith('vow-') && category === 'nadhr' && vowId === c.id.replace('vow-', ''))
+                            ? 'ring-1 ring-white/50'
+                            : ''
+                        }`}
+                        style={{ background: `${c.color}1c`, borderColor: `${c.color}55`, color: c.color }}
+                      >
+                        <span aria-hidden>{c.emoji}</span>
+                        <span className="max-w-[90px] truncate">{c.label}</span>
+                        <span className="tabular-nums text-white/80">{c.done}/{c.target}</span>
+                        <span className="text-white/40 font-semibold">· {remaining} left</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* State display */}
               {ruling.level === 'haram' && ruling.haram ? (
@@ -762,123 +999,153 @@ export default function FastingTracker() {
             <motion.div
               initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
               transition={{ type: 'spring', damping: 26 }}
-              className="bg-brand-surface rounded-3xl p-5 w-full max-w-md shadow-2xl border border-brand-border max-h-[85vh] overflow-y-auto space-y-5"
+              className="bg-brand-surface rounded-3xl w-full max-w-md shadow-2xl border border-brand-border max-h-[88vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-black text-white">Make-up fasts & vows</h3>
+              <div className="sticky top-0 bg-brand-surface/95 backdrop-blur-sm px-5 pt-5 pb-3 flex items-center justify-between border-b border-white/5 z-10">
+                <div>
+                  <h3 className="text-base font-black text-white">Obligations & vows</h3>
+                  <p className="text-white/30 text-[11px]">Activate what applies to you — a countdown capsule appears on the main card</p>
+                </div>
                 <button onClick={() => setShowManage(false)} aria-label="Close" className="text-white/30 hover:text-white p-1">
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Qada */}
-              <div className="rounded-2xl border border-brand-gold/25 bg-brand-gold/5 p-4 space-y-2">
-                <p className="text-brand-gold font-bold text-sm">🔄 Qaḍā — missed Ramaḍān days</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-white/40 text-xs">I owe</span>
-                  <input
-                    type="number" min="0" value={qadaInput}
-                    onChange={(e) => setQadaInput(e.target.value)}
-                    aria-label="Days owed"
-                    className="input input-sm w-20 bg-brand-deep border-brand-border text-white text-center font-bold"
-                  />
-                  <span className="text-white/40 text-xs">days</span>
-                  <button onClick={saveQadaOwed} className="btn btn-xs bg-brand-emerald text-white border-0 ml-auto">Save</button>
-                </div>
-                {qadaOwed > 0 && (
-                  <>
-                    <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-                      <motion.div animate={{ width: `${Math.min(100, (qadaDone / qadaOwed) * 100)}%` }}
-                        className="h-full bg-brand-gold rounded-full" />
-                    </div>
-                    <p className="text-white/40 text-[11px]">
-                      {qadaDone} done · {qadaRemaining === 0 ? 'all caught up — māshā\'Allāh! 🎉' : `${qadaRemaining} to go`}
-                    </p>
-                  </>
-                )}
-                <p className="text-white/25 text-[10px]">Log a day as "Qaḍā" from the fast-type picker to count it here.</p>
-                <RefLink r={OBLIGATORY_META[0]!.refs[0]!} />
-              </div>
-
-              {/* Kaffarah */}
-              <div className="rounded-2xl border border-purple-400/25 bg-purple-500/5 p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-purple-300 font-bold text-sm">⚖️ Kaffārah — expiation</p>
-                  <button
-                    onClick={() => updateProfile.mutate({ kaffarah: { active: !kaffarahActive, targetDays: summary?.profile.kaffarah.targetDays ?? 60 } })}
-                    className={`btn btn-xs border-0 ${kaffarahActive ? 'bg-white/10 text-white/50' : 'bg-purple-500 text-white'}`}
-                  >{kaffarahActive ? 'Stop tracking' : 'Start'}</button>
-                </div>
-                {kaffarahActive ? (
-                  <>
-                    <select
-                      value={summary?.profile.kaffarah.targetDays ?? 60}
-                      onChange={(e) => updateProfile.mutate({ kaffarah: { active: true, targetDays: parseInt(e.target.value, 10) } })}
-                      aria-label="Kaffarah target"
-                      className="select select-xs w-full bg-brand-deep border-brand-border text-white"
-                    >
-                      <option value={60}>60 consecutive days (Ramaḍān violation)</option>
-                      <option value={3}>3 days (broken oath)</option>
-                    </select>
-                    <p className="text-white/40 text-[11px]">
-                      Total done: <b className="text-white/70">{summary?.kaffarah.completed ?? 0}</b> · Current run:{' '}
-                      <b className={summary?.kaffarah.runStale ? 'text-red-400' : 'text-brand-emerald'}>
-                        {summary?.kaffarah.currentRun ?? 0}/{summary?.profile.kaffarah.targetDays ?? 60}
-                      </b>
-                    </p>
-                    <p className="text-white/25 text-[10px] leading-relaxed">
-                      The 60 days must be consecutive — an unexcused gap restarts the count.
-                      For a broken oath, feeding/clothing ten poor comes first; fasting 3 days only if unable.
-                      Consult a scholar for your situation.
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-white/30 text-[11px]">Only activate if this applies to you.</p>
-                )}
-                <div className="flex gap-2 flex-wrap">
-                  {OBLIGATORY_META[1]!.refs.map((r) => <RefLink key={r.url} r={r} />)}
-                </div>
-              </div>
-
-              {/* Vows */}
-              <div className="rounded-2xl border border-cyan-400/25 bg-cyan-500/5 p-4 space-y-2">
-                <p className="text-cyan-300 font-bold text-sm">🤝 Nadhr — vowed fasts</p>
-                {vows.map((v) => (
-                  <div key={v.id} className="flex items-center gap-2">
+              <div className="p-5 space-y-4">
+                {/* ── Qada ── */}
+                <div className="rounded-2xl border border-brand-gold/25 bg-brand-gold/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-9 h-9 rounded-xl bg-brand-gold/15 grid place-items-center text-lg shrink-0">🔄</span>
                     <div className="flex-1 min-w-0">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-white/60 truncate">{v.title}</span>
-                        <span className={v.completed >= v.targetDays ? 'text-brand-emerald font-bold' : 'text-white/40'}>
-                          {v.completed}/{v.targetDays}
-                        </span>
-                      </div>
-                      <div className="w-full bg-white/10 rounded-full h-1.5 mt-1 overflow-hidden">
-                        <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${Math.min(100, (v.completed / v.targetDays) * 100)}%` }} />
-                      </div>
+                      <p className="text-brand-gold font-bold text-sm leading-tight">Qaḍā — missed Ramaḍān days</p>
+                      <p className="text-white/30 text-[10px]">Quran 2:184 — make them up day by day</p>
                     </div>
-                    <button onClick={() => deleteVow.mutate(v.id)} aria-label={`Delete vow ${v.title}`}
-                      className="p-1 text-white/25 hover:text-red-400 shrink-0">
-                      <TrashIcon className="w-3.5 h-3.5" />
-                    </button>
                   </div>
-                ))}
-                <div className="flex gap-1.5 pt-1">
-                  <input
-                    value={vowTitle} onChange={(e) => setVowTitle(e.target.value)}
-                    placeholder="e.g. 3 days for shifa"
-                    aria-label="Vow description"
-                    className="input input-xs flex-1 bg-brand-deep border-brand-border text-white placeholder-white/20"
-                  />
-                  <input
-                    type="number" min="1" value={vowDays} onChange={(e) => setVowDays(e.target.value)}
-                    placeholder="days" aria-label="Vow days"
-                    className="input input-xs w-14 bg-brand-deep border-brand-border text-white placeholder-white/20 text-center"
-                  />
-                  <button onClick={submitVow} disabled={!vowTitle.trim() || !vowDays || addVow.isPending}
-                    className="btn btn-xs bg-cyan-500 text-white border-0 disabled:opacity-30">Add</button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white/40 text-xs">I owe</span>
+                    <input
+                      type="number" min="0" value={qadaInput}
+                      onChange={(e) => setQadaInput(e.target.value)}
+                      aria-label="Days owed"
+                      className="input input-sm w-20 bg-brand-deep border-brand-border text-white text-center font-bold"
+                    />
+                    <span className="text-white/40 text-xs">days</span>
+                    <button onClick={saveQadaOwed} className="btn btn-xs bg-brand-emerald text-white border-0 ml-auto">Save</button>
+                  </div>
+                  {qadaOwed > 0 && (
+                    <ManageProgress
+                      done={qadaDone}
+                      target={qadaOwed}
+                      color="#f59e0b"
+                      doneLabel={qadaRemaining === 0 ? "All made up — māshā'Allāh! 🎉" : `${qadaRemaining} day${qadaRemaining === 1 ? '' : 's'} remaining`}
+                    />
+                  )}
+                  <div className="flex gap-2 flex-wrap">
+                    {OBLIGATORY_META[0]!.refs.map((r) => <RefLink key={r.url} r={r} />)}
+                  </div>
                 </div>
-                <div className="flex gap-2 flex-wrap">
-                  {OBLIGATORY_META[2]!.refs.map((r) => <RefLink key={r.url} r={r} />)}
+
+                {/* ── Kaffarah ── */}
+                <div className="rounded-2xl border border-purple-400/25 bg-purple-500/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-9 h-9 rounded-xl bg-purple-500/15 grid place-items-center text-lg shrink-0">⚖️</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-purple-300 font-bold text-sm leading-tight">Kaffārah — expiation</p>
+                      <p className="text-white/30 text-[10px]">Consecutive days required (Bukhārī 1936)</p>
+                    </div>
+                    <button
+                      onClick={() => updateProfile.mutate({ kaffarah: { active: !kaffarahActive, targetDays: summary?.profile.kaffarah.targetDays ?? 60 } })}
+                      className={`btn btn-xs border-0 shrink-0 ${kaffarahActive ? 'bg-white/10 text-white/50' : 'bg-purple-500 text-white'}`}
+                    >{kaffarahActive ? 'Stop' : 'Start'}</button>
+                  </div>
+                  {kaffarahActive ? (
+                    <>
+                      <select
+                        value={summary?.profile.kaffarah.targetDays ?? 60}
+                        onChange={(e) => updateProfile.mutate({ kaffarah: { active: true, targetDays: parseInt(e.target.value, 10) } })}
+                        aria-label="Kaffarah target"
+                        className="select select-xs w-full bg-brand-deep border-brand-border text-white"
+                      >
+                        <option value={60}>60 consecutive days (Ramaḍān violation)</option>
+                        <option value={3}>3 days (broken oath)</option>
+                      </select>
+                      <ManageProgress
+                        done={summary?.kaffarah.currentRun ?? 0}
+                        target={summary?.profile.kaffarah.targetDays ?? 60}
+                        color="#a855f7"
+                        doneLabel={
+                          (summary?.kaffarah.currentRun ?? 0) >= (summary?.profile.kaffarah.targetDays ?? 60)
+                            ? 'Complete — māshā\'Allāh! 🎉'
+                            : `${Math.max(0, (summary?.profile.kaffarah.targetDays ?? 60) - (summary?.kaffarah.currentRun ?? 0))} consecutive days to go`
+                        }
+                        extra={`current run: ${summary?.kaffarah.currentRun ?? 0} · lifetime total: ${summary?.kaffarah.completed ?? 0}`}
+                      />
+                      {summary?.kaffarah.runStale && (summary?.kaffarah.completed ?? 0) > 0 && (
+                        <p className="text-red-400/90 text-[11px] rounded-lg bg-red-500/10 border border-red-500/25 px-2.5 py-1.5">
+                          ⚠️ Chain broken — an unexcused gap restarts the consecutive count.
+                          Log a fast today to start a new run. Consult a scholar about valid excuses.
+                        </p>
+                      )}
+                      <p className="text-white/25 text-[10px] leading-relaxed">
+                        For a broken oath, feeding/clothing ten poor people comes first — fasting
+                        3 days only if unable (Quran 5:89).
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-white/30 text-[11px]">Only activate if this applies to you.</p>
+                  )}
+                  <div className="flex gap-2 flex-wrap">
+                    {OBLIGATORY_META[1]!.refs.map((r) => <RefLink key={r.url} r={r} />)}
+                  </div>
+                </div>
+
+                {/* ── Vows ── */}
+                <div className="rounded-2xl border border-cyan-400/25 bg-cyan-500/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-9 h-9 rounded-xl bg-cyan-500/15 grid place-items-center text-lg shrink-0">🤝</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-cyan-300 font-bold text-sm leading-tight">Nadhr — vowed fasts</p>
+                      <p className="text-white/30 text-[10px]">"Whoever vows to obey Allah, let him obey Him" (Bukhārī 6696)</p>
+                    </div>
+                  </div>
+                  {vows.length === 0 && (
+                    <p className="text-white/30 text-[11px]">No vows yet. Add one below and it gets its own countdown.</p>
+                  )}
+                  {vows.map((v) => (
+                    <div key={v.id} className="rounded-xl bg-white/[0.04] border border-white/10 p-2.5 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <p className="text-white/70 text-xs font-bold flex-1 truncate">{v.title}</p>
+                        <button onClick={() => deleteVow.mutate(v.id)} aria-label={`Delete vow ${v.title}`}
+                          className="p-1 text-white/25 hover:text-red-400 shrink-0">
+                          <TrashIcon className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <ManageProgress
+                        done={v.completed}
+                        target={v.targetDays}
+                        color="#06b6d4"
+                        doneLabel={v.completed >= v.targetDays ? 'Fulfilled ✓' : `${v.targetDays - v.completed} day${v.targetDays - v.completed === 1 ? '' : 's'} remaining`}
+                      />
+                    </div>
+                  ))}
+                  <div className="flex gap-1.5 pt-1">
+                    <input
+                      value={vowTitle} onChange={(e) => setVowTitle(e.target.value)}
+                      placeholder="e.g. 3 days for shifa"
+                      aria-label="Vow description"
+                      className="input input-xs flex-1 bg-brand-deep border-brand-border text-white placeholder-white/20"
+                    />
+                    <input
+                      type="number" min="1" value={vowDays} onChange={(e) => setVowDays(e.target.value)}
+                      placeholder="days" aria-label="Vow days"
+                      className="input input-xs w-14 bg-brand-deep border-brand-border text-white placeholder-white/20 text-center"
+                    />
+                    <button onClick={submitVow} disabled={!vowTitle.trim() || !vowDays || addVow.isPending}
+                      className="btn btn-xs bg-cyan-500 text-white border-0 disabled:opacity-30">Add</button>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {OBLIGATORY_META[2]!.refs.map((r) => <RefLink key={r.url} r={r} />)}
+                  </div>
                 </div>
               </div>
             </motion.div>

@@ -194,27 +194,44 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
           </div>
         </div>
 
-        {/* 7-day heatmap */}
+        {/* 7-day heatmap with streak-status tags */}
         {last7.length > 0 && (
           <div className="mb-3">
             <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1.5 font-bold">Last 7 days</p>
             <div className="flex gap-1.5 items-end">
               {last7.map((day, i) => {
                 const isToday = i === last7.length - 1;
-                const color = heatmapColor(day.total, dailyGoal);
+                const color = day.status === 'grace'
+                  ? 'rgba(6,182,212,0.45)' // frozen — the streak survived this miss
+                  : day.status === 'missed'
+                  ? 'rgba(248,113,113,0.4)'
+                  : heatmapColor(day.total, dailyGoal);
                 const pct = dailyGoal ? Math.min(1, day.total / dailyGoal) : (day.total > 0 ? 0.6 : 0);
                 const height = 8 + Math.round(pct * 20); // 8–28px
+                const tagTip = day.status === 'grace'
+                  ? ' — 🧊 grace day (streak survived, you got a chance!)'
+                  : day.status === 'missed'
+                  ? ' — ✖ missed'
+                  : day.status === 'pending'
+                  ? ' — in progress'
+                  : '';
                 return (
                   <div
                     key={day.date}
                     className="tooltip flex-1"
-                    data-tip={`${formatShortDate(day.date)}: ${day.total.toLocaleString()} zikr${dailyGoal ? ` (${Math.round((day.total / dailyGoal) * 100)}% of goal)` : ''}`}
+                    data-tip={`${formatShortDate(day.date)}: ${day.total.toLocaleString()} zikr${dailyGoal ? ` (${Math.round((day.total / dailyGoal) * 100)}% of goal)` : ''}${tagTip}`}
                   >
+                    {/* Status tag above the bar */}
+                    <p className="text-center text-[10px] leading-none mb-0.5 h-3">
+                      {day.status === 'grace' && <span aria-label="grace day">🧊</span>}
+                      {day.status === 'missed' && <span className="text-red-400/80" aria-label="missed">✖</span>}
+                      {day.status === 'met' && <span className="text-brand-emerald/70" aria-label="goal met">✓</span>}
+                    </p>
                     <motion.div
                       initial={{ scaleY: 0 }}
                       animate={{ scaleY: 1 }}
                       transition={{ delay: i * 0.05, duration: 0.3, ease: 'easeOut' }}
-                      style={{ height, background: color, originY: 1 }}
+                      style={{ height: Math.max(height, day.status === 'grace' || day.status === 'missed' ? 12 : height), background: color, originY: 1 }}
                       className={`w-full rounded-t-sm ${isToday ? 'ring-1 ring-white/30' : ''}`}
                     />
                     <p className={`text-[9px] text-center mt-0.5 ${isToday ? 'text-white/60 font-bold' : 'text-white/20'}`}>
@@ -225,12 +242,12 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
               })}
             </div>
             {/* Legend */}
-            <div className="flex items-center gap-2 mt-1.5">
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               {[
-                { color: 'rgba(255,255,255,0.06)', label: '0' },
-                { color: 'rgba(245,158,11,0.55)', label: '<50%' },
-                { color: 'rgba(16,185,129,0.45)', label: '50%+' },
-                { color: 'rgba(16,185,129,0.85)', label: 'Goal' },
+                { color: 'rgba(16,185,129,0.85)', label: '✓ goal met' },
+                { color: 'rgba(6,182,212,0.45)', label: '🧊 grace (chance used)' },
+                { color: 'rgba(248,113,113,0.4)', label: '✖ missed' },
+                { color: 'rgba(245,158,11,0.55)', label: 'partial' },
               ].map(({ color, label }) => (
                 <div key={label} className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: color }} />
@@ -238,6 +255,9 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
                 </div>
               ))}
             </div>
+            <p className="text-[10px] text-white/25 mt-1">
+              🧊 grace day = you missed it but the streak survived. Backfill it from “Log Missed Counts” (up to 2 days back) to turn it green.
+            </p>
           </div>
         )}
 
