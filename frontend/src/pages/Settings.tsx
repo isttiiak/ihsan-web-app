@@ -12,7 +12,6 @@ import {
   SparklesIcon,
   MoonIcon,
   EyeIcon,
-  EyeDropperIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   LightBulbIcon,
@@ -394,16 +393,6 @@ export default function Settings() {
             </p>
           </SectionCard>
 
-          <SectionCard
-            icon={<EyeDropperIcon className="w-5 h-5 text-white/30" />}
-            title="About"
-            delay={0.3}
-          >
-            <p className="text-white/40 text-xs leading-relaxed">
-              Ihsan — worship tracking built with love for the Muslim community. Every hadith and
-              verse in the app links to its exact source on quran.com or sunnah.com.
-            </p>
-          </SectionCard>
         </div>
       </div>
     </AnimatedBackground>

@@ -17,6 +17,8 @@ import {
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
   ArrowLeftIcon,
+  InformationCircleIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 
 // ── Page metadata ─────────────────────────────────────────────────────────────
@@ -31,6 +33,8 @@ const PAGE_META: Record<string, { title: string; emoji: string }> = {
   '/quran':           { title: 'Quran Habit',     emoji: '📖' },
   '/friends':         { title: 'Friends',         emoji: '🤝' },
   '/settings':        { title: 'Settings',        emoji: '⚙️'  },
+  '/about':           { title: 'About Ihsan',     emoji: '🕌' },
+  '/privacy':         { title: 'Privacy',         emoji: '🔒' },
   '/profile':         { title: 'My Profile',      emoji: '👤' },
 };
 
@@ -46,6 +50,8 @@ const PARENT_ROUTES: Record<string, string> = {
   '/quran':           '/',
   '/friends':         '/',
   '/settings':        '/',
+  '/about':           '/',
+  '/privacy':         '/',
   '/profile':         '/',
 };
 
@@ -316,6 +322,22 @@ export default function Navbar() {
                       >
                         <Cog6ToothIcon className="w-4 h-4 text-white/40" />
                         Settings
+                      </Link>
+                      <Link
+                        to="/about"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/6 text-sm transition-colors"
+                      >
+                        <InformationCircleIcon className="w-4 h-4 text-brand-gold/60" />
+                        About Us
+                      </Link>
+                      <Link
+                        to="/privacy"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/6 text-sm transition-colors"
+                      >
+                        <ShieldCheckIcon className="w-4 h-4 text-cyan-300/60" />
+                        Privacy
                       </Link>
 
                       <div className="border-t border-brand-border/60 mt-1 pt-1">
