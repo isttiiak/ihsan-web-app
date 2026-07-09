@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
 import { useAuthStore } from '../store/useAuthStore.js';
@@ -180,9 +181,6 @@ export default function FastingTracker() {
   const qadaOwed = summary?.profile.qadaOwed ?? 0;
   const qadaDone = summary?.qadaCompleted ?? 0;
   const qadaRemaining = Math.max(0, qadaOwed - qadaDone);
-  const hasDebts = qadaOwed > 0 || kaffarahActive || vows.length > 0;
-
-  useEffect(() => { setQadaInput(String(qadaOwed)); }, [qadaOwed]);
 
   // Suhoor / iftar for the selected date (location optional)
   const dayTimes = useMemo(() => {
@@ -529,9 +527,14 @@ export default function FastingTracker() {
                         whileTap={{ scale: 0.93 }}
                         onClick={() => {
                           if (!user) { setShowGuestDialog(true); return; }
+                          if (log) {
+                            toast(`This day is already logged — remove it (🗑) to change its type.`, { id: 'fasting-capsule', icon: 'ℹ️' });
+                            return;
+                          }
                           if (c.id === 'qada') setCategory('qada');
                           else if (c.id === 'kaffarah') setCategory('kaffarah');
                           else { setCategory('nadhr'); setVowId(c.id.replace('vow-', '')); }
+                          toast.success(`Fast type set to ${c.label} — now tap "I fasted"`, { id: 'fasting-capsule', duration: 2500 });
                         }}
                         title={`${c.label}: ${c.done}/${c.target} done — tap to log this day as ${c.label}`}
                         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all ${
@@ -764,7 +767,13 @@ export default function FastingTracker() {
               ))}
             </div>
             <button
-              onClick={() => { if (!user) { setShowGuestDialog(true); return; } setShowManage(true); }}
+              onClick={() => {
+                if (!user) { setShowGuestDialog(true); return; }
+                // Seed the editor once on open — not on every refetch, which
+                // would wipe the input while the user is typing
+                setQadaInput(String(qadaOwed));
+                setShowManage(true);
+              }}
               aria-label="Manage make-up fasts and vows"
               title="Make-up fasts, kaffārah & vows"
               className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/10 px-3 flex flex-col items-center justify-center gap-1 text-white/40 hover:text-white transition-all"
