@@ -258,9 +258,10 @@ export default function QuranHabit() {
                 ) : (
                   <button
                     onClick={() => { setGoalInput(String(goal)); setEditingGoal(true); }}
+                    title="Your minimum daily reading — counts toward your Noor and the friends leaderboard"
                     className="flex items-center gap-1 text-white/40 hover:text-white text-[11px] font-semibold"
                   >
-                    <PencilIcon className="w-3 h-3" /> Goal: {goal}/day
+                    <PencilIcon className="w-3 h-3" /> Daily minimum: {goal} page{goal === 1 ? '' : 's'}
                   </button>
                 )}
               </div>

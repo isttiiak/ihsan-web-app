@@ -8,36 +8,37 @@ A modern Islamic productivity application to help Muslims track their daily Zikr
 
 ## ✨ Features
 
-### 🔢 Zikr Counter
+### 📿 Zikr Counter
+- Local-first tap counter with haptics, focus mode, and custom dhikr (with verified hadith references)
+- Daily goals and a fair streak system — miss one day and you get a grace chance 🧊; backfill up to 2 days to repair a streak
+- Analytics: trends, per-type breakdown, weekly heatmap with met/grace/missed tags
 
-- Beautiful, intuitive counter interface
-- Multiple Zikr types (SubhanAllah, Alhamdulillah, Allahu Akbar, La ilaha illallah)
-- Custom Zikr types support
-- Real-time count tracking
-- Smooth animations and haptic feedback
+### 🕌 Salat Tracker
+- All five fard prayers with on-time / kaza / missed states, location (mosque/jamaah/home), post-salat sunnah toggles
+- Nafl prayers (Tahajjud, Duha, Ishraq…) with authentic references
+- Streaks, per-prayer analytics, and a 90-day calendar
 
-### 🎯 Goals & Streaks
+### 🕐 Prayer Times
+- Calculated fully on-device (adhan, Moonsighting Committee) — GPS or city search, no external API
+- Live clock with current/next prayer, forbidden windows and nafl windows on an educational timeline
 
-- Set daily Zikr goals
-- Track current and longest streaks
-- Visual progress indicators
-- Goal achievement celebrations
-- Streak pause/resume feature
+### 🌙 Fasting Tracker
+- Fiqh-aware: qaḍā make-up counter, kaffārah (consecutive-day tracking), vowed fasts, and every sunnah day (Mon/Thu, White Days, ʿArafah, ʿĀshūrā…)
+- Blocks ḥarām days (Eids, Tashrīq) and warns on disliked ones — each rule cites its exact hadith
+- Intention auto-completes after iftar; month calendar; full analytics with editable history
 
-### 🌍 Worldwide Timezone Support
+### 📖 Quran Habit
+- One-tap page logging with a daily-minimum goal, reading streaks, and a khatm bookmark across the 604-page mushaf
+- Pace estimate for finishing your khatm, verified virtues of recitation
 
-- **Automatic timezone detection** - Works for users anywhere in the world
-- **Local midnight reset** - Daily reset occurs at user's local midnight
-- **Accurate analytics** - All data reflects user's local timezone
-- **Zero configuration** - Works automatically out of the box
+### 🤝 Friends — “So compete with one another in doing good” (Quran 2:148)
+- Connect via a single invite link; see each other's streaks and today's worship
+- A calm daily measure called **Noor** (max 100: prayers 50 · zikr streak 20 · Quran goal 20 · fasting 10) — today's Noor resets at midnight, all-time Noor only ever grows
 
-### 🎨 Modern UI/UX
-
-- Dark glassmorphism design
-- Vivid gradients and spiritual aesthetics
-- Smooth animations with Framer Motion
-- Responsive design (mobile, tablet, desktop)
-- Islamic-inspired color palette
+### 🌍 Built right
+- Hijri dates with a ±1-day moon-sighting adjustment; every quote linked to quran.com / sunnah.com with grading
+- Worldwide timezone-correct daily resets; celebration animations that respect reduced-motion
+- Full data ownership: export and per-feature deletion from Settings
 
 ---
 
@@ -194,22 +195,16 @@ No configuration needed - it just works! ✨
 
 ## 📝 API Endpoints
 
-### Zikr
+All routes are Bearer-token authenticated (Firebase) and zod-validated.
 
-- `POST /api/zikr/increment` - Increment Zikr count
-- `POST /api/zikr/increment/batch` - Batch increment
-- `GET /api/zikr/summary` - Get user summary
-- `GET /api/zikr/types` - Get Zikr types
-- `POST /api/zikr/types` - Add custom Zikr type
-
-### Analytics
-
-- `GET /api/analytics/analytics` - Get analytics data
-- `GET /api/analytics/goal` - Get user goal
-- `POST /api/analytics/goal` - Set/update goal
-- `GET /api/analytics/streak` - Get streak info
-- `POST /api/analytics/streak/pause` - Pause streak
-- `POST /api/analytics/streak/resume` - Resume streak
+| Area | Base | Highlights |
+|---|---|---|
+| Zikr | `/api/zikr` | `POST /increment/batch`, `GET /summary`, `GET\|POST /types`, `DELETE /all` |
+| Analytics | `/api/analytics` | `GET /` (charts + derived streak), `GET\|POST /goal`, `POST /streak/pause\|resume` |
+| Salat | `/api/salat` | `GET /?date=`, `PATCH /prayer`, `PATCH /nafl`, `GET /analytics?today=`, `DELETE /all` |
+| Fasting | `/api/fasting` | `PUT /log`, `GET /summary?today=`, `GET /history`, `PATCH /profile`, vows CRUD, `DELETE /all` |
+| Quran | `/api/quran` | `POST /read`, `GET /summary?today=`, `PATCH /profile`, `DELETE /all` |
+| Social | `/api/social` | `GET /summary` (leaderboard), `GET /noor`, `POST /connect`, `DELETE /friends/:uid` |
 
 ---
 

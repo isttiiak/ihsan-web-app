@@ -28,6 +28,8 @@ const FastingAnalytics = lazy(() => import('./pages/FastingAnalytics.js'));
 const PrayerTimes = lazy(() => import('./pages/PrayerTimes.js'));
 const QuranHabit = lazy(() => import('./pages/QuranHabit.js'));
 const IslamicSpecialDay = lazy(() => import('./pages/IslamicSpecialDay.js'));
+const Friends = lazy(() => import('./pages/Friends.js'));
+const ConnectFriend = lazy(() => import('./pages/ConnectFriend.js'));
 
 function RouteFallback() {
   return (
@@ -256,7 +258,7 @@ export default function App() {
 
   const { authLoading } = useAuthStore();
   const isAuthPage = ['/login', '/signup', '/auth/action'].includes(location.pathname);
-  const noFooterRoutes = ['/zikr', '/salat', '/salat/analytics', '/fasting', '/fasting/analytics', '/prayer-times', '/quran'];
+  const noFooterRoutes = ['/zikr', '/salat', '/salat/analytics', '/fasting', '/fasting/analytics', '/prayer-times', '/quran', '/friends'];
   const showFooter = !isAuthPage && !noFooterRoutes.includes(location.pathname);
 
   return (
@@ -289,6 +291,9 @@ export default function App() {
               <Route path="/settings" element={<Protected><Settings /></Protected>} />
               <Route path="/profile" element={<Protected><Profile /></Protected>} />
               <Route path="/special-day/:id" element={<IslamicSpecialDay />} />
+              <Route path="/friends" element={<Protected><Friends /></Protected>} />
+              {/* Public: handles guests itself (sign-in gate that returns here) */}
+              <Route path="/connect/:code" element={<ConnectFriend />} />
               <Route path="/login" element={<AuthSignIn />} />
               <Route path="/signup" element={<AuthSignUp />} />
               <Route path="/auth/action" element={<AuthAction />} />

@@ -442,6 +442,38 @@ export default function Home() {
           })}
         </div>
 
+        {/* ── Friends / Share activities ── */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="mb-12">
+          <Link to="/friends" className="block group">
+            <motion.div
+              whileHover={{ scale: 1.01, y: -3 }}
+              whileTap={{ scale: 0.99 }}
+              className="flex items-center gap-4 px-5 sm:px-7 py-5 rounded-3xl border border-brand-gold/25 bg-gradient-to-r from-brand-gold/10 via-white/[0.03] to-brand-emerald/10 backdrop-blur-xl overflow-hidden relative"
+            >
+              <motion.span
+                className="text-4xl shrink-0"
+                animate={{ rotate: [0, -8, 8, 0] }}
+                transition={{ duration: 3, repeat: Infinity, repeatDelay: 3 }}
+              >🤝</motion.span>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg sm:text-xl font-black text-white">Friends & Leaderboard</h2>
+                <p className="text-white/45 text-xs sm:text-sm">
+                  Connect with friends, share your streaks, and race each other to good deeds — Quran 2:148
+                </p>
+              </div>
+              <span className="shrink-0 px-4 py-2 rounded-xl bg-brand-gold/20 border border-brand-gold/40 text-brand-gold text-xs font-black group-hover:bg-brand-gold/30 transition-colors">
+                Compete →
+              </span>
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent pointer-events-none"
+                initial={{ x: '-100%' }}
+                whileHover={{ x: '100%' }}
+                transition={{ duration: 0.7 }}
+              />
+            </motion.div>
+          </Link>
+        </motion.div>
+
         <div className="text-center text-xs text-white/50">May your remembrance be constant.</div>
       </div>
     </AnimatedBackground>

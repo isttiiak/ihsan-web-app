@@ -7,6 +7,8 @@ import { useAuthStore } from '../store/useAuthStore.js';
 import { useZikrStore } from '../store/useZikrStore.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useSalatLog } from '../hooks/useSalatLog.js';
+import { useNoor } from '../hooks/useSocial.js';
+import { useUiStore } from '../store/useUiStore.js';
 import { StreakBadge, GoalBadge } from './StatusBadges.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
 import { getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
@@ -15,6 +17,7 @@ import {
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
   ArrowLeftIcon,
+  UserPlusIcon,
 } from '@heroicons/react/24/outline';
 
 // ── Page metadata ─────────────────────────────────────────────────────────────
@@ -27,6 +30,7 @@ const PAGE_META: Record<string, { title: string; emoji: string }> = {
   '/fasting/analytics': { title: 'Fasting Analytics', emoji: '📊' },
   '/prayer-times':    { title: 'Prayer Times',    emoji: '🕐' },
   '/quran':           { title: 'Quran Habit',     emoji: '📖' },
+  '/friends':         { title: 'Friends',         emoji: '🤝' },
   '/settings':        { title: 'Settings',        emoji: '⚙️'  },
   '/profile':         { title: 'My Profile',      emoji: '👤' },
 };
@@ -41,6 +45,7 @@ const PARENT_ROUTES: Record<string, string> = {
   '/fasting/analytics': '/fasting',
   '/prayer-times':    '/',
   '/quran':           '/',
+  '/friends':         '/',
   '/settings':        '/',
   '/profile':         '/',
 };
@@ -109,6 +114,13 @@ export default function Navbar() {
   const { data: analyticsData } = useAnalytics(1);
   const { data: salatLog }      = useSalatLog();
 
+  // Noor capsules: always on /friends; elsewhere per the Settings toggles
+  const { showNoorAllTime, showNoorToday } = useUiStore();
+  const onFriendsPage = location.pathname === '/friends';
+  const noorTodayVisible = onFriendsPage || showNoorToday;
+  const noorAllTimeVisible = onFriendsPage || showNoorAllTime;
+  const { data: noor } = useNoor(!!user && (noorTodayVisible || noorAllTimeVisible));
+
   const streak        = analyticsData?.streak?.currentStreak ?? null;
   const dailyGoal     = analyticsData?.goal?.dailyTarget ?? null;
   const confirmedTotal = analyticsData?.today?.total ?? 0;
@@ -147,6 +159,18 @@ export default function Navbar() {
           )}
           <GoalBadge pct={goalPct} met={goalMet} />
         </div>
+      );
+    }
+    if (location.pathname === '/friends') {
+      return (
+        <Link
+          to="/friends?invite=1"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-emerald/15 hover:bg-brand-emerald/25 border border-brand-emerald/40 text-brand-emerald text-xs font-bold transition-all whitespace-nowrap"
+        >
+          <UserPlusIcon className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Connect a friend</span>
+          <span className="sm:hidden">Connect</span>
+        </Link>
       );
     }
     if (location.pathname === '/salat') {
@@ -222,8 +246,26 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* ── Right: settings + theme + profile ─────────── */}
+          {/* ── Right: noor + profile ─────────────────────── */}
           <div className="flex items-center gap-0.5 flex-shrink-0">
+            {user && noor && (noorTodayVisible || noorAllTimeVisible) && (
+              <div className="flex items-center gap-1 mr-1">
+                {noorTodayVisible && (
+                  <div className="tooltip tooltip-bottom" data-tip="Today's Noor — fresh light every day, resets at midnight">
+                    <span className="px-2 py-0.5 rounded-full bg-brand-emerald/15 border border-brand-emerald/40 text-brand-emerald text-xs font-bold flex items-center gap-1 whitespace-nowrap">
+                      ✨ {noor.today}
+                    </span>
+                  </div>
+                )}
+                {noorAllTimeVisible && (
+                  <div className="tooltip tooltip-bottom" data-tip="All-time Noor — every day's light, gathered. Never resets">
+                    <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 border border-brand-gold/40 text-brand-gold text-xs font-bold flex items-center gap-1 whitespace-nowrap">
+                      🌟 {noor.allTime.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
             {/* Date display — home page only */}
             {isHome && user && (
               <div className="hidden md:flex flex-col items-end mr-2 shrink-0 px-2 py-1 rounded-xl bg-white/5 border border-brand-border/60">
