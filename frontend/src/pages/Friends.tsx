@@ -23,7 +23,7 @@ function Avatar({ f, size = 'w-10 h-10' }: { f: FriendStats; size?: string }) {
 }
 
 export default function Friends() {
-  const { data, isLoading } = useSocialSummary();
+  const { data, isLoading, isError, refetch } = useSocialSummary();
   const unfriend = useUnfriend();
   const [searchParams, setSearchParams] = useSearchParams();
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -119,7 +119,7 @@ export default function Friends() {
                   onClick={() => setInviteOpen(true)}
                   className="flex items-center gap-1 text-brand-emerald/70 hover:text-brand-emerald text-xs font-bold"
                 >
-                  <UserPlusIcon className="w-3.5 h-3.5" /> Invite
+                  <UserPlusIcon className="w-3.5 h-3.5" /> Invite a friend
                 </button>
               </div>
               {leaderboard.map((f, i) => {
@@ -277,7 +277,17 @@ export default function Friends() {
                   className="block text-brand-gold/60 text-[10px] underline not-italic mt-1">Quran 2:148 ↗</a>
               </p>
 
-              {inviteLink ? (
+              {isError ? (
+                <div className="text-center space-y-3 py-2">
+                  <p className="text-brand-gold/80 text-sm">
+                    Couldn't load your invite link — the server may still be waking up.
+                  </p>
+                  <button
+                    onClick={() => void refetch()}
+                    className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0"
+                  >Try again</button>
+                </div>
+              ) : inviteLink ? (
                 <>
                   <div className="flex gap-2">
                     <code className="flex-1 min-w-0 truncate px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-brand-emerald/90 text-xs">

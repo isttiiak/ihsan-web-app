@@ -164,6 +164,19 @@ export default function App() {
 
   useEffect(() => { checkAndResetIfNewDay(); }, [checkAndResetIfNewDay, location.pathname]);
 
+  // Google Analytics 4: SPA page views (the gtag loader in index.html sets
+  // send_page_view=false, so each route change is reported exactly once here)
+  useEffect(() => {
+    const w = window as unknown as { gtag?: (...args: unknown[]) => void; __IHSAN_GA_ID?: string };
+    if (w.gtag && w.__IHSAN_GA_ID) {
+      w.gtag('event', 'page_view', {
+        page_path: location.pathname + location.search,
+        page_location: window.location.href,
+        page_title: document.title,
+      });
+    }
+  }, [location.pathname, location.search]);
+
   useEffect(() => {
     init();
     const theme = localStorage.getItem('ihsan_theme') || 'ihsan';

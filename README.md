@@ -144,6 +144,7 @@ cp .env.example .env
 # - VITE_FIREBASE_STORAGE_BUCKET
 # - VITE_FIREBASE_MESSAGING_SENDER_ID
 # - VITE_FIREBASE_APP_ID
+# - VITE_GA_MEASUREMENT_ID   (optional — Google Analytics 4, e.g. G-XXXXXXXXXX)
 
 # Start frontend
 npm run dev

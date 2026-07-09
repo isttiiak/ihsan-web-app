@@ -17,7 +17,6 @@ import {
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
   ArrowLeftIcon,
-  UserPlusIcon,
 } from '@heroicons/react/24/outline';
 
 // ── Page metadata ─────────────────────────────────────────────────────────────
@@ -159,18 +158,6 @@ export default function Navbar() {
           )}
           <GoalBadge pct={goalPct} met={goalMet} />
         </div>
-      );
-    }
-    if (location.pathname === '/friends') {
-      return (
-        <Link
-          to="/friends?invite=1"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-emerald/15 hover:bg-brand-emerald/25 border border-brand-emerald/40 text-brand-emerald text-xs font-bold transition-all whitespace-nowrap"
-        >
-          <UserPlusIcon className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Connect a friend</span>
-          <span className="sm:hidden">Connect</span>
-        </Link>
       );
     }
     if (location.pathname === '/salat') {

@@ -92,6 +92,12 @@ export default function Settings() {
   const queryClient = useQueryClient();
 
   const [hijriAdj, setHijriAdjState] = useState(getHijriAdjustment());
+  const [savedLocation, setSavedLocation] = useState<string | null>(() => {
+    try {
+      const s = localStorage.getItem('ihsan_location');
+      return s ? ((JSON.parse(s) as { name?: string }).name ?? 'Saved location') : null;
+    } catch { return null; }
+  });
   const [suggestions, setSuggestions] = useState<AiSuggestionsResponse | null>(null);
   const [loadingSuggest, setLoadingSuggest] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -326,6 +332,27 @@ export default function Settings() {
                 Import
                 <input type="file" accept="application/json" className="hidden" onChange={(e) => void importProfile(e)} />
               </label>
+            </div>
+
+            {/* Saved prayer location (stored only in this browser) */}
+            <div className="flex items-center gap-3 p-2.5 rounded-xl border border-brand-border bg-brand-deep/40 mb-5">
+              <span className="text-lg shrink-0">📍</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-white/70 text-sm font-semibold">Prayer times location</p>
+                <p className="text-white/30 text-[11px] truncate">
+                  {savedLocation ? `${savedLocation} — stored only in this browser` : 'Not set — choose one on the Prayer Times page'}
+                </p>
+              </div>
+              {savedLocation && (
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('ihsan_location');
+                    setSavedLocation(null);
+                    toast.success('Saved location cleared.');
+                  }}
+                  className="btn btn-xs btn-ghost text-white/40 hover:text-red-400 shrink-0"
+                >Clear</button>
+              )}
             </div>
 
             <p className="text-red-400/70 text-[11px] uppercase tracking-widest font-bold mb-2">Danger zone — cannot be undone</p>
