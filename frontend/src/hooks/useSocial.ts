@@ -100,3 +100,24 @@ export function useUnfriend() {
     onError: () => toast.error('Could not remove friend — try again.', { id: 'social-unfriend' }),
   });
 }
+
+export interface FriendListItem {
+  uid: string;
+  displayName: string;
+  photoUrl?: string;
+  connectedSince: string | null;
+}
+
+/** Full friend list with join dates — for the "See friends" manage view. */
+export function useFriendsList(enabled: boolean) {
+  const user = useAuthStore((s) => s.user);
+  return useQuery({
+    queryKey: ['social', 'friends'],
+    queryFn: async () => {
+      const { data } = await api.get<{ ok: boolean; friends: FriendListItem[] }>('/api/social/friends');
+      return data.friends;
+    },
+    enabled: !!user && enabled,
+    staleTime: 60_000,
+  });
+}

@@ -4,31 +4,167 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import { streakVisual } from '../components/StatusBadges.js';
-import { ClipboardDocumentIcon, CheckIcon, XMarkIcon, ChevronDownIcon, UserPlusIcon } from '@heroicons/react/24/outline';
-import { useSocialSummary, useUnfriend, FriendStats } from '../hooks/useSocial.js';
+import { ClipboardDocumentIcon, CheckIcon, XMarkIcon, ChevronDownIcon, UserPlusIcon, UsersIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { useSocialSummary, useUnfriend, useFriendsList } from '../hooks/useSocial.js';
 
 const RANK_BADGE = ['🥇', '🥈', '🥉'];
 
-function Avatar({ f, size = 'w-10 h-10' }: { f: FriendStats; size?: string }) {
-  if (f.photoUrl) {
-    return <img src={f.photoUrl} alt="" className={`${size} rounded-full object-cover ring-2 ring-white/15 shrink-0`} />;
+function Avatar({ name, photoUrl, size = 'w-10 h-10' }: { name: string; photoUrl?: string; size?: string }) {
+  if (photoUrl) {
+    return <img src={photoUrl} alt="" className={`${size} rounded-full object-cover ring-2 ring-white/15 shrink-0`} />;
   }
   return (
     <div className={`${size} rounded-full bg-brand-emerald/20 ring-2 ring-brand-emerald/30 grid place-items-center shrink-0`}>
       <span className="text-sm font-black text-brand-emerald">
-        {f.displayName?.[0]?.toUpperCase() ?? '؟'}
+        {name?.[0]?.toUpperCase() ?? '؟'}
       </span>
     </div>
   );
 }
 
+function formatConnectedSince(iso: string | null): string {
+  if (!iso) return 'Connected a while ago';
+  const d = new Date(iso);
+  return `Connected since ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+}
+
+/** Manage-friends modal: full list, connected-since date, two-step confirm delete. */
+function ManageFriendsModal({ onClose }: { onClose: () => void }) {
+  const { data: friends, isLoading } = useFriendsList(true);
+  const unfriend = useUnfriend();
+  // Two-step confirm: null → "confirm-1" (Remove?) → "confirm-2" (Are you sure?) → delete
+  const [confirmStep, setConfirmStep] = useState<{ uid: string; step: 1 | 2 } | null>(null);
+
+  const startConfirm = (uid: string) => setConfirmStep({ uid, step: 1 });
+  const advanceConfirm = (uid: string) => setConfirmStep({ uid, step: 2 });
+  const cancelConfirm = () => setConfirmStep(null);
+  const finalizeRemove = (uid: string) => {
+    unfriend.mutate(uid);
+    setConfirmStep(null);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+        transition={{ type: 'spring', damping: 26 }}
+        className="bg-brand-surface rounded-3xl p-6 w-full max-w-md shadow-2xl border border-brand-emerald/30 space-y-4 max-h-[80vh] overflow-y-auto"
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <span className="text-3xl">👥</span>
+            <div>
+              <h3 className="text-lg font-black text-white leading-tight">Your friends</h3>
+              <p className="text-white/35 text-[11px]">
+                {friends ? `${friends.length} connected` : 'Loading…'}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="text-white/30 hover:text-white p-1">
+            <XMarkIcon className="w-5 h-5" />
+          </button>
+        </div>
+
+        {isLoading ? (
+          <div className="grid place-items-center py-8">
+            <span className="loading loading-spinner text-brand-emerald" />
+          </div>
+        ) : !friends || friends.length === 0 ? (
+          <div className="text-center py-6 space-y-1.5">
+            <p className="text-3xl">🌱</p>
+            <p className="text-white/50 text-sm">No friends connected yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {friends.map((f) => {
+              const confirming = confirmStep?.uid === f.uid;
+              return (
+                <div
+                  key={f.uid}
+                  className={`rounded-2xl border p-3 transition-colors ${
+                    confirming ? 'border-red-500/40 bg-red-500/[0.06]' : 'border-white/10 bg-white/[0.04]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar name={f.displayName} photoUrl={f.photoUrl} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-bold text-sm truncate">{f.displayName}</p>
+                      <p className="text-white/35 text-[11px]">{formatConnectedSince(f.connectedSince)}</p>
+                    </div>
+                    {!confirming && (
+                      <button
+                        onClick={() => startConfirm(f.uid)}
+                        aria-label={`Remove ${f.displayName}`}
+                        title="Remove friend"
+                        className="p-2 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 shrink-0"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <AnimatePresence>
+                    {confirming && confirmStep?.step === 1 && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+                          <p className="text-white/60 text-xs">Remove {f.displayName} from your friends?</p>
+                          <div className="flex gap-1.5 shrink-0">
+                            <button onClick={cancelConfirm} className="btn btn-xs btn-ghost text-white/50">Cancel</button>
+                            <button
+                              onClick={() => advanceConfirm(f.uid)}
+                              className="btn btn-xs bg-red-500/80 hover:bg-red-500 text-white border-0"
+                            >Remove</button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                    {confirming && confirmStep?.step === 2 && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-3 pt-3 border-t border-red-500/20 space-y-2">
+                          <p className="text-red-300/90 text-xs font-semibold">
+                            Are you sure? This removes the connection for both of you — {f.displayName} won't see your
+                            stats anymore, and you'll need a new invite link to reconnect.
+                          </p>
+                          <div className="flex gap-1.5 justify-end">
+                            <button onClick={cancelConfirm} className="btn btn-xs btn-ghost text-white/50">Cancel</button>
+                            <button
+                              onClick={() => finalizeRemove(f.uid)}
+                              disabled={unfriend.isPending}
+                              className="btn btn-xs bg-red-500 hover:bg-red-600 text-white border-0"
+                            >
+                              {unfriend.isPending ? <span className="loading loading-spinner loading-xs" /> : 'Yes, remove'}
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function Friends() {
   const { data, isLoading, isError, refetch } = useSocialSummary();
-  const unfriend = useUnfriend();
   const [searchParams, setSearchParams] = useSearchParams();
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [howOpen, setHowOpen] = useState(false);
 
   // The navbar "Connect a friend" button links to /friends?invite=1
@@ -115,12 +251,20 @@ export default function Friends() {
                 <p className="text-white/30 text-xs font-semibold uppercase tracking-wide">
                   Today's circle <span className="normal-case font-normal">— you + {friendsCount} friend{friendsCount === 1 ? '' : 's'}</span>
                 </p>
-                <button
-                  onClick={() => setInviteOpen(true)}
-                  className="flex items-center gap-1 text-brand-emerald/70 hover:text-brand-emerald text-xs font-bold"
-                >
-                  <UserPlusIcon className="w-3.5 h-3.5" /> Invite a friend
-                </button>
+                <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    onClick={() => setManageOpen(true)}
+                    className="flex items-center gap-1 text-white/40 hover:text-white text-xs font-bold"
+                  >
+                    <UsersIcon className="w-3.5 h-3.5" /> See friends
+                  </button>
+                  <button
+                    onClick={() => setInviteOpen(true)}
+                    className="flex items-center gap-1 text-brand-emerald/70 hover:text-brand-emerald text-xs font-bold"
+                  >
+                    <UserPlusIcon className="w-3.5 h-3.5" /> Invite a friend
+                  </button>
+                </div>
               </div>
               {leaderboard.map((f, i) => {
                 const sv = streakVisual(f.zikrState, f.zikrStreak);
@@ -140,7 +284,7 @@ export default function Friends() {
                       <span className="w-7 text-center text-lg font-black shrink-0">
                         {RANK_BADGE[i] ?? <span className="text-white/30 text-sm">{i + 1}</span>}
                       </span>
-                      <Avatar f={f} />
+                      <Avatar name={f.displayName} photoUrl={f.photoUrl} />
                       <div className="flex-1 min-w-0">
                         <p className="text-white font-bold text-sm truncate">
                           {f.displayName}
@@ -158,21 +302,6 @@ export default function Friends() {
                           <span className="text-white/70 text-xs font-black tabular-nums w-10 text-right">✨{f.score}</span>
                         </div>
                       </div>
-                      {!f.isMe && (
-                        confirmRemove === f.uid ? (
-                          <button
-                            onClick={() => { unfriend.mutate(f.uid); setConfirmRemove(null); }}
-                            className="px-2 py-1 rounded-lg bg-red-500 text-white text-[10px] font-bold shrink-0"
-                          >Remove?</button>
-                        ) : (
-                          <button
-                            onClick={() => { setConfirmRemove(f.uid); setTimeout(() => setConfirmRemove((c) => (c === f.uid ? null : c)), 2500); }}
-                            aria-label={`Remove ${f.displayName}`}
-                            title="Remove friend"
-                            className="p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 shrink-0"
-                          ><XMarkIcon className="w-4 h-4" /></button>
-                        )
-                      )}
                     </div>
                     {/* Stat chips — prayer, zikr streak, today's zikr, fasted today, quran pages */}
                     <div className="flex flex-wrap gap-1.5 mt-2.5 pl-10">
@@ -305,7 +434,7 @@ export default function Friends() {
                   <div className="space-y-1.5 text-[11px] text-white/40 leading-relaxed">
                     <p>📤 Send it over WhatsApp, Messenger — anywhere.</p>
                     <p>🔗 The link stays the same — one link works for all your friends.</p>
-                    <p>🔒 Friends see your streaks and daily worship — never your logs or notes. Remove anyone anytime.</p>
+                    <p>🔒 Friends see your streaks and daily worship — never your logs or notes. Remove anyone anytime from "See friends".</p>
                   </div>
                 </>
               ) : (
@@ -316,6 +445,11 @@ export default function Friends() {
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* ── Manage friends modal ── */}
+      <AnimatePresence>
+        {manageOpen && <ManageFriendsModal onClose={() => setManageOpen(false)} />}
       </AnimatePresence>
     </AnimatedBackground>
   );

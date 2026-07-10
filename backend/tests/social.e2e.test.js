@@ -113,6 +113,21 @@ describe("Social API (share activities)", () => {
     expect(res.body.allTime).toBe(40);
   });
 
+  test("friends list returns the connection with a connectedSince date", async () => {
+    const res = await asA(request(app).get(`/api/social/friends`));
+    expect(res.status).toBe(200);
+    expect(res.body.friends).toHaveLength(1);
+    expect(res.body.friends[0].uid).toBe("bilal");
+    expect(res.body.friends[0].displayName).toBe("Bilal");
+    expect(res.body.friends[0].connectedSince).not.toBeNull();
+    expect(new Date(res.body.friends[0].connectedSince).getTime()).not.toBeNaN();
+
+    // Symmetric on Bilal's side too
+    const resB = await asB(request(app).get(`/api/social/friends`));
+    expect(resB.body.friends).toHaveLength(1);
+    expect(resB.body.friends[0].uid).toBe("amir");
+  });
+
   test("unfriend removes the connection on both sides", async () => {
     const res = await asA(request(app).delete(`/api/social/friends/bilal`));
     expect(res.status).toBe(200);
@@ -121,5 +136,11 @@ describe("Social API (share activities)", () => {
     const sumB = await asB(request(app).get(`/api/social/summary?today=2026-07-09&timezoneOffset=360`));
     expect(sumA.body.leaderboard).toHaveLength(1);
     expect(sumB.body.leaderboard).toHaveLength(1);
+
+    // Friends list is now empty on both sides
+    const listA = await asA(request(app).get(`/api/social/friends`));
+    const listB = await asB(request(app).get(`/api/social/friends`));
+    expect(listA.body.friends).toHaveLength(0);
+    expect(listB.body.friends).toHaveLength(0);
   });
 });

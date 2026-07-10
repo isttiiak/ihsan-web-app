@@ -15,6 +15,9 @@ router.get('/noor', requireAuth, validate(socialSummarySchema), socialController
 // POST /api/social/connect { code } — connect with the invite link's owner
 router.post('/connect', requireAuth, validate(connectSchema), socialController.connect);
 
+// GET /api/social/friends — friend list with connected-since dates (manage view)
+router.get('/friends', requireAuth, socialController.getFriendsList);
+
 // DELETE /api/social/friends/:friendUid — mutual disconnect
 router.delete('/friends/:friendUid', requireAuth, socialController.unfriend);
 

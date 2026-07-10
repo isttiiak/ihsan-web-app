@@ -205,7 +205,7 @@ All routes are Bearer-token authenticated (Firebase) and zod-validated.
 | Salat | `/api/salat` | `GET /?date=`, `PATCH /prayer`, `PATCH /nafl`, `GET /analytics?today=`, `DELETE /all` |
 | Fasting | `/api/fasting` | `PUT /log`, `GET /summary?today=`, `GET /history`, `PATCH /profile`, vows CRUD, `DELETE /all` |
 | Quran | `/api/quran` | `POST /read`, `GET /summary?today=`, `PATCH /profile`, `DELETE /all` |
-| Social | `/api/social` | `GET /summary` (leaderboard), `GET /noor`, `POST /connect`, `DELETE /friends/:uid` |
+| Social | `/api/social` | `GET /summary` (leaderboard), `GET /noor`, `GET /friends` (list + join date), `POST /connect`, `DELETE /friends/:uid` |
 
 ---
 

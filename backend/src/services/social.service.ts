@@ -56,10 +56,17 @@ export async function connectByCode(userId: string, code: string): Promise<Conne
     if (mine.friends.length >= MAX_FRIENDS || owner.friends.length >= MAX_FRIENDS) {
       return { ok: false, message: 'Friend limit reached.' };
     }
-    // Mutual connection, atomic on each side
+    const now = new Date();
+    // Mutual connection, atomic on each side — record the join date for both
     await Promise.all([
-      SocialProfile.updateOne({ userId }, { $addToSet: { friends: owner.userId } }),
-      SocialProfile.updateOne({ userId: owner.userId }, { $addToSet: { friends: userId } }),
+      SocialProfile.updateOne(
+        { userId },
+        { $addToSet: { friends: owner.userId }, $set: { [`friendSince.${owner.userId}`]: now } }
+      ),
+      SocialProfile.updateOne(
+        { userId: owner.userId },
+        { $addToSet: { friends: userId }, $set: { [`friendSince.${userId}`]: now } }
+      ),
     ]);
   }
 
@@ -74,10 +81,56 @@ export async function connectByCode(userId: string, code: string): Promise<Conne
 
 export async function unfriend(userId: string, friendUid: string): Promise<{ ok: boolean }> {
   await Promise.all([
-    SocialProfile.updateOne({ userId }, { $pull: { friends: friendUid } }),
-    SocialProfile.updateOne({ userId: friendUid }, { $pull: { friends: userId } }),
+    SocialProfile.updateOne(
+      { userId },
+      { $pull: { friends: friendUid }, $unset: { [`friendSince.${friendUid}`]: '' } }
+    ),
+    SocialProfile.updateOne(
+      { userId: friendUid },
+      { $pull: { friends: userId }, $unset: { [`friendSince.${userId}`]: '' } }
+    ),
   ]);
   return { ok: true };
+}
+
+// ─── Friends list (manage view) ──────────────────────────────────────────────
+
+export interface FriendListItem {
+  uid: string;
+  displayName: string;
+  photoUrl?: string;
+  /** ISO date the friendship began; null for connections made before this field existed */
+  connectedSince: string | null;
+}
+
+export async function getFriendsList(userId: string): Promise<FriendListItem[]> {
+  const profile = await getOrCreateProfile(userId);
+  if (profile.friends.length === 0) return [];
+
+  const users = await User.find({ uid: { $in: profile.friends } }).select('uid displayName photoUrl');
+  const byUid = new Map(users.map((u) => [u.uid, u]));
+
+  const list = profile.friends.map((uid) => {
+    const u = byUid.get(uid);
+    const photo = u?.photoUrl;
+    const since = profile.friendSince?.get(uid);
+    return {
+      uid,
+      displayName: u?.displayName || 'Ihsan user',
+      ...(photo && /^https?:\/\//.test(photo) ? { photoUrl: photo } : {}),
+      connectedSince: since ? since.toISOString() : null,
+    };
+  });
+
+  // Newest connections first; undated (legacy) connections last
+  list.sort((a, b) => {
+    if (!a.connectedSince && !b.connectedSince) return a.displayName.localeCompare(b.displayName);
+    if (!a.connectedSince) return 1;
+    if (!b.connectedSince) return -1;
+    return b.connectedSince.localeCompare(a.connectedSince);
+  });
+
+  return list;
 }
 
 // ─── Leaderboard ──────────────────────────────────────────────────────────────

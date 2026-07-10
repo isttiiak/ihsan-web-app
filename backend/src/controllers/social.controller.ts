@@ -37,3 +37,10 @@ export const unfriend = async (req: Request, res: Response, next: NextFunction):
     res.json(result);
   } catch (err) { next(err); }
 };
+
+export const getFriendsList = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const friends = await socialService.getFriendsList(req.user.uid);
+    res.json({ ok: true, friends });
+  } catch (err) { next(err); }
+};
