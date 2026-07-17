@@ -90,4 +90,6 @@ export interface AuthUser {
   displayName: string | null;
   photoUrl?: string | null;
   emailVerified?: boolean;
+  /** From the DB profile — gates the Rayhanah Cycle entry (female only) */
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_say';
 }

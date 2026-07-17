@@ -374,12 +374,16 @@ export default function Profile() {
           ...(user ?? { uid: '', email: null }),
           displayName: data.user.displayName || profile.displayName,
           photoUrl: data.user.photoUrl || profile.photoUrl,
+          // Gender gates the Rayhanah Cycle menu entry — reflect it immediately
+          gender: (data.user.gender || profile.gender || undefined) as
+            'male' | 'female' | 'other' | 'prefer_not_say' | undefined,
         };
         setUser(updatedAuthUser);
         localStorage.setItem('ihsan_user', JSON.stringify({
           ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'),
           displayName: updatedAuthUser.displayName,
           photoUrl: updatedAuthUser.photoUrl,
+          gender: updatedAuthUser.gender,
         }));
         setSaveSuccess(true);
         if (saveSuccessTimeout.current) clearTimeout(saveSuccessTimeout.current);

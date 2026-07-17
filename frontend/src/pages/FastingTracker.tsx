@@ -6,6 +6,8 @@ import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { celebrateFast } from '../utils/celebrate.js';
+import { useCycleActive } from '../hooks/useCycle.js';
+import ExcusedCard from '../components/ExcusedCard.js';
 import {
   ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, TrashIcon, XMarkIcon,
   Cog6ToothIcon, CalendarDaysIcon,
@@ -132,6 +134,7 @@ const SPARKLES = [
 // ─── component ────────────────────────────────────────────────────────────────
 
 export default function FastingTracker() {
+  const cycleActive = useCycleActive();
   const navigate = useNavigate();
   const { user } = useAuthStore();
 
@@ -492,6 +495,11 @@ export default function FastingTracker() {
             })}
           </div>
 
+          {/* Rayhanah days — fasting excused now, made up later */}
+          {cycleActive && selectedDate >= cycleActive.startDate ? (
+            <ExcusedCard feature="fasting" />
+          ) : (
+          <>
           {/* ── HERO card ── */}
           <motion.div
             layout
@@ -746,6 +754,9 @@ export default function FastingTracker() {
             <p className="text-brand-gold/60 text-[11px] px-2 leading-relaxed">
               ⚠️ {ruling.cautions.map((c) => c.info.label).join(' · ')} — we'll remind you before logging.
             </p>
+          )}
+
+          </>
           )}
 
           {/* ── Progress chips + manage ── */}

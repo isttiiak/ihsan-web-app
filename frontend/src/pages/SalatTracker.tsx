@@ -24,6 +24,8 @@ import {
 } from '../utils/prayerTimes.js';
 import { isFriday, getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
+import { useCycleActive } from '../hooks/useCycle.js';
+import ExcusedCard from '../components/ExcusedCard.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -111,6 +113,7 @@ function getDefaultDate(): string {
 }
 
 export default function SalatTracker() {
+  const cycleActive = useCycleActive();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [selectedDate, setSelectedDate] = useState(getDefaultDate);
@@ -315,6 +318,11 @@ export default function SalatTracker() {
             </motion.button>
           </div>
 
+          {/* Rayhanah days — salat fully excused (never made up) */}
+          {cycleActive && selectedDate >= cycleActive.startDate ? (
+            <ExcusedCard feature="salat" />
+          ) : (
+          <>
           {/* Progress bar */}
           <div className="card bg-gradient-to-br from-brand-emerald/10 to-brand-deep border border-brand-emerald/20 rounded-2xl">
             <div className="card-body p-4">
@@ -740,6 +748,8 @@ export default function SalatTracker() {
               </div>
             </div>
           </div>
+          </>
+          )}
 
         </div>
       </div>

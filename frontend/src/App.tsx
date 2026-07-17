@@ -32,6 +32,7 @@ const Friends = lazy(() => import('./pages/Friends.js'));
 const ConnectFriend = lazy(() => import('./pages/ConnectFriend.js'));
 const About = lazy(() => import('./pages/About.js'));
 const Privacy = lazy(() => import('./pages/Privacy.js'));
+const RayhanahCycle = lazy(() => import('./pages/RayhanahCycle.js'));
 
 function RouteFallback() {
   return (
@@ -257,11 +258,12 @@ export default function App() {
           } else {
             // Reconcile with the DB profile (user may have edited name/photo there)
             try {
-              const verifyData = await verifyRes.json() as { user?: { displayName?: string; photoUrl?: string } };
+              const verifyData = await verifyRes.json() as { user?: { displayName?: string; photoUrl?: string; gender?: AuthUser['gender'] } };
               const authUser: AuthUser = {
                 ...optimistic,
                 displayName: verifyData?.user?.displayName || optimistic.displayName,
                 photoUrl: verifyData?.user?.photoUrl || optimistic.photoUrl,
+                gender: verifyData?.user?.gender ?? optimistic.gender,
               };
               localStorage.setItem('ihsan_user', JSON.stringify(authUser));
               setUser(authUser);
@@ -324,6 +326,7 @@ export default function App() {
               <Route path="/profile" element={<Protected><Profile /></Protected>} />
               <Route path="/special-day/:id" element={<IslamicSpecialDay />} />
               <Route path="/friends" element={<Protected><Friends /></Protected>} />
+              <Route path="/cycle" element={<Protected><RayhanahCycle /></Protected>} />
               {/* Public: handles guests itself (sign-in gate that returns here) */}
               <Route path="/connect/:code" element={<ConnectFriend />} />
               <Route path="/about" element={<About />} />

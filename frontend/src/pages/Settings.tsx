@@ -30,6 +30,7 @@ const DATA_TARGETS = [
   { id: 'salat',   label: 'Salat logs',   emoji: '🕌', endpoint: '/api/salat/all',   detail: 'Every prayer log and its analytics' },
   { id: 'fasting', label: 'Fasting data', emoji: '🌙', endpoint: '/api/fasting/all', detail: 'All fasts, qaḍā/kaffārah progress & vows' },
   { id: 'quran',   label: 'Quran data',   emoji: '📖', endpoint: '/api/quran/all',   detail: 'Reading logs, streak & khatm bookmark' },
+  { id: 'cycle',   label: 'Rayhanah Cycle data', emoji: '🌸', endpoint: '/api/cycle/all', detail: 'All cycle history and settings — visible only to you' },
 ] as const;
 
 function SectionCard({ icon, title, subtitle, delay, children }: {

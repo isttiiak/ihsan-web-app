@@ -340,6 +340,17 @@ export default function Navbar() {
                         Privacy
                       </Link>
 
+                      {user.gender === 'female' && (
+                        <Link
+                          to="/cycle"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-pink-500/10 text-sm transition-colors"
+                        >
+                          <span className="w-4 h-4 grid place-items-center text-pink-300/90 text-sm leading-none">🌸</span>
+                          Rayhanah Cycle
+                        </Link>
+                      )}
+
                       <div className="border-t border-brand-border/60 mt-1 pt-1">
                         <button
                           className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 text-sm transition-colors"

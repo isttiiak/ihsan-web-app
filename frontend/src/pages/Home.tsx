@@ -16,6 +16,7 @@ import {
   PRAYER_META,
 } from '../utils/prayerTimes.js';
 import { getTodaySpecialDays } from '../utils/islamicCalendar.js';
+import { useCycleActive } from '../hooks/useCycle.js';
 
 interface ActivityItem {
   id: string;
@@ -128,6 +129,8 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prayerNow.getMinutes()]); // recalc every minute is enough for widget
 
+  const cycleActive = useCycleActive();
+
   const activities: ActivityItem[] = [
     {
       id: 'zikr',
@@ -149,7 +152,9 @@ export default function Home() {
       icon: '🕌',
       title: 'Salat Tracker',
       description: 'Track your daily prayers',
-      stats: { label: 'Today', value: salatCompletedToday !== null ? `${salatCompletedToday}/5` : '—/5' },
+      stats: cycleActive
+        ? { label: 'Rayhanah', value: '🌸 Excused' }
+        : { label: 'Today', value: salatCompletedToday !== null ? `${salatCompletedToday}/5` : '—/5' },
       action: 'Track Prayer',
       link: '/salat',
       accentColor: 'var(--brand-emerald, #10b981)',
@@ -160,10 +165,12 @@ export default function Home() {
       icon: '🌙',
       title: 'Fasting Tracker',
       description: 'Sunnah fasts, qaḍā, kaffārah & vows',
-      stats: {
-        label: 'This month',
-        value: fastingSummary ? `${fastingSummary.stats.thisMonth} fasts` : '—',
-      },
+      stats: cycleActive
+        ? { label: 'Rayhanah', value: '🌸 Excused' }
+        : {
+            label: 'This month',
+            value: fastingSummary ? `${fastingSummary.stats.thisMonth} fasts` : '—',
+          },
       action: 'Track Fasting',
       link: '/fasting',
       accentColor: 'var(--brand-gold, #f59e0b)',
@@ -192,6 +199,22 @@ export default function Home() {
     <AnimatedBackground variant="dark">
       <h1 className="sr-only">Ihsan — Islamic Productivity</h1>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+        {/* Rayhanah days banner — female users with an active cycle */}
+        {cycleActive && (
+          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <Link to="/cycle">
+              <div className="rounded-2xl border border-pink-400/25 bg-gradient-to-r from-pink-500/15 via-rose-500/10 to-purple-500/10 px-5 py-4 hover:border-pink-300/40 transition-all">
+                <p className="text-pink-100 font-bold text-sm">
+                  🌸 Rayhanah day {cycleActive.dayCount} — your reward flows on
+                </p>
+                <p className="text-white/40 text-xs mt-1">
+                  Salat & fasting are lifted from you — open your Garden of Light for today's dhikr, Quran & ṣalawāt →
+                </p>
+              </div>
+            </Link>
+          </motion.div>
+        )}
 
         {/* Prayer times widget / location CTA */}
         <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">

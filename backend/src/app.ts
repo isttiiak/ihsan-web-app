@@ -11,6 +11,7 @@ import salatRoutes from './routes/salat.routes.js';
 import fastingRoutes from './routes/fasting.routes.js';
 import quranRoutes from './routes/quran.routes.js';
 import socialRoutes from './routes/social.routes.js';
+import cycleRoutes from './routes/cycle.routes.js';
 import { generalLimiter, authLimiter, zikrLimiter, aiLimiter } from './middleware/rateLimiter.js';
 import { globalErrorHandler } from './middleware/errorHandler.js';
 
@@ -73,6 +74,7 @@ app.use('/api/salat', salatRoutes);
 app.use('/api/fasting', fastingRoutes);
 app.use('/api/quran', quranRoutes);
 app.use('/api/social', socialRoutes);
+app.use('/api/cycle', cycleRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

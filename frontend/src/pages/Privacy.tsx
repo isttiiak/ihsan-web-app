@@ -10,6 +10,7 @@ const SECTIONS = [
       'Account basics — your email, display name, and optional profile photo (via Firebase Authentication).',
       'Your worship records — zikr counts, prayer logs, fasting logs, Quran reading progress, goals and vows — stored in our database so they sync across your devices.',
       'A friends list and an invite code, if you use the Friends feature.',
+      'Rayhanah Cycle dates (start/end), if you use it — visible ONLY to you, never to friends. On the leaderboard your Noor simply flows from the dhikr, Quran and salawat you do, indistinguishable from any other day. Delete it anytime from Settings.',
     ],
   },
   {
