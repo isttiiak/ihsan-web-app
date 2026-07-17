@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api.js';
 import { useAuthStore } from '../store/useAuthStore.js';
+import { getTrackingDay } from '../utils/trackingDay.js';
 
 export type PrayerStatus = 'completed' | 'kaza' | 'missed' | 'pending';
 export type PrayerLocation = 'home' | 'mosque' | 'jamat';
@@ -210,11 +211,9 @@ const EMPTY_PRAYERS: Record<PrayerId, PrayerEntry> = {
 
 const EMPTY_NAFL: NaflEntry = { completed: false, types: [], rakat: 2 };
 
-// Always use local device date — never let the backend guess (backend runs UTC which
-// diverges from local date for users ahead/behind UTC).
+// Fajr-boundary tracking day — never let the backend guess "today".
 function localTodayStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return getTrackingDay();
 }
 
 export function useSalatLog(date?: string) {

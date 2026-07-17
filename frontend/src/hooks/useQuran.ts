@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api.js';
 import { useAuthStore } from '../store/useAuthStore.js';
+import { getTrackingDay } from '../utils/trackingDay.js';
 
 export const QURAN_TOTAL_PAGES = 604;
 
@@ -27,9 +28,9 @@ export interface QuranSummary {
   estDaysToKhatm: number | null;
 }
 
+// Fajr-boundary tracking day (falls back to civil midnight without a location)
 export function localTodayStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return getTrackingDay();
 }
 
 export function useQuranSummary() {

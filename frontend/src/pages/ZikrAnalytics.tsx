@@ -18,6 +18,7 @@ import { useZikrTypes, useAddZikrType } from '../hooks/useZikrTypes.js';
 import { useZikrStore } from '../store/useZikrStore.js';
 import api from '../lib/api.js';
 import { getUserTimezoneOffset } from '../utils/timezone.js';
+import { getTrackingDay, getTrackingDayMiddayTs } from '../utils/trackingDay.js';
 
 // ─── Manual Entry Modal ───────────────────────────────────────────────────────
 
@@ -73,18 +74,15 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
     setSubmitting(true);
     setSubmitError('');
     try {
-      // Backfilled days carry a midday timestamp so the count lands in the
-      // right daily bucket for any timezone.
-      let ts: number | undefined;
-      if (daysBack > 0) {
-        const d = new Date();
-        d.setDate(d.getDate() - daysBack);
-        d.setHours(12, 0, 0, 0);
-        ts = d.getTime();
-      }
+      // Every day (incl. today) is anchored at the TRACKING day's midday so
+      // the count lands in the right Fajr-boundary bucket for any timezone.
+      const d = new Date(getTrackingDayMiddayTs());
+      d.setDate(d.getDate() - daysBack);
+      const ts = d.getTime();
       await api.post('/api/zikr/increment/batch', {
-        increments: [{ zikrType: selectedType, amount: parsedAmount, ...(ts ? { ts } : {}) }],
+        increments: [{ zikrType: selectedType, amount: parsedAmount, ts }],
         timezoneOffset: getUserTimezoneOffset(),
+        today: getTrackingDay(),
       });
       // Local live counter only reflects TODAY — don't inflate it with backfills
       if (daysBack === 0) addConfirmedCounts(selectedType, parsedAmount);

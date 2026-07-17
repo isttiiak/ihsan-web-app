@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { getUserTimezoneOffset, getTodayLocal } from '../utils/timezone.js';
+import { getUserTimezoneOffset } from '../utils/timezone.js';
+import { getTrackingDay, getTrackingDayMiddayTs } from '../utils/trackingDay.js';
 import { getIdToken } from '../lib/api.js';
 
 const FLUSH_DELAY = 800; // ms
@@ -74,7 +75,7 @@ export const useZikrStore = create<ZikrState>()(
       customMeanings: {},
 
       checkAndResetIfNewDay: () => {
-        const today = getTodayLocal();
+        const today = getTrackingDay();
         const lastReset = get().lastResetDate;
         if (lastReset !== today) {
           set({ counts: {}, pending: {}, lastResetDate: today });
@@ -109,7 +110,7 @@ export const useZikrStore = create<ZikrState>()(
         try {
           const tzOffset = get().timezoneOffset ?? SESSION_TZ_OFFSET;
           const res = await fetch(
-            `${import.meta.env.VITE_BACKEND_URL}/api/zikr/summary?timezoneOffset=${tzOffset}`,
+            `${import.meta.env.VITE_BACKEND_URL}/api/zikr/summary?timezoneOffset=${tzOffset}&today=${getTrackingDay()}`,
             { headers: { Authorization: `Bearer ${idToken}` } }
           );
           if (!res.ok) return;
@@ -136,7 +137,7 @@ export const useZikrStore = create<ZikrState>()(
             for (const t of typeNames) {
               counts[t] = Math.max(0, (data.today.perType[t] ?? 0) + (pending[t] ?? 0));
             }
-            set({ counts, lastResetDate: getTodayLocal() });
+            set({ counts, lastResetDate: getTrackingDay() });
           }
           if (Array.isArray(data.types) && data.types.length) {
             const serverNames = data.types
@@ -220,9 +221,14 @@ export const useZikrStore = create<ZikrState>()(
         if (!idToken) return;
 
         const resolvedOffset = get().timezoneOffset ?? SESSION_TZ_OFFSET;
+        // Anchor every increment INSIDE the current tracking day (midday ts):
+        // with the Fajr boundary, a 1 AM tap belongs to the CLOSING day's
+        // bucket — Date.now() would land it in the next civil day.
+        const anchorTs = getTrackingDayMiddayTs();
         const payload = entries.map(([zikrType, amount]) => ({
           zikrType,
           amount,
+          ts: anchorTs,
           timezoneOffset: resolvedOffset,
         }));
 
@@ -231,7 +237,7 @@ export const useZikrStore = create<ZikrState>()(
           const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/increment/batch`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-            body: JSON.stringify({ increments: payload, timezoneOffset: resolvedOffset }),
+            body: JSON.stringify({ increments: payload, timezoneOffset: resolvedOffset, today: getTrackingDay() }),
           });
 
           if (!res.ok) {

@@ -6,16 +6,17 @@ import { DEFAULT_TIMEZONE_OFFSET } from '../utils/timezone-flexible.js';
 export const incrementHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = req.user.uid;
-    const { zikrType, amount = 1, ts, timezoneOffset } = req.body as {
+    const { zikrType, amount = 1, ts, timezoneOffset, today } = req.body as {
       zikrType: string;
       amount?: number;
       ts?: number;
       timezoneOffset?: number;
+      today?: string;
     };
 
     const userOffset = timezoneOffset ?? DEFAULT_TIMEZONE_OFFSET;
     const result = await zikrService.incrementZikr(userId, zikrType, amount, userOffset, ts);
-    const streakResult = await streakService.checkAndUpdateStreak(userId, userOffset);
+    const streakResult = await streakService.checkAndUpdateStreak(userId, userOffset, today);
 
     res.json({
       ok: true,
@@ -32,14 +33,15 @@ export const incrementHandler = async (req: Request, res: Response, next: NextFu
 export const batchIncrementHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = req.user.uid;
-    const { increments, timezoneOffset } = req.body as {
+    const { increments, timezoneOffset, today } = req.body as {
       increments: Array<{ zikrType: string; amount?: number; ts?: number }>;
       timezoneOffset?: number;
+      today?: string;
     };
 
     const userOffset = timezoneOffset ?? DEFAULT_TIMEZONE_OFFSET;
     const result = await zikrService.batchIncrementZikr(userId, increments, userOffset);
-    const streakResult = await streakService.checkAndUpdateStreak(userId, userOffset);
+    const streakResult = await streakService.checkAndUpdateStreak(userId, userOffset, today);
 
     res.json({
       ok: true,
@@ -57,7 +59,8 @@ export const getSummaryHandler = async (req: Request, res: Response, next: NextF
   try {
     const rawOffset = Number(req.query.timezoneOffset);
     const timezoneOffset = Number.isFinite(rawOffset) ? rawOffset : undefined;
-    const summary = await zikrService.getZikrSummary(req.user.uid, timezoneOffset);
+    const todayQ = typeof req.query.today === 'string' ? req.query.today : undefined;
+    const summary = await zikrService.getZikrSummary(req.user.uid, timezoneOffset, todayQ);
     res.json({ ok: true, ...summary });
   } catch (err) {
     next(err);

@@ -1,17 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api.js';
 import { getUserTimezoneOffset } from '../utils/timezone.js';
+import { getTrackingDay } from '../utils/trackingDay.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import type { AnalyticsResponse, ZikrGoal, ZikrStreak } from '../types/api.js';
 
 export function useAnalytics(days = 7) {
   const user = useAuthStore((s) => s.user);
   const timezoneOffset = getUserTimezoneOffset();
+  const today = getTrackingDay();
   return useQuery<AnalyticsResponse>({
-    queryKey: ['analytics', days, timezoneOffset],
+    queryKey: ['analytics', days, timezoneOffset, today],
     queryFn: async () => {
       const res = await api.get<AnalyticsResponse>('/api/analytics', {
-        params: { days, timezoneOffset },
+        params: { days, timezoneOffset, today },
       });
       return res.data;
     },
@@ -39,7 +41,9 @@ export function useStreak() {
   return useQuery<ZikrStreak>({
     queryKey: ['analytics', 'streak'],
     queryFn: async () => {
-      const res = await api.get<{ streak: ZikrStreak }>('/api/analytics/streak');
+      const res = await api.get<{ streak: ZikrStreak }>('/api/analytics/streak', {
+        params: { timezoneOffset: getUserTimezoneOffset(), today: getTrackingDay() },
+      });
       return res.data.streak;
     },
     enabled: !!user,
@@ -61,7 +65,9 @@ export function useUpdateGoal() {
 export function usePauseStreak() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => api.post('/api/analytics/streak/pause'),
+    mutationFn: () => api.post('/api/analytics/streak/pause', null, {
+      params: { timezoneOffset: getUserTimezoneOffset(), today: getTrackingDay() },
+    }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['analytics', 'streak'] });
       void queryClient.invalidateQueries({ queryKey: ['analytics'] });
@@ -72,7 +78,9 @@ export function usePauseStreak() {
 export function useResumeStreak() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => api.post('/api/analytics/streak/resume'),
+    mutationFn: () => api.post('/api/analytics/streak/resume', null, {
+      params: { timezoneOffset: getUserTimezoneOffset(), today: getTrackingDay() },
+    }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['analytics', 'streak'] });
       void queryClient.invalidateQueries({ queryKey: ['analytics'] });

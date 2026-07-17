@@ -2,7 +2,7 @@ import User from '../models/User.js';
 import ZikrDaily from '../models/ZikrDaily.js';
 import ZikrGoal, { IZikrGoal } from '../models/ZikrGoal.js';
 import { getStreak, classifyDays, StreakResponse } from './streak.service.js';
-import { truncateToTimezone, DEFAULT_TIMEZONE_OFFSET } from '../utils/timezone-flexible.js';
+import { truncateToTimezone, bucketDateForDayString, DEFAULT_TIMEZONE_OFFSET } from '../utils/timezone-flexible.js';
 import { ChartDataPoint } from '../types/api.types.js';
 
 export interface AnalyticsData {
@@ -19,10 +19,13 @@ export interface AnalyticsData {
 export async function getAnalyticsData(
   userId: string,
   days: number = 7,
-  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET,
+  todayStr?: string
 ): Promise<AnalyticsData> {
   const DAY_MS = 86_400_000;
-  const today = truncateToTimezone(Date.now(), timezoneOffset);
+  // Fajr-boundary tracking day (client-sent); clock+offset fallback
+  const today = (todayStr ? bucketDateForDayString(todayStr, timezoneOffset) : null)
+    ?? truncateToTimezone(Date.now(), timezoneOffset);
   const startDate = new Date(today.getTime() - (days - 1) * DAY_MS);
 
   // truncateToTimezone anchors every bucket so its UTC date part equals the
@@ -74,7 +77,7 @@ export async function getAnalyticsData(
   // single-day grace) and refreshes the checkpoint — no cron needed.
   const [goal, streak, todayRecords, user] = await Promise.all([
     ZikrGoal.findOne({ userId }),
-    getStreak(userId, timezoneOffset),
+    getStreak(userId, timezoneOffset, todayStr),
     ZikrDaily.find({ userId, date: today }),
     User.findOne({ uid: userId }).select('totalCount zikrTotals'),
   ]);

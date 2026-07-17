@@ -184,7 +184,7 @@ async function statsForUser(
 
   const [user, zikr, salatLog, fastsThisMonth, todayFastLog, quranLogs, quranProfile] = await Promise.all([
     User.findOne({ uid }).select('displayName photoUrl'),
-    getStreakStatus(uid, timezoneOffset),
+    getStreakStatus(uid, timezoneOffset, today),
     SalatLog.findOne({ userId: uid, date: today }),
     FastingLog.countDocuments({ userId: uid, status: 'completed', date: { $gte: monthStart, $lte: today } }),
     FastingLog.findOne({ userId: uid, date: today }).select('status'),

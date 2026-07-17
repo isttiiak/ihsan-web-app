@@ -45,6 +45,25 @@ export function truncateToTimezone(dateLike: number | Date = Date.now(), offsetM
 }
 
 /**
+ * Bucket anchor for an explicit client-sent day string (YYYY-MM-DD).
+ * Produces exactly what truncateToTimezone would for any instant inside that
+ * local day: a Date whose UTC date part equals the day string. Used by the
+ * Fajr-boundary tracking day — the client owns the day decision, the server
+ * just needs the matching bucket anchor.
+ */
+export function bucketDateForDayString(
+  dayStr: string,
+  offsetMinutes: number = DEFAULT_TIMEZONE_OFFSET
+): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dayStr);
+  if (!m) return null;
+  const [, y, mo, d] = m;
+  const DAY_MIN = 24 * 60;
+  const utcMin = (((DAY_MIN - offsetMinutes) % DAY_MIN) + DAY_MIN) % DAY_MIN;
+  return new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d), Math.floor(utcMin / 60), utcMin % 60, 0, 0));
+}
+
+/**
  * Get "today" in specified timezone as a date string (YYYY-MM-DD)
  */
 export function getTodayString(offsetMinutes: number = DEFAULT_TIMEZONE_OFFSET): string {

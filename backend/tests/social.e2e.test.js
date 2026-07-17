@@ -35,6 +35,10 @@ describe("Social API (share activities)", () => {
 
   let codeA;
 
+  // The server now honors the client-sent tracking day exactly, so the test's
+  // "today" must match where clock-based zikr buckets actually land (UTC+6).
+  const TODAY = new Date(Date.now() + 360 * 60 * 1000).toISOString().slice(0, 10);
+
   test("summary requires auth", async () => {
     const res = await request(app).get(`/api/social/summary`);
     expect(res.status).toBe(401);
@@ -44,7 +48,7 @@ describe("Social API (share activities)", () => {
     await request(app).post(`/api/auth/verify`).send({ idToken: tokenA });
     await request(app).post(`/api/auth/verify`).send({ idToken: tokenB });
 
-    const res = await asA(request(app).get(`/api/social/summary?today=2026-07-09&timezoneOffset=360`));
+    const res = await asA(request(app).get(`/api/social/summary?today=${TODAY}&timezoneOffset=360`));
     expect(res.status).toBe(200);
     expect(res.body.inviteCode).toMatch(/^[A-Za-z0-9_-]{6,}$/);
     expect(res.body.leaderboard).toHaveLength(1);
@@ -75,8 +79,8 @@ describe("Social API (share activities)", () => {
     expect(again.body.message).toMatch(/already/i);
 
     // Both sides see each other
-    const sumA = await asA(request(app).get(`/api/social/summary?today=2026-07-09&timezoneOffset=360`));
-    const sumB = await asB(request(app).get(`/api/social/summary?today=2026-07-09&timezoneOffset=360`));
+    const sumA = await asA(request(app).get(`/api/social/summary?today=${TODAY}&timezoneOffset=360`));
+    const sumB = await asB(request(app).get(`/api/social/summary?today=${TODAY}&timezoneOffset=360`));
     expect(sumA.body.leaderboard.map((f) => f.uid).sort()).toEqual(["amir", "bilal"]);
     expect(sumB.body.leaderboard.map((f) => f.uid).sort()).toEqual(["amir", "bilal"]);
   });
@@ -89,13 +93,13 @@ describe("Social API (share activities)", () => {
     });
     // Bilal also prays two fard prayers today
     await asB(request(app).patch(`/api/salat/prayer`)).send({
-      prayer: "fajr", status: "completed", date: "2026-07-09",
+      prayer: "fajr", status: "completed", date: TODAY,
     });
     await asB(request(app).patch(`/api/salat/prayer`)).send({
-      prayer: "dhuhr", status: "kaza", date: "2026-07-09",
+      prayer: "dhuhr", status: "kaza", date: TODAY,
     });
 
-    const res = await asA(request(app).get(`/api/social/summary?today=2026-07-09&timezoneOffset=360`));
+    const res = await asA(request(app).get(`/api/social/summary?today=${TODAY}&timezoneOffset=360`));
     const [first, second] = res.body.leaderboard;
     expect(first.uid).toBe("bilal");
     expect(first.salatToday).toBe(2);
@@ -105,7 +109,7 @@ describe("Social API (share activities)", () => {
   });
 
   test("noor endpoint returns today's and all-time Noor", async () => {
-    const res = await asB(request(app).get(`/api/social/noor?today=2026-07-09&timezoneOffset=360`));
+    const res = await asB(request(app).get(`/api/social/noor?today=${TODAY}&timezoneOffset=360`));
     expect(res.status).toBe(200);
     // Today matches Bilal's leaderboard score (22)
     expect(res.body.today).toBe(22);
@@ -132,8 +136,8 @@ describe("Social API (share activities)", () => {
     const res = await asA(request(app).delete(`/api/social/friends/bilal`));
     expect(res.status).toBe(200);
 
-    const sumA = await asA(request(app).get(`/api/social/summary?today=2026-07-09&timezoneOffset=360`));
-    const sumB = await asB(request(app).get(`/api/social/summary?today=2026-07-09&timezoneOffset=360`));
+    const sumA = await asA(request(app).get(`/api/social/summary?today=${TODAY}&timezoneOffset=360`));
+    const sumB = await asB(request(app).get(`/api/social/summary?today=${TODAY}&timezoneOffset=360`));
     expect(sumA.body.leaderboard).toHaveLength(1);
     expect(sumB.body.leaderboard).toHaveLength(1);
 

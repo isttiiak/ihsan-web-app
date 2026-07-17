@@ -142,6 +142,33 @@ describe("Zikr API", () => {
     expect(zero.status).toBe(400);
   });
 
+  test("summary honors an explicit ?today= tracking day (Fajr boundary)", async () => {
+    const token = fakeJwt({ uid: "u-fajr", email: "fajr@test.dev", name: "Fajr" });
+    await request(app).post(`/api/auth/verify`).send({ idToken: token });
+
+    // Log 5 counts anchored to YESTERDAY's tracking day (midday ts)
+    const tz = 360;
+    const yester = new Date(Date.now() + tz * 60 * 1000 - 86_400_000);
+    const yesterStr = yester.toISOString().slice(0, 10);
+    const middayTs = new Date(`${yesterStr}T12:00:00.000Z`).getTime() - tz * 60 * 1000;
+    await request(app)
+      .post(`/api/zikr/increment/batch`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ increments: [{ zikrType: "SubhanAllah", amount: 5, ts: middayTs }], timezoneOffset: tz, today: yesterStr });
+
+    // Asking for that tracking day returns its bucket; the real "today" is empty
+    const asYester = await request(app)
+      .get(`/api/zikr/summary?timezoneOffset=${tz}&today=${yesterStr}`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(asYester.body.today.total).toBe(5);
+
+    const todayStr = new Date(Date.now() + tz * 60 * 1000).toISOString().slice(0, 10);
+    const asToday = await request(app)
+      .get(`/api/zikr/summary?timezoneOffset=${tz}&today=${todayStr}`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(asToday.body.today.total).toBe(0);
+  });
+
   test("types endpoint returns defaults and custom types de-duplicated (case-insensitive)", async () => {
     const token = fakeJwt({ uid: "u3", email: "u3@test.dev", name: "U3" });
 

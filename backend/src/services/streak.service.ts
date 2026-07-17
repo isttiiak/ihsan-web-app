@@ -33,6 +33,8 @@ export interface StreakStatus {
   dailyTarget: number;
 }
 
+const DAY_STR_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 /** Bucket key: UTC date part equals the user's local date (see timezone-flexible). */
 function keyOf(d: Date): string {
   return d.toISOString().split('T')[0] ?? '';
@@ -65,7 +67,8 @@ async function loadDayTotals(userId: string, sinceKey: string): Promise<Map<stri
 /** Derives the live streak. Single source of truth for all streak reads. */
 export async function getStreakStatus(
   userId: string,
-  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET,
+  todayStr?: string
 ): Promise<StreakStatus> {
   const [goalDoc, doc] = await Promise.all([
     ZikrGoal.findOne({ userId }),
@@ -73,7 +76,11 @@ export async function getStreakStatus(
   ]);
   const goal = goalDoc?.dailyTarget ?? 100;
 
-  const todayKey = keyOf(truncateToTimezone(Date.now(), timezoneOffset));
+  // Fajr-boundary tracking day: the client owns the day decision and sends it
+  // explicitly; the clock+offset fallback keeps old clients working.
+  const todayKey = todayStr && DAY_STR_RE.test(todayStr)
+    ? todayStr
+    : keyOf(truncateToTimezone(Date.now(), timezoneOffset));
   const yesterdayKey = shiftKey(todayKey, -1);
   const floorKey = shiftKey(todayKey, -365);
 
@@ -194,10 +201,11 @@ export interface StreakCheckResult {
 
 export async function checkAndUpdateStreak(
   userId: string,
-  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET,
+  todayStr?: string
 ): Promise<StreakCheckResult | null> {
   try {
-    const s = await getStreakStatus(userId, timezoneOffset);
+    const s = await getStreakStatus(userId, timezoneOffset, todayStr);
     return {
       goalMet: s.goalMet,
       streak: {
@@ -223,9 +231,10 @@ export interface StreakResponse {
 
 export async function getStreak(
   userId: string,
-  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET,
+  todayStr?: string
 ): Promise<StreakResponse> {
-  const s = await getStreakStatus(userId, timezoneOffset);
+  const s = await getStreakStatus(userId, timezoneOffset, todayStr);
   return {
     currentStreak: s.currentStreak,
     longestStreak: s.longestStreak,
@@ -236,10 +245,11 @@ export async function getStreak(
 
 export async function pauseStreak(
   userId: string,
-  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET,
+  todayStr?: string
 ): Promise<{ ok: boolean; message: string; streak: IZikrStreak }> {
   // Freeze the DERIVED streak (the stored counter may be stale)
-  const derived = await getStreakStatus(userId, timezoneOffset);
+  const derived = await getStreakStatus(userId, timezoneOffset, todayStr);
   let streak = await ZikrStreak.findOne({ userId });
   if (!streak) streak = new ZikrStreak({ userId });
 
@@ -255,7 +265,8 @@ export async function pauseStreak(
 
 export async function resumeStreak(
   userId: string,
-  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET,
+  todayStr?: string
 ): Promise<{ ok: boolean; message: string; streak: IZikrStreak } | null> {
   const streak = await ZikrStreak.findOne({ userId });
   if (!streak) return null;
@@ -265,7 +276,9 @@ export async function resumeStreak(
 
   // Write the frozen streak as a credit anchored at yesterday so today's
   // zikr seamlessly continues it.
-  const todayKey = keyOf(truncateToTimezone(Date.now(), timezoneOffset));
+  const todayKey = todayStr && DAY_STR_RE.test(todayStr)
+    ? todayStr
+    : keyOf(truncateToTimezone(Date.now(), timezoneOffset));
   streak.isPaused = false;
   streak.currentStreak = streak.pausedStreak;
   streak.lastCompletedDate = keyToDate(shiftKey(todayKey, -1));

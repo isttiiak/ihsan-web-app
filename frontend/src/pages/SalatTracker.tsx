@@ -23,6 +23,7 @@ import {
   formatTime,
 } from '../utils/prayerTimes.js';
 import { isFriday, getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
+import { getTrackingDay } from '../utils/trackingDay.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -45,8 +46,9 @@ function isRamadanNow(): boolean {
 }
 
 function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // Fajr-boundary tracking day — before Fajr this is still "yesterday",
+  // which is exactly right: Isha prayed at 1 AM belongs to the closing day.
+  return getTrackingDay();
 }
 function offsetDate(base: string, delta: number): string {
   const d = new Date(base + 'T12:00:00');

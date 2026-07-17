@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import ZikrDaily from '../models/ZikrDaily.js';
-import { truncateToTimezone, DEFAULT_TIMEZONE_OFFSET } from '../utils/timezone-flexible.js';
+import { truncateToTimezone, bucketDateForDayString, DEFAULT_TIMEZONE_OFFSET } from '../utils/timezone-flexible.js';
 import { ZikrIncrementItem } from '../types/api.types.js';
 
 export interface IncrementResult {
@@ -110,7 +110,8 @@ export async function batchIncrementZikr(
 
 export async function getZikrSummary(
   userId: string,
-  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET,
+  todayStr?: string
 ): Promise<{
   totalCount: number;
   perType: Array<{ zikrType: string; total: number }>;
@@ -122,7 +123,8 @@ export async function getZikrSummary(
 
   // Today's buckets — the DB is the source of truth for the day count so every
   // browser/device shows the same number (localStorage is only a tap buffer).
-  const todayDate = truncateToTimezone(Date.now(), timezoneOffset);
+  const todayDate = (todayStr ? bucketDateForDayString(todayStr, timezoneOffset) : null)
+    ?? truncateToTimezone(Date.now(), timezoneOffset);
   const todayDocs = await ZikrDaily.find({ userId, date: todayDate }).select('zikrType count');
   const todayPerType: Record<string, number> = {};
   let todayTotal = 0;

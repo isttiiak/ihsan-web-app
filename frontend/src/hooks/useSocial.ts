@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { getUserTimezoneOffset } from '../utils/timezone.js';
+import { getTrackingDay } from '../utils/trackingDay.js';
 
 export interface FriendStats {
   uid: string;
@@ -29,8 +30,7 @@ export interface SocialSummary {
 }
 
 function localTodayStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return getTrackingDay();
 }
 
 export function useSocialSummary() {

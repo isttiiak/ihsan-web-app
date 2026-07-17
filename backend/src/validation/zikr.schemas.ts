@@ -35,12 +35,15 @@ const tsField = z
     { message: 'ts out of allowed range (max 2 days back)' }
   );
 
+const todayField = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional();
+
 export const incrementSchema = z.object({
   body: z.object({
     zikrType: zikrTypeName,
     amount: amountField,
     ts: tsField,
     timezoneOffset: z.number().min(-720).max(840).optional(),
+    today: todayField,
   }),
 });
 
@@ -57,6 +60,7 @@ export const batchIncrementSchema = z.object({
       .min(1)
       .max(100),
     timezoneOffset: z.number().min(-720).max(840).optional(),
+    today: todayField,
   }),
 });
 
