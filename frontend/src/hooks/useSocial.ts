@@ -46,6 +46,10 @@ export function useSocialSummary() {
     },
     enabled: !!user,
     staleTime: 2 * 60_000,
+    // Entering the Friends page must always show the user's LATEST stats —
+    // they may have just prayed/counted zikr elsewhere in the app. Cached
+    // data still paints instantly; this refetches in the background.
+    refetchOnMount: 'always',
   });
 }
 

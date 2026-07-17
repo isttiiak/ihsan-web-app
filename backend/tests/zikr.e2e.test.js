@@ -100,6 +100,48 @@ describe("Zikr API", () => {
     expect(sum.body.totalCount).toBe(22);
   });
 
+  test("negative amounts (minus button) decrement DB counts, clamped at 0", async () => {
+    const token = fakeJwt({ uid: "u-dec", email: "dec@test.dev", name: "Dec" });
+    await request(app).post(`/api/auth/verify`).send({ idToken: token });
+
+    // Count 10, then decrement 3 → 7
+    await request(app)
+      .post(`/api/zikr/increment/batch`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ increments: [{ zikrType: "SubhanAllah", amount: 10 }], timezoneOffset: 360 });
+    const dec = await request(app)
+      .post(`/api/zikr/increment/batch`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ increments: [{ zikrType: "SubhanAllah", amount: -3 }], timezoneOffset: 360 });
+    expect(dec.status).toBe(200);
+
+    let sum = await request(app)
+      .get(`/api/zikr/summary?timezoneOffset=360`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(sum.body.totalCount).toBe(7);
+    expect(sum.body.today.total).toBe(7);
+    expect(sum.body.today.perType["SubhanAllah"]).toBe(7);
+
+    // Over-decrement (-100) clamps the day bucket at 0 and only subtracts
+    // what was actually there from the lifetime total
+    await request(app)
+      .post(`/api/zikr/increment/batch`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ increments: [{ zikrType: "SubhanAllah", amount: -100 }], timezoneOffset: 360 });
+    sum = await request(app)
+      .get(`/api/zikr/summary?timezoneOffset=360`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(sum.body.today.total).toBe(0);
+    expect(sum.body.totalCount).toBe(0);
+
+    // amount 0 is rejected by validation
+    const zero = await request(app)
+      .post(`/api/zikr/increment/batch`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ increments: [{ zikrType: "SubhanAllah", amount: 0 }] });
+    expect(zero.status).toBe(400);
+  });
+
   test("types endpoint returns defaults and custom types de-duplicated (case-insensitive)", async () => {
     const token = fakeJwt({ uid: "u3", email: "u3@test.dev", name: "U3" });
 

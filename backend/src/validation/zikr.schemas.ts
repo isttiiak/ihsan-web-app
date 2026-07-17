@@ -12,8 +12,15 @@ const zikrTypeName = z
   });
 
 // Bound a single increment so a stray client (or manual API call) can't
-// corrupt lifetime stats with a giant number.
-const amountField = z.number().int().positive().max(10_000).default(1);
+// corrupt lifetime stats with a giant number. Negative amounts are the
+// counter's minus button — the service clamps day buckets at 0.
+const amountField = z
+  .number()
+  .int()
+  .min(-10_000)
+  .max(10_000)
+  .refine((a) => a !== 0, { message: 'amount may not be 0' })
+  .default(1);
 
 // Backfill window: today plus the two previous days (matches the streak's
 // grace rules — you may only repair the days that can still save a streak),

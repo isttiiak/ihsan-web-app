@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import { useAuthStore } from '../store/useAuthStore.js';
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -62,6 +63,17 @@ const itemVariants = {
 export default function AuthSignIn() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const user = useAuthStore((s) => s.user);
+
+  // Safety net: once the auth store has a user, this page is done. App.tsx
+  // navigates verified users away; unverified email/password sign-ins would
+  // otherwise leave the button spinning here forever — send them home (the
+  // verify-email gate protects the private pages).
+  useEffect(() => {
+    if (!user) return;
+    setLoading(false);
+    if (user.emailVerified === false) navigate('/', { replace: true });
+  }, [user, navigate]);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 

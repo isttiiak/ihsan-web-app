@@ -134,7 +134,9 @@ export default function Home() {
       icon: '📿',
       title: 'Zikr Counter',
       description: 'Continue your remembrance of Allah',
-      stats: { label: 'Today', value: totalToday },
+      // effectiveToday = max(local taps, server total) — DB-backed so every
+      // browser shows the same number for signed-in users
+      stats: { label: 'Today', value: effectiveToday },
       action: 'Start Counting',
       link: '/zikr',
       accentColor: 'var(--brand-emerald, #10b981)',

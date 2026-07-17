@@ -107,20 +107,37 @@ export const useZikrStore = create<ZikrState>()(
         const idToken = await getIdToken();
         if (!idToken) return;
         try {
-          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/summary`, {
-            headers: { Authorization: `Bearer ${idToken}` },
-          });
+          const tzOffset = get().timezoneOffset ?? SESSION_TZ_OFFSET;
+          const res = await fetch(
+            `${import.meta.env.VITE_BACKEND_URL}/api/zikr/summary?timezoneOffset=${tzOffset}`,
+            { headers: { Authorization: `Bearer ${idToken}` } }
+          );
           if (!res.ok) return;
           const data = await res.json() as {
             totalCount?: number;
             perType?: Array<{ zikrType: string; total: number }>;
             types?: Array<{ name: string } | string>;
+            today?: { total: number; perType: Record<string, number> };
           };
           const lt = (data.perType ?? []).reduce<Record<string, number>>((acc, t) => {
             acc[t.zikrType] = t.total;
             return acc;
           }, {});
           set({ total: data.totalCount ?? 0, lifetimeTotals: lt });
+          // Sync TODAY's counts from the DB so every browser/device agrees.
+          // Local unflushed pending deltas are layered on top.
+          if (data.today?.perType) {
+            const pending = get().pending;
+            const counts: Record<string, number> = {};
+            const typeNames = new Set([
+              ...Object.keys(data.today.perType),
+              ...Object.keys(pending),
+            ]);
+            for (const t of typeNames) {
+              counts[t] = Math.max(0, (data.today.perType[t] ?? 0) + (pending[t] ?? 0));
+            }
+            set({ counts, lastResetDate: getTodayLocal() });
+          }
           if (Array.isArray(data.types) && data.types.length) {
             const serverNames = data.types
               .map((t) => (typeof t === 'object' ? t.name : t))
@@ -157,7 +174,10 @@ export const useZikrStore = create<ZikrState>()(
           return {
             counts: { ...s.counts, [type]: current - 1 },
             lifetimeTotals: { ...s.lifetimeTotals, [type]: Math.max(0, (s.lifetimeTotals[type] ?? 0) - 1) },
-            pending: { ...s.pending, [type]: Math.max(0, (s.pending[type] ?? 0) - 1) },
+            // Pending may go NEGATIVE — that's how a decrement of an
+            // already-flushed count reaches the server (clamping at 0 here
+            // silently dropped the minus button's effect on the DB).
+            pending: { ...s.pending, [type]: (s.pending[type] ?? 0) - 1 },
             total: Math.max(0, s.total - 1),
           };
         }),
@@ -193,7 +213,7 @@ export const useZikrStore = create<ZikrState>()(
 
         // Snapshot pending at this moment — any taps during the request stay safe
         const snapshot = { ...get().pending };
-        const entries = Object.entries(snapshot).filter(([, a]) => a > 0);
+        const entries = Object.entries(snapshot).filter(([, a]) => a !== 0);
         if (!entries.length) return;
 
         const idToken = await getIdToken();
@@ -220,11 +240,13 @@ export const useZikrStore = create<ZikrState>()(
             return;
           }
 
-          // Only subtract the amounts we confirmed were saved (not everything — user may have tapped during request)
+          // Only subtract the amounts we confirmed were saved (not everything —
+          // user may have tapped during the request). No clamping: pending can
+          // legitimately be negative (queued decrements).
           set((s) => {
             const newPending = { ...s.pending };
             for (const [type, amount] of entries) {
-              newPending[type] = Math.max(0, (newPending[type] ?? 0) - amount);
+              newPending[type] = (newPending[type] ?? 0) - amount;
             }
             return { pending: newPending };
           });

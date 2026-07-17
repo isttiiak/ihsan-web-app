@@ -55,7 +55,9 @@ export const batchIncrementHandler = async (req: Request, res: Response, next: N
 
 export const getSummaryHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const summary = await zikrService.getZikrSummary(req.user.uid);
+    const rawOffset = Number(req.query.timezoneOffset);
+    const timezoneOffset = Number.isFinite(rawOffset) ? rawOffset : undefined;
+    const summary = await zikrService.getZikrSummary(req.user.uid, timezoneOffset);
     res.json({ ok: true, ...summary });
   } catch (err) {
     next(err);

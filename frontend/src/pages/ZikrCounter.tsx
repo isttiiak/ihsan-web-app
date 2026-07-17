@@ -286,7 +286,14 @@ export default function ZikrCounter() {
     if ('vibrate' in navigator) navigator.vibrate(10);
   }, [increment, scheduleFlush]);
 
-  const onDecrement = useCallback(() => { if (currentCount > 0) decrement(); }, [currentCount, decrement]);
+  // Decrements must flush too — they queue a negative pending delta so the
+  // minus button reaches the database, not just the local count.
+  const onDecrement = useCallback(() => {
+    if (currentCount > 0) {
+      decrement();
+      scheduleFlush();
+    }
+  }, [currentCount, decrement, scheduleFlush]);
 
   // Keyboard: Space = increment
   useEffect(() => {

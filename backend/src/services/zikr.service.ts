@@ -28,25 +28,43 @@ async function applyIncrements(
 
   for (const item of increments) {
     const { zikrType, amount = 1, ts } = item;
-    if (!zikrType || !Number.isFinite(amount) || amount <= 0) continue;
+    if (!zikrType || !Number.isFinite(amount) || amount === 0) continue;
 
     const date = truncateToTimezone(ts ?? Date.now(), timezoneOffset);
+    // The delta actually applied to the day bucket — for decrements this can
+    // be smaller in magnitude than `amount` (buckets clamp at 0), and the
+    // lifetime totals must move by exactly the same applied delta.
+    let applied = amount;
     try {
-      await ZikrDaily.updateOne(
-        { userId, date, zikrType },
-        { $inc: { count: amount } },
-        { upsert: true }
-      );
+      if (amount > 0) {
+        await ZikrDaily.updateOne(
+          { userId, date, zikrType },
+          { $inc: { count: amount } },
+          { upsert: true }
+        );
+      } else {
+        // Atomic clamp-at-zero via pipeline update; new:false returns the
+        // pre-update doc so we can compute how much was really subtracted.
+        const before = await ZikrDaily.findOneAndUpdate(
+          { userId, date, zikrType },
+          [{ $set: { count: { $max: [0, { $add: [{ $ifNull: ['$count', 0] }, amount] }] } } }],
+          { new: false }
+        );
+        const prev = before?.count ?? 0;
+        applied = Math.max(0, prev + amount) - prev; // ≤ 0, never past the bucket
+      }
     } catch {
       // Ignore duplicate key race conditions
     }
 
-    userInc[`zikrTotals.${zikrType}`] = (userInc[`zikrTotals.${zikrType}`] ?? 0) + amount;
-    totalAdded += amount;
-    newTypeNames.add(zikrType);
+    if (applied !== 0) {
+      userInc[`zikrTotals.${zikrType}`] = (userInc[`zikrTotals.${zikrType}`] ?? 0) + applied;
+      totalAdded += applied;
+    }
+    if (amount > 0) newTypeNames.add(zikrType);
   }
 
-  if (totalAdded > 0) {
+  if (totalAdded !== 0 || Object.keys(userInc).length) {
     await User.updateOne(
       { uid: userId },
       { $inc: { ...userInc, totalCount: totalAdded } }
@@ -90,9 +108,28 @@ export async function batchIncrementZikr(
   return applyIncrements(userId, increments, timezoneOffset);
 }
 
-export async function getZikrSummary(userId: string): Promise<{ totalCount: number; perType: Array<{ zikrType: string; total: number }>; types: unknown[] }> {
+export async function getZikrSummary(
+  userId: string,
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+): Promise<{
+  totalCount: number;
+  perType: Array<{ zikrType: string; total: number }>;
+  types: unknown[];
+  today: { total: number; perType: Record<string, number> };
+}> {
   const user = await User.findOne({ uid: userId }).select(ZIKR_PROJECTION);
   if (!user) throw new Error('User not found');
+
+  // Today's buckets — the DB is the source of truth for the day count so every
+  // browser/device shows the same number (localStorage is only a tap buffer).
+  const todayDate = truncateToTimezone(Date.now(), timezoneOffset);
+  const todayDocs = await ZikrDaily.find({ userId, date: todayDate }).select('zikrType count');
+  const todayPerType: Record<string, number> = {};
+  let todayTotal = 0;
+  for (const d of todayDocs) {
+    todayPerType[d.zikrType] = d.count;
+    todayTotal += d.count;
+  }
 
   let perType: Array<{ zikrType: string; total: number }> = [];
   if (user.zikrTotals instanceof Map) {
@@ -105,6 +142,7 @@ export async function getZikrSummary(userId: string): Promise<{ totalCount: numb
     totalCount: user.totalCount ?? 0,
     perType: perType.sort((a, b) => b.total - a.total),
     types: user.zikrTypes,
+    today: { total: todayTotal, perType: todayPerType },
   };
 }
 
