@@ -146,9 +146,21 @@ export default function App() {
     pathnameRef.current = location.pathname;
   });
 
-  // Warm up the Render free-tier backend — fire once on mount, ignore response.
+  // Warm up the Render free-tier backend — fire once on mount. If it hasn't
+  // answered within 2.5s the server is cold-starting: show an honest banner so
+  // loading cards aren't mistaken for a broken app.
+  const [serverWaking, setServerWaking] = useState(false);
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/health`).catch(() => {});
+    let settled = false;
+    const timer = setTimeout(() => { if (!settled) setServerWaking(true); }, 2500);
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/health`)
+      .catch(() => {})
+      .finally(() => {
+        settled = true;
+        clearTimeout(timer);
+        setServerWaking(false);
+      });
+    return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -194,76 +206,76 @@ export default function App() {
         return;
       }
 
+      // Render the app IMMEDIATELY from Firebase's local session — never make
+      // the user wait on our backend (Render free tier can take ~60s to wake).
+      // Prefer the richer cached copy (DB displayName/photo) for the same account.
+      const optimistic: AuthUser = {
+        uid: u.uid,
+        email: u.email,
+        displayName: u.displayName,
+        photoUrl: u.photoURL ?? null,
+        emailVerified: u.emailVerified,
+      };
       try {
-        const idToken = await u.getIdToken();
-        const verifyRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify({ idToken }),
-        });
-
-        if (!verifyRes.ok) {
-          const errorText = await verifyRes.text();
-          console.error('Verify failed:', { status: verifyRes.status, body: errorText });
-          // Only sign out on genuine auth failures — not rate limits (429) or server errors (5xx)
-          if (verifyRes.status === 401 || verifyRes.status === 403) {
-            await auth.signOut();
-            setAuthLoading(false);
-            return;
-          }
-          // For 429/5xx: keep the user signed in, store the token we already have
-          console.warn(`Verify returned ${verifyRes.status} — keeping session alive`);
+        const cached = JSON.parse(localStorage.getItem('ihsan_user') ?? 'null') as AuthUser | null;
+        if (cached?.uid === u.uid) {
+          optimistic.displayName = cached.displayName ?? optimistic.displayName;
+          optimistic.photoUrl = cached.photoUrl ?? optimistic.photoUrl;
         }
+      } catch { /* corrupt cache — Firebase values are fine */ }
+      setUser(optimistic);
+      setAuthLoading(false);
 
-        localStorage.setItem('ihsan_idToken', idToken);
-
-        // Prefer the displayName from our DB (user may have edited it in Profile)
-        // Fall back to Firebase display name for brand-new accounts
-        let dbDisplayName: string | null | undefined = u.displayName;
-        if (verifyRes.ok) {
-          try {
-            const verifyData = await verifyRes.clone().json() as { user?: { displayName?: string } };
-            if (verifyData?.user?.displayName) dbDisplayName = verifyData.user.displayName;
-          } catch { /* ignore parse error */ }
-        }
-
-        // Also carry over the photo URL: prefer DB value (user may have uploaded custom photo),
-        // fall back to Firebase/Google profile picture.
-        let dbPhotoUrl: string | null | undefined = u.photoURL ?? null;
-        if (verifyRes.ok) {
-          try {
-            const verifyDataForPhoto = await verifyRes.clone().json() as { user?: { photoUrl?: string } };
-            if (verifyDataForPhoto?.user?.photoUrl) dbPhotoUrl = verifyDataForPhoto.user.photoUrl;
-          } catch { /* ignore */ }
-        }
-
-        const authUser: AuthUser = {
-          uid: u.uid,
-          email: u.email,
-          displayName: dbDisplayName ?? u.displayName,
-          photoUrl: dbPhotoUrl,
-          emailVerified: u.emailVerified,
-        };
-        localStorage.setItem('ihsan_user', JSON.stringify(authUser));
-        setUser(authUser);
-        try { await hydrate(); } catch { /* hydrate errors are non-fatal */ }
-        // Push any counts made while signed out — the guest dialog promises
-        // "Sign in to save", so save immediately rather than on the next tap.
-        try { await useZikrStore.getState().flush(); } catch { /* retried on next tap */ }
-
-        // Only navigate away from /login or /signup once the email is verified.
-        // Unverified email/password accounts stay on /signup so the verification screen shows.
-        if (['/login', '/signup'].includes(pathnameRef.current) && u.emailVerified) {
-          const redirect = sessionStorage.getItem('ihsan_redirect');
-          sessionStorage.removeItem('ihsan_redirect');
-          navigateRef.current(redirect || '/', { replace: true });
-        }
-      } catch (err) {
-        // Network failure or unexpected error — don't leave the spinner running forever
-        console.error('Auth setup error:', err);
-      } finally {
-        setAuthLoading(false);
+      // Only navigate away from /login or /signup once the email is verified.
+      // Unverified email/password accounts stay on /signup so the verification screen shows.
+      if (['/login', '/signup'].includes(pathnameRef.current) && u.emailVerified) {
+        const redirect = sessionStorage.getItem('ihsan_redirect');
+        sessionStorage.removeItem('ihsan_redirect');
+        navigateRef.current(redirect || '/', { replace: true });
       }
+
+      // Everything below is a BACKGROUND sync — it must never gate rendering.
+      void (async () => {
+        try {
+          const idToken = await u.getIdToken();
+          localStorage.setItem('ihsan_idToken', idToken);
+          const verifyRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ idToken }),
+          });
+
+          if (!verifyRes.ok) {
+            const errorText = await verifyRes.text();
+            console.error('Verify failed:', { status: verifyRes.status, body: errorText });
+            // Only sign out on genuine auth failures — not rate limits (429) or server errors (5xx)
+            if (verifyRes.status === 401 || verifyRes.status === 403) {
+              await auth.signOut();
+              return;
+            }
+            console.warn(`Verify returned ${verifyRes.status} — keeping session alive`);
+          } else {
+            // Reconcile with the DB profile (user may have edited name/photo there)
+            try {
+              const verifyData = await verifyRes.json() as { user?: { displayName?: string; photoUrl?: string } };
+              const authUser: AuthUser = {
+                ...optimistic,
+                displayName: verifyData?.user?.displayName || optimistic.displayName,
+                photoUrl: verifyData?.user?.photoUrl || optimistic.photoUrl,
+              };
+              localStorage.setItem('ihsan_user', JSON.stringify(authUser));
+              setUser(authUser);
+            } catch { /* ignore parse error — optimistic values stand */ }
+          }
+
+          try { await hydrate(); } catch { /* hydrate errors are non-fatal */ }
+          // Push any counts made while signed out — the guest dialog promises
+          // "Sign in to save", so save immediately rather than on the next tap.
+          try { await useZikrStore.getState().flush(); } catch { /* retried on next tap */ }
+        } catch (err) {
+          console.error('Auth background sync error:', err);
+        }
+      })();
     });
 
     return () => unsub();
@@ -290,6 +302,11 @@ export default function App() {
       ) : (
         <>
           {!isAuthPage && <Navbar />}
+          {serverWaking && (
+            <div className="bg-amber-500/15 border-b border-amber-500/25 px-4 py-2 text-center text-xs text-amber-200/90">
+              ☕ Waking up the server — free hosting naps when idle. Your data will appear in under a minute, in shāʾ Allāh.
+            </div>
+          )}
           {!isAuthPage && <UnsavedWarning />}
           <div className="flex-1">
             <Suspense fallback={<RouteFallback />}>

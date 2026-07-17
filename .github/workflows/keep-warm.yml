@@ -1,0 +1,25 @@
+# Keeps the Render free-tier backend awake. Render spins the service down
+# after ~15 minutes of inactivity and a cold start takes 30-60s — this ping
+# every 10 minutes prevents that entirely.
+#
+# Notes:
+# - Public repo → GitHub Actions minutes are free/unlimited.
+# - Render free tier allows 750 instance-hours/month; one service kept awake
+#   24/7 uses ~744h, which fits (as long as ihsan is the only awake service).
+# - GitHub disables scheduled workflows after 60 days without repo activity —
+#   any commit re-enables it.
+name: Keep backend warm
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/health
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" -m 90 https://ihsan-web-app.onrender.com/api/health || echo "000")
+          echo "Health responded with HTTP $code"

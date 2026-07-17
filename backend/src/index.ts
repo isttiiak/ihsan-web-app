@@ -8,9 +8,12 @@ const PORT = process.env.PORT ?? 5000;
 
 (async () => {
   try {
-    await connectDB();
     initFirebaseAdmin();
+    // Listen BEFORE the DB connect: /api/health (no DB) answers immediately,
+    // so Render marks the service live seconds earlier on cold starts.
+    // Mongoose buffers model queries until the connection is up.
     app.listen(PORT, () => console.log(`API running on http://localhost:${PORT}`));
+    await connectDB();
   } catch (err) {
     console.error('Failed to start server', err);
     process.exit(1);

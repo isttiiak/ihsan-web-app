@@ -50,7 +50,14 @@ export const verifyHandler = async (req: Request, res: Response): Promise<void> 
           ...(picture ? { photoUrl: picture } : {}),
         },
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+        // Frontend only reads displayName/photoUrl here — don't ship the
+        // zikr lifetime map and the rest of the doc on every session start.
+        projection: 'uid email displayName photoUrl',
+      }
     );
 
     res.json({ ok: true, user });

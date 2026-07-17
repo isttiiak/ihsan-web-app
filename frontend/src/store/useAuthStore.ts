@@ -32,7 +32,20 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   init: () => {
     const ai = localStorage.getItem('ihsan_ai_enabled');
-    set({ aiEnabled: ai === '1' });
-    // leave authLoading as true; App will flip it after Firebase resolves
+    // Optimistic session restore: render the app instantly from the cached
+    // user instead of blocking on Firebase + backend. onAuthStateChanged in
+    // App.tsx confirms (or clears) the session moments later. Without this,
+    // a cold Render backend held the whole UI hostage for up to a minute.
+    let cachedUser: AuthUser | null = null;
+    try {
+      cachedUser = JSON.parse(localStorage.getItem('ihsan_user') ?? 'null') as AuthUser | null;
+    } catch {
+      cachedUser = null;
+    }
+    if (cachedUser?.uid) {
+      set({ aiEnabled: ai === '1', user: cachedUser, authLoading: false });
+    } else {
+      set({ aiEnabled: ai === '1' });
+    }
   },
 }));
