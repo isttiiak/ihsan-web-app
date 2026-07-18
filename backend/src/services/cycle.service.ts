@@ -121,7 +121,7 @@ export async function getSummary(userId: string, today: string): Promise<CycleSu
   const daysSince = shiftDateStr(today, -60);
   const [status, logs, days] = await Promise.all([
     getStatus(userId, today),
-    CycleLog.find({ userId }).sort({ startDate: -1 }).limit(12).select('type startDate endDate'),
+    CycleLog.find({ userId }).sort({ startDate: -1 }).limit(24).select('type startDate endDate'),
     CycleDay.find({ userId, date: { $gte: daysSince, $lte: today } }).select('date flow symptoms mood'),
   ]);
   return {
@@ -170,6 +170,33 @@ export async function startCycle(
   if (overlapping) return { ok: false, error: 'That date is inside an already-logged cycle.' };
 
   const log = await CycleLog.create({ userId, type, startDate: date, endDate: null });
+  return { ok: true, log };
+}
+
+/**
+ * Log a COMPLETED past episode in one step (history backfill) — start and end
+ * together. Rejects overlap with any existing episode and future dates.
+ */
+export async function addPastCycle(
+  userId: string,
+  input: { startDate: string; endDate: string; type: 'hayd' | 'nifas'; today: string }
+): Promise<{ ok: boolean; error?: string; log?: ICycleLog }> {
+  const { startDate, endDate, type, today } = input;
+  if (!DAY_STR_RE.test(startDate) || !DAY_STR_RE.test(endDate)) return { ok: false, error: 'Invalid date' };
+  if (endDate < startDate) return { ok: false, error: 'End date is before the start date.' };
+  if (endDate >= today) return { ok: false, error: 'Past cycles must end before today — use "My period started" for a current one.' };
+  const len = daysBetween(startDate, endDate) + 1;
+  if (len > 60) return { ok: false, error: 'That episode is longer than 60 days — please split it.' };
+
+  // Overlap check against every existing episode (incl. active)
+  const clash = await CycleLog.findOne({
+    userId,
+    startDate: { $lte: endDate },
+    $or: [{ endDate: null }, { endDate: { $gte: startDate } }],
+  });
+  if (clash) return { ok: false, error: 'Those dates overlap an already-logged cycle.' };
+
+  const log = await CycleLog.create({ userId, type, startDate, endDate });
   return { ok: true, log };
 }
 

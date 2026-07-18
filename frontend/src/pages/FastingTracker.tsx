@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/useAuthStore.js';
 import { celebrateFast } from '../utils/celebrate.js';
 import { useCycleActive } from '../hooks/useCycle.js';
 import ExcusedCard from '../components/ExcusedCard.js';
+import ConfirmDialog from '../components/ConfirmDialog.js';
 import {
   ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, TrashIcon, XMarkIcon,
   Cog6ToothIcon, CalendarDaysIcon,
@@ -154,6 +155,7 @@ export default function FastingTracker() {
   const updateProfile = useUpdateFastingProfile();
   const addVow = useAddVow();
   const deleteVow = useDeleteVow();
+  const [confirmVowDelete, setConfirmVowDelete] = useState<{ id: string; title: string } | null>(null);
 
   // "Fasting as" — smart default: the day's best sunnah kind, or general nafl
   const defaultKind: VoluntaryKind = ruling.recommended[0]?.id ?? 'general';
@@ -1140,7 +1142,7 @@ export default function FastingTracker() {
                     <div key={v.id} className="rounded-xl bg-white/[0.04] border border-white/10 p-2.5 space-y-1.5">
                       <div className="flex items-center gap-2">
                         <p className="text-white/70 text-xs font-bold flex-1 truncate">{v.title}</p>
-                        <button onClick={() => deleteVow.mutate(v.id)} aria-label={`Delete vow ${v.title}`}
+                        <button onClick={() => setConfirmVowDelete({ id: v.id, title: v.title })} aria-label={`Delete vow ${v.title}`}
                           className="p-1 text-white/25 hover:text-red-400 shrink-0">
                           <TrashIcon className="w-3.5 h-3.5" />
                         </button>
@@ -1269,6 +1271,14 @@ export default function FastingTracker() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Second confirmation for deletes (app-wide rule) */}
+      <ConfirmDialog
+        open={!!confirmVowDelete}
+        title="Delete this vow?"
+        message={confirmVowDelete ? `"${confirmVowDelete.title}" and its countdown will be removed. Logged fasts stay in your history.` : ''}
+        onConfirm={() => { if (confirmVowDelete) deleteVow.mutate(confirmVowDelete.id); setConfirmVowDelete(null); }}
+        onCancel={() => setConfirmVowDelete(null)}
+      />
     </AnimatedBackground>
   );
 }

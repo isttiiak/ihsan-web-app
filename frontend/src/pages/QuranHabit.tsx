@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import QuranAudioPlayer from '../components/QuranAudioPlayer.js';
 import { celebrateGoal, celebrateKhatm } from '../utils/celebrate.js';
 import { PencilIcon, CheckIcon } from '@heroicons/react/24/outline';
 import {
@@ -373,6 +374,9 @@ export default function QuranHabit() {
               <span>All time: <b className="text-white/60">{summary?.stats.allTimePages ?? 0}</b> pages</span>
             </div>
           </motion.div>
+
+          {/* ── Audio Quran (listening logs pages automatically) ── */}
+          <QuranAudioPlayer />
 
           {/* ── Virtues ── */}
           <motion.div

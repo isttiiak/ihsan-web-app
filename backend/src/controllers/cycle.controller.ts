@@ -53,6 +53,22 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
   }
 };
 
+export const addPastCycle = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { startDate, endDate, type, today } = req.body as {
+      startDate: string; endDate: string; type: 'hayd' | 'nifas'; today: string;
+    };
+    const result = await cycleService.addPastCycle(req.user.uid, { startDate, endDate, type, today });
+    if (!result.ok) {
+      res.status(400).json({ ok: false, error: result.error });
+      return;
+    }
+    res.json({ ok: true, log: result.log });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const upsertDay = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { date, flow, symptoms, mood } = req.body as {

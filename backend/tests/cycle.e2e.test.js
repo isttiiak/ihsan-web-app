@@ -149,6 +149,39 @@ describe("Rayhanah Cycle API", () => {
     await asM(request(app).post(`/api/cycle/end`)).send({ date: shift(TODAY, 4) });
   });
 
+  test("past-cycle backfill: valid history accepted, overlaps and future rejected", async () => {
+    const added = await asM(request(app).post(`/api/cycle/logs`)).send({
+      startDate: shift(TODAY, -40),
+      endDate: shift(TODAY, -34),
+      type: "hayd",
+      today: TODAY,
+    });
+    expect(added.status).toBe(200);
+    expect(added.body.log.endDate).toBe(shift(TODAY, -34));
+
+    // Overlap with the episode just added → rejected
+    const overlap = await asM(request(app).post(`/api/cycle/logs`)).send({
+      startDate: shift(TODAY, -36),
+      endDate: shift(TODAY, -30),
+      type: "hayd",
+      today: TODAY,
+    });
+    expect(overlap.status).toBe(400);
+
+    // Ending today or later → must use the live flow instead
+    const future = await asM(request(app).post(`/api/cycle/logs`)).send({
+      startDate: shift(TODAY, -2),
+      endDate: TODAY,
+      type: "hayd",
+      today: TODAY,
+    });
+    expect(future.status).toBe(400);
+
+    // Prediction now learns from history (two starts → one gap)
+    const sum = await asM(request(app).get(`/api/cycle/summary?today=${TODAY}`));
+    expect(sum.body.prediction.basedOnCycles).toBeGreaterThanOrEqual(1);
+  });
+
   test("day wellness note upserts and returns in summary", async () => {
     const put = await asM(request(app).put(`/api/cycle/day`)).send({
       date: TODAY,

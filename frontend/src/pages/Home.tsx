@@ -18,6 +18,7 @@ import {
 import { getTodaySpecialDays } from '../utils/islamicCalendar.js';
 import { useCycleActive, useCycleSummary } from '../hooks/useCycle.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
+import { getRamadanWindow } from '../utils/ramadan.js';
 
 function localTodayForCycle(): string { return getTrackingDay(); }
 
@@ -134,6 +135,8 @@ export default function Home() {
 
   const cycleActive = useCycleActive();
   const { data: cycleSummary } = useCycleSummary();
+  // The whole ummah counts down to Ramadan — a small pill on the fasting card
+  const ramadan = useMemo(() => getRamadanWindow(), []);
   // Gentle heads-up when the predicted period is ≤3 days away (female only)
   const upcomingCycleDays = (() => {
     const ns = cycleSummary?.prediction?.nextStart;
@@ -433,6 +436,17 @@ export default function Home() {
                       >
                         {a.tag}
                       </span>
+                    )}
+
+                    {a.id === 'fasting' && (
+                      <button
+                        className="absolute top-4 right-4 z-20 px-2.5 py-1 rounded-full text-[11px] font-black text-white shadow-lg border border-white/15 hover:scale-105 transition-transform"
+                        style={{ background: 'linear-gradient(90deg, #b45309 0%, #7c3aed 100%)' }}
+                        title={ramadan.active ? 'Open the Ramadan tracker' : 'Countdown to Ramadan — tap to prepare'}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/ramadan'); }}
+                      >
+                        {ramadan.active ? `🌙 Ramadan · Day ${ramadan.todayNumber}` : `🌙 Ramadan in ${ramadan.daysUntil}d`}
+                      </button>
                     )}
 
                     {isZikr && (

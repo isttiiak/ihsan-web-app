@@ -359,7 +359,12 @@ export default function Friends() {
                     <p>📖 <b className="text-white/60">20</b> — today's Quran reading vs your daily goal</p>
                     <p>🌙 <b className="text-white/60">10</b> — fasting today</p>
                     <p className="pt-1">
-                      <b className="text-white/60">Today's Noor</b> starts fresh every day at midnight.{' '}
+                      🌸 On days when Allah Himself excuses a believer from salat or fasting — as He decreed
+                      for our sisters — Noor flows from what remains open: dhikr, Quran, and ṣalawāt. The
+                      maximum stays 100 for everyone, and no one can tell whose day was excused.
+                    </p>
+                    <p className="pt-1">
+                      <b className="text-white/60">Today's Noor</b> starts fresh every day at Fajr.{' '}
                       <b className="text-white/60">All-time Noor</b> gathers each day's light and never resets.
                     </p>
                     <p className="text-white/25 pt-1 italic">

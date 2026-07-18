@@ -9,6 +9,8 @@ import {
   useUpsertCycleDay, type CycleFlow, type CycleMood,
 } from '../hooks/useCycle.js';
 import CycleCalendar from '../components/CycleCalendar.js';
+import ConfirmDialog from '../components/ConfirmDialog.js';
+import TabNav from '../components/TabNav.js';
 import { useFastingSummary, useUpdateFastingProfile } from '../hooks/useFasting.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
 import { getHijriDate } from '../utils/islamicCalendar.js';
@@ -201,7 +203,17 @@ export default function RayhanahCycle() {
   return (
     <AnimatedBackground variant="dark">
       <h1 className="sr-only">Rayhanah Cycle</h1>
-      <div className="relative max-w-2xl mx-auto px-4 pt-6 pb-16 space-y-5">
+      <div className="px-4 pt-3">
+        <div className="max-w-2xl mx-auto">
+          <TabNav
+            items={[
+              { label: '🌸 Cycle', to: '/cycle', active: true },
+              { label: '📊 Analytics', to: '/cycle/analytics' },
+            ]}
+          />
+        </div>
+      </div>
+      <div className="relative max-w-2xl mx-auto px-4 pt-4 pb-16 space-y-5">
 
         {/* ── Hero ─────────────────────────────────────────────────────────── */}
         {isLoading ? (
@@ -454,14 +466,7 @@ export default function RayhanahCycle() {
                         <span className="text-white/70 flex-1">
                           {formatDay(l.startDate)} — {l.endDate ? formatDay(l.endDate) : 'ongoing'}
                         </span>
-                        {confirmDelete === l._id ? (
-                          <span className="flex items-center gap-2">
-                            <button className="text-red-300 font-bold" onClick={() => { deleteLog.mutate(l._id); setConfirmDelete(null); }}>Delete?</button>
-                            <button className="text-white/40" onClick={() => setConfirmDelete(null)}>Cancel</button>
-                          </span>
-                        ) : (
-                          <button aria-label="Delete entry" className="text-white/25 hover:text-red-300" onClick={() => setConfirmDelete(l._id)}>🗑</button>
-                        )}
+                        <button aria-label="Delete entry" className="text-white/25 hover:text-red-300" onClick={() => setConfirmDelete(l._id)}>🗑</button>
                       </div>
                     ))}
                   </div>
@@ -564,6 +569,15 @@ export default function RayhanahCycle() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Second confirmation for deletes (app-wide rule) */}
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title="Remove this cycle?"
+        message="This entry will be removed from your history and predictions."
+        onConfirm={() => { if (confirmDelete) deleteLog.mutate(confirmDelete); setConfirmDelete(null); }}
+        onCancel={() => setConfirmDelete(null)}
+      />
 
       {/* ── Ramadan qada prompt ─────────────────────────────────────────────── */}
       <AnimatePresence>

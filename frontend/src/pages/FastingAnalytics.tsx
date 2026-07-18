@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
+import ConfirmDialog from '../components/ConfirmDialog.js';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import {
   useFastingSummary,
@@ -272,19 +273,12 @@ export default function FastingAnalytics() {
                                     className="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 text-xs"
                                   >💔</button>
                                 )}
-                                {confirmDelete === l.date ? (
-                                  <button
-                                    onClick={() => { clearLog.mutate(l.date); setConfirmDelete(null); }}
-                                    className="px-2 py-1 rounded-lg bg-red-500 text-white text-[10px] font-bold"
-                                  >Sure?</button>
-                                ) : (
-                                  <button
-                                    onClick={() => { setConfirmDelete(l.date); setTimeout(() => setConfirmDelete((d) => (d === l.date ? null : d)), 2500); }}
-                                    title="Delete entry"
-                                    aria-label={`Delete ${l.date} entry`}
-                                    className="p-1.5 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10"
-                                  ><TrashIcon className="w-3.5 h-3.5" /></button>
-                                )}
+                                <button
+                                  onClick={() => setConfirmDelete(l.date)}
+                                  title="Delete entry"
+                                  aria-label={`Delete ${l.date} entry`}
+                                  className="p-1.5 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10"
+                                ><TrashIcon className="w-3.5 h-3.5" /></button>
                               </div>
                             </div>
                           );
@@ -298,6 +292,14 @@ export default function FastingAnalytics() {
           )}
         </div>
       </div>
+      {/* Second confirmation for deletes (app-wide rule) */}
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title="Delete this fast log?"
+        message={confirmDelete ? `The entry for ${confirmDelete} will be removed from your history and stats.` : ''}
+        onConfirm={() => { if (confirmDelete) clearLog.mutate(confirmDelete); setConfirmDelete(null); }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </AnimatedBackground>
   );
 }

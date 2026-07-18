@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import * as cycleController from '../controllers/cycle.controller.js';
-import { startCycleSchema, endCycleSchema, cycleProfileSchema, cycleDaySchema } from '../validation/cycle.schemas.js';
+import { startCycleSchema, endCycleSchema, cycleProfileSchema, cycleDaySchema, pastCycleSchema } from '../validation/cycle.schemas.js';
 
 const router = Router();
 
@@ -14,6 +14,9 @@ router.post('/start', requireAuth, validate(startCycleSchema), cycleController.s
 
 // POST /api/cycle/end — end the active episode
 router.post('/end', requireAuth, validate(endCycleSchema), cycleController.endCycle);
+
+// POST /api/cycle/logs — backfill a completed past episode (history import)
+router.post('/logs', requireAuth, validate(pastCycleSchema), cycleController.addPastCycle);
 
 // PUT /api/cycle/day — per-day wellness note (flow/symptoms/mood)
 router.put('/day', requireAuth, validate(cycleDaySchema), cycleController.upsertDay);

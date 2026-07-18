@@ -30,6 +30,7 @@ A modern Islamic productivity application to help Muslims track their daily Zikr
 ### 📖 Quran Habit
 - One-tap page logging with a daily-minimum goal, reading streaks, and a khatm bookmark across the 604-page mushaf
 - Pace estimate for finishing your khatm, verified virtues of recitation
+- 🎧 Audio Quran: all 114 surahs, six renowned reciters, streamed free — every ~3 minutes of listening logs a page toward your goal automatically
 
 ### 🤝 Friends — “So compete with one another in doing good” (Quran 2:148)
 - Connect via a single invite link; see each other's streaks and today's worship
@@ -40,6 +41,7 @@ A modern Islamic productivity application to help Muslims track their daily Zikr
 - Salat & fasting pause automatically with zero guilt — dhikr, Quran listening & ṣalawāt take over your Noor, and nothing about it is ever visible to friends
 - Ghusl guide, cycle predictions, madhab-aware istiḥāḍa guidance, and Ramadan days auto-added to your qaḍā counter
 - Modern cycle facilities: private flow/symptom/mood notes, a cycle calendar with predicted windows, personal rhythm stats, and a pre-period heads-up
+- A dedicated analytics page: regularity score, prediction windows (mean ± variability), length history, symptom patterns — plus past-period backfill so predictions learn your rhythm from day one
 
 ### 🌙 Ramadan Tracker
 - A dedicated home for the blessed month: countdown & preparation before it, a 30-day grid during it

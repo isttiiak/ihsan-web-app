@@ -106,6 +106,25 @@ export function useSetMadhab() {
   });
 }
 
+/** Backfill a completed past episode (history import). */
+export function useAddPastCycle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { startDate: string; endDate: string; type: 'hayd' | 'nifas' }) => {
+      const { data } = await api.post('/api/cycle/logs', { ...vars, today: getTrackingDay() });
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Past cycle added — predictions just got smarter 🌸', { id: 'cycle-past' });
+      void qc.invalidateQueries({ queryKey: ['cycle'] });
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      toast.error(msg ?? 'Could not add that cycle.', { id: 'cycle-past' });
+    },
+  });
+}
+
 /** Save today's wellness note (flow / symptoms / mood) — optimistic, silent. */
 export function useUpsertCycleDay() {
   const qc = useQueryClient();

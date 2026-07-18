@@ -21,6 +21,15 @@ export const cycleProfileSchema = z.object({
   }),
 });
 
+export const pastCycleSchema = z.object({
+  body: z.object({
+    startDate: dateField,
+    endDate: dateField,
+    type: z.enum(['hayd', 'nifas']).default('hayd'),
+    today: dateField,
+  }),
+});
+
 export const cycleDaySchema = z.object({
   body: z.object({
     date: dateField,
