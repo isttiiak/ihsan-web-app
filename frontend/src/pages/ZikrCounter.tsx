@@ -862,7 +862,14 @@ export default function ZikrCounter() {
               className="bg-brand-surface rounded-3xl p-6 w-full max-w-md shadow-2xl border border-brand-border"
             >
               <h3 className="text-xl font-bold text-brand-emerald mb-1">Add Custom Dhikr</h3>
-              <p className="text-white/40 text-xs mb-5">Name and meaning are required. Arabic is optional but recommended.</p>
+              <p className="text-white/40 text-xs mb-2">Name and meaning are required. Arabic is optional but recommended.</p>
+              <p className="text-xs mb-4">
+                <button
+                  className="text-brand-gold/80 underline"
+                  onClick={() => { setShowAddCustom(false); navigate('/settings'); }}
+                >📿 First check the zikr library in Settings</button>
+                <span className="text-white/30"> — ṣalawāt, istighfār & more, already verified with references.</span>
+              </p>
 
               <div className="space-y-3">
                 {/* Name */}

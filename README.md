@@ -10,6 +10,7 @@ A modern Islamic productivity application to help Muslims track their daily Zikr
 
 ### 📿 Zikr Counter
 - Local-first tap counter with haptics, focus mode, and custom dhikr (with verified hadith references)
+- A curated zikr library in Settings — ṣalawāt (Durud Ibrāhīm & the short ṣalawāt), every istighfār formula, the weighty words, calls on His Names — each verified, one tap to add to your own list
 - Daily goals and a fair streak system — miss one day and you get a grace chance 🧊; backfill up to 2 days to repair a streak
 - Analytics: trends, per-type breakdown, weekly heatmap with met/grace/missed tags
 

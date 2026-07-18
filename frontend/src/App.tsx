@@ -41,6 +41,7 @@ const QuranListen = lazy(() => import('./pages/QuranListen.js'));
 const QuranAnalytics = lazy(() => import('./pages/QuranAnalytics.js'));
 const QuranReader = lazy(() => import('./pages/QuranReader.js'));
 const QuranBookmarks = lazy(() => import('./pages/QuranBookmarks.js'));
+const Landing = lazy(() => import('./pages/Landing.js'));
 
 function RouteFallback() {
   return (
@@ -89,6 +90,18 @@ function VerifyEmailGate({ email }: { email: string | null }) {
     </div>
   );
 }
+
+/** "/" shows the marketing landing to guests and the app home to users. */
+const RootRoute = () => {
+  const { user, authLoading } = useAuthStore();
+  if (user) return <Home />;
+  if (authLoading) return <RouteFallback />;
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <Landing />
+    </Suspense>
+  );
+};
 
 interface ProtectedProps {
   children: React.ReactNode;
@@ -321,7 +334,7 @@ export default function App() {
           <div className="flex-1">
             <Suspense fallback={<RouteFallback />}>
             <Routes>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<RootRoute />} />
               <Route path="/zikr" element={<ZikrCounter />} />
               <Route path="/salat" element={<SalatTracker />} />
               <Route path="/salat/analytics" element={<Protected><SalatAnalytics /></Protected>} />

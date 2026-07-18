@@ -7,6 +7,7 @@ import { getHijriAdjustment, setHijriAdjustment, getHijriDate, formatHijriDate }
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useUiStore } from '../store/useUiStore.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import ZikrLibrarySection from '../components/ZikrLibrarySection.js';
 import {
   Cog6ToothIcon,
   SparklesIcon,
@@ -309,6 +310,16 @@ export default function Settings() {
                 )}
               </div>
             )}
+          </SectionCard>
+
+          {/* ── Zikr library ── */}
+          <SectionCard
+            icon={<span className="text-lg">📿</span>}
+            title="Zikr library"
+            subtitle="Ṣalawāt, istighfār, the weighty words — verified adhkār to add to your counter"
+            delay={0.22}
+          >
+            <ZikrLibrarySection />
           </SectionCard>
 
           {/* ── Your data ── */}
