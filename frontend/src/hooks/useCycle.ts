@@ -12,6 +12,16 @@ export interface CycleActive {
   beyondMax: boolean;
 }
 
+export type CycleFlow = 'light' | 'medium' | 'heavy';
+export type CycleMood = 'calm' | 'happy' | 'low' | 'irritable' | 'anxious' | 'tired';
+
+export interface CycleDayNote {
+  date: string;
+  flow: CycleFlow | null;
+  symptoms: string[];
+  mood: CycleMood | null;
+}
+
 export interface CycleSummary {
   active: CycleActive | null;
   prediction: {
@@ -22,6 +32,7 @@ export interface CycleSummary {
   };
   madhab: 'hanafi' | 'majority';
   logs: Array<{ _id: string; type: 'hayd' | 'nifas'; startDate: string; endDate: string | null }>;
+  days: CycleDayNote[];
 }
 
 /** True for signed-in female users — the only ones who see Rayhanah UI. */
@@ -92,6 +103,40 @@ export function useSetMadhab() {
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['cycle'] }),
     onError: () => toast.error('Could not update setting.', { id: 'cycle-madhab' }),
+  });
+}
+
+/** Save today's wellness note (flow / symptoms / mood) — optimistic, silent. */
+export function useUpsertCycleDay() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { date: string; flow?: CycleFlow | null; symptoms?: string[]; mood?: CycleMood | null }) => {
+      const { data } = await api.put('/api/cycle/day', vars);
+      return data;
+    },
+    onMutate: async (vars) => {
+      // Optimistic merge into every cached cycle summary
+      await qc.cancelQueries({ queryKey: ['cycle'] });
+      qc.setQueriesData<CycleSummary & { ok: boolean }>({ queryKey: ['cycle', 'summary'] }, (old) => {
+        if (!old) return old;
+        const days = [...(old.days ?? [])];
+        const i = days.findIndex((d) => d.date === vars.date);
+        const prev = i >= 0 ? days[i]! : { date: vars.date, flow: null, symptoms: [], mood: null };
+        const next = {
+          ...prev,
+          ...(vars.flow !== undefined ? { flow: vars.flow } : {}),
+          ...(vars.symptoms !== undefined ? { symptoms: vars.symptoms } : {}),
+          ...(vars.mood !== undefined ? { mood: vars.mood } : {}),
+        };
+        if (i >= 0) days[i] = next; else days.push(next);
+        return { ...old, days };
+      });
+    },
+    onError: () => {
+      toast.error('Could not save your note — try again.', { id: 'cycle-day' });
+      void qc.invalidateQueries({ queryKey: ['cycle'] });
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ['cycle', 'summary'] }),
   });
 }
 

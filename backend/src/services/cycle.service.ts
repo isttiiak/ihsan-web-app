@@ -1,5 +1,6 @@
 import CycleLog, { ICycleLog } from '../models/CycleLog.js';
 import CycleProfile, { ICycleProfile } from '../models/CycleProfile.js';
+import CycleDay, { ICycleDay } from '../models/CycleDay.js';
 
 /**
  * Rayhanah Cycle — menstrual (hayd) & post-natal (nifas) tracking.
@@ -112,12 +113,16 @@ export async function getStatus(userId: string, today: string): Promise<CycleSta
 
 export interface CycleSummary extends CycleStatus {
   logs: Array<{ _id: string; type: string; startDate: string; endDate: string | null }>;
+  /** Wellness notes for the last ~60 days (flow/symptoms/mood) */
+  days: Array<{ date: string; flow: string | null; symptoms: string[]; mood: string | null }>;
 }
 
 export async function getSummary(userId: string, today: string): Promise<CycleSummary> {
-  const [status, logs] = await Promise.all([
+  const daysSince = shiftDateStr(today, -60);
+  const [status, logs, days] = await Promise.all([
     getStatus(userId, today),
     CycleLog.find({ userId }).sort({ startDate: -1 }).limit(12).select('type startDate endDate'),
+    CycleDay.find({ userId, date: { $gte: daysSince, $lte: today } }).select('date flow symptoms mood'),
   ]);
   return {
     ...status,
@@ -127,7 +132,23 @@ export async function getSummary(userId: string, today: string): Promise<CycleSu
       startDate: l.startDate,
       endDate: l.endDate,
     })),
+    days: days.map((d) => ({ date: d.date, flow: d.flow, symptoms: d.symptoms, mood: d.mood })),
   };
+}
+
+export async function upsertDay(
+  userId: string,
+  input: { date: string; flow?: string | null; symptoms?: string[]; mood?: string | null }
+): Promise<ICycleDay> {
+  const set: Record<string, unknown> = {};
+  if (input.flow !== undefined) set.flow = input.flow;
+  if (input.symptoms !== undefined) set.symptoms = input.symptoms;
+  if (input.mood !== undefined) set.mood = input.mood;
+  return await CycleDay.findOneAndUpdate(
+    { userId, date: input.date },
+    { $set: set, $setOnInsert: { userId, date: input.date } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 }
 
 export async function startCycle(
@@ -175,6 +196,7 @@ export async function deleteLog(userId: string, logId: string): Promise<boolean>
 export async function deleteAll(userId: string): Promise<void> {
   await CycleLog.deleteMany({ userId });
   await CycleProfile.deleteMany({ userId });
+  await CycleDay.deleteMany({ userId });
 }
 
 /**

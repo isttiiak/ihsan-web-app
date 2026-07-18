@@ -26,6 +26,8 @@ export interface UpsertLogInput {
   status: FastingStatus;
   hijri?: string;
   note?: string;
+  /** Ramadan nights: tarawih prayed */
+  tarawih?: boolean;
 }
 
 export async function getLog(userId: string, date?: string): Promise<IFastingLog | null> {
@@ -34,7 +36,7 @@ export async function getLog(userId: string, date?: string): Promise<IFastingLog
 }
 
 export async function upsertLog(userId: string, input: UpsertLogInput): Promise<IFastingLog> {
-  const { date, category, voluntaryKind, vowId, status, hijri, note } = input;
+  const { date, category, voluntaryKind, vowId, status, hijri, note, tarawih } = input;
 
   // Nadhr logs must reference one of the user's vows
   if (category === 'nadhr') {
@@ -59,6 +61,7 @@ export async function upsertLog(userId: string, input: UpsertLogInput): Promise<
   else unset['hijri'] = 1;
   if (note !== undefined) set['note'] = note;
   else unset['note'] = 1;
+  if (tarawih !== undefined) set['tarawih'] = tarawih;
 
   const log = await FastingLog.findOneAndUpdate(
     { userId, date },

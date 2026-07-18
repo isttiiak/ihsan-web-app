@@ -20,14 +20,11 @@ export const upsertFastingLogSchema = z.object({
       status: z.enum(FASTING_STATUSES),
       hijri: z.string().max(60).optional(),
       note: z.string().max(200).optional(),
+      /** Ramadan tracker: did she/he pray tarawih this night? */
+      tarawih: z.boolean().optional(),
     })
     .refine((b) => b.category !== 'nadhr' || !!b.vowId, {
       message: 'vowId is required for nadhr fasts',
-    })
-    // The dedicated Ramadan tracker is not built yet — reject its category so
-    // ordinary logging can't write ramadan rows prematurely.
-    .refine((b) => b.category !== 'ramadan', {
-      message: 'Ramadan fasts are tracked by the dedicated Ramadan tracker',
     }),
 });
 

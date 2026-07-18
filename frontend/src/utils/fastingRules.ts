@@ -5,7 +5,8 @@
 
 import { getHijriDate } from './islamicCalendar.js';
 
-export type FastingCategory = 'qada' | 'kaffarah' | 'nadhr' | 'voluntary';
+// 'ramadan' is logged only by the dedicated Ramadan tracker (/ramadan)
+export type FastingCategory = 'qada' | 'kaffarah' | 'nadhr' | 'voluntary' | 'ramadan';
 export type VoluntaryKind =
   | 'mon_thu' | 'ayyam_bid' | 'arafah' | 'ashura' | 'shawwal_six'
   | 'muharram' | 'shaban' | 'dawud' | 'dhul_hijjah' | 'general';

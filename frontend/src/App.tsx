@@ -33,6 +33,7 @@ const ConnectFriend = lazy(() => import('./pages/ConnectFriend.js'));
 const About = lazy(() => import('./pages/About.js'));
 const Privacy = lazy(() => import('./pages/Privacy.js'));
 const RayhanahCycle = lazy(() => import('./pages/RayhanahCycle.js'));
+const RamadanTracker = lazy(() => import('./pages/RamadanTracker.js'));
 
 function RouteFallback() {
   return (
@@ -327,6 +328,7 @@ export default function App() {
               <Route path="/special-day/:id" element={<IslamicSpecialDay />} />
               <Route path="/friends" element={<Protected><Friends /></Protected>} />
               <Route path="/cycle" element={<Protected><RayhanahCycle /></Protected>} />
+              <Route path="/ramadan" element={<Protected><RamadanTracker /></Protected>} />
               {/* Public: handles guests itself (sign-in gate that returns here) */}
               <Route path="/connect/:code" element={<ConnectFriend />} />
               <Route path="/about" element={<About />} />

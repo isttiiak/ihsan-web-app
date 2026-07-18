@@ -53,6 +53,18 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
   }
 };
 
+export const upsertDay = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { date, flow, symptoms, mood } = req.body as {
+      date: string; flow?: 'light' | 'medium' | 'heavy' | null; symptoms?: string[]; mood?: string | null;
+    };
+    const day = await cycleService.upsertDay(req.user.uid, { date, flow, symptoms, mood });
+    res.json({ ok: true, day: { date: day.date, flow: day.flow, symptoms: day.symptoms, mood: day.mood } });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const deleteLog = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const logId = typeof req.params.logId === 'string' ? req.params.logId : '';

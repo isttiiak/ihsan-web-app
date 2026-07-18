@@ -65,13 +65,28 @@ describe("Fasting API", () => {
     expect(get.body.log.voluntaryKind).toBeUndefined();
   });
 
-  test("ramadan category is rejected until the dedicated tracker exists", async () => {
+  test("ramadan category logs with a tarawih flag (dedicated tracker)", async () => {
     const res = await auth(request(app).put(`/api/fasting/log`)).send({
       date: "2026-06-30",
       category: "ramadan",
       status: "completed",
+      tarawih: true,
     });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
+    expect(res.body.log.category).toBe("ramadan");
+    expect(res.body.log.tarawih).toBe(true);
+
+    // Toggle tarawih off without touching the fast status
+    const upd = await auth(request(app).put(`/api/fasting/log`)).send({
+      date: "2026-06-30",
+      category: "ramadan",
+      status: "completed",
+      tarawih: false,
+    });
+    expect(upd.body.log.tarawih).toBe(false);
+
+    // Clean up so later stats tests aren't affected
+    await auth(request(app).delete(`/api/fasting/log?date=2026-06-30`));
   });
 
   test("nadhr requires a valid vow; vow progress is derived in summary", async () => {

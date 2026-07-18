@@ -6,7 +6,9 @@ import AnimatedBackground from '../components/AnimatedBackground.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import {
   useCycleSummary, useStartCycle, useEndCycle, useSetMadhab, useDeleteCycleLog, useIsFemale,
+  useUpsertCycleDay, type CycleFlow, type CycleMood,
 } from '../hooks/useCycle.js';
+import CycleCalendar from '../components/CycleCalendar.js';
 import { useFastingSummary, useUpdateFastingProfile } from '../hooks/useFasting.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
 import { getHijriDate } from '../utils/islamicCalendar.js';
@@ -58,6 +60,31 @@ const GHUSL_STEPS = [
   'Pour water over your whole body — right side first, then left',
 ];
 
+// ─── "How are you today?" chips ───────────────────────────────────────────────
+const FLOW_OPTIONS: Array<{ id: CycleFlow; label: string }> = [
+  { id: 'light', label: '💧 Light' },
+  { id: 'medium', label: '💧💧 Medium' },
+  { id: 'heavy', label: '💧💧💧 Heavy' },
+];
+const SYMPTOM_OPTIONS: Array<{ id: string; label: string }> = [
+  { id: 'cramps', label: '🌀 Cramps' },
+  { id: 'headache', label: '🤕 Headache' },
+  { id: 'fatigue', label: '🪫 Fatigue' },
+  { id: 'nausea', label: '🌊 Nausea' },
+  { id: 'backache', label: '🦴 Backache' },
+  { id: 'bloating', label: '🎈 Bloating' },
+  { id: 'tenderness', label: '🌡️ Tenderness' },
+  { id: 'insomnia', label: '🌙 Insomnia' },
+];
+const MOOD_OPTIONS: Array<{ id: CycleMood; label: string }> = [
+  { id: 'calm', label: '🕊️ Calm' },
+  { id: 'happy', label: '🌈 Happy' },
+  { id: 'low', label: '🌧️ Low' },
+  { id: 'irritable', label: '🌪️ Irritable' },
+  { id: 'anxious', label: '〰️ Anxious' },
+  { id: 'tired', label: '🛌 Tired' },
+];
+
 function formatDay(dateStr: string): string {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
@@ -91,6 +118,7 @@ export default function RayhanahCycle() {
   const setMadhab = useSetMadhab();
   const deleteLog = useDeleteCycleLog();
   const updateFastingProfile = useUpdateFastingProfile();
+  const upsertDay = useUpsertCycleDay();
 
   const [startOpen, setStartOpen] = useState(false);
   const [startDate, setStartDate] = useState(today);
@@ -113,6 +141,16 @@ export default function RayhanahCycle() {
   const gardenDone = GARDEN_ITEMS.filter((g) => garden[g.id]).length;
 
   const active = summary?.active ?? null;
+  const todayNote = summary?.days?.find((d) => d.date === today) ?? null;
+
+  const setFlow = (flow: CycleFlow) =>
+    upsertDay.mutate({ date: today, flow: todayNote?.flow === flow ? null : flow });
+  const toggleSymptom = (id: string) => {
+    const cur = todayNote?.symptoms ?? [];
+    upsertDay.mutate({ date: today, symptoms: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] });
+  };
+  const setMood = (mood: CycleMood) =>
+    upsertDay.mutate({ date: today, mood: todayNote?.mood === mood ? null : mood });
 
   const handleEndConfirmed = () => {
     const startedOn = active?.startDate;
@@ -274,6 +312,74 @@ export default function RayhanahCycle() {
             {gardenDone === GARDEN_ITEMS.length && (
               <p className="text-center text-pink-200/90 text-sm font-semibold mt-3">🌺 Mā shāʾ Allāh — a full garden today!</p>
             )}
+          </div>
+        )}
+
+        {/* ── How are you today? (private wellness note) ────────────────────── */}
+        {active && (
+          <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-white font-black">🌷 How are you today?</h2>
+              <span className="text-[10px] text-white/25">private — only you can see this</span>
+            </div>
+            <div>
+              <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">Flow</p>
+              <div className="flex flex-wrap gap-1.5">
+                {FLOW_OPTIONS.map((f) => (
+                  <button key={f.id}
+                    className={`btn btn-xs rounded-full border ${todayNote?.flow === f.id ? 'bg-pink-500/30 border-pink-400/50 text-pink-100' : 'bg-white/5 border-white/10 text-white/50 hover:text-white'}`}
+                    onClick={() => setFlow(f.id)}
+                  >{f.label}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">Body</p>
+              <div className="flex flex-wrap gap-1.5">
+                {SYMPTOM_OPTIONS.map((sy) => (
+                  <button key={sy.id}
+                    className={`btn btn-xs rounded-full border ${todayNote?.symptoms?.includes(sy.id) ? 'bg-rose-500/25 border-rose-400/40 text-rose-100' : 'bg-white/5 border-white/10 text-white/50 hover:text-white'}`}
+                    onClick={() => toggleSymptom(sy.id)}
+                  >{sy.label}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">Heart</p>
+              <div className="flex flex-wrap gap-1.5">
+                {MOOD_OPTIONS.map((mo) => (
+                  <button key={mo.id}
+                    className={`btn btn-xs rounded-full border ${todayNote?.mood === mo.id ? 'bg-purple-500/25 border-purple-400/40 text-purple-100' : 'bg-white/5 border-white/10 text-white/50 hover:text-white'}`}
+                    onClick={() => setMood(mo.id)}
+                  >{mo.label}</button>
+                ))}
+              </div>
+            </div>
+            {(todayNote?.symptoms?.length ?? 0) > 0 && (
+              <p className="text-pink-200/70 text-xs leading-relaxed border-t border-white/5 pt-2.5">
+                May Allah give you ease — no fatigue or pain touches a Muslim except that Allah wipes away
+                sins with it (<a className="underline" href="https://sunnah.com/bukhari:5641" target="_blank" rel="noreferrer">Bukhārī 5641</a>). 🌸
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── Cycle calendar + stats ────────────────────────────────────────── */}
+        {summary && <CycleCalendar summary={summary} today={today} />}
+        {summary && summary.prediction.basedOnCycles > 0 && (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
+              <p className="text-2xl font-black text-pink-200">{summary.prediction.avgCycleDays}</p>
+              <p className="text-white/35 text-[10px] font-bold uppercase tracking-wide mt-1">avg cycle days</p>
+            </div>
+            <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
+              <p className="text-2xl font-black text-pink-200">{summary.prediction.avgPeriodDays}</p>
+              <p className="text-white/35 text-[10px] font-bold uppercase tracking-wide mt-1">avg period days</p>
+            </div>
+            <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
+              <p className="text-2xl font-black text-pink-200">{summary.prediction.basedOnCycles + 1}</p>
+              <p className="text-white/35 text-[10px] font-bold uppercase tracking-wide mt-1">cycles learned</p>
+            </div>
           </div>
         )}
 

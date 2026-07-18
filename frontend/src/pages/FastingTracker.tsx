@@ -123,6 +123,7 @@ const CATEGORY_LABEL: Record<FastingCategory, { label: string; emoji: string }> 
   qada:      { label: 'Qaḍā',      emoji: '🔄' },
   kaffarah:  { label: 'Kaffārah',  emoji: '⚖️' },
   nadhr:     { label: 'Vow',       emoji: '🤝' },
+  ramadan:   { label: 'Ramadan',   emoji: '🌙' },
 };
 
 // Celebration sparkles around the hero emoji after logging a completed fast
@@ -580,15 +581,19 @@ export default function FastingTracker() {
                   <p className="text-white/40 text-xs pt-1">Enjoy the blessing — today is for eating and celebrating! 🎉</p>
                 </motion.div>
               ) : ruling.level === 'ramadan' ? (
-                <div className="space-y-2 py-2">
+                <div className="space-y-3 py-2">
                   <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity }} className="text-6xl">🌙</motion.div>
                   <p className="text-brand-gold font-black text-lg">Ramaḍān Mubārak!</p>
                   <p className="text-white/50 text-xs leading-relaxed max-w-sm mx-auto">
-                    The dedicated 30-day Ramaḍān tracker is coming soon — every day of this
-                    blessed month is the obligatory fast itself.
+                    This blessed month has its own home — the 30-day tracker with suhoor &
+                    iftar times, tarawih nights and Laylat al-Qadr.
                   </p>
+                  <button
+                    className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-gold to-amber-500"
+                    onClick={() => navigate('/ramadan')}
+                  >🌙 Open the Ramadan tracker →</button>
                   <a href="https://quran.com/2/185" target="_blank" rel="noopener noreferrer"
-                    className="text-brand-gold/60 text-[10px] underline">Quran 2:185 ↗</a>
+                    className="block text-brand-gold/60 text-[10px] underline">Quran 2:185 ↗</a>
                 </div>
               ) : log ? (
                 /* ── Logged state ── */

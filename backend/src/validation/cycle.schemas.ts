@@ -20,3 +20,15 @@ export const cycleProfileSchema = z.object({
     madhab: z.enum(['hanafi', 'majority']),
   }),
 });
+
+export const cycleDaySchema = z.object({
+  body: z.object({
+    date: dateField,
+    flow: z.enum(['light', 'medium', 'heavy']).nullable().optional(),
+    symptoms: z
+      .array(z.enum(['cramps', 'headache', 'fatigue', 'nausea', 'backache', 'bloating', 'tenderness', 'insomnia']))
+      .max(8)
+      .optional(),
+    mood: z.enum(['calm', 'happy', 'low', 'irritable', 'anxious', 'tired']).nullable().optional(),
+  }),
+});

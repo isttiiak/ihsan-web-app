@@ -39,6 +39,12 @@ A modern Islamic productivity application to help Muslims track their daily Zikr
 - The first Muslim productivity app with first-class menstrual & post-natal (nifās) support
 - Salat & fasting pause automatically with zero guilt — dhikr, Quran listening & ṣalawāt take over your Noor, and nothing about it is ever visible to friends
 - Ghusl guide, cycle predictions, madhab-aware istiḥāḍa guidance, and Ramadan days auto-added to your qaḍā counter
+- Modern cycle facilities: private flow/symptom/mood notes, a cycle calendar with predicted windows, personal rhythm stats, and a pre-period heads-up
+
+### 🌙 Ramadan Tracker
+- A dedicated home for the blessed month: countdown & preparation before it, a 30-day grid during it
+- Suhoor & iftar times on-device, tarawih nights, Laylat al-Qadr odd-night focus with the du'a of the night
+- Rayhanah-aware: excused days show 🌸 and flow into the qaḍā counter automatically
 
 ### 🌍 Built right
 - Hijri dates with a ±1-day moon-sighting adjustment; every quote linked to quran.com / sunnah.com with grading
@@ -210,7 +216,7 @@ All routes are Bearer-token authenticated (Firebase) and zod-validated.
 | Salat | `/api/salat` | `GET /?date=`, `PATCH /prayer`, `PATCH /nafl`, `GET /analytics?today=`, `DELETE /all` |
 | Fasting | `/api/fasting` | `PUT /log`, `GET /summary?today=`, `GET /history`, `PATCH /profile`, vows CRUD, `DELETE /all` |
 | Quran | `/api/quran` | `POST /read`, `GET /summary?today=`, `PATCH /profile`, `DELETE /all` |
-| Cycle | `/api/cycle` | `GET /summary`, `POST /start`, `POST /end`, `PATCH /profile`, `DELETE /all` |
+| Cycle | `/api/cycle` | `GET /summary`, `POST /start`, `POST /end`, `PUT /day`, `PATCH /profile`, `DELETE /all` |
 | Social | `/api/social` | `GET /summary` (leaderboard), `GET /noor`, `GET /friends` (list + join date), `POST /connect`, `DELETE /friends/:uid` |
 
 ---

@@ -7,6 +7,7 @@ import { getTrackingDay } from '../utils/trackingDay.js';
 
 export interface FastingLog {
   _id: string;
+  tarawih?: boolean;
   userId: string;
   date: string;
   category: FastingCategory;
@@ -76,6 +77,8 @@ export interface UpsertFastingVars {
   status: FastingStatus;
   hijri?: string;
   note?: string;
+  /** Ramadan nights: tarawih prayed */
+  tarawih?: boolean;
 }
 
 export function useUpsertFastingLog() {

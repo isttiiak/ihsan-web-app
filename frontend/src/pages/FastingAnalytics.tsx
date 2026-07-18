@@ -21,6 +21,7 @@ const CATEGORY_CHART: Record<FastingCategory, { label: string; emoji: string; co
   qada:      { label: 'Qaḍā',      emoji: '🔄', color: '#d97706' },
   kaffarah:  { label: 'Kaffārah',  emoji: '⚖️', color: '#9333ea' },
   nadhr:     { label: 'Vow',       emoji: '🤝', color: '#0891b2' },
+  ramadan:   { label: 'Ramadan',   emoji: '🌙', color: '#b45309' },
 };
 const CATEGORY_ORDER: FastingCategory[] = ['voluntary', 'qada', 'kaffarah', 'nadhr'];
 

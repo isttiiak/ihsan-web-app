@@ -24,6 +24,8 @@ export interface IFastingLog extends Document {
   /** Display snapshot of the user's adjusted hijri date, e.g. "17 Muḥarram 1448" */
   hijri?: string;
   note?: string;
+  /** Ramadan nights: tarawih prayed (independent of the fast status) */
+  tarawih?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,6 +40,7 @@ const fastingLogSchema = new Schema<IFastingLog>(
     status: { type: String, enum: FASTING_STATUSES, required: true },
     hijri: { type: String, maxlength: 60 },
     note: { type: String, maxlength: 200 },
+    tarawih: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

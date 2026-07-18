@@ -16,7 +16,10 @@ import {
   PRAYER_META,
 } from '../utils/prayerTimes.js';
 import { getTodaySpecialDays } from '../utils/islamicCalendar.js';
-import { useCycleActive } from '../hooks/useCycle.js';
+import { useCycleActive, useCycleSummary } from '../hooks/useCycle.js';
+import { getTrackingDay } from '../utils/trackingDay.js';
+
+function localTodayForCycle(): string { return getTrackingDay(); }
 
 interface ActivityItem {
   id: string;
@@ -130,6 +133,14 @@ export default function Home() {
   }, [prayerNow.getMinutes()]); // recalc every minute is enough for widget
 
   const cycleActive = useCycleActive();
+  const { data: cycleSummary } = useCycleSummary();
+  // Gentle heads-up when the predicted period is ≤3 days away (female only)
+  const upcomingCycleDays = (() => {
+    const ns = cycleSummary?.prediction?.nextStart;
+    if (!ns || cycleActive) return null;
+    const diff = Math.round((new Date(ns + 'T12:00:00').getTime() - new Date(localTodayForCycle() + 'T12:00:00').getTime()) / 86_400_000);
+    return diff >= 0 && diff <= 3 ? diff : null;
+  })();
 
   const activities: ActivityItem[] = [
     {
@@ -199,6 +210,20 @@ export default function Home() {
     <AnimatedBackground variant="dark">
       <h1 className="sr-only">Ihsan — Islamic Productivity</h1>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+        {/* Pre-period heads-up — predicted start within 3 days */}
+        {upcomingCycleDays !== null && (
+          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <Link to="/cycle">
+              <div className="rounded-2xl border border-pink-400/20 bg-pink-500/8 px-5 py-3.5 hover:border-pink-300/35 transition-all">
+                <p className="text-pink-100/90 font-bold text-sm">
+                  🌷 {upcomingCycleDays === 0 ? 'Your period may begin today' : `Your period may begin in ~${upcomingCycleDays} day${upcomingCycleDays > 1 ? 's' : ''}`}
+                </p>
+                <p className="text-white/35 text-xs mt-0.5">Based on your own rhythm — open Rayhanah Cycle to see your calendar →</p>
+              </div>
+            </Link>
+          </motion.div>
+        )}
 
         {/* Rayhanah days banner — female users with an active cycle */}
         {cycleActive && (

@@ -149,6 +149,29 @@ describe("Rayhanah Cycle API", () => {
     await asM(request(app).post(`/api/cycle/end`)).send({ date: shift(TODAY, 4) });
   });
 
+  test("day wellness note upserts and returns in summary", async () => {
+    const put = await asM(request(app).put(`/api/cycle/day`)).send({
+      date: TODAY,
+      flow: "medium",
+      symptoms: ["cramps", "fatigue"],
+      mood: "tired",
+    });
+    expect(put.status).toBe(200);
+    expect(put.body.day.flow).toBe("medium");
+
+    // Partial update keeps unspecified fields
+    await asM(request(app).put(`/api/cycle/day`)).send({ date: TODAY, mood: "calm" });
+    const sum = await asM(request(app).get(`/api/cycle/summary?today=${TODAY}`));
+    const day = sum.body.days.find((d) => d.date === TODAY);
+    expect(day.flow).toBe("medium");
+    expect(day.symptoms).toEqual(["cramps", "fatigue"]);
+    expect(day.mood).toBe("calm");
+
+    // Invalid symptom rejected
+    const bad = await asM(request(app).put(`/api/cycle/day`)).send({ date: TODAY, symptoms: ["hangry"] });
+    expect(bad.status).toBe(400);
+  });
+
   test("delete all wipes cycle data", async () => {
     const del = await asM(request(app).delete(`/api/cycle/all`));
     expect(del.status).toBe(200);
