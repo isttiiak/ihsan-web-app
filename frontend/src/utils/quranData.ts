@@ -16,7 +16,24 @@ export interface AyahText {
   /** Global ayah number 1..6236 — used for per-ayah audio + khatam math */
   number: number;
   arabic: string;
-  english: string;
+  /** Translation texts in the same order as the requested edition ids */
+  translations: string[];
+}
+
+/** Translations the reader can show (up to two at once — Istiak's spec). */
+export const TRANSLATIONS = [
+  { id: 'en.sahih', label: 'English — Ṣaḥīḥ International' },
+  { id: 'bn.bengali', label: 'Bengali — মুহিউদ্দীন খান' },
+] as const;
+
+export function selectedTranslations(): string[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem('ihsan_quran_translations') ?? '["en.sahih"]') as string[];
+    const valid = raw.filter((id) => TRANSLATIONS.some((t) => t.id === id)).slice(0, 2);
+    return valid.length ? valid : ['en.sahih'];
+  } catch {
+    return ['en.sahih'];
+  }
 }
 
 const SURAH_META_KEY = 'ihsan_surah_meta_v1';
@@ -40,24 +57,25 @@ export async function loadSurahList(): Promise<SurahMeta[]> {
   return list;
 }
 
-/** Arabic (Uthmani) + Sahih International translation for one surah. */
-export async function loadSurahText(surah: number): Promise<AyahText[]> {
-  const key = `ihsan_surah_text_${surah}_v1`;
+/** Arabic (Uthmani) + the selected translations (1–2) for one surah. */
+export async function loadSurahText(surah: number, editions?: string[]): Promise<AyahText[]> {
+  const eds = (editions?.length ? editions : selectedTranslations()).slice(0, 2);
+  const key = `ihsan_surah_text_${surah}_${eds.join('+')}_v2`;
   try {
     const cached = localStorage.getItem(key);
     if (cached) return JSON.parse(cached) as AyahText[];
   } catch { /* refetch */ }
 
-  const res = await fetch(`https://api.alquran.cloud/v1/surah/${surah}/editions/quran-uthmani,en.sahih`);
+  const res = await fetch(`https://api.alquran.cloud/v1/surah/${surah}/editions/${['quran-uthmani', ...eds].join(',')}`);
   const data = await res.json() as {
     data: Array<{ ayahs: Array<{ number: number; numberInSurah: number; text: string }> }>;
   };
-  const [ar, en] = data.data;
+  const [ar, ...trs] = data.data;
   const ayat: AyahText[] = (ar?.ayahs ?? []).map((a, i) => ({
     numberInSurah: a.numberInSurah,
     number: a.number,
     arabic: a.text,
-    english: en?.ayahs?.[i]?.text ?? '',
+    translations: trs.map((tr) => tr?.ayahs?.[i]?.text ?? ''),
   }));
   try {
     localStorage.setItem(key, JSON.stringify(ayat));

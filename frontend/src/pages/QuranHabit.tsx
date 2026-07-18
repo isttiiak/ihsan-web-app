@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Cog6ToothIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
-import QuranSettings from '../components/QuranSettings.js';
 import { useQuranSummary, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
 import { loadSurahList, locateGlobalAyah, type SurahMeta } from '../utils/quranData.js';
 import { SPECIAL_SURAHS, AYAH_BUNDLES, QURANIC_DUAS } from '../utils/quranMeta.js';
@@ -18,7 +17,6 @@ export default function QuranHabit() {
   const navigate = useNavigate();
   const { data: summary, isLoading } = useQuranSummary();
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [allOpen, setAllOpen] = useState(false);
 
   useEffect(() => {
@@ -39,14 +37,7 @@ export default function QuranHabit() {
     <AnimatedBackground variant="dark">
       <h1 className="sr-only">Quran Habit</h1>
       <div className="max-w-2xl mx-auto px-4 pt-3 pb-16 space-y-4">
-        <div className="flex items-center gap-2">
-          <div className="flex-1"><QuranTabNav active="home" /></div>
-          <button
-            aria-label="Quran settings"
-            className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:text-white"
-            onClick={() => setSettingsOpen(true)}
-          ><Cog6ToothIcon className="w-4 h-4" /></button>
-        </div>
+        <QuranTabNav active="home" />
 
         {/* ── Today hero ── */}
         <motion.div
@@ -215,7 +206,6 @@ export default function QuranHabit() {
         </p>
       </div>
 
-      <QuranSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </AnimatedBackground>
   );
 }

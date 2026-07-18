@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
@@ -9,8 +9,8 @@ import {
 import { BookmarkIcon as BookmarkSolid, PlayIcon, PauseIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useQuranSummary, useReadAyat, useToggleBookmark } from '../hooks/useQuran.js';
-import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, type SurahMeta, type AyahText } from '../utils/quranData.js';
-import { celebrateGoal, celebrateKhatm } from '../utils/celebrate.js';
+import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, selectedTranslations, TRANSLATIONS, type SurahMeta, type AyahText } from '../utils/quranData.js';
+import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrate.js';
 
 /**
  * The ayah-by-ayah reading room (Istiak's design):
@@ -25,6 +25,7 @@ import { celebrateGoal, celebrateKhatm } from '../utils/celebrate.js';
  */
 
 const FONT_SIZES = ['text-2xl sm:text-3xl', 'text-3xl sm:text-4xl', 'text-4xl sm:text-5xl'];
+const TR_FONT_SIZES = ['text-xs sm:text-sm', 'text-sm sm:text-base', 'text-base sm:text-lg'];
 
 export default function QuranReader() {
   const { surah: surahParam } = useParams();
@@ -49,6 +50,9 @@ export default function QuranReader() {
   const [playing, setPlaying] = useState(false);
   const [wordIdx, setWordIdx] = useState(-1);
   const fontSize = FONT_SIZES[Number(localStorage.getItem('ihsan_quran_font')) || 1] ?? FONT_SIZES[1]!;
+  const trFontSize = TR_FONT_SIZES[Number(localStorage.getItem('ihsan_quran_font_tr')) || 1] ?? TR_FONT_SIZES[1]!;
+  const editions = useMemo(() => selectedTranslations(), []);
+  const editionLabel = (id: string) => TRANSLATIONS.find((t) => t.id === id)?.label ?? id;
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -149,9 +153,14 @@ export default function QuranReader() {
       markRead(idx);
       flush();
       if (mode === 'bundle') {
-        toast.success('Bundle complete — may it protect and bless you 🤲', { id: 'bundle-done' });
+        celebrateSmall();
+        toast.success('Complete — may it protect and bless you 🤲', { id: 'bundle-done' });
       } else if (surahNo < 114) {
+        celebrateSmall();
+        toast.success(`${surahMeta?.englishName ?? 'Surah'} completed — onward! 🌿`, { id: 'surah-done', duration: 2200 });
         navigate(`/quran/read/${surahNo + 1}?mode=${mode}`);
+      } else {
+        celebrateKhatm();
       }
     }
   }, [idx, lastIdx, markRead, stopAudio, flush, mode, surahNo, navigate]);
@@ -206,7 +215,15 @@ export default function QuranReader() {
 
         {/* top bar */}
         <div className="flex items-center justify-between text-xs">
-          <Link to={mode === 'khatam' ? '/quran/khatam' : '/quran'} className="text-white/40 hover:text-white">← Back</Link>
+          <button
+            className="text-white/40 hover:text-white"
+            onClick={() => {
+              // Go back to wherever the reader was opened from; fall back to
+              // the section home when the reader was the entry point.
+              if (window.history.length > 1) navigate(-1);
+              else navigate(mode === 'khatam' ? '/quran/khatam' : '/quran');
+            }}
+          >← Back</button>
           <div className="flex items-center gap-2 text-white/40">
             {mode === 'khatam' && <span className="px-2 py-0.5 rounded-full bg-brand-emerald/15 text-brand-emerald border border-brand-emerald/30 font-bold">Khatam journey</span>}
             {mode === 'bundle' && <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold border border-brand-gold/30 font-bold">Special selection</span>}
@@ -293,10 +310,17 @@ export default function QuranReader() {
                   ))}
                 </p>
 
-                <p className="text-white/55 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-                  {current.english}
+                <div className="space-y-3 max-w-2xl mx-auto">
+                  {current.translations.map((tr, i) => (
+                    <p key={editions[i] ?? i} className={`${i === 0 ? 'text-white/60' : 'text-teal-100/50'} ${trFontSize} leading-relaxed`}>
+                      {tr}
+                    </p>
+                  ))}
+                </div>
+                <p className="text-white/20 text-[10px]">
+                  {editions.map(editionLabel).join(' · ')} ·{' '}
+                  <a className="underline" href={`https://quran.com/${surahNo}/${current.numberInSurah}`} target="_blank" rel="noreferrer">quran.com/{surahNo}/{current.numberInSurah}</a>
                 </p>
-                <p className="text-white/20 text-[10px]">Ṣaḥīḥ International · <a className="underline" href={`https://quran.com/${surahNo}/${current.numberInSurah}`} target="_blank" rel="noreferrer">quran.com/{surahNo}/{current.numberInSurah}</a></p>
               </motion.div>
             </AnimatePresence>
           )}
