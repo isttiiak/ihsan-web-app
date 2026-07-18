@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/useAuthStore.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
 
 export const QURAN_TOTAL_PAGES = 604;
+export const QURAN_TOTAL_AYAT = 6236;
 
 /** Juz number for a mushaf page (standard Madani layout: juz 2 starts p.22, then every 20 pages) */
 export function juzForPage(page: number): number {
@@ -11,21 +12,30 @@ export function juzForPage(page: number): number {
   return Math.min(30, Math.floor((page - 2) / 20) + 1);
 }
 
+export interface QuranBookmark { surah: number; ayah: number }
+
 export interface QuranSummary {
   profile: {
     dailyGoalPages: number;
     currentPage: number;
     khatmCount: number;
     totalPages: number;
+    dailyGoalAyat: number;
+    currentAyah: number;
+    totalAyat: number;
   };
   todayPages: number;
+  /** Today's ayat-equivalents (ayat + pages·10) — the v4 goal/streak unit */
+  todayAyat: number;
   goalMet: boolean;
   streak: number;
   bestStreak: number;
-  last7: Array<{ date: string; pages: number }>;
-  stats: { last30Pages: number; allTimePages: number };
+  last7: Array<{ date: string; pages: number; units: number }>;
+  stats: { last30Pages: number; allTimePages: number; last30Units: number; allTimeUnits: number };
   pace: number | null;
   estDaysToKhatm: number | null;
+  topSurahs: Array<{ surah: number; ayat: number }>;
+  bookmarks: QuranBookmark[];
 }
 
 // Fajr-boundary tracking day (falls back to civil midnight without a location)
@@ -93,12 +103,74 @@ export function useLogReading() {
 export function useUpdateQuranProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (vars: { dailyGoalPages?: number; currentPage?: number }) => {
+    mutationFn: async (vars: { dailyGoalPages?: number; currentPage?: number; dailyGoalAyat?: number; currentAyah?: number }) => {
       const { data } = await api.patch('/api/quran/profile', vars);
       return data;
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['quran', 'summary'] });
     },
+  });
+}
+
+
+// ── v4 ayah engine ────────────────────────────────────────────────────────────
+
+/** Log ayat read (reader auto-logging). Khatam mode also advances the bookmark. */
+export function useReadAyat() {
+  const qc = useQueryClient();
+  const today = localTodayStr();
+  return useMutation({
+    mutationFn: async (vars: { count: number; surah?: number; advanceKhatm?: boolean }) => {
+      const { data } = await api.post<{ ok: boolean; khatmCompleted: boolean; currentAyah: number; todayAyat: number }>(
+        '/api/quran/read-ayat',
+        { date: today, ...vars }
+      );
+      return data;
+    },
+    onMutate: async (vars) => {
+      const key = ['quran', 'summary', today];
+      await qc.cancelQueries({ queryKey: key });
+      qc.setQueryData<QuranSummary>(key, (old) => {
+        if (!old) return old;
+        const todayAyat = old.todayAyat + vars.count;
+        return {
+          ...old,
+          todayAyat,
+          goalMet: todayAyat >= old.profile.dailyGoalAyat,
+          profile: vars.advanceKhatm
+            ? { ...old.profile, currentAyah: (old.profile.currentAyah + vars.count) % QURAN_TOTAL_AYAT }
+            : old.profile,
+        };
+      });
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ['quran'] }),
+  });
+}
+
+export function useToggleBookmark() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { surah: number; ayah: number }) => {
+      const { data } = await api.post<{ ok: boolean; bookmarks: QuranBookmark[] }>('/api/quran/bookmark', vars);
+      return data.bookmarks;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['quran', 'summary'] }),
+  });
+}
+
+export function useQuranHistory(days = 30, enabled = true) {
+  const user = useAuthStore((s) => s.user);
+  const today = localTodayStr();
+  return useQuery({
+    queryKey: ['quran', 'history', days, today],
+    queryFn: async () => {
+      const { data } = await api.get<{ ok: boolean; history: Array<{ date: string; ayat: number; pages: number; units: number }> }>(
+        `/api/quran/history?days=${days}&today=${today}`
+      );
+      return data.history;
+    },
+    enabled: !!user && enabled,
+    staleTime: 60_000,
   });
 }

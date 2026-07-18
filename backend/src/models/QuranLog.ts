@@ -6,6 +6,8 @@ export interface IQuranLog extends Document {
   date: string;
   /** Pages read that day (accumulated; standard 604-page mushaf) */
   pages: number;
+  /** Ayat read that day (v4 ayah engine; 1 page ≈ 10 ayat for unit math) */
+  ayat: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -14,7 +16,8 @@ const quranLogSchema = new Schema<IQuranLog>(
   {
     userId: { type: String, required: true },
     date: { type: String, required: true },
-    pages: { type: Number, required: true, min: 0, max: 700 },
+    pages: { type: Number, default: 0, min: 0, max: 700 },
+    ayat: { type: Number, default: 0, min: 0, max: 7000 },
   },
   { timestamps: true }
 );

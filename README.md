@@ -27,10 +27,11 @@ A modern Islamic productivity application to help Muslims track their daily Zikr
 - Blocks ḥarām days (Eids, Tashrīq) and warns on disliked ones — each rule cites its exact hadith
 - Intention auto-completes after iftar; month calendar; full analytics with editable history
 
-### 📖 Quran Habit
-- One-tap page logging with a daily-minimum goal, reading streaks, and a khatm bookmark across the 604-page mushaf
-- Pace estimate for finishing your khatm, verified virtues of recitation
-- 🎧 Audio Quran: all 114 surahs, six renowned reciters, streamed free — every ~3 minutes of listening logs a page toward your goal automatically
+### 📖 Quran — a complete reading & listening home
+- Āyah-by-āyah reader: one calm card with the Arabic and its meaning, single-āyah recitation with word highlighting, fullscreen mode, keyboard navigation, bookmarks
+- Five rooms: Overview · Khatam (serial journey) · Read (any surah, searchable) · Listen (7 reciters, Yasser Al-Dossari default) · Analytics
+- Beloved surahs, authentic protection selections (Āyatul Kursī, last verses of al-Baqarah…), and duʿās from the Quran — each opens straight in the reader
+- ONE unified streak: āyāt from khatam, free reading, special selections and listening all count toward your daily goal
 
 ### 🤝 Friends — “So compete with one another in doing good” (Quran 2:148)
 - Connect via a single invite link; see each other's streaks and today's worship

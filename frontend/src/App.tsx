@@ -35,6 +35,11 @@ const Privacy = lazy(() => import('./pages/Privacy.js'));
 const RayhanahCycle = lazy(() => import('./pages/RayhanahCycle.js'));
 const RamadanTracker = lazy(() => import('./pages/RamadanTracker.js'));
 const CycleAnalytics = lazy(() => import('./pages/CycleAnalytics.js'));
+const QuranKhatam = lazy(() => import('./pages/QuranKhatam.js'));
+const QuranBrowse = lazy(() => import('./pages/QuranBrowse.js'));
+const QuranListen = lazy(() => import('./pages/QuranListen.js'));
+const QuranAnalytics = lazy(() => import('./pages/QuranAnalytics.js'));
+const QuranReader = lazy(() => import('./pages/QuranReader.js'));
 
 function RouteFallback() {
   return (
@@ -323,6 +328,11 @@ export default function App() {
               <Route path="/fasting/analytics" element={<Protected><FastingAnalytics /></Protected>} />
               <Route path="/prayer-times" element={<PrayerTimes />} />
               <Route path="/quran" element={<Protected><QuranHabit /></Protected>} />
+              <Route path="/quran/khatam" element={<Protected><QuranKhatam /></Protected>} />
+              <Route path="/quran/browse" element={<Protected><QuranBrowse /></Protected>} />
+              <Route path="/quran/listen" element={<Protected><QuranListen /></Protected>} />
+              <Route path="/quran/analytics" element={<Protected><QuranAnalytics /></Protected>} />
+              <Route path="/quran/read/:surah" element={<Protected><QuranReader /></Protected>} />
               <Route path="/zikr/analytics" element={<Protected><ZikrAnalytics /></Protected>} />
               <Route path="/settings" element={<Protected><Settings /></Protected>} />
               <Route path="/profile" element={<Protected><Profile /></Protected>} />

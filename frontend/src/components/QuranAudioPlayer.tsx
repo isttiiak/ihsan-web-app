@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { PlayIcon, PauseIcon, ForwardIcon, BackwardIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useLogReading } from '../hooks/useQuran.js';
+import { loadSurahList, type SurahMeta } from '../utils/quranData.js';
 
 /**
  * 🎧 Audio Quran — all 114 surahs, streamed from the free Islamic Network CDN
@@ -22,6 +23,9 @@ const SECONDS_PER_PAGE = 180;
 // here was verified (HTTP 200) against its host. islamic.network takes the
 // plain surah number; mp3quran.net wants it zero-padded to 3 digits.
 const RECITERS: Array<{ id: string; name: string; url: (n: number) => string }> = [
+  // Priority pair (Istiak's spec): Yasser Al-Dossari default, Alafasy second.
+  { id: 'dossari', name: 'Yasser Al-Dossari',
+    url: (n) => `https://server11.mp3quran.net/yasser/${String(n).padStart(3, '0')}.mp3` },
   { id: 'alafasy', name: 'Mishary Alafasy',
     url: (n) => `https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/${n}.mp3` },
   { id: 'abdulbasit', name: 'Abdul Basit (Murattal)',
@@ -36,33 +40,7 @@ const RECITERS: Array<{ id: string; name: string; url: (n: number) => string }> 
     url: (n) => `https://server10.mp3quran.net/minsh/${String(n).padStart(3, '0')}.mp3` },
 ];
 
-interface SurahMeta {
-  number: number;
-  name: string;          // Arabic
-  englishName: string;
-  englishNameTranslation: string;
-  numberOfAyahs: number;
-}
 
-const SURAH_CACHE_KEY = 'ihsan_surah_meta_v1';
-
-async function loadSurahList(): Promise<SurahMeta[]> {
-  try {
-    const cached = localStorage.getItem(SURAH_CACHE_KEY);
-    if (cached) return JSON.parse(cached) as SurahMeta[];
-  } catch { /* refetch */ }
-  const res = await fetch('https://api.alquran.cloud/v1/surah');
-  const data = await res.json() as { data: SurahMeta[] };
-  const list = data.data.map((s) => ({
-    number: s.number,
-    name: s.name,
-    englishName: s.englishName,
-    englishNameTranslation: s.englishNameTranslation,
-    numberOfAyahs: s.numberOfAyahs,
-  }));
-  localStorage.setItem(SURAH_CACHE_KEY, JSON.stringify(list));
-  return list;
-}
 
 function fmtClock(sec: number): string {
   if (!Number.isFinite(sec)) return '0:00';
@@ -79,13 +57,18 @@ export default function QuranAudioPlayer() {
   const [loadError, setLoadError] = useState(false);
   const [surahNo, setSurahNo] = useState<number>(() => Number(localStorage.getItem('ihsan_last_surah')) || 1);
   const [reciter, setReciter] = useState<string>(() => {
-    const stored = localStorage.getItem('ihsan_reciter') || 'alafasy';
-    return RECITERS.some((r) => r.id === stored) ? stored : 'alafasy';
+    const stored = localStorage.getItem('ihsan_reciter') || 'dossari';
+    return RECITERS.some((r) => r.id === stored) ? stored : 'dossari';
   });
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [buffering, setBuffering] = useState(false);
+  const [volume, setVolume] = useState<number>(() => {
+    const v = Number(localStorage.getItem('ihsan_quran_volume'));
+    return Number.isFinite(v) && v >= 0 && v <= 1 ? v : 1;
+  });
+  const [muted, setMuted] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // Listening accumulator — survives pause, resets only after a page is logged
@@ -124,9 +107,16 @@ export default function QuranAudioPlayer() {
     lastTimeRef.current = a.currentTime;
   };
 
+  useEffect(() => {
+    const a = audioRef.current;
+    if (a) { a.volume = volume; a.muted = muted; }
+  }, [volume, muted]);
+
   const togglePlay = () => {
     const a = audioRef.current;
     if (!a) return;
+    a.volume = volume;
+    a.muted = muted;
     if (playing) { a.pause(); } else { void a.play(); }
   };
 
@@ -216,6 +206,26 @@ export default function QuranAudioPlayer() {
               <span className="w-9">{fmtClock(duration)}</span>
             </div>
 
+            {/* sound control */}
+            <div className="flex items-center gap-2 text-white/40">
+              <button
+                aria-label={muted ? 'Unmute' : 'Mute'}
+                className="text-sm w-6"
+                onClick={() => setMuted((m) => !m)}
+              >{muted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'}</button>
+              <input
+                type="range" min={0} max={100} value={muted ? 0 : Math.round(volume * 100)}
+                aria-label="Volume"
+                onChange={(e) => {
+                  const v = Number(e.target.value) / 100;
+                  setVolume(v);
+                  setMuted(v === 0);
+                  localStorage.setItem('ihsan_quran_volume', String(v));
+                }}
+                className="range range-xs w-32 [--range-shdw:theme(colors.teal.400)]"
+              />
+            </div>
+
             <audio
               ref={audioRef}
               src={src}
@@ -226,13 +236,7 @@ export default function QuranAudioPlayer() {
               onPlaying={() => setBuffering(false)}
               onTimeUpdate={onTimeUpdate}
               onLoadedMetadata={(e) => setDuration((e.target as HTMLAudioElement).duration)}
-              onEnded={() => {
-                // Flow straight into the next surah, like a khatm session
-                if (surahNo < 114) {
-                  changeSurah(surahNo + 1);
-                  setTimeout(() => void audioRef.current?.play(), 300);
-                }
-              }}
+              onEnded={() => setPlaying(false)} // one surah at a time — no autoplay (Istiak's spec)
             />
 
             <p className="text-white/30 text-[10px] leading-relaxed">

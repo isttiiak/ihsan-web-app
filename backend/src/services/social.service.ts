@@ -219,8 +219,8 @@ async function statsForUser(
     SalatLog.findOne({ userId: uid, date: today }),
     FastingLog.countDocuments({ userId: uid, status: 'completed', date: { $gte: monthStart, $lte: today } }),
     FastingLog.findOne({ userId: uid, date: today }).select('status'),
-    QuranLog.find({ userId: uid, date: { $gte: quranSince, $lte: today } }).select('date pages'),
-    QuranProfile.findOne({ userId: uid }).select('dailyGoalPages'),
+    QuranLog.find({ userId: uid, date: { $gte: quranSince, $lte: today } }).select('date pages ayat'),
+    QuranProfile.findOne({ userId: uid }).select('dailyGoalAyat'),
   ]);
 
   let salatToday = 0;
@@ -231,7 +231,8 @@ async function statsForUser(
     }
   }
 
-  const quranByDate = new Map(quranLogs.map((l) => [l.date, l.pages]));
+  // v4 units: ayat + pages·10 — reading and listening both count
+  const quranByDate = new Map(quranLogs.map((l) => [l.date, Math.round((l.ayat ?? 0) + (l.pages ?? 0) * 10)]));
   const quranPagesToday = quranByDate.get(today) ?? 0;
   let quranStreak = 0;
   let cursor = quranPagesToday > 0 ? today : shiftDateStr(today, -1);
@@ -252,7 +253,7 @@ async function statsForUser(
     fastedToday: todayFastLog?.status === 'completed' || todayFastLog?.status === 'intended',
     quranStreak,
     quranPagesToday,
-    quranGoal: quranProfile?.dailyGoalPages ?? 2,
+    quranGoal: quranProfile?.dailyGoalAyat ?? 20,
   };
 
   let score = computeScore(base);
@@ -367,14 +368,14 @@ export async function getNoor(
         },
       },
     ]) as Promise<Array<{ _id: Date; total: number; salawat: number }>>,
-    QuranLog.find({ userId, date: { $gte: since, $lte: end } }).select('date pages'),
+    QuranLog.find({ userId, date: { $gte: since, $lte: end } }).select('date pages ayat'),
     FastingLog.find({ userId, status: 'completed', date: { $gte: since, $lte: end } }).select('date'),
     ZikrGoal.findOne({ userId }),
-    QuranProfile.findOne({ userId }).select('dailyGoalPages'),
+    QuranProfile.findOne({ userId }).select('dailyGoalAyat'),
   ]);
 
   const zikrGoal = zikrGoalDoc?.dailyTarget ?? 100;
-  const quranGoal = quranProfile?.dailyGoalPages ?? 2;
+  const quranGoal = quranProfile?.dailyGoalAyat ?? 20;
 
   const salatByDay = new Map<string, number>();
   for (const log of salatLogs) {
@@ -393,7 +394,7 @@ export async function getNoor(
     zikrByDay.set(k, (zikrByDay.get(k) ?? 0) + r.total);
     salawatByDay.set(k, (salawatByDay.get(k) ?? 0) + (r.salawat ?? 0));
   }
-  const quranByDay = new Map(quranLogs.map((l) => [l.date, l.pages]));
+  const quranByDay = new Map(quranLogs.map((l) => [l.date, Math.round((l.ayat ?? 0) + (l.pages ?? 0) * 10)]));
   const fastDays = new Set(fastLogs.map((l) => l.date));
 
   const allDays = new Set<string>([

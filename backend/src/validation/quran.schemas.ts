@@ -22,5 +22,31 @@ export const quranProfileSchema = z.object({
   body: z.object({
     dailyGoalPages: z.number().int().min(1).max(604).optional(),
     currentPage: z.number().int().min(0).max(603).optional(),
+    dailyGoalAyat: z.number().int().min(1).max(6236).optional(),
+    currentAyah: z.number().int().min(0).max(6235).optional(),
   }),
+});
+
+export const quranReadAyatSchema = z.object({
+  body: z.object({
+    date: dateStr,
+    count: z.number().int().min(1).max(700),
+    surah: z.number().int().min(1).max(114).optional(),
+    advanceKhatm: z.boolean().default(false),
+  }),
+});
+
+export const quranBookmarkSchema = z.object({
+  body: z.object({
+    surah: z.number().int().min(1).max(114),
+    ayah: z.number().int().min(1).max(286),
+  }),
+});
+
+export const quranHistorySchema = z.object({
+  query: z.object({
+    days: z.coerce.number().int().min(1).max(365).default(30),
+    today: dateStr.optional(),
+  }),
+  body: z.object({}).optional(),
 });

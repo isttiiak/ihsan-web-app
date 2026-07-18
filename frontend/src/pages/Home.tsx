@@ -198,7 +198,7 @@ export default function Home() {
       stats: {
         label: 'Today',
         value: quranSummary
-          ? `${quranSummary.todayPages}/${quranSummary.profile.dailyGoalPages} pages`
+          ? `${quranSummary.todayAyat}/${quranSummary.profile.dailyGoalAyat} āyāt`
           : '—',
       },
       action: 'Read & Track',

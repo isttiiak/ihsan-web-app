@@ -11,6 +11,33 @@ export const read = async (req: Request, res: Response, next: NextFunction): Pro
   } catch (err) { next(err); }
 };
 
+export const readAyat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { date, count, surah, advanceKhatm } = req.body as {
+      date: string; count: number; surah?: number; advanceKhatm?: boolean;
+    };
+    const result = await quranService.addAyatReading(req.user.uid, { date, count, surah, advanceKhatm });
+    res.json({ ok: true, khatmCompleted: result.khatmCompleted, currentAyah: result.profile.currentAyah, todayAyat: quranService.unitsOf(result.log) });
+  } catch (err) { next(err); }
+};
+
+export const toggleBookmark = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { surah, ayah } = req.body as { surah: number; ayah: number };
+    const bookmarks = await quranService.toggleBookmark(req.user.uid, surah, ayah);
+    res.json({ ok: true, bookmarks });
+  } catch (err) { next(err); }
+};
+
+export const getHistory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const days = Number(req.query.days) || 30;
+    const today = typeof req.query.today === 'string' ? req.query.today : undefined;
+    const history = await quranService.getHistory(req.user.uid, days, today);
+    res.json({ ok: true, history });
+  } catch (err) { next(err); }
+};
+
 export const getSummary = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const today = req.query['today'] as string | undefined;

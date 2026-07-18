@@ -1,5 +1,12 @@
 import QuranLog, { IQuranLog } from '../models/QuranLog.js';
-import QuranProfile, { IQuranProfile, QURAN_TOTAL_PAGES } from '../models/QuranProfile.js';
+import QuranProfile, { IQuranProfile, QURAN_TOTAL_PAGES, QURAN_TOTAL_AYAT } from '../models/QuranProfile.js';
+
+/** Unit math: 1 mushaf page ≈ 10 ayat (6236/604). Units = ayat-equivalents. */
+const AYAT_PER_PAGE = 10;
+export function unitsOf(log: { pages?: number; ayat?: number } | null | undefined): number {
+  if (!log) return 0;
+  return Math.round((log.ayat ?? 0) + (log.pages ?? 0) * AYAT_PER_PAGE);
+}
 
 function todayDateString(): string {
   return new Date().toISOString().substring(0, 10);
@@ -58,15 +65,101 @@ export async function addReading(
   return { log, profile, khatmCompleted };
 }
 
+export interface AyatReadResult {
+  log: IQuranLog;
+  profile: IQuranProfile;
+  khatmCompleted: boolean;
+}
+
+/**
+ * v4 ayah engine: log `count` ayat for the day, credit the surah's lifetime
+ * counter, and (khatam mode) advance the global-ayah bookmark — wrapping at
+ * 6236 completes a khatm. The page bookmark is kept roughly in sync so the
+ * old page-based UI keeps making sense.
+ */
+export async function addAyatReading(
+  userId: string,
+  input: { date: string; count: number; surah?: number; advanceKhatm?: boolean }
+): Promise<AyatReadResult> {
+  const { date, count, surah, advanceKhatm } = input;
+
+  const inc: Record<string, number> = { ayat: count };
+  const log = await QuranLog.findOneAndUpdate(
+    { userId, date },
+    { $inc: inc, $setOnInsert: { pages: 0 } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  const profile = await getOrCreateProfile(userId);
+  if (surah && surah >= 1 && surah <= 114) {
+    const key = String(surah);
+    profile.surahCounts.set(key, (profile.surahCounts.get(key) ?? 0) + count);
+  }
+
+  let khatmCompleted = false;
+  if (advanceKhatm) {
+    let pos = profile.currentAyah + count;
+    while (pos >= QURAN_TOTAL_AYAT) {
+      pos -= QURAN_TOTAL_AYAT;
+      profile.khatmCount += 1;
+      khatmCompleted = true;
+    }
+    profile.currentAyah = pos;
+    profile.currentPage = Math.min(QURAN_TOTAL_PAGES - 1, Math.floor(pos / (QURAN_TOTAL_AYAT / QURAN_TOTAL_PAGES)));
+  }
+  await profile.save();
+
+  return { log, profile, khatmCompleted };
+}
+
+/** Toggle a saved ayah. Returns the new bookmark list (capped at 100). */
+export async function toggleBookmark(
+  userId: string,
+  surah: number,
+  ayah: number
+): Promise<Array<{ surah: number; ayah: number }>> {
+  const profile = await getOrCreateProfile(userId);
+  const i = profile.bookmarks.findIndex((b) => b.surah === surah && b.ayah === ayah);
+  if (i >= 0) profile.bookmarks.splice(i, 1);
+  else {
+    profile.bookmarks.unshift({ surah, ayah });
+    if (profile.bookmarks.length > 100) profile.bookmarks.length = 100;
+  }
+  profile.markModified('bookmarks');
+  await profile.save();
+  return profile.bookmarks;
+}
+
+/** Daily units for the analytics tab (last N days, oldest first). */
+export async function getHistory(
+  userId: string,
+  days: number,
+  today?: string
+): Promise<Array<{ date: string; ayat: number; pages: number; units: number }>> {
+  const end = today ?? todayDateString();
+  const since = shiftDateStr(end, -(days - 1));
+  const logs = await QuranLog.find({ userId, date: { $gte: since, $lte: end } })
+    .select('date pages ayat')
+    .sort({ date: 1 });
+  return logs.map((l) => ({ date: l.date, ayat: l.ayat ?? 0, pages: l.pages ?? 0, units: unitsOf(l) }));
+}
+
 export interface QuranProfileUpdate {
   dailyGoalPages?: number;
   currentPage?: number;
+  dailyGoalAyat?: number;
+  currentAyah?: number;
 }
 
 export async function updateProfile(userId: string, input: QuranProfileUpdate): Promise<IQuranProfile> {
   const profile = await getOrCreateProfile(userId);
   if (input.dailyGoalPages !== undefined) profile.dailyGoalPages = input.dailyGoalPages;
   if (input.currentPage !== undefined) profile.currentPage = input.currentPage;
+  if (input.dailyGoalAyat !== undefined) profile.dailyGoalAyat = input.dailyGoalAyat;
+  if (input.currentAyah !== undefined) {
+    profile.currentAyah = input.currentAyah;
+    profile.currentPage = Math.min(QURAN_TOTAL_PAGES - 1, Math.floor(input.currentAyah / (QURAN_TOTAL_AYAT / QURAN_TOTAL_PAGES)));
+  }
   await profile.save();
   return profile;
 }
@@ -77,17 +170,25 @@ export interface QuranSummary {
     currentPage: number;
     khatmCount: number;
     totalPages: number; // 604
+    dailyGoalAyat: number;
+    currentAyah: number;
+    totalAyat: number; // 6236
   };
   todayPages: number;
+  /** Today's ayat-equivalents (ayat + pages·10) — the v4 goal/streak unit */
+  todayAyat: number;
   goalMet: boolean;
   streak: number;
   bestStreak: number;
-  last7: Array<{ date: string; pages: number }>;
-  stats: { last30Pages: number; allTimePages: number };
-  /** Average pages/day over the last 7 days; null when no recent reading */
+  last7: Array<{ date: string; pages: number; units: number }>;
+  stats: { last30Pages: number; allTimePages: number; last30Units: number; allTimeUnits: number };
+  /** Average units/day over the last 7 days; null when no recent reading */
   pace: number | null;
   /** Estimated days to finish the current khatm at the current pace */
   estDaysToKhatm: number | null;
+  /** Lifetime top-5 most-read surahs */
+  topSurahs: Array<{ surah: number; ayat: number }>;
+  bookmarks: Array<{ surah: number; ayah: number }>;
 }
 
 export async function getSummary(userId: string, today?: string): Promise<QuranSummary> {
@@ -96,15 +197,17 @@ export async function getSummary(userId: string, today?: string): Promise<QuranS
 
   const [profile, logs, allTimeAgg] = await Promise.all([
     getOrCreateProfile(userId),
-    QuranLog.find({ userId, date: { $gte: windowSince, $lte: end } }).select('date pages').sort({ date: 1 }),
+    QuranLog.find({ userId, date: { $gte: windowSince, $lte: end } }).select('date pages ayat').sort({ date: 1 }),
     QuranLog.aggregate([
       { $match: { userId } },
-      { $group: { _id: null, total: { $sum: '$pages' } } },
-    ]) as Promise<Array<{ _id: null; total: number }>>,
+      { $group: { _id: null, pages: { $sum: '$pages' }, ayat: { $sum: { $ifNull: ['$ayat', 0] } } } },
+    ]) as Promise<Array<{ _id: null; pages: number; ayat: number }>>,
   ]);
 
-  const byDate = new Map(logs.map((l) => [l.date, l.pages]));
-  const todayPages = byDate.get(end) ?? 0;
+  const byDate = new Map(logs.map((l) => [l.date, unitsOf(l)]));
+  const pagesByDate = new Map(logs.map((l) => [l.date, l.pages ?? 0]));
+  const todayPages = pagesByDate.get(end) ?? 0;
+  const todayAyat = byDate.get(end) ?? 0;
 
   // Streak: consecutive days with any reading, ending today (or yesterday if
   // today hasn't been read yet — the day is still in progress).
@@ -123,22 +226,36 @@ export async function getSummary(userId: string, today?: string): Promise<QuranS
     if (run > bestStreak) bestStreak = run;
   }
 
-  const last7: Array<{ date: string; pages: number }> = [];
+  const last7: Array<{ date: string; pages: number; units: number }> = [];
   let last7Sum = 0;
   for (let i = 6; i >= 0; i--) {
     const d = shiftDateStr(end, -i);
-    const p = byDate.get(d) ?? 0;
-    last7.push({ date: d, pages: p });
-    last7Sum += p;
+    const u = byDate.get(d) ?? 0;
+    last7.push({ date: d, pages: pagesByDate.get(d) ?? 0, units: u });
+    last7Sum += u;
   }
 
   let last30Pages = 0;
+  let last30Units = 0;
   const since30 = shiftDateStr(end, -29);
-  for (const l of logs) if (l.date >= since30) last30Pages += l.pages;
+  for (const l of logs) {
+    if (l.date >= since30) {
+      last30Pages += l.pages ?? 0;
+      last30Units += unitsOf(l);
+    }
+  }
 
   const pace = last7Sum > 0 ? Math.round((last7Sum / 7) * 10) / 10 : null;
-  const remaining = QURAN_TOTAL_PAGES - profile.currentPage;
-  const estDaysToKhatm = pace && pace > 0 ? Math.ceil(remaining / pace) : null;
+  const remainingAyat = QURAN_TOTAL_AYAT - profile.currentAyah;
+  const estDaysToKhatm = pace && pace > 0 ? Math.ceil(remainingAyat / pace) : null;
+
+  const topSurahs = [...profile.surahCounts.entries()]
+    .map(([k, v]) => ({ surah: Number(k), ayat: v }))
+    .sort((a, b) => b.ayat - a.ayat)
+    .slice(0, 5);
+
+  const allPages = allTimeAgg[0]?.pages ?? 0;
+  const allAyat = allTimeAgg[0]?.ayat ?? 0;
 
   return {
     profile: {
@@ -146,18 +263,26 @@ export async function getSummary(userId: string, today?: string): Promise<QuranS
       currentPage: profile.currentPage,
       khatmCount: profile.khatmCount,
       totalPages: QURAN_TOTAL_PAGES,
+      dailyGoalAyat: profile.dailyGoalAyat,
+      currentAyah: profile.currentAyah,
+      totalAyat: QURAN_TOTAL_AYAT,
     },
     todayPages,
-    goalMet: todayPages >= profile.dailyGoalPages,
+    todayAyat,
+    goalMet: todayAyat >= profile.dailyGoalAyat,
     streak,
     bestStreak,
     last7,
     stats: {
       last30Pages,
-      allTimePages: allTimeAgg[0]?.total ?? 0,
+      allTimePages: allPages,
+      last30Units,
+      allTimeUnits: Math.round(allAyat + allPages * AYAT_PER_PAGE),
     },
     pace,
     estDaysToKhatm,
+    topSurahs,
+    bookmarks: profile.bookmarks,
   };
 }
 

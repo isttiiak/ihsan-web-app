@@ -80,6 +80,52 @@ describe("Quran API", () => {
     await auth(request(app).patch(`/api/quran/profile`)).send({ dailyGoalPages: 20 });
     const res = await auth(request(app).get(`/api/quran/summary?today=2026-07-02`));
     expect(res.body.profile.dailyGoalPages).toBe(20);
-    expect(res.body.goalMet).toBe(false); // 14 pages today < 20
+    // v4: the goal unit is AYAT (1 page ≈ 10 ayat). 14 pages = 140 units ≥ default 20.
+    expect(res.body.goalMet).toBe(true);
+    const strict = await auth(request(app).patch(`/api/quran/profile`)).send({ dailyGoalAyat: 200 });
+    expect(strict.status).toBe(200);
+    const res2 = await auth(request(app).get(`/api/quran/summary?today=2026-07-02`));
+    expect(res2.body.goalMet).toBe(false); // 140 units < 200
+  });
+
+  test("v4 ayah engine: read-ayat logs units, credits the surah, advances khatam", async () => {
+    const r = await auth(request(app).post(`/api/quran/read-ayat`)).send({
+      date: "2026-07-03", count: 7, surah: 1, advanceKhatm: true,
+    });
+    expect(r.status).toBe(200);
+    expect(r.body.todayAyat).toBe(7);
+    expect(r.body.currentAyah).toBe(7);
+
+    const sum = await auth(request(app).get(`/api/quran/summary?today=2026-07-03`));
+    expect(sum.body.todayAyat).toBe(7);
+    expect(sum.body.topSurahs[0]).toEqual({ surah: 1, ayat: 7 });
+    expect(sum.body.profile.currentAyah).toBe(7);
+    expect(sum.body.profile.totalAyat).toBe(6236);
+  });
+
+  test("v4: khatm wraps when currentAyah crosses 6236", async () => {
+    await auth(request(app).patch(`/api/quran/profile`)).send({ currentAyah: 6230 });
+    const r = await auth(request(app).post(`/api/quran/read-ayat`)).send({
+      date: "2026-07-03", count: 10, surah: 114, advanceKhatm: true,
+    });
+    expect(r.body.khatmCompleted).toBe(true);
+    expect(r.body.currentAyah).toBe(4); // 6230 + 10 - 6236
+  });
+
+  test("v4: bookmarks toggle on and off and appear in summary", async () => {
+    const on = await auth(request(app).post(`/api/quran/bookmark`)).send({ surah: 2, ayah: 255 });
+    expect(on.body.bookmarks).toEqual([{ surah: 2, ayah: 255 }]);
+    const sum = await auth(request(app).get(`/api/quran/summary?today=2026-07-03`));
+    expect(sum.body.bookmarks).toEqual([{ surah: 2, ayah: 255 }]);
+    const off = await auth(request(app).post(`/api/quran/bookmark`)).send({ surah: 2, ayah: 255 });
+    expect(off.body.bookmarks).toEqual([]);
+  });
+
+  test("v4: history returns daily units for analytics", async () => {
+    const res = await auth(request(app).get(`/api/quran/history?days=7&today=2026-07-03`));
+    expect(res.status).toBe(200);
+    const day = res.body.history.find((h) => h.date === "2026-07-03");
+    expect(day.ayat).toBe(17); // 7 + 10
+    expect(day.units).toBe(17);
   });
 });
