@@ -50,7 +50,7 @@ Your ONLY job is to ENCOURAGE, PERSONALIZE and warmly reflect. Follow these ABSO
 6. Do not produce long Arabic supplication text (the app has verified ones already).
 Stay strictly within encouragement and personal reflection.`;
 
-async function callProvider(p: Provider, system: string, user: string): Promise<string | null> {
+async function callProvider(p: Provider, system: string, user: string, maxTokens = 900): Promise<string | null> {
   try {
     const res = await fetch(p.url, {
       method: 'POST',
@@ -62,7 +62,8 @@ async function callProvider(p: Provider, system: string, user: string): Promise<
           { role: 'user', content: user },
         ],
         temperature: 0.8,
-        max_tokens: 500,
+        // Bengali is token-heavy — a small budget truncated long replies.
+        max_tokens: maxTokens,
       }),
     });
     if (!res.ok) {
@@ -80,9 +81,9 @@ async function callProvider(p: Provider, system: string, user: string): Promise<
 }
 
 /** Try each provider in order with a fully-formed system prompt. */
-async function completeRaw(system: string, user: string): Promise<{ text: string; provider: string } | null> {
+async function completeRaw(system: string, user: string, maxTokens = 900): Promise<{ text: string; provider: string } | null> {
   for (const p of providers()) {
-    const text = await callProvider(p, system, user);
+    const text = await callProvider(p, system, user, maxTokens);
     if (text && text.trim()) return { text: text.trim(), provider: p.name };
   }
   return null;
@@ -188,13 +189,17 @@ ABSOLUTE rules:
 4. Keep the scholar's meaning intact; just make the wording clear and simple for a beginner. Be concise.`;
 
 export async function getSimplifiedTafsir(input: { text: string; language: 'en' | 'bn' }): Promise<SimplifyResult> {
-  const langName = input.language === 'bn' ? 'simple Bengali (বাংলা)' : 'simple, clear English';
+  const langName = input.language === 'bn' ? 'simple, everyday Bengali (বাংলা)' : 'simple, clear English';
   const out = await completeRaw(
     SIMPLIFY_GUARD,
-    `Rewrite this tafsir excerpt faithfully in ${langName} for a beginner. Keep it to a few short paragraphs.\n\nTafsir excerpt:\n"""${input.text.slice(0, 6000)}"""`
+    `Rewrite this tafsir excerpt faithfully in ${langName} for a beginner. Cover the WHOLE excerpt so nothing important is dropped, in a few short paragraphs. Do not stop mid-sentence. Reply with ONLY the simplified text — no preamble like "Here is...".\n\nTafsir excerpt:\n"""${input.text.slice(0, 5000)}"""`,
+    // Bengali needs a big budget so the reply isn't cut off.
+    input.language === 'bn' ? 3000 : 1800
   );
   if (!out) {
     return { simplified: 'The simplified reading is unavailable right now — please read the original tafsir above.', ai: false };
   }
-  return { simplified: out.text, ai: true, provider: out.provider };
+  // Strip a leading "Here is a simplified…" preamble if the model adds one.
+  const cleaned = out.text.replace(/^\s*(here('|’)s|here is|sure[,!]?|below is)[^\n:]*[:\n]/i, '').trim();
+  return { simplified: cleaned || out.text, ai: true, provider: out.provider };
 }

@@ -186,6 +186,11 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                 <FontPicker label="🔡 Translation size" storageKey="ihsan_quran_font_tr" />
               </div>
 
+              <div>
+                <FontPicker label="📖 Tafsir size" storageKey="ihsan_tafsir_font" />
+                <p className="text-white/25 text-[10px] mt-1">Larger, easier to read on big screens.</p>
+              </div>
+
               <div className="rounded-2xl bg-white/3 border border-slate-400/8 p-3">
                 <p className="text-white/45 text-xs leading-relaxed">
                   🔖 Your saved āyāt now live in their own <b className="text-white/70">Saved</b> tab —

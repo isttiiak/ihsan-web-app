@@ -56,18 +56,20 @@ export function AiThinking({ label = 'Naseeh is reflecting…' }: { label?: stri
   );
 }
 
-/** A card wrapped in a slowly rotating colorful AI gradient border. */
+/** A card wrapped in a slowly rotating colorful AI gradient BORDER only. The
+ * interior is fully opaque so the moving gradient never sits behind the text
+ * (Istiak: the moving background hurt readability). Rotation is slow + calm. */
 export function AiPanel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`relative rounded-3xl p-[1.5px] overflow-hidden ${className}`}>
+    <div className={`relative rounded-3xl p-[2px] overflow-hidden ${className}`}>
       <motion.div
         aria-hidden
         className="absolute left-1/2 top-1/2 w-[200%] aspect-square -translate-x-1/2 -translate-y-1/2"
         style={{ background: AI_GRADIENT }}
         animate={{ rotate: 360 }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
       />
-      <div className="relative rounded-[calc(1.5rem-1.5px)] bg-brand-deep/95 backdrop-blur-sm">
+      <div className="relative rounded-[calc(1.5rem-2px)] bg-brand-deep">
         {children}
       </div>
     </div>

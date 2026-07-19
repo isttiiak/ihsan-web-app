@@ -39,6 +39,8 @@ import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrat
 
 const FONT_SIZES = ['text-2xl sm:text-3xl', 'text-3xl sm:text-4xl', 'text-4xl sm:text-5xl'];
 const TR_FONT_SIZES = ['text-xs sm:text-sm', 'text-sm sm:text-base', 'text-base sm:text-lg'];
+// Tafsir is dense prose — default larger + generous line-height for big screens.
+const TAFSIR_FONT_SIZES = ['text-[15px] sm:text-base', 'text-base sm:text-lg', 'text-lg sm:text-xl'];
 
 // ── Resume tracking: where the reader left off, per surah ──────────────────────
 const RESUME_KEY = 'ihsan_reader_pos';
@@ -97,6 +99,7 @@ export default function QuranReader() {
   });
   const fontSize = FONT_SIZES[Number(localStorage.getItem('ihsan_quran_font')) || 1] ?? FONT_SIZES[1]!;
   const trFontSize = TR_FONT_SIZES[Number(localStorage.getItem('ihsan_quran_font_tr')) || 1] ?? TR_FONT_SIZES[1]!;
+  const tafsirFontSize = TAFSIR_FONT_SIZES[Number(localStorage.getItem('ihsan_tafsir_font')) || 1] ?? TAFSIR_FONT_SIZES[1]!;
   const editions = useMemo(() => selectedTranslations(), []);
   const editionLabel = (id: string) => TRANSLATIONS.find((t) => t.id === id)?.label ?? id;
 
@@ -527,9 +530,9 @@ export default function QuranReader() {
                     aria-hidden className="absolute inset-0"
                     style={{ background: 'linear-gradient(90deg,#10b981,#06b6d4,#a855f7,#ec4899,#f59e0b,#10b981)', backgroundSize: '300% 100%', opacity: 0.55 }}
                     animate={{ backgroundPosition: ['0% 50%', '300% 50%'] }}
-                    transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
+                    transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
                   />
-                  <span className="relative flex items-center justify-center gap-2 rounded-[calc(1rem-1.5px)] bg-brand-deep/95 px-4 py-2.5 text-sm font-bold text-white/80 group-hover:text-white">
+                  <span className="relative flex items-center justify-center gap-2 rounded-[calc(1rem-1.5px)] bg-brand-deep px-4 py-2.5 text-sm font-bold text-white/80 group-hover:text-white">
                     <SparklesIcon className="w-4 h-4 text-fuchsia-300" /> Reflect
                   </span>
                 </button>
@@ -562,7 +565,7 @@ export default function QuranReader() {
                   <p className="text-white/50 text-sm py-2">Couldn't load this tafsir — check your connection or try another edition.</p>
                 ) : (
                   <>
-                    <div className={`max-h-72 overflow-y-auto pr-1 text-white/75 text-sm leading-relaxed whitespace-pre-line ${tafsirLang === 'bn' ? 'text-[15px]' : ''}`}>
+                    <div className={`max-h-80 overflow-y-auto pr-2 text-white/80 ${tafsirFontSize} leading-8 whitespace-pre-line`}>
                       {tafsir.data?.text}
                     </div>
                     <p className="text-white/30 text-[10px]">
@@ -577,9 +580,9 @@ export default function QuranReader() {
                           aria-hidden className="absolute inset-0"
                           style={{ background: 'linear-gradient(90deg,#10b981,#06b6d4,#a855f7,#ec4899,#f59e0b,#10b981)', backgroundSize: '300% 100%', opacity: 0.5 }}
                           animate={{ backgroundPosition: ['0% 50%', '300% 50%'] }}
-                          transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
+                          transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
                         />
-                        <span className="relative flex items-center justify-center gap-2 rounded-[calc(0.75rem-1.5px)] bg-brand-deep/95 px-4 py-2 text-xs font-bold text-white/80 group-hover:text-white">
+                        <span className="relative flex items-center justify-center gap-2 rounded-[calc(0.75rem-1.5px)] bg-brand-deep px-4 py-2 text-xs font-bold text-white/80 group-hover:text-white">
                           <SparklesIcon className="w-3.5 h-3.5 text-fuchsia-300" />
                           Simplify with Naseeh{tafsirLang === 'bn' ? ' (বাংলায়)' : ''}
                         </span>
@@ -599,7 +602,7 @@ export default function QuranReader() {
                               <button className="mt-2 btn btn-xs bg-white/10 border-slate-400/15 text-white/70" onClick={onSimplify}>Retry</button>
                             </div>
                           ) : (
-                            <p className="text-white/80 text-sm leading-relaxed whitespace-pre-line">{simplify.data?.simplified}</p>
+                            <p className={`text-white/85 ${tafsirFontSize} leading-8 whitespace-pre-line`}>{simplify.data?.simplified}</p>
                           )}
                           <p className="text-white/35 text-[10px] leading-relaxed mt-2 flex items-start gap-1">
                             <span aria-hidden>✨</span>
