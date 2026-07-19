@@ -34,7 +34,7 @@ export default function QuranAnalytics() {
   }, [history]);
 
   const khatmPct = summary ? (summary.profile.currentAyah / QURAN_TOTAL_AYAT) * 100 : 0;
-  const maxTop = Math.max(1, ...(summary?.topSurahs ?? []).map((t) => t.ayat));
+  const maxTop = Math.max(1, ...(summary?.topSurahs ?? []).map((t) => t.completions));
 
   return (
     <AnimatedBackground variant="dark">
@@ -86,9 +86,9 @@ export default function QuranAnalytics() {
 
         {/* top surahs */}
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-          <h2 className="text-white font-black mb-3">💚 Your most-read surahs</h2>
+          <h2 className="text-white font-black mb-3">💚 Your most-completed surahs</h2>
           {(summary?.topSurahs ?? []).length === 0 ? (
-            <p className="text-white/30 text-xs">Read in the new āyah reader and your favourites appear here.</p>
+            <p className="text-white/30 text-xs">Finish a surah in the āyah reader and your favourites appear here.</p>
           ) : (
             <div className="space-y-1.5">
               {(summary?.topSurahs ?? []).map((t, i) => (
@@ -96,9 +96,9 @@ export default function QuranAnalytics() {
                   <span className="w-5 text-white/30 font-black">{i + 1}</span>
                   <span className="text-white/70 font-bold w-32 truncate">{nameOf(t.surah)}</span>
                   <div className="flex-1 h-4 rounded-full bg-white/5 overflow-hidden">
-                    <div className="h-full rounded-full bg-gradient-to-r from-emerald-500/60 to-teal-400/60" style={{ width: `${(t.ayat / maxTop) * 100}%` }} />
+                    <div className="h-full rounded-full bg-gradient-to-r from-emerald-500/60 to-teal-400/60" style={{ width: `${(t.completions / maxTop) * 100}%` }} />
                   </div>
-                  <span className="text-brand-emerald font-bold w-14 text-right">{t.ayat} āyāt</span>
+                  <span className="text-brand-emerald font-bold w-16 text-right">×{t.completions}</span>
                 </div>
               ))}
             </div>

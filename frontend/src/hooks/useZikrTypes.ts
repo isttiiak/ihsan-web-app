@@ -25,3 +25,13 @@ export function useAddZikrType() {
     },
   });
 }
+
+export function useDeleteZikrType() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => api.delete(`/api/zikr/types/${encodeURIComponent(name)}`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['zikr', 'types'] });
+    },
+  });
+}

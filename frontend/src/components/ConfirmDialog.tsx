@@ -40,7 +40,7 @@ export default function ConfirmDialog({
             <h3 className="text-white font-black text-base">{title}</h3>
             <p className="text-white/50 text-xs mt-1.5 leading-relaxed">{message}</p>
             <div className="flex gap-2 mt-4">
-              <button className="flex-1 btn btn-sm rounded-xl bg-white/5 border-white/10 text-white/70" onClick={onCancel}>
+              <button className="flex-1 btn btn-sm rounded-xl bg-white/5 border-slate-400/10 text-white/70" onClick={onCancel}>
                 Cancel
               </button>
               <button

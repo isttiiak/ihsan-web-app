@@ -226,7 +226,7 @@ export default function SalatAnalytics() {
                       </div>
                     ))}
                   </div>
-                  <div className="space-y-0.5 pt-1 border-t border-white/10">
+                  <div className="space-y-0.5 pt-1 border-t border-slate-400/10">
                     <p className="text-white/20 text-xs flex items-center gap-1">
                       <InformationCircleIcon className="w-3 h-3 shrink-0" />
                       Completion = (On time + Kaza) ÷ ({data.totalDays} × 5) × 100 = <strong className="text-white/30">{data.completionRate}%</strong>
@@ -258,7 +258,7 @@ export default function SalatAnalytics() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.05 * i }}
                         whileHover={{ y: -4, scale: 1.02 }}
-                        className={`card relative overflow-hidden bg-gradient-to-br ${gradient} border border-white/20 rounded-2xl`}
+                        className={`card relative overflow-hidden bg-gradient-to-br ${gradient} border border-slate-400/20 rounded-2xl`}
                       >
                         <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent" initial={{ x: '-100%' }} whileHover={{ x: '100%' }} transition={{ duration: 0.5 }} />
                         <div className="card-body p-4 relative z-10">

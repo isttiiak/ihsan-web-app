@@ -23,7 +23,7 @@ export default function QuranTabNav({ active }: { active: QuranTab }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 flex gap-1 bg-white/5 rounded-xl p-1 border border-white/10 overflow-x-auto">
+      <div className="flex-1 flex gap-1 bg-white/5 rounded-xl p-1 border border-slate-400/10 overflow-x-auto">
         {TABS.map((t) =>
           t.id === active ? (
             <span key={t.id} aria-current="page"
@@ -40,7 +40,7 @@ export default function QuranTabNav({ active }: { active: QuranTab }) {
       </div>
       <button
         aria-label="Quran settings"
-        className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:text-white shrink-0"
+        className="p-2 rounded-xl bg-white/5 border border-slate-400/10 text-white/50 hover:text-white shrink-0"
         onClick={() => setSettingsOpen(true)}
       ><Cog6ToothIcon className="w-4 h-4" /></button>
       <QuranSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} />

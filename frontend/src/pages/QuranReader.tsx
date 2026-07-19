@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
   ChevronLeftIcon, ChevronRightIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon,
-  BookmarkIcon as BookmarkOutline,
+  BookmarkIcon as BookmarkOutline, SpeakerWaveIcon, SpeakerXMarkIcon,
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolid, PlayIcon, PauseIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
@@ -20,12 +20,40 @@ import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrat
  * fullscreen for distraction-free reading. Keyboard: ← → navigate · F
  * fullscreen · Esc exit.
  *
- * Modes: free (browse), khatam (advances the khatam bookmark), bundle
- * (a bounded ayah range like Āyatul Kursī).
+ * Modes:
+ *  - free    browse a full surah; finishing auto-advances to the NEXT surah.
+ *  - khatam  serial journey; advances the khatam bookmark + wraps a khatm.
+ *  - single  a "beloved surah"; finishing REDIRECTS to /quran (no next surah).
+ *  - bundle  a bounded āyah selection or duʿā; does NOT count toward the goal
+ *            (Istiak's spec) and redirects to /quran when finished.
+ *
+ * Reading counts toward the daily āyah goal in free/khatam/single only.
+ * Finishing a surah (reaching its last āyah) credits ONE completion toward
+ * the "top surahs" list.
  */
 
 const FONT_SIZES = ['text-2xl sm:text-3xl', 'text-3xl sm:text-4xl', 'text-4xl sm:text-5xl'];
 const TR_FONT_SIZES = ['text-xs sm:text-sm', 'text-sm sm:text-base', 'text-base sm:text-lg'];
+
+// ── Resume tracking: where the reader left off, per surah ──────────────────────
+const RESUME_KEY = 'ihsan_reader_pos';
+function readResumeMap(): Record<string, number> {
+  try { return JSON.parse(localStorage.getItem(RESUME_KEY) ?? '{}') as Record<string, number>; }
+  catch { return {}; }
+}
+function getResume(surah: number): number { return readResumeMap()[String(surah)] ?? 0; }
+function saveResume(surah: number, ayah: number): void {
+  const m = readResumeMap();
+  m[String(surah)] = ayah;
+  localStorage.setItem(RESUME_KEY, JSON.stringify(m));
+}
+function clearResume(surah: number): void {
+  const m = readResumeMap();
+  delete m[String(surah)];
+  localStorage.setItem(RESUME_KEY, JSON.stringify(m));
+}
+
+type ReaderMode = 'free' | 'khatam' | 'bundle' | 'single';
 
 export default function QuranReader() {
   const { surah: surahParam } = useParams();
@@ -34,7 +62,8 @@ export default function QuranReader() {
   const user = useAuthStore((s) => s.user);
 
   const surahNo = Math.min(114, Math.max(1, Number(surahParam) || 1));
-  const mode = (params.get('mode') ?? 'free') as 'free' | 'khatam' | 'bundle';
+  const mode = (params.get('mode') ?? 'free') as ReaderMode;
+  const hasStart = params.get('start') != null;
   const startAyah = Number(params.get('start')) || 1;
   const endAyah = Number(params.get('end')) || null; // bundle bound
 
@@ -49,10 +78,21 @@ export default function QuranReader() {
   const [fullscreen, setFullscreen] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [wordIdx, setWordIdx] = useState(-1);
+  const [resumeAyah, setResumeAyah] = useState<number | null>(null); // continue-or-restart prompt
+  const [volume, setVolume] = useState<number>(() => {
+    const raw = localStorage.getItem('ihsan_quran_volume');
+    const v = Number(raw);
+    return raw !== null && Number.isFinite(v) && v >= 0 && v <= 1 ? v : 0.4; // 40% default
+  });
   const fontSize = FONT_SIZES[Number(localStorage.getItem('ihsan_quran_font')) || 1] ?? FONT_SIZES[1]!;
   const trFontSize = TR_FONT_SIZES[Number(localStorage.getItem('ihsan_quran_font_tr')) || 1] ?? TR_FONT_SIZES[1]!;
   const editions = useMemo(() => selectedTranslations(), []);
   const editionLabel = (id: string) => TRANSLATIONS.find((t) => t.id === id)?.label ?? id;
+
+  // free/single reads track a resume position; khatam uses the server bookmark,
+  // bundles are bounded — neither uses local resume.
+  const usesResume = mode === 'free' || mode === 'single';
+  const countsGoal = mode !== 'bundle';
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -60,6 +100,7 @@ export default function QuranReader() {
   // Ayat advanced past but not yet flushed to the server
   const pendingRef = useRef(0);
   const seenRef = useRef(new Set<number>());
+  const suppressSaveRef = useRef(false);
 
   const surahMeta = useMemo(() => surahs.find((s) => s.number === surahNo) ?? null, [surahs, surahNo]);
   const current = ayat[idx] ?? null;
@@ -70,13 +111,22 @@ export default function QuranReader() {
   useEffect(() => {
     let alive = true;
     setLoading(true);
+    setResumeAyah(null);
+    suppressSaveRef.current = false;
+    seenRef.current = new Set();
     Promise.all([loadSurahList(), loadSurahText(surahNo)])
       .then(([list, text]) => {
         if (!alive) return;
         setSurahs(list);
         setAyat(text);
-        setIdx(Math.min(text.length - 1, Math.max(0, startAyah - 1)));
+        const initialIdx = Math.min(text.length - 1, Math.max(0, startAyah - 1));
+        setIdx(initialIdx);
         setLoading(false);
+        // Offer "continue where you left off?" for an unfinished free/single read.
+        if (usesResume && !hasStart) {
+          const saved = getResume(surahNo);
+          if (saved > 1 && saved <= text.length) setResumeAyah(saved);
+        }
       })
       .catch(() => { if (alive) { setLoading(false); toast.error('Could not load the surah — check your connection.', { id: 'quran-load' }); } });
     return () => { alive = false; };
@@ -84,33 +134,30 @@ export default function QuranReader() {
   }, [surahNo]);
 
   // ── logging: count each NEW ayah the reader moves past, flush in batches ──
-  const flush = useCallback(() => {
+  const flush = useCallback((completedSurah = false) => {
     const n = pendingRef.current;
-    if (n <= 0 || !user) return;
+    if ((n <= 0 && !completedSurah) || !user || !countsGoal) return;
     pendingRef.current = 0;
     readAyat.mutate(
-      { count: n, surah: surahNo, advanceKhatm: mode === 'khatam' },
-      {
-        onSuccess: (r) => {
-          if (r.khatmCompleted) celebrateKhatm();
-        },
-      }
+      { count: n, surah: surahNo, advanceKhatm: mode === 'khatam', completedSurah },
+      { onSuccess: (r) => { if (r.khatmCompleted) celebrateKhatm(); } }
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, surahNo, mode]);
+  }, [user, surahNo, mode, countsGoal]);
 
   useEffect(() => () => flush(), [flush]); // flush on unmount / surah change
 
   const markRead = useCallback((ayahIdx: number) => {
+    if (!countsGoal) return; // bundles/duas don't count toward the goal
     const a = ayat[ayahIdx];
     if (!a || seenRef.current.has(a.number)) return;
     seenRef.current.add(a.number);
     pendingRef.current += 1;
     const before = (summary?.todayAyat ?? 0) + pendingRef.current - 1;
-    const goal = summary?.profile.dailyGoalAyat ?? 20;
+    const goal = summary?.profile.dailyGoalAyat ?? 1;
     if (before < goal && before + 1 >= goal) celebrateGoal();
     if (pendingRef.current >= 5) flush();
-  }, [ayat, flush, summary]);
+  }, [ayat, flush, summary, countsGoal]);
 
   // ── audio: play ONLY the current ayah, highlight words while it runs ──
   const stopAudio = useCallback(() => {
@@ -125,6 +172,7 @@ export default function QuranReader() {
     if (!current) return;
     if (playing) { stopAudio(); return; }
     const a = new Audio(ayahAudioUrl(current.number));
+    a.volume = volume;
     audioRef.current = a;
     const words = current.arabic.split(' ').length;
     a.addEventListener('loadedmetadata', () => {
@@ -141,34 +189,65 @@ export default function QuranReader() {
     a.addEventListener('ended', () => { stopAudio(); }); // ONE ayah, then stop
     a.addEventListener('error', () => { stopAudio(); toast.error('Audio unavailable — try again.', { id: 'ayah-audio' }); });
     void a.play().then(() => setPlaying(true)).catch(() => toast.error('Tap again to allow audio.', { id: 'ayah-audio' }));
-  }, [current, playing, stopAudio]);
+  }, [current, playing, stopAudio, volume]);
+
+  const changeVolume = useCallback((v: number) => {
+    setVolume(v);
+    if (audioRef.current) audioRef.current.volume = v;
+    localStorage.setItem('ihsan_quran_volume', String(v));
+  }, []);
 
   // ── navigation ──
+  const goToIdx = useCallback((next: number) => {
+    stopAudio();
+    setIdx(next);
+    if (usesResume && !suppressSaveRef.current) { const a = ayat[next]; if (a) saveResume(surahNo, a.numberInSurah); }
+  }, [stopAudio, usesResume, ayat, surahNo]);
+
+  const finishAndRedirect = useCallback((msg: string) => {
+    suppressSaveRef.current = true;
+    clearResume(surahNo);
+    celebrateSmall();
+    toast.success(msg, { id: 'reader-done', duration: 2200 });
+    setTimeout(() => navigate('/quran'), 850);
+  }, [surahNo, navigate]);
+
   const goNext = useCallback(() => {
     stopAudio();
     if (idx < lastIdx) {
       markRead(idx); // moving past the current ayah = it was read
-      setIdx(idx + 1);
-    } else {
-      markRead(idx);
-      flush();
-      if (mode === 'bundle') {
-        celebrateSmall();
-        toast.success('Complete — may it protect and bless you 🤲', { id: 'bundle-done' });
-      } else if (surahNo < 114) {
-        celebrateSmall();
-        toast.success(`${surahMeta?.englishName ?? 'Surah'} completed — onward! 🌿`, { id: 'surah-done', duration: 2200 });
-        navigate(`/quran/read/${surahNo + 1}?mode=${mode}`);
-      } else {
-        celebrateKhatm();
-      }
+      goToIdx(idx + 1);
+      return;
     }
-  }, [idx, lastIdx, markRead, stopAudio, flush, mode, surahNo, navigate]);
+    // At the last ayah of this view.
+    if (mode === 'bundle') {
+      finishAndRedirect('Complete — may it protect and bless you 🤲');
+      return;
+    }
+    // free / khatam / single reached the surah's end
+    markRead(idx);
+    flush(true); // credits the surah completion
+    clearResume(surahNo);
+    if (mode === 'single') {
+      finishAndRedirect(`${surahMeta?.englishName ?? 'Surah'} complete 🌿`);
+      return;
+    }
+    if (surahNo < 114) {
+      suppressSaveRef.current = true;
+      celebrateSmall();
+      toast.success(`${surahMeta?.englishName ?? 'Surah'} completed — onward! 🌿`, { id: 'surah-done', duration: 2200 });
+      // REPLACE so Back returns to where you came from — not the finished surah
+      // — and so you can't step back into the previous surah.
+      navigate(`/quran/read/${surahNo + 1}?mode=${mode}`, { replace: true });
+    } else {
+      finishAndRedirect('Khatm complete — Allahu akbar! 🕋');
+      celebrateKhatm();
+    }
+  }, [idx, lastIdx, markRead, stopAudio, flush, mode, surahNo, surahMeta, navigate, goToIdx, finishAndRedirect]);
 
   const goPrev = useCallback(() => {
-    stopAudio();
-    if (idx > firstIdx) setIdx(idx - 1);
-  }, [idx, firstIdx, stopAudio]);
+    if (idx > firstIdx) goToIdx(idx - 1);
+  }, [idx, firstIdx, goToIdx]);
 
   // ── fullscreen + keyboard ──
   const toggleFullscreen = useCallback(() => {
@@ -226,24 +305,30 @@ export default function QuranReader() {
           >← Back</button>
           <div className="flex items-center gap-2 text-white/40">
             {mode === 'khatam' && <span className="px-2 py-0.5 rounded-full bg-brand-emerald/15 text-brand-emerald border border-brand-emerald/30 font-bold">Khatam journey</span>}
-            {mode === 'bundle' && <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold border border-brand-gold/30 font-bold">Special selection</span>}
+            {(mode === 'bundle' || mode === 'single') && <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold border border-brand-gold/30 font-bold">Special selection</span>}
             <span className="hidden sm:inline">⌨️ ← → · F fullscreen</span>
           </div>
         </div>
 
         {/* info chips */}
         <div className="flex flex-wrap items-center gap-2 text-[11px]">
-          <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 font-bold">
+          <span className="px-2.5 py-1 rounded-full bg-white/5 border border-slate-400/10 text-white/70 font-bold">
             {surahNo}. {surahMeta?.englishName ?? '…'} <span className="text-white/30">· {surahMeta?.numberOfAyahs ?? '–'} āyāt</span>
           </span>
-          <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/50">
+          <span className="px-2.5 py-1 rounded-full bg-white/5 border border-slate-400/10 text-white/50">
             Juz {current ? juzOf(surahNo, current.numberInSurah) : '–'}
           </span>
-          <span className="px-2.5 py-1 rounded-full bg-brand-emerald/10 border border-brand-emerald/25 text-brand-emerald font-bold">
-            📖 {todayCount} āyāt today{summary ? ` / ${summary.profile.dailyGoalAyat} goal` : ''}
-          </span>
+          {countsGoal ? (
+            <span className="px-2.5 py-1 rounded-full bg-brand-emerald/10 border border-brand-emerald/25 text-brand-emerald font-bold">
+              📖 {todayCount} āyāt today{summary ? ` / ${summary.profile.dailyGoalAyat} goal` : ''}
+            </span>
+          ) : (
+            <span className="px-2.5 py-1 rounded-full bg-white/5 border border-slate-400/10 text-white/40">
+              🤲 Reflection — not counted toward the goal
+            </span>
+          )}
           {khatamPos && (
-            <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/40">
+            <span className="px-2.5 py-1 rounded-full bg-white/5 border border-slate-400/10 text-white/40">
               Khatam at {khatamPos.surah}:{khatamPos.ayah}
             </span>
           )}
@@ -252,7 +337,7 @@ export default function QuranReader() {
         {/* ── THE CARD ── */}
         <div
           ref={cardRef}
-          className={`relative rounded-3xl border border-white/10 bg-gradient-to-br from-[#0d1b17] via-[#0a1412] to-[#0d1420] overflow-hidden ${fullscreen ? 'fixed inset-0 z-50 rounded-none grid place-items-center p-6 sm:p-16' : 'p-6 sm:p-10'}`}
+          className={`relative rounded-3xl border border-slate-400/10 bg-gradient-to-br from-[#0d1b17] via-[#0a1412] to-[#0d1420] overflow-hidden ${fullscreen ? 'fixed inset-0 z-50 rounded-none grid place-items-center p-6 sm:p-16' : 'p-6 sm:p-10'}`}
         >
           {/* top-right controls */}
           <div className={`absolute top-4 right-4 flex items-center gap-2 z-10`}>
@@ -260,7 +345,7 @@ export default function QuranReader() {
               aria-label={playing ? 'Stop recitation' : 'Recite this ayah'}
               title="Recite only this ayah"
               onClick={playAyah}
-              className={`w-10 h-10 rounded-full grid place-items-center border transition-all ${playing ? 'bg-brand-emerald text-white border-brand-emerald' : 'bg-white/5 text-brand-emerald border-white/10 hover:border-brand-emerald/50'}`}
+              className={`w-10 h-10 rounded-full grid place-items-center border transition-all ${playing ? 'bg-brand-emerald text-white border-brand-emerald' : 'bg-white/5 text-brand-emerald border-slate-400/10 hover:border-brand-emerald/50'}`}
             >
               {playing ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4 ml-0.5" />}
             </button>
@@ -268,7 +353,7 @@ export default function QuranReader() {
               <button
                 aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this ayah'}
                 onClick={() => current && toggleBookmark.mutate({ surah: surahNo, ayah: current.numberInSurah })}
-                className="w-10 h-10 rounded-full grid place-items-center border bg-white/5 border-white/10 text-brand-gold hover:border-brand-gold/50"
+                className="w-10 h-10 rounded-full grid place-items-center border bg-white/5 border-slate-400/10 text-brand-gold hover:border-brand-gold/50"
               >
                 {isBookmarked ? <BookmarkSolid className="w-4 h-4" /> : <BookmarkOutline className="w-4 h-4" />}
               </button>
@@ -276,7 +361,7 @@ export default function QuranReader() {
             <button
               aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
               onClick={toggleFullscreen}
-              className="w-10 h-10 rounded-full grid place-items-center border bg-white/5 border-white/10 text-white/50 hover:text-white"
+              className="w-10 h-10 rounded-full grid place-items-center border bg-white/5 border-slate-400/10 text-white/50 hover:text-white"
             >
               {fullscreen ? <ArrowsPointingInIcon className="w-4 h-4" /> : <ArrowsPointingOutIcon className="w-4 h-4" />}
             </button>
@@ -332,7 +417,7 @@ export default function QuranReader() {
                 aria-label="Previous ayah"
                 onClick={goPrev}
                 disabled={idx <= firstIdx}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-white/60 hover:text-white disabled:opacity-20 text-sm font-bold"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/5 border border-slate-400/10 text-white/60 hover:text-white disabled:opacity-20 text-sm font-bold"
               >
                 <ChevronLeftIcon className="w-4 h-4" /> Previous
               </button>
@@ -341,28 +426,89 @@ export default function QuranReader() {
                 onClick={goNext}
                 className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-brand-emerald/90 hover:bg-brand-emerald text-white text-sm font-black border-0"
               >
-                {idx >= lastIdx ? (mode === 'bundle' ? 'Finish 🤲' : surahNo < 114 ? 'Next surah' : 'Finish') : 'Next'}
+                {idx >= lastIdx
+                  ? (mode === 'bundle' ? 'Finish 🤲' : mode === 'single' ? 'Finish 🌿' : surahNo < 114 ? 'Next surah' : 'Finish')
+                  : 'Next'}
                 <ChevronRightIcon className="w-4 h-4" />
               </button>
             </div>
           )}
         </div>
 
-        {/* jump within surah */}
-        {!loading && ayat.length > 0 && mode !== 'bundle' && (
-          <div className="flex items-center gap-2 text-xs text-white/40">
-            <label htmlFor="jump-ayah" className="font-bold">Jump to āyah</label>
-            <select
-              id="jump-ayah"
-              className="select select-xs bg-white/5 border-white/10 text-white/70 rounded-lg"
-              value={idx + 1}
-              onChange={(e) => { stopAudio(); setIdx(Number(e.target.value) - 1); }}
-            >
-              {ayat.map((a) => <option key={a.number} value={a.numberInSurah}>{a.numberInSurah}</option>)}
-            </select>
+        {/* bottom controls: jump (left) · volume (right) */}
+        {!loading && ayat.length > 0 && (
+          <div className="flex items-center justify-between gap-3 text-xs text-white/40">
+            {mode !== 'bundle' ? (
+              <div className="flex items-center gap-2">
+                <label htmlFor="jump-ayah" className="font-bold">Jump to āyah</label>
+                <select
+                  id="jump-ayah"
+                  className="select select-xs bg-white/5 border-slate-400/10 text-white/70 rounded-lg"
+                  value={idx + 1}
+                  onChange={(e) => goToIdx(Number(e.target.value) - 1)}
+                >
+                  {ayat.map((a) => <option key={a.number} value={a.numberInSurah}>{a.numberInSurah}</option>)}
+                </select>
+              </div>
+            ) : <span />}
+
+            {/* volume control (defaults to 40%) */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                aria-label={volume === 0 ? 'Volume off' : 'Volume'}
+                className="text-white/50 hover:text-white"
+                onClick={() => changeVolume(volume === 0 ? 0.4 : 0)}
+              >
+                {volume === 0 ? <SpeakerXMarkIcon className="w-4 h-4" /> : <SpeakerWaveIcon className="w-4 h-4" />}
+              </button>
+              <input
+                type="range" min={0} max={100} value={Math.round(volume * 100)}
+                aria-label="Recitation volume"
+                onChange={(e) => changeVolume(Number(e.target.value) / 100)}
+                className="range range-xs w-24 [--range-shdw:theme(colors.emerald.400)]"
+              />
+            </div>
           </div>
         )}
       </div>
+
+      {/* ── Continue where you left off? ── */}
+      <AnimatePresence>
+        {resumeAyah !== null && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm grid place-items-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.94, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94, y: 8 }}
+              transition={{ type: 'spring', damping: 24 }}
+              className="w-full max-w-xs rounded-2xl bg-brand-deep border border-brand-emerald/25 p-5 text-center"
+              role="alertdialog" aria-modal="true"
+            >
+              <div className="text-3xl mb-2">📖</div>
+              <h3 className="text-white font-black text-base">Continue reading?</h3>
+              <p className="text-white/50 text-xs mt-1.5 leading-relaxed">
+                You left {surahMeta?.englishName ?? 'this surah'} at āyah <b className="text-brand-emerald">{resumeAyah}</b>.
+                Pick up from there, or start over from the beginning.
+              </p>
+              <div className="flex gap-2 mt-4">
+                <button
+                  className="flex-1 btn btn-sm rounded-xl bg-white/5 border-slate-400/10 text-white/70"
+                  onClick={() => { clearResume(surahNo); setIdx(0); setResumeAyah(null); }}
+                >
+                  Start over
+                </button>
+                <button
+                  className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-500"
+                  onClick={() => { setIdx(Math.min(ayat.length - 1, resumeAyah - 1)); setResumeAyah(null); }}
+                >
+                  Continue
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

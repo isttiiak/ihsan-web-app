@@ -30,9 +30,13 @@ export const quranProfileSchema = z.object({
 export const quranReadAyatSchema = z.object({
   body: z.object({
     date: dateStr,
-    count: z.number().int().min(1).max(700),
+    // count 0 is allowed only to carry a pure surah-completion signal
+    count: z.number().int().min(0).max(700),
     surah: z.number().int().min(1).max(114).optional(),
     advanceKhatm: z.boolean().default(false),
+    /** Set when this reading reached the LAST ayah of `surah` — credits a
+     * completion toward the "top surahs" list. */
+    completedSurah: z.boolean().default(false),
   }),
 });
 

@@ -69,7 +69,7 @@ function Toggle({ checked, onChange, title, detail, accent = 'toggle-success' }:
   accent?: string;
 }) {
   return (
-    <label className="flex items-center gap-4 p-3 rounded-xl border border-brand-border bg-brand-deep/50 cursor-pointer hover:border-white/20 transition-colors">
+    <label className="flex items-center gap-4 p-3 rounded-xl border border-brand-border bg-brand-deep/50 cursor-pointer hover:border-slate-400/20 transition-colors">
       <input
         type="checkbox"
         className={`toggle ${accent}`}
@@ -102,6 +102,7 @@ export default function Settings() {
   const [suggestions, setSuggestions] = useState<AiSuggestionsResponse | null>(null);
   const [loadingSuggest, setLoadingSuggest] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportingXlsx, setExportingXlsx] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -153,6 +154,68 @@ export default function Settings() {
       toast.error('Export failed. Check your connection and try again.');
     } finally {
       setExporting(false);
+    }
+  };
+
+  // ── Excel (.xlsx) export ────────────────────────────────────────────────────
+  const exportExcel = async () => {
+    setExportingXlsx(true);
+    const idToken = await getIdToken();
+    const base = import.meta.env.VITE_BACKEND_URL as string;
+    const headers: Record<string, string> = idToken ? { Authorization: `Bearer ${idToken}` } : {};
+    const getJson = async (path: string): Promise<any | null> => {
+      try { const r = await fetch(`${base}${path}`, { headers }); return r.ok ? await r.json() : null; }
+      catch { return null; }
+    };
+    try {
+      const XLSX = await import('xlsx');
+      const [profile, zikr, quran, fasting] = await Promise.all([
+        getJson('/api/user/me'),
+        getJson('/api/zikr/summary'),
+        getJson('/api/quran/summary'),
+        getJson('/api/fasting/summary'),
+      ]);
+
+      const wb = XLSX.utils.book_new();
+      const addSheet = (name: string, rows: Array<Record<string, unknown>>) => {
+        if (!rows.length) return;
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), name.slice(0, 31));
+      };
+
+      // Overview
+      addSheet('Overview', [
+        { Metric: 'Exported at', Value: new Date().toLocaleString() },
+        { Metric: 'Name', Value: profile?.displayName ?? profile?.user?.displayName ?? '—' },
+        { Metric: 'Email', Value: profile?.email ?? profile?.user?.email ?? '—' },
+        { Metric: 'Zikr — lifetime total', Value: zikr?.totalCount ?? 0 },
+        { Metric: 'Zikr — today', Value: zikr?.today?.total ?? 0 },
+        { Metric: 'Quran — day streak', Value: quran?.streak ?? 0 },
+        { Metric: 'Quran — khatms completed', Value: quran?.profile?.khatmCount ?? 0 },
+        { Metric: 'Quran — āyāt all-time', Value: quran?.stats?.allTimeUnits ?? 0 },
+      ]);
+
+      // Zikr lifetime per type
+      addSheet('Zikr (lifetime)', (zikr?.perType ?? []).map((t: { zikrType: string; total: number }) => ({
+        Zikr: t.zikrType, LifetimeCount: t.total,
+      })));
+
+      // Quran top surahs
+      addSheet('Quran top surahs', (quran?.topSurahs ?? []).map((t: { surah: number; completions: number }) => ({
+        Surah: t.surah, TimesCompleted: t.completions,
+      })));
+
+      // Fasting recent logs
+      addSheet('Fasting (recent)', (fasting?.logs ?? []).map((l: { date: string; category: string; status: string }) => ({
+        Date: l.date, Category: l.category, Status: l.status,
+      })));
+
+      if (wb.SheetNames.length === 0) { toast.error('Nothing to export yet.'); return; }
+      XLSX.writeFile(wb, `ihsan-export-${new Date().toISOString().substring(0, 10)}.xlsx`);
+      toast.success('Excel file downloaded ✓');
+    } catch {
+      toast.error('Excel export failed. Check your connection and try again.');
+    } finally {
+      setExportingXlsx(false);
     }
   };
 
@@ -337,6 +400,14 @@ export default function Settings() {
               >
                 {exporting ? <span className="loading loading-spinner loading-xs" /> : <ArrowDownTrayIcon className="w-4 h-4" />}
                 Export my data (JSON)
+              </button>
+              <button
+                className="btn btn-sm bg-brand-deep border border-brand-border text-white/70 hover:text-white gap-2"
+                onClick={() => void exportExcel()}
+                disabled={exportingXlsx}
+              >
+                {exportingXlsx ? <span className="loading loading-spinner loading-xs" /> : <ArrowDownTrayIcon className="w-4 h-4" />}
+                Export as Excel (.xlsx)
               </button>
               <label className="btn btn-sm bg-brand-deep border border-brand-border text-white/70 hover:text-white gap-2 cursor-pointer">
                 <ArrowUpTrayIcon className="w-4 h-4" />

@@ -53,7 +53,7 @@ html {
   color: rgba(255, 255, 255, 1);
 }
 
-:root[data-high-contrast] .border-white\/10 {
+:root[data-high-contrast] .border-slate-400\/10 {
   border-color: rgba(255, 255, 255, 0.25);
 }
 

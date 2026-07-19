@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
 import { useQuranSummary, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
@@ -17,7 +16,6 @@ export default function QuranHabit() {
   const navigate = useNavigate();
   const { data: summary, isLoading } = useQuranSummary();
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
-  const [allOpen, setAllOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -26,7 +24,7 @@ export default function QuranHabit() {
   }, []);
 
   const nameOf = (n: number) => surahs.find((s) => s.number === n)?.englishName ?? `Surah ${n}`;
-  const goal = summary?.profile.dailyGoalAyat ?? 20;
+  const goal = summary?.profile.dailyGoalAyat ?? 1;
   const today = summary?.todayAyat ?? 0;
   const pct = Math.min(100, (today / goal) * 100);
   const khatmPct = summary ? (summary.profile.currentAyah / QURAN_TOTAL_AYAT) * 100 : 0;
@@ -73,7 +71,7 @@ export default function QuranHabit() {
                   onClick={() => { if (pos) navigate(`/quran/read/${pos.surah}?start=${pos.ayah}&mode=khatam`); else navigate('/quran/khatam'); }}>
                   ▶ Continue khatam
                 </button>
-                <Link to="/quran/browse" className="btn btn-sm rounded-xl bg-white/5 border-white/10 text-white/70 font-bold">
+                <Link to="/quran/browse" className="btn btn-sm rounded-xl bg-white/5 border-slate-400/10 text-white/70 font-bold">
                   Pick a surah
                 </Link>
               </div>
@@ -108,13 +106,14 @@ export default function QuranHabit() {
         {/* ── top surahs ── */}
         {(summary?.topSurahs ?? []).length > 0 && (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-            <h2 className="text-white font-black text-sm mb-2">💚 Your top surahs</h2>
+            <h2 className="text-white font-black text-sm mb-0.5">💚 Your top surahs</h2>
+            <p className="text-white/30 text-[11px] mb-2">Counted each time you read a surah to its end.</p>
             <div className="flex flex-wrap gap-1.5">
               {(summary?.topSurahs ?? []).map((t, i) => (
                 <button key={t.surah}
-                  className="px-2.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/70 hover:border-brand-emerald/40"
+                  className="px-2.5 py-1.5 rounded-xl bg-white/5 border border-slate-400/10 text-xs text-white/70 hover:border-brand-emerald/40"
                   onClick={() => navigate(`/quran/read/${t.surah}`)}
-                >{['🥇', '🥈', '🥉', '🏅', '🏅'][i]} {nameOf(t.surah)} <span className="text-white/30">· {t.ayat}</span></button>
+                >{['🥇', '🥈', '🥉', '🏅', '🏅'][i]} {nameOf(t.surah)} <span className="text-white/30">· ×{t.completions}</span></button>
               ))}
             </div>
           </div>
@@ -126,8 +125,8 @@ export default function QuranHabit() {
           <div className="grid sm:grid-cols-2 gap-2">
             {SPECIAL_SURAHS.map((sp) => (
               <button key={sp.surah}
-                className="rounded-2xl bg-white/3 border border-white/8 hover:border-brand-gold/40 p-3 text-left transition-all"
-                onClick={() => navigate(`/quran/read/${sp.surah}`)}
+                className="rounded-2xl bg-white/3 border border-slate-400/8 hover:border-brand-gold/40 p-3 text-left transition-all"
+                onClick={() => navigate(`/quran/read/${sp.surah}?mode=single`)}
               >
                 <p className="text-white/85 text-sm font-bold">{sp.emoji} {sp.name} <span className="text-white/25 font-normal">· {sp.surah}</span></p>
                 <p className="text-white/40 text-[11px] mt-1 leading-relaxed">{sp.note}</p>
@@ -147,7 +146,7 @@ export default function QuranHabit() {
           <div className="grid sm:grid-cols-2 gap-2">
             {AYAH_BUNDLES.map((b) => (
               <button key={b.id}
-                className="rounded-2xl bg-white/3 border border-white/8 hover:border-brand-emerald/40 p-3 text-left transition-all"
+                className="rounded-2xl bg-white/3 border border-slate-400/8 hover:border-brand-emerald/40 p-3 text-left transition-all"
                 onClick={() => navigate(`/quran/read/${b.surah}?start=${b.fromAyah}&end=${b.toAyah}&mode=bundle`)}
               >
                 <p className="text-white/85 text-sm font-bold">{b.emoji} {b.title} <span className="text-white/25 font-normal">· {b.surah}:{b.fromAyah}{b.toAyah !== b.fromAyah ? `–${b.toAyah}` : ''}</span></p>
@@ -176,26 +175,10 @@ export default function QuranHabit() {
           </div>
         </div>
 
-        {/* ── all surahs ── */}
-        <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-          <button className="w-full flex items-center justify-between" onClick={() => setAllOpen((v) => !v)} aria-expanded={allOpen}>
-            <h2 className="text-white font-black text-sm">📚 All 114 surahs</h2>
-            <ChevronDownIcon className={`w-4 h-4 text-white/30 transition-transform ${allOpen ? 'rotate-180' : ''}`} />
-          </button>
-          {allOpen && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-3">
-              {surahs.map((s) => (
-                <button key={s.number}
-                  className="rounded-xl bg-white/3 hover:bg-white/6 px-2.5 py-2 text-left text-xs transition-colors"
-                  onClick={() => navigate(`/quran/read/${s.number}`)}
-                >
-                  <span className="text-white/30 font-black mr-1.5">{s.number}</span>
-                  <span className="text-white/65">{s.englishName}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Browse all surahs lives on the dedicated Read tab (no duplicate list here). */}
+        <Link to="/quran/browse" className="block rounded-3xl bg-brand-deep/80 border border-brand-border p-4 text-center hover:border-brand-emerald/40 transition-all">
+          <span className="text-white/70 text-sm font-bold">📚 Browse all 114 surahs →</span>
+        </Link>
 
         {/* virtue footer */}
         <p className="text-white/30 text-[11px] leading-relaxed px-1">

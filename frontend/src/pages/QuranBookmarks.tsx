@@ -93,7 +93,7 @@ export default function QuranBookmarks() {
                   {g.items.map((b) => {
                     const a = ayahText(b.surah, b.ayah);
                     return (
-                      <div key={`${b.surah}:${b.ayah}`} className="rounded-2xl bg-white/3 border border-white/8 p-3.5 hover:border-brand-emerald/30 transition-all">
+                      <div key={`${b.surah}:${b.ayah}`} className="rounded-2xl bg-white/3 border border-slate-400/8 p-3.5 hover:border-brand-emerald/30 transition-all">
                         <button className="w-full text-left" onClick={() => navigate(`/quran/read/${b.surah}?start=${b.ayah}`)}>
                           <p className="text-brand-emerald text-[11px] font-black mb-1.5">Āyah {b.ayah} →</p>
                           {a ? (

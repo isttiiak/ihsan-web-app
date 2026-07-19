@@ -72,28 +72,36 @@ export interface AyatReadResult {
 }
 
 /**
- * v4 ayah engine: log `count` ayat for the day, credit the surah's lifetime
- * counter, and (khatam mode) advance the global-ayah bookmark — wrapping at
- * 6236 completes a khatm. The page bookmark is kept roughly in sync so the
- * old page-based UI keeps making sense.
+ * v4 ayah engine: log `count` ayat for the day toward the daily goal/streak,
+ * (khatam mode) advance the global-ayah bookmark — wrapping at 6236 completes
+ * a khatm — and, when `completedSurah` is set, credit ONE completion of that
+ * surah toward the "top surahs" list. Reading duas/bundles passes count 0 and
+ * completedSurah false, so they never touch the goal (Istiak's spec).
  */
 export async function addAyatReading(
   userId: string,
-  input: { date: string; count: number; surah?: number; advanceKhatm?: boolean }
+  input: { date: string; count: number; surah?: number; advanceKhatm?: boolean; completedSurah?: boolean }
 ): Promise<AyatReadResult> {
-  const { date, count, surah, advanceKhatm } = input;
+  const { date, count, surah, advanceKhatm, completedSurah } = input;
 
-  const inc: Record<string, number> = { ayat: count };
-  const log = await QuranLog.findOneAndUpdate(
-    { userId, date },
-    { $inc: inc, $setOnInsert: { pages: 0 } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
+  const log = count > 0
+    ? await QuranLog.findOneAndUpdate(
+        { userId, date },
+        { $inc: { ayat: count }, $setOnInsert: { pages: 0 } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      )
+    : await QuranLog.findOneAndUpdate(
+        { userId, date },
+        { $setOnInsert: { pages: 0, ayat: 0 } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
 
   const profile = await getOrCreateProfile(userId);
-  if (surah && surah >= 1 && surah <= 114) {
+  // Top-surah counter now tracks how many times a surah was READ TO THE END,
+  // not raw ayat — a far more meaningful "most-read" signal.
+  if (completedSurah && surah && surah >= 1 && surah <= 114) {
     const key = String(surah);
-    profile.surahCounts.set(key, (profile.surahCounts.get(key) ?? 0) + count);
+    profile.surahCounts.set(key, (profile.surahCounts.get(key) ?? 0) + 1);
   }
 
   let khatmCompleted = false;
@@ -186,8 +194,8 @@ export interface QuranSummary {
   pace: number | null;
   /** Estimated days to finish the current khatm at the current pace */
   estDaysToKhatm: number | null;
-  /** Lifetime top-5 most-read surahs */
-  topSurahs: Array<{ surah: number; ayat: number }>;
+  /** Top-5 most-completed surahs (times read to the end) */
+  topSurahs: Array<{ surah: number; completions: number }>;
   bookmarks: Array<{ surah: number; ayah: number }>;
 }
 
@@ -250,8 +258,9 @@ export async function getSummary(userId: string, today?: string): Promise<QuranS
   const estDaysToKhatm = pace && pace > 0 ? Math.ceil(remainingAyat / pace) : null;
 
   const topSurahs = [...profile.surahCounts.entries()]
-    .map(([k, v]) => ({ surah: Number(k), ayat: v }))
-    .sort((a, b) => b.ayat - a.ayat)
+    .map(([k, v]) => ({ surah: Number(k), completions: v }))
+    .filter((t) => t.completions > 0)
+    .sort((a, b) => b.completions - a.completions)
     .slice(0, 5);
 
   const allPages = allTimeAgg[0]?.pages ?? 0;

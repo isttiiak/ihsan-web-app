@@ -306,7 +306,7 @@ export default function RayhanahCycle() {
                   <button
                     aria-label={`Mark ${g.label}`}
                     onClick={() => toggleGarden(g.id)}
-                    className={`w-6 h-6 rounded-full grid place-items-center border transition-all flex-shrink-0 ${garden[g.id] ? 'bg-pink-500 border-pink-400 text-white' : 'border-white/20 text-transparent hover:border-pink-300/60'}`}
+                    className={`w-6 h-6 rounded-full grid place-items-center border transition-all flex-shrink-0 ${garden[g.id] ? 'bg-pink-500 border-pink-400 text-white' : 'border-slate-400/20 text-transparent hover:border-pink-300/60'}`}
                   >
                     ✓
                   </button>
@@ -339,7 +339,7 @@ export default function RayhanahCycle() {
               <div className="flex flex-wrap gap-1.5">
                 {FLOW_OPTIONS.map((f) => (
                   <button key={f.id}
-                    className={`btn btn-xs rounded-full border ${todayNote?.flow === f.id ? 'bg-pink-500/30 border-pink-400/50 text-pink-100' : 'bg-white/5 border-white/10 text-white/50 hover:text-white'}`}
+                    className={`btn btn-xs rounded-full border ${todayNote?.flow === f.id ? 'bg-pink-500/30 border-pink-400/50 text-pink-100' : 'bg-white/5 border-slate-400/10 text-white/50 hover:text-white'}`}
                     onClick={() => setFlow(f.id)}
                   >{f.label}</button>
                 ))}
@@ -350,7 +350,7 @@ export default function RayhanahCycle() {
               <div className="flex flex-wrap gap-1.5">
                 {SYMPTOM_OPTIONS.map((sy) => (
                   <button key={sy.id}
-                    className={`btn btn-xs rounded-full border ${todayNote?.symptoms?.includes(sy.id) ? 'bg-rose-500/25 border-rose-400/40 text-rose-100' : 'bg-white/5 border-white/10 text-white/50 hover:text-white'}`}
+                    className={`btn btn-xs rounded-full border ${todayNote?.symptoms?.includes(sy.id) ? 'bg-rose-500/25 border-rose-400/40 text-rose-100' : 'bg-white/5 border-slate-400/10 text-white/50 hover:text-white'}`}
                     onClick={() => toggleSymptom(sy.id)}
                   >{sy.label}</button>
                 ))}
@@ -361,14 +361,14 @@ export default function RayhanahCycle() {
               <div className="flex flex-wrap gap-1.5">
                 {MOOD_OPTIONS.map((mo) => (
                   <button key={mo.id}
-                    className={`btn btn-xs rounded-full border ${todayNote?.mood === mo.id ? 'bg-purple-500/25 border-purple-400/40 text-purple-100' : 'bg-white/5 border-white/10 text-white/50 hover:text-white'}`}
+                    className={`btn btn-xs rounded-full border ${todayNote?.mood === mo.id ? 'bg-purple-500/25 border-purple-400/40 text-purple-100' : 'bg-white/5 border-slate-400/10 text-white/50 hover:text-white'}`}
                     onClick={() => setMood(mo.id)}
                   >{mo.label}</button>
                 ))}
               </div>
             </div>
             {(todayNote?.symptoms?.length ?? 0) > 0 && (
-              <p className="text-pink-200/70 text-xs leading-relaxed border-t border-white/5 pt-2.5">
+              <p className="text-pink-200/70 text-xs leading-relaxed border-t border-slate-400/5 pt-2.5">
                 May Allah give you ease — no fatigue or pain touches a Muslim except that Allah wipes away
                 sins with it (<a className="underline" href="https://sunnah.com/bukhari:5641" target="_blank" rel="noreferrer">Bukhārī 5641</a>). 🌸
               </p>
@@ -437,7 +437,7 @@ export default function RayhanahCycle() {
               {(['hanafi', 'majority'] as const).map((m) => (
                 <button
                   key={m}
-                  className={`join-item btn btn-xs ${summary?.madhab === m ? 'bg-pink-500/30 border-pink-400/40 text-pink-100' : 'bg-white/5 border-white/10 text-white/50'}`}
+                  className={`join-item btn btn-xs ${summary?.madhab === m ? 'bg-pink-500/30 border-pink-400/40 text-pink-100' : 'bg-white/5 border-slate-400/10 text-white/50'}`}
                   onClick={() => setMadhab.mutate(m)}
                 >
                   {m === 'hanafi' ? 'Ḥanafī' : 'Majority'}
@@ -475,7 +475,7 @@ export default function RayhanahCycle() {
             )}
           </AnimatePresence>
 
-          <p className="text-white/25 text-[10px] leading-relaxed border-t border-white/5 pt-3">
+          <p className="text-white/25 text-[10px] leading-relaxed border-t border-slate-400/5 pt-3">
             🔒 Your cycle data is visible only to you. It is never shown to friends — on the leaderboard your
             Noor simply flows from the dhikr, Quran and ṣalawāt you do, exactly like any other day.
           </p>
@@ -500,13 +500,13 @@ export default function RayhanahCycle() {
                 <input
                   id="cycle-start-date" type="date" value={startDate} max={today}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="input input-bordered w-full mt-1 bg-white/5 border-white/10 text-white"
+                  className="input input-bordered w-full mt-1 bg-white/5 border-slate-400/10 text-white"
                 />
               </div>
               <div className="flex gap-2">
                 {(['hayd', 'nifas'] as const).map((t) => (
                   <button key={t}
-                    className={`flex-1 btn btn-sm rounded-xl ${startType === t ? 'bg-pink-500/30 border-pink-400/40 text-pink-100' : 'bg-white/5 border-white/10 text-white/50'}`}
+                    className={`flex-1 btn btn-sm rounded-xl ${startType === t ? 'bg-pink-500/30 border-pink-400/40 text-pink-100' : 'bg-white/5 border-slate-400/10 text-white/50'}`}
                     onClick={() => setStartType(t)}
                   >
                     {t === 'hayd' ? '🌸 Period (hayd)' : '🤱 Post-natal (nifās)'}
@@ -548,7 +548,7 @@ export default function RayhanahCycle() {
                   <button key={step} className="w-full flex items-start gap-3 rounded-xl px-3 py-2.5 bg-white/3 hover:bg-white/6 text-left"
                     onClick={() => setGhuslChecked((c) => c.map((v, j) => (j === i ? !v : v)))}
                   >
-                    <span className={`w-5 h-5 rounded-full grid place-items-center border text-[10px] flex-shrink-0 mt-0.5 ${ghuslChecked[i] ? 'bg-emerald-500 border-emerald-400 text-white' : 'border-white/20 text-white/30'}`}>
+                    <span className={`w-5 h-5 rounded-full grid place-items-center border text-[10px] flex-shrink-0 mt-0.5 ${ghuslChecked[i] ? 'bg-emerald-500 border-emerald-400 text-white' : 'border-slate-400/20 text-white/30'}`}>
                       {ghuslChecked[i] ? '✓' : i + 1}
                     </span>
                     <span className={`text-xs leading-relaxed ${ghuslChecked[i] ? 'text-white/40 line-through' : 'text-white/75'}`}>{step}</span>
@@ -595,7 +595,7 @@ export default function RayhanahCycle() {
                 Add {qadaPrompt.days > 1 ? 'them' : 'it'} to your qaḍā counter?
               </p>
               <div className="flex gap-2">
-                <button className="flex-1 btn btn-sm rounded-xl bg-white/5 border-white/10 text-white/60" onClick={() => setQadaPrompt(null)}>
+                <button className="flex-1 btn btn-sm rounded-xl bg-white/5 border-slate-400/10 text-white/60" onClick={() => setQadaPrompt(null)}>
                   Not now
                 </button>
                 <button className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-amber-500 to-orange-500"

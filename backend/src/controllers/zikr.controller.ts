@@ -85,6 +85,17 @@ export const addTypeHandler = async (req: Request, res: Response, next: NextFunc
     next(err);
   }
 };
+export const removeTypeHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const rawName = req.params.name;
+    const name = decodeURIComponent((Array.isArray(rawName) ? rawName[0] : rawName) ?? '').trim();
+    if (!name) { res.status(400).json({ ok: false, error: 'Name required' }); return; }
+    const types = await zikrService.removeZikrType(req.user.uid, name);
+    res.json({ ok: true, types });
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const deleteAllZikrData = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {

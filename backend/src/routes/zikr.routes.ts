@@ -11,6 +11,7 @@ router.post('/increment/batch', requireAuth, validate(batchIncrementSchema), zik
 router.get('/summary', requireAuth, zikrController.getSummaryHandler);
 router.get('/types', requireAuth, zikrController.getTypesHandler);
 router.post('/types', requireAuth, validate(addZikrTypeSchema), zikrController.addTypeHandler);
+router.delete('/types/:name', requireAuth, zikrController.removeTypeHandler);
 
 // DELETE /api/zikr/all — delete all zikr data for the authenticated user
 router.delete('/all', requireAuth, zikrController.deleteAllZikrData);

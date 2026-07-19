@@ -31,7 +31,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02, y: -4 }}
-      className="relative overflow-hidden rounded-[1.25rem] backdrop-blur-2xl border border-white/10 bg-brand-deep/60 text-white shadow-glass"
+      className="relative overflow-hidden rounded-[1.25rem] backdrop-blur-2xl border border-slate-400/10 bg-brand-deep/60 text-white shadow-glass"
     >
       {goalMet && (
         <div className="pointer-events-none absolute inset-0 z-10">
@@ -82,7 +82,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
                 transition={{ type: 'spring', stiffness: 280, damping: 16 }}
                 className="inline-flex items-center"
               >
-                <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 bg-emerald-300/90 text-[var(--brand-deep)] font-black uppercase text-[10px] tracking-wider shadow-[0_4px_16px_rgba(0,0,0,0.3)] border border-white/30 ring-1 ring-inset ring-yellow-500/30">
+                <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 bg-emerald-300/90 text-[var(--brand-deep)] font-black uppercase text-[10px] tracking-wider shadow-[0_4px_16px_rgba(0,0,0,0.3)] border border-slate-400/30 ring-1 ring-inset ring-yellow-500/30">
                   <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-800" />
                   Achieved
                 </span>
@@ -166,7 +166,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="relative p-2 bg-gradient-to-r from-emerald-500/30 via-yellow-400/30 to-pink-500/30 rounded-lg backdrop-blur-sm border border-white/20 flex items-center justify-center gap-2 overflow-hidden"
+            className="relative p-2 bg-gradient-to-r from-emerald-500/30 via-yellow-400/30 to-pink-500/30 rounded-lg backdrop-blur-sm border border-slate-400/20 flex items-center justify-center gap-2 overflow-hidden"
           >
             {!prefersReducedMotion && (
               <motion.span
@@ -181,7 +181,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
           </motion.div>
         ) : (
           <motion.div
-            className="text-center p-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/15"
+            className="text-center p-2 bg-white/10 rounded-lg backdrop-blur-sm border border-slate-400/15"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.25 }}

@@ -413,7 +413,7 @@ export default function SalatTracker() {
                       {/* Primary action buttons (future prayers locked for today) */}
                       {isFuture ? (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-white/20 text-xs font-medium px-2 py-1 rounded-lg border border-white/10">
+                          <span className="text-white/20 text-xs font-medium px-2 py-1 rounded-lg border border-slate-400/10">
                             🔒 not yet
                           </span>
                         </div>
@@ -467,7 +467,7 @@ export default function SalatTracker() {
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.18 }}
-                          className="overflow-hidden border-t border-white/10"
+                          className="overflow-hidden border-t border-slate-400/10"
                         >
                           <div className="px-3 py-2.5 space-y-2">
                             {/* Location tags — only for completed (kaza is always prayed alone) */}
@@ -526,7 +526,7 @@ export default function SalatTracker() {
                     {hasSubTag && !isFuture && (
                       <button
                         onClick={() => setExpandedPrayer(isExpanded ? null : prayerId)}
-                        className="w-full flex items-center justify-center gap-1 py-1 border-t border-white/5 text-white/20 hover:text-white/50 text-xs transition-colors"
+                        className="w-full flex items-center justify-center gap-1 py-1 border-t border-slate-400/5 text-white/20 hover:text-white/50 text-xs transition-colors"
                       >
                         {isExpanded ? '▲ Less' : '▾ Details'}
                         {status === 'completed' && entry?.location && entry.location !== 'home' && (
@@ -610,7 +610,7 @@ export default function SalatTracker() {
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="overflow-hidden border-t border-white/10"
+                    className="overflow-hidden border-t border-slate-400/10"
                   >
                     <div className="px-3 py-3 space-y-3">
 
@@ -659,7 +659,7 @@ export default function SalatTracker() {
                                       transition={{ duration: 0.15 }}
                                       className="overflow-hidden"
                                     >
-                                      <div className="mx-1 mt-1 mb-1 p-2 rounded-lg bg-brand-deep border border-white/10 space-y-1">
+                                      <div className="mx-1 mt-1 mb-1 p-2 rounded-lg bg-brand-deep border border-slate-400/10 space-y-1">
                                         <p className="text-white/50 text-xs leading-relaxed">{t.fullNote}</p>
                                         <p className="text-white/25 text-xs italic">{t.hadith}</p>
                                         <a
@@ -717,7 +717,7 @@ export default function SalatTracker() {
               {naflEntry.completed && (
                 <button
                   onClick={() => setNaflExpanded(!naflExpanded)}
-                  className="w-full flex items-center justify-center gap-1 py-1 border-t border-white/5 text-white/20 hover:text-white/50 text-xs transition-colors"
+                  className="w-full flex items-center justify-center gap-1 py-1 border-t border-slate-400/5 text-white/20 hover:text-white/50 text-xs transition-colors"
                 >
                   {naflExpanded ? '▲ Less' : '▾ Details'}
                   {(naflEntry.types?.length ?? 0) > 0 && (

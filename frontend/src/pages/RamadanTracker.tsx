@@ -199,12 +199,12 @@ export default function RamadanTracker() {
             {/* suhoor / iftar */}
             {prayerTimes ? (
               <div className="flex gap-3 mt-4">
-                <div className="flex-1 rounded-2xl bg-white/5 border border-white/10 p-3 text-center">
+                <div className="flex-1 rounded-2xl bg-white/5 border border-slate-400/10 p-3 text-center">
                   <p className="text-white/35 text-[10px] font-bold uppercase">Suhoor ends (Fajr)</p>
                   <p className="text-white font-black text-lg">{formatTime(prayerTimes.fajr)}</p>
                   <p className="text-white/25 text-[10px]">"Take suhoor — there is blessing in it" · <a className="underline" href="https://sunnah.com/bukhari:1923" target="_blank" rel="noreferrer">Bukhārī 1923</a></p>
                 </div>
-                <div className="flex-1 rounded-2xl bg-white/5 border border-white/10 p-3 text-center">
+                <div className="flex-1 rounded-2xl bg-white/5 border border-slate-400/10 p-3 text-center">
                   <p className="text-white/35 text-[10px] font-bold uppercase">Iftar (Maghrib)</p>
                   <p className="text-white font-black text-lg">{formatTime(prayerTimes.maghrib)}</p>
                   <p className="text-white/25 text-[10px]">"People remain upon good while they hasten iftar" · <a className="underline" href="https://sunnah.com/bukhari:1957" target="_blank" rel="noreferrer">Bukhārī 1957</a></p>
@@ -240,7 +240,7 @@ export default function RamadanTracker() {
                 >✅ I fasted today</button>
                 {todayLog?.status !== 'intended' && (
                   <button
-                    className="btn h-12 rounded-2xl bg-white/5 border-white/15 text-white/70 font-bold"
+                    className="btn h-12 rounded-2xl bg-white/5 border-slate-400/15 text-white/70 font-bold"
                     disabled={upsert.isPending}
                     onClick={() => logToday('intended')}
                   >🌅 Intending</button>
@@ -251,7 +251,7 @@ export default function RamadanTracker() {
             {/* tarawih toggle — salat, so hidden on excused days */}
             {!excusedToday && (
               <button
-                className={`mt-3 w-full btn btn-sm rounded-xl border ${todayLog?.tarawih ? 'bg-indigo-500/25 border-indigo-400/40 text-indigo-100' : 'bg-white/5 border-white/10 text-white/50'}`}
+                className={`mt-3 w-full btn btn-sm rounded-xl border ${todayLog?.tarawih ? 'bg-indigo-500/25 border-indigo-400/40 text-indigo-100' : 'bg-white/5 border-slate-400/10 text-white/50'}`}
                 disabled={upsert.isPending}
                 onClick={toggleTarawih}
               >

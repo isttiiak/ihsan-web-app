@@ -88,19 +88,38 @@ describe("Quran API", () => {
     expect(res2.body.goalMet).toBe(false); // 140 units < 200
   });
 
-  test("v4 ayah engine: read-ayat logs units, credits the surah, advances khatam", async () => {
+  test("v4 ayah engine: read-ayat logs units, credits a surah COMPLETION, advances khatam", async () => {
+    // Read 6 āyāt of al-Fātiḥah (no completion yet)
     const r = await auth(request(app).post(`/api/quran/read-ayat`)).send({
-      date: "2026-07-03", count: 7, surah: 1, advanceKhatm: true,
+      date: "2026-07-03", count: 6, surah: 1, advanceKhatm: true,
     });
     expect(r.status).toBe(200);
-    expect(r.body.todayAyat).toBe(7);
-    expect(r.body.currentAyah).toBe(7);
+    expect(r.body.todayAyat).toBe(6);
+    expect(r.body.currentAyah).toBe(6);
+
+    // Reach the last āyah and mark the surah completed
+    const r2 = await auth(request(app).post(`/api/quran/read-ayat`)).send({
+      date: "2026-07-03", count: 1, surah: 1, advanceKhatm: true, completedSurah: true,
+    });
+    expect(r2.status).toBe(200);
+    expect(r2.body.currentAyah).toBe(7);
 
     const sum = await auth(request(app).get(`/api/quran/summary?today=2026-07-03`));
     expect(sum.body.todayAyat).toBe(7);
-    expect(sum.body.topSurahs[0]).toEqual({ surah: 1, ayat: 7 });
+    // Top surahs now track COMPLETIONS, not raw āyāt
+    expect(sum.body.topSurahs[0]).toEqual({ surah: 1, completions: 1 });
     expect(sum.body.profile.currentAyah).toBe(7);
     expect(sum.body.profile.totalAyat).toBe(6236);
+  });
+
+  test("v4: reading duas/bundles (count 0) never credits a completion", async () => {
+    // A pure completion marker only fires when completedSurah is set
+    const r = await auth(request(app).post(`/api/quran/read-ayat`)).send({
+      date: "2026-07-04", count: 0, surah: 36,
+    });
+    expect(r.status).toBe(200);
+    const sum = await auth(request(app).get(`/api/quran/summary?today=2026-07-04`));
+    expect((sum.body.topSurahs ?? []).some((t) => t.surah === 36)).toBe(false);
   });
 
   test("v4: khatm wraps when currentAyah crosses 6236", async () => {

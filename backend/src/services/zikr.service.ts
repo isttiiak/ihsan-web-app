@@ -166,6 +166,22 @@ export async function addZikrType(userId: string, name: string): Promise<unknown
   return user.zikrTypes;
 }
 
+/** Remove a custom zikr type from the user's list (case-insensitive). Lifetime
+ * totals in the zikr Map are left untouched — only the dropdown entry is gone. */
+export async function removeZikrType(userId: string, name: string): Promise<unknown[]> {
+  const user = await User.findOne({ uid: userId }).select(ZIKR_PROJECTION);
+  if (!user) throw new Error('User not found');
+
+  const before = user.zikrTypes.length;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  user.zikrTypes = user.zikrTypes.filter(
+    (t: { name: string }) => t.name.toLowerCase() !== name.toLowerCase()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ) as any;
+  if (user.zikrTypes.length !== before) await user.save();
+  return user.zikrTypes;
+}
+
 export async function deleteAllUserZikrData(userId: string): Promise<void> {
   // Delete all daily records
   await ZikrDaily.deleteMany({ userId });

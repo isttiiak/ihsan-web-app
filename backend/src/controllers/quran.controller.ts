@@ -13,10 +13,10 @@ export const read = async (req: Request, res: Response, next: NextFunction): Pro
 
 export const readAyat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { date, count, surah, advanceKhatm } = req.body as {
-      date: string; count: number; surah?: number; advanceKhatm?: boolean;
+    const { date, count, surah, advanceKhatm, completedSurah } = req.body as {
+      date: string; count: number; surah?: number; advanceKhatm?: boolean; completedSurah?: boolean;
     };
-    const result = await quranService.addAyatReading(req.user.uid, { date, count, surah, advanceKhatm });
+    const result = await quranService.addAyatReading(req.user.uid, { date, count, surah, advanceKhatm, completedSurah });
     res.json({ ok: true, khatmCompleted: result.khatmCompleted, currentAyah: result.profile.currentAyah, todayAyat: quranService.unitsOf(result.log) });
   } catch (err) { next(err); }
 };

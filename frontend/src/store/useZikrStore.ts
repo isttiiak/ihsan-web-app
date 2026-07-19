@@ -49,6 +49,7 @@ interface ZikrState {
   checkAndResetIfNewDay: () => void;
   setTypes: (types: string[]) => void;
   replaceTypes: (types: string[]) => void;
+  removeType: (name: string) => void;
   selectType: (selected: string) => void;
   setCustomMeaning: (name: string, data: CustomMeaning) => void;
   resetAll: () => void;
@@ -86,6 +87,15 @@ export const useZikrStore = create<ZikrState>()(
 
       replaceTypes: (types) =>
         set({ types, counts: {}, pending: {}, selected: types[0] ?? 'SubhanAllah' }),
+
+      removeType: (name) =>
+        set((s) => {
+          const types = s.types.filter((t) => t !== name);
+          const customMeanings = { ...s.customMeanings };
+          delete customMeanings[name];
+          const selected = s.selected === name ? (types[0] ?? 'SubhanAllah') : s.selected;
+          return { types, customMeanings, selected };
+        }),
 
       selectType: (selected) => set({ selected }),
 

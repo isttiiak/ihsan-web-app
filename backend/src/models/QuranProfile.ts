@@ -13,11 +13,13 @@ export interface IQuranProfile extends Document {
   currentPage: number;
   /** Number of complete read-throughs */
   khatmCount: number;
-  /** Daily reading goal in AYAT (v4 engine; ~10 ayat ≈ 1 page) */
+  /** Daily reading goal in AYAT (v4 engine; ~10 ayat ≈ 1 page). Default 1 —
+   * a gentle, achievable start (Istiak's spec). */
   dailyGoalAyat: number;
   /** Global ayah index of the khatam bookmark (0..6235) */
   currentAyah: number;
-  /** Lifetime ayat read per surah ("1".."114") — top-5 + analytics */
+  /** Times each surah has been read to the end ("1".."114") — powers the
+   * "top surahs" list (completions, not raw ayat). */
   surahCounts: Map<string, number>;
   /** Saved ayat [{surah, ayah}] — capped at 100 */
   bookmarks: Array<{ surah: number; ayah: number }>;
@@ -31,7 +33,7 @@ const quranProfileSchema = new Schema<IQuranProfile>(
     dailyGoalPages: { type: Number, default: 2, min: 1, max: 604 },
     currentPage: { type: Number, default: 0, min: 0, max: QURAN_TOTAL_PAGES - 1 },
     khatmCount: { type: Number, default: 0, min: 0 },
-    dailyGoalAyat: { type: Number, default: 20, min: 1, max: 6236 },
+    dailyGoalAyat: { type: Number, default: 1, min: 1, max: 6236 },
     currentAyah: { type: Number, default: 0, min: 0, max: 6235 },
     surahCounts: { type: Map, of: Number, default: {} },
     bookmarks: {

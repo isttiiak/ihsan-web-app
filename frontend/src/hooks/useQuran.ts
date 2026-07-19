@@ -34,7 +34,7 @@ export interface QuranSummary {
   stats: { last30Pages: number; allTimePages: number; last30Units: number; allTimeUnits: number };
   pace: number | null;
   estDaysToKhatm: number | null;
-  topSurahs: Array<{ surah: number; ayat: number }>;
+  topSurahs: Array<{ surah: number; completions: number }>;
   bookmarks: QuranBookmark[];
 }
 
@@ -121,7 +121,7 @@ export function useReadAyat() {
   const qc = useQueryClient();
   const today = localTodayStr();
   return useMutation({
-    mutationFn: async (vars: { count: number; surah?: number; advanceKhatm?: boolean }) => {
+    mutationFn: async (vars: { count: number; surah?: number; advanceKhatm?: boolean; completedSurah?: boolean }) => {
       const { data } = await api.post<{ ok: boolean; khatmCompleted: boolean; currentAyah: number; todayAyat: number }>(
         '/api/quran/read-ayat',
         { date: today, ...vars }

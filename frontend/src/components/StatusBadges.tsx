@@ -66,7 +66,7 @@ export function GoalBadge({ pct, met, size = 'sm' }: {
     <div className="tooltip tooltip-bottom" data-tip={met ? 'Daily goal achieved — māshā’Allāh! 🏆' : `${pct}% of today's goal`}>
       <span
         className={`rounded-full border font-bold flex items-center gap-1 text-white ${
-          met ? 'bg-brand-emerald/25 border-brand-emerald/50' : 'bg-white/10 border-white/20'
+          met ? 'bg-brand-emerald/25 border-brand-emerald/50' : 'bg-white/10 border-slate-400/20'
         } ${size === 'md' ? 'px-2.5 py-1 text-sm' : 'px-2 py-0.5 text-xs'}`}
       >
         <span aria-hidden>{met ? '🏆' : '🎯'}</span>

@@ -3,21 +3,20 @@ import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { PlayIcon, PauseIcon, ForwardIcon, BackwardIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
-import { useLogReading } from '../hooks/useQuran.js';
+import { useReadAyat } from '../hooks/useQuran.js';
 import { loadSurahList, type SurahMeta } from '../utils/quranData.js';
 
 /**
  * 🎧 Audio Quran — all 114 surahs, streamed from the free Islamic Network CDN
  * (the audio backend of alquran.cloud; no storage cost on our side).
  *
- * LISTENING AUTO-LOG: murattal recitation averages ~3 minutes per mushaf
- * page, so every 180 seconds of REAL listening time logs one page through
- * the normal /api/quran/read endpoint — it feeds the daily goal, streak,
- * khatm pace and Noor exactly like reading. This is also how Rayhanah
- * users keep their Quran connection alive (listening is agreed upon).
+ * LISTENING AUTO-LOG (v4.3, ayah units): listening feeds the SAME āyah goal
+ * as reading. As you listen, we convert real listened time into āyāt using
+ * the surah's own length (numberOfAyahs ÷ track duration), so a full listen
+ * logs ≈ the surah's āyah count — finally fine-grained enough for a 1-āyah
+ * goal. Seeks/jumps are ignored. This is also how Rayhanah users keep their
+ * Quran connection — and their Noor — alive.
  */
-
-const SECONDS_PER_PAGE = 180;
 
 // Full-surah audio only exists for some editions on each CDN — every entry
 // here was verified (HTTP 200) against its host. islamic.network takes the
@@ -51,7 +50,7 @@ function fmtClock(sec: number): string {
 
 export default function QuranAudioPlayer() {
   const user = useAuthStore((s) => s.user);
-  const logReading = useLogReading();
+  const readAyat = useReadAyat();
 
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [loadError, setLoadError] = useState(false);
@@ -65,16 +64,18 @@ export default function QuranAudioPlayer() {
   const [duration, setDuration] = useState(0);
   const [buffering, setBuffering] = useState(false);
   const [volume, setVolume] = useState<number>(() => {
-    const v = Number(localStorage.getItem('ihsan_quran_volume'));
-    return Number.isFinite(v) && v >= 0 && v <= 1 ? v : 1;
+    const raw = localStorage.getItem('ihsan_quran_volume');
+    const v = Number(raw);
+    // Default 40% (Istiak's spec) when nothing is stored yet
+    return raw !== null && Number.isFinite(v) && v >= 0 && v <= 1 ? v : 0.4;
   });
   const [muted, setMuted] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  // Listening accumulator — survives pause, resets only after a page is logged
-  const listenedRef = useRef(0);
+  // Listening accumulators — survive pause, reset when the surah changes.
+  const listenedRef = useRef(0);        // total continuous seconds this surah
+  const loggedAyatRef = useRef(0);      // āyāt already logged this surah
   const lastTimeRef = useRef(0);
-  const sessionPagesRef = useRef(0);
 
   useEffect(() => {
     let alive = true;
@@ -95,12 +96,16 @@ export default function QuranAudioPlayer() {
     const delta = a.currentTime - lastTimeRef.current;
     if (delta > 0 && delta <= 2) {
       listenedRef.current += delta;
-      if (listenedRef.current >= SECONDS_PER_PAGE) {
-        listenedRef.current -= SECONDS_PER_PAGE;
-        sessionPagesRef.current += 1;
-        if (user) {
-          logReading.mutate({ pages: 1, advancePosition: false });
-          toast.success('🎧 Listening logged: +1 page toward your goal', { id: 'quran-listen', duration: 2500 });
+      // Convert listened seconds into āyāt using THIS surah's own length.
+      const total = surah?.numberOfAyahs ?? 0;
+      const dur = a.duration;
+      if (user && total > 0 && Number.isFinite(dur) && dur > 0) {
+        const target = Math.min(total, Math.floor((listenedRef.current / dur) * total));
+        const diff = target - loggedAyatRef.current;
+        if (diff >= 1) {
+          loggedAyatRef.current = target;
+          readAyat.mutate({ count: diff });
+          toast.success(`🎧 +${diff} āyah${diff > 1 ? 's' : ''} logged toward your goal`, { id: 'quran-listen', duration: 2000 });
         }
       }
     }
@@ -126,6 +131,8 @@ export default function QuranAudioPlayer() {
     localStorage.setItem('ihsan_last_surah', String(clamped));
     setProgress(0);
     lastTimeRef.current = 0;
+    listenedRef.current = 0;
+    loggedAyatRef.current = 0;
   };
 
   const seek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,7 +151,7 @@ export default function QuranAudioPlayer() {
           <h2 className="text-white font-black">🎧 Listen to the Quran</h2>
           <select
             aria-label="Reciter"
-            className="select select-xs bg-white/5 border-white/10 text-white/70 rounded-lg max-w-[45%]"
+            className="select select-xs bg-white/5 border-slate-400/10 text-white/70 rounded-lg max-w-[45%]"
             value={reciter}
             onChange={(e) => { setReciter(e.target.value); localStorage.setItem('ihsan_reciter', e.target.value); }}
           >
@@ -158,7 +165,7 @@ export default function QuranAudioPlayer() {
           <>
             <select
               aria-label="Surah"
-              className="select select-sm w-full bg-white/5 border-white/10 text-white rounded-xl"
+              className="select select-sm w-full bg-white/5 border-slate-400/10 text-white rounded-xl"
               value={surahNo}
               onChange={(e) => changeSurah(Number(e.target.value))}
             >
@@ -240,9 +247,10 @@ export default function QuranAudioPlayer() {
             />
 
             <p className="text-white/30 text-[10px] leading-relaxed">
-              Every ~3 minutes of listening logs <b className="text-white/50">1 page</b> toward your daily goal
-              and streak{user ? '' : ' (sign in to save it)'} — recitation streamed free from the Islamic
-              Network CDN. 🌸 During Rayhanah days, listening keeps your Quran connection — and your Noor — alive.
+              As you listen, āyāt are logged toward your <b className="text-white/50">daily goal</b> and streak
+              {user ? '' : ' (sign in to save it)'} — counted from each surah's own length. Recitation streamed
+              free from the Islamic Network CDN. 🌸 During Rayhanah days, listening keeps your Quran connection —
+              and your Noor — alive.
             </p>
           </>
         )}

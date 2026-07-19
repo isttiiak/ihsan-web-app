@@ -7,13 +7,15 @@ import toast from 'react-hot-toast';
 import { useZikrStore } from '../store/useZikrStore.js';
 import type { CustomMeaning } from '../store/useZikrStore.js';
 import { useAuthStore } from '../store/useAuthStore.js';
-import { useZikrTypes, useAddZikrType } from '../hooks/useZikrTypes.js';
+import { useZikrTypes, useAddZikrType, useDeleteZikrType } from '../hooks/useZikrTypes.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import ConfirmDialog from '../components/ConfirmDialog.js';
 import TabNav from '../components/TabNav.js';
 import { StreakBadge, GoalBadge } from '../components/StatusBadges.js';
 import { celebrateGoal } from '../utils/celebrate.js';
-import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowsPointingOutIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { getHiddenZikr, hideZikr } from '../utils/hiddenZikr.js';
+import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowsPointingOutIcon, XMarkIcon, TrashIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
 // Meanings for all built-in dhikr
 const DEFAULT_MEANINGS: Record<string, { arabic: string; transliteration: string; meaning: string }> = {
@@ -177,9 +179,11 @@ export default function ZikrCounter() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const { types, selected, counts, pending, isFlushing, customMeanings, selectType, increment, decrement, reset, scheduleFlush, setTypes, setCustomMeaning } = useZikrStore();
+  const { types, selected, counts, pending, isFlushing, customMeanings, selectType, increment, decrement, reset, scheduleFlush, setTypes, setCustomMeaning, removeType } = useZikrStore();
+  const [hiddenTypes, setHiddenTypes] = useState<string[]>(getHiddenZikr);
   const { data: fetchedTypes } = useZikrTypes();
   const addZikrType = useAddZikrType();
+  const deleteZikrType = useDeleteZikrType();
   const { data: analyticsData } = useAnalytics(1);
 
   const currentCount = counts?.[selected] ?? 0;
@@ -192,6 +196,8 @@ export default function ZikrCounter() {
   const [customSourceUrl, setCustomSourceUrl] = useState('');
   const [showGuestDialog, setShowGuestDialog] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
+  const [showManage, setShowManage] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   // Real-time goal progress:
   // confirmedTotal = what the server last told us (stale until RQ refetch).
@@ -271,12 +277,15 @@ export default function ZikrCounter() {
   // Merge predefined + server types into local store
   useEffect(() => {
     const serverNames = (fetchedTypes ?? []).map((t) => t.name).filter(Boolean);
-    const merged = [...new Set([...PREDEFINED_TYPES, ...serverNames, ...types])];
+    // Deleted names (hiddenTypes) must never re-appear even though they live in
+    // the predefined/server lists.
+    const hidden = new Set(hiddenTypes);
+    const merged = [...new Set([...PREDEFINED_TYPES, ...serverNames, ...types])].filter((t) => !hidden.has(t));
     if (merged.length !== types.length || merged.some((t, i) => t !== types[i])) {
       setTypes(merged);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchedTypes?.length]);
+  }, [fetchedTypes?.length, hiddenTypes]);
 
   const onIncrement = useCallback(() => {
     increment();
@@ -353,6 +362,21 @@ export default function ZikrCounter() {
     });
   };
 
+  // Remove a zikr from MY list. Locally it's hidden immediately; if it was a
+  // server-stored (custom / library-added) type we also delete it on the API.
+  const handleDeleteType = (name: string) => {
+    const isServerType = (fetchedTypes ?? []).some((t) => t.name?.toLowerCase() === name.toLowerCase());
+    setHiddenTypes(hideZikr(name)); // durable (survives predefined re-merge)
+    removeType(name);
+    if (isServerType) {
+      deleteZikrType.mutate(name, {
+        onError: () => toast.error('Could not sync removal — try again.', { duration: 2500 }),
+      });
+    }
+    toast.success(`"${name}" removed from your list`, { icon: '🗑️', duration: 2000 });
+    setConfirmDelete(null);
+  };
+
   return (
     <AnimatedBackground variant="dark">
       <h1 className="sr-only">Zikr Counter</h1>
@@ -388,7 +412,7 @@ export default function ZikrCounter() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="flex items-center gap-2 bg-white/8 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-white/15"
+          className="flex items-center gap-2 bg-white/8 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-slate-400/15"
           style={{ background: 'rgba(255,255,255,0.07)' }}
         >
           {/* Selected name — glowing accent */}
@@ -418,10 +442,20 @@ export default function ZikrCounter() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
           </svg>
 
+          {/* Manage my list (delete) */}
+          <button
+            onClick={() => setShowManage(true)}
+            className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-slate-400/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
+            title="Manage my zikr list"
+            aria-label="Manage my zikr list"
+          >
+            <PencilSquareIcon className="w-3.5 h-3.5" />
+          </button>
+
           {/* Add custom */}
           <button
             onClick={() => setShowAddCustom(true)}
-            className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
+            className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-slate-400/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
             title="Add custom dhikr"
             aria-label="Add custom dhikr"
           >
@@ -434,7 +468,7 @@ export default function ZikrCounter() {
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.08 }}
-          className="relative rounded-3xl border border-white/20 bg-white/8 backdrop-blur-lg shadow-2xl overflow-hidden"
+          className="relative rounded-3xl border border-slate-400/20 bg-white/8 backdrop-blur-lg shadow-2xl overflow-hidden"
           style={{ background: 'rgba(255,255,255,0.07)' }}
         >
           {/* Focus mode button */}
@@ -554,7 +588,7 @@ export default function ZikrCounter() {
             onClick={onDecrement}
             disabled={currentCount === 0}
             aria-label="Decrease count by one"
-            className="btn btn-circle bg-white/15 hover:bg-white/25 border-white/20 text-white backdrop-blur-sm disabled:opacity-25"
+            className="btn btn-circle bg-white/15 hover:bg-white/25 border-slate-400/20 text-white backdrop-blur-sm disabled:opacity-25"
           >
             <MinusIcon className="w-6 h-6" />
           </motion.button>
@@ -576,7 +610,7 @@ export default function ZikrCounter() {
             onClick={onReset}
             disabled={currentCount === 0}
             aria-label="Reset counter"
-            className="btn btn-circle bg-white/15 hover:bg-red-500/70 border-white/20 text-white backdrop-blur-sm disabled:opacity-25 transition-colors"
+            className="btn btn-circle bg-white/15 hover:bg-red-500/70 border-slate-400/20 text-white backdrop-blur-sm disabled:opacity-25 transition-colors"
           >
             <ArrowPathIcon className="w-6 h-6" />
           </motion.button>
@@ -584,7 +618,7 @@ export default function ZikrCounter() {
 
         {/* Keyboard hint */}
         <p className="text-center text-white/35 text-xs">
-          Press <kbd className="kbd kbd-xs bg-white/15 text-white border-white/20">Space</kbd> to count
+          Press <kbd className="kbd kbd-xs bg-white/15 text-white border-slate-400/20">Space</kbd> to count
         </p>
 
         {/* ── Hadith reference for selected dhikr ── */}
@@ -599,7 +633,7 @@ export default function ZikrCounter() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.25 }}
-              className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm px-4 py-3 space-y-1.5"
+              className="rounded-2xl border border-slate-400/10 bg-white/5 backdrop-blur-sm px-4 py-3 space-y-1.5"
             >
               <p className="text-white/25 text-[10px] uppercase tracking-widest font-bold">📖 Hadith Reference</p>
               {builtin ? (
@@ -833,7 +867,7 @@ export default function ZikrCounter() {
               </p>
               <button
                 onClick={() => setFullScreen(false)}
-                className="sm:hidden flex items-center gap-2 px-8 py-3 rounded-2xl bg-white/10 border border-white/15 text-white/50 text-sm font-semibold active:scale-95 transition-transform"
+                className="sm:hidden flex items-center gap-2 px-8 py-3 rounded-2xl bg-white/10 border border-slate-400/15 text-white/50 text-sm font-semibold active:scale-95 transition-transform"
               >
                 ✕ Close
               </button>
@@ -1003,6 +1037,61 @@ export default function ZikrCounter() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Manage my zikr list (remove) ── */}
+      <AnimatePresence>
+        {showManage && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowManage(false); }}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25 }}
+              className="bg-brand-surface rounded-3xl p-6 w-full max-w-md shadow-2xl border border-brand-border max-h-[80vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-xl font-bold text-brand-emerald">My zikr list</h3>
+                <button onClick={() => setShowManage(false)} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10">
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-white/40 text-xs mb-4">Tap the trash to remove a zikr from your dropdown. Your saved counts stay in analytics — only the list entry is removed.</p>
+              <div className="space-y-1.5 overflow-y-auto pr-1">
+                {types.length === 0 && <p className="text-white/40 text-sm text-center py-6">Your list is empty. Add one with ＋.</p>}
+                {types.map((t) => (
+                  <div key={t} className="flex items-center gap-3 p-2.5 rounded-xl border border-brand-border bg-brand-deep/50">
+                    <span className="flex-1 min-w-0 truncate text-white/80 text-sm font-semibold">{t}</span>
+                    <button
+                      onClick={() => setConfirmDelete(t)}
+                      aria-label={`Remove ${t}`}
+                      className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10 gap-1 shrink-0"
+                    >
+                      <TrashIcon className="w-3.5 h-3.5" /> Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => { setShowManage(false); setShowAddCustom(true); }}
+                className="btn btn-sm mt-4 bg-brand-emerald/15 border border-brand-emerald/30 text-brand-emerald hover:bg-brand-emerald/25 gap-1.5"
+              >
+                <PlusIcon className="w-4 h-4" /> Add a new zikr
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title={`Remove "${confirmDelete ?? ''}"?`}
+        message="This takes it out of your counter list. You can always add it back later. Your saved counts are not affected."
+        confirmLabel="Yes, remove"
+        onConfirm={() => confirmDelete && handleDeleteType(confirmDelete)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </AnimatedBackground>
   );
 }
