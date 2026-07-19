@@ -487,7 +487,7 @@ export default function QuranReader() {
           </div>
         )}
 
-        {/* ── ✨ Reflect with Nur (AI — encouragement only) ── */}
+        {/* ── ✨ Reflect with Rafiq (AI — encouragement only) ── */}
         {!loading && current && user && (
           <div>
             {!reflectOpen ? (
@@ -503,7 +503,7 @@ export default function QuranReader() {
                 />
                 <span className="relative flex items-center justify-center gap-2 rounded-[calc(1rem-1.5px)] bg-brand-deep/95 px-4 py-2.5 text-sm font-bold text-white/80 group-hover:text-white">
                   <SparklesIcon className="w-4 h-4 text-fuchsia-300" />
-                  Reflect on this āyah with Nur
+                  Reflect on this āyah with Rafiq
                 </span>
               </button>
             ) : (
@@ -517,7 +517,7 @@ export default function QuranReader() {
                     <AiThinking />
                   ) : reflect.isError ? (
                     <div className="py-3 text-center">
-                      <p className="text-white/50 text-sm">Nur is resting right now — please try again in a moment.</p>
+                      <p className="text-white/50 text-sm">Rafiq is resting right now — please try again in a moment.</p>
                       <button className="mt-2 btn btn-xs bg-white/10 border-slate-400/15 text-white/70" onClick={onReflect}>Retry</button>
                     </div>
                   ) : (
