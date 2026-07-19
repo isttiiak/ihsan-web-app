@@ -23,7 +23,6 @@ import {
   formatTime,
 } from '../utils/prayerTimes.js';
 import { isFriday, getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
-import { getTrackingDay } from '../utils/trackingDay.js';
 import { useCycleActive } from '../hooks/useCycle.js';
 import ExcusedCard from '../components/ExcusedCard.js';
 
@@ -48,9 +47,12 @@ function isRamadanNow(): boolean {
 }
 
 function todayStr() {
-  // Fajr-boundary tracking day — before Fajr this is still "yesterday",
-  // which is exactly right: Isha prayed at 1 AM belongs to the closing day.
-  return getTrackingDay();
+  // Salat uses the CIVIL local day (midnight boundary), NOT the Fajr tracking
+  // day. Istiak's spec: at 12:40 AM the day has already turned, and a nafl /
+  // tahajjud prayed after midnight belongs to the new date. Salat has no
+  // strict real-time streak, so the Fajr boundary only got in the way.
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 function offsetDate(base: string, delta: number): string {
   const d = new Date(base + 'T12:00:00');
@@ -99,17 +101,8 @@ const STATUS_STYLE: Record<PrayerStatus, { bg: string; border: string; text: str
 // ─── component ───────────────────────────────────────────────────────────────
 
 function getDefaultDate(): string {
-  const today = todayStr();
-  try {
-    const stored = localStorage.getItem('ihsan_location');
-    if (!stored) return today;
-    const loc = JSON.parse(stored) as { latitude: number; longitude: number };
-    const times = calcPrayerTimes(loc.latitude, loc.longitude, new Date());
-    const now = new Date();
-    // If it's between midnight and Fajr, the user is still in the "previous" Islamic evening
-    if (now < times.fajr && now.getHours() < 12) return offsetDate(today, -1);
-  } catch { /* ignore */ }
-  return today;
+  // Always open on the civil "today" (no pre-Fajr shift — salat is civil-dated).
+  return todayStr();
 }
 
 export default function SalatTracker() {
@@ -121,6 +114,9 @@ export default function SalatTracker() {
   const [showGuestDialog, setShowGuestDialog] = useState(false);
 
   const isToday = selectedDate === todayStr();
+  // A past civil day whose prayers were never logged reads as "missed" (derived
+  // on read — no DB writes, consistent with the app's lazy-expiry approach).
+  const isPastDay = selectedDate < todayStr();
 
   // Start date: the day tracking began (or was reset after deletion).
   // Prevents users from adding entries before this date after a data wipe.
@@ -363,7 +359,9 @@ export default function SalatTracker() {
                 const status: PrayerStatus =
                   rawStatus === 'prayed' || rawStatus === 'mosque' ? 'completed' :
                   (rawStatus in STATUS_STYLE ? rawStatus as PrayerStatus : 'pending');
-                const style = STATUS_STYLE[status] ?? STATUS_STYLE['pending'];
+                // Past unlogged fard shows as missed (still editable — just tap a status).
+                const displayStatus: PrayerStatus = isPastDay && status === 'pending' ? 'missed' : status;
+                const style = STATUS_STYLE[displayStatus] ?? STATUS_STYLE['pending'];
                 const isCurrent = isToday && isCurrentPrayer(prayerId, todayPrayerTimes?.current);
                 const isFuture = isToday && isFuturePrayer(prayerId, todayPrayerTimes?.times);
                 const isExpanded = expandedPrayer === prayerId;

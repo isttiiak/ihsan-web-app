@@ -142,16 +142,16 @@ export default function SalatAnalytics() {
                     tooltip: true,
                   },
                   {
-                    label: 'Current Streak',
+                    label: 'Days without a gap',
                     value: data.currentStreak,
-                    sub: 'Consecutive days with all 5 prayers (done or kaza)',
+                    sub: 'How long you have prayed all 5, day after day',
                     gradient: 'from-brand-gold to-orange-400',
                     icon: <FireIcon className="w-3 h-3 inline" />,
                   },
                   {
-                    label: 'Best Streak',
+                    label: 'Best run',
                     value: data.bestStreak,
-                    sub: 'Longest run of all-5-prayer days ever',
+                    sub: 'Your longest run of all-5-prayer days',
                     gradient: 'from-violet-500 to-purple-400',
                   },
                   {
