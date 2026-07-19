@@ -8,6 +8,8 @@ import { useAuthStore } from '../store/useAuthStore.js';
 import { useUiStore } from '../store/useUiStore.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import ZikrLibrarySection from '../components/ZikrLibrarySection.js';
+import { AiPanel, AiThinking, AiDisclaimer, AiBadge } from '../components/ai/AiFlair.js';
+import { useAiSuggest, useAiWeekly } from '../hooks/useAi.js';
 import {
   Cog6ToothIcon,
   SparklesIcon,
@@ -20,10 +22,6 @@ import {
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 
-interface AiSuggestionsResponse {
-  suggestions?: string[];
-  motivation?: string;
-}
 
 // ── Per-feature data deletion targets ─────────────────────────────────────────
 const DATA_TARGETS = [
@@ -99,8 +97,8 @@ export default function Settings() {
       return s ? ((JSON.parse(s) as { name?: string }).name ?? 'Saved location') : null;
     } catch { return null; }
   });
-  const [suggestions, setSuggestions] = useState<AiSuggestionsResponse | null>(null);
-  const [loadingSuggest, setLoadingSuggest] = useState(false);
+  const aiSuggest = useAiSuggest();
+  const aiWeekly = useAiWeekly();
   const [exporting, setExporting] = useState(false);
   const [exportingXlsx, setExportingXlsx] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
@@ -111,19 +109,31 @@ export default function Settings() {
     setHijriAdjState(days);
   };
 
-  // ── AI suggestions ──────────────────────────────────────────────────────────
-  const getSuggestions = async () => {
-    setLoadingSuggest(true);
-    try {
-      const { data } = await api.post<AiSuggestionsResponse>('/api/ai/suggest', {
-        userSummary: 'Daily zikr, salat and fasting tracker user.',
-      });
-      setSuggestions(data);
-    } catch {
-      toast.error('Could not load suggestions right now.');
-    } finally {
-      setLoadingSuggest(false);
-    }
+  // ── AI companion (encouragement only) ────────────────────────────────────────
+  const runSuggest = () => {
+    aiSuggest.mutate('A Muslim keeping daily zikr, salah, Quran and fasting habits in the Ihsan app.', {
+      onError: () => toast.error('Nur is resting — try again in a moment.'),
+    });
+  };
+
+  // Gather a light, privacy-safe stats snapshot for the weekly recap.
+  const runWeekly = async () => {
+    const idToken = await getIdToken();
+    const base = import.meta.env.VITE_BACKEND_URL as string;
+    const headers: Record<string, string> = idToken ? { Authorization: `Bearer ${idToken}` } : {};
+    const j = async (p: string): Promise<any | null> => {
+      try { const r = await fetch(`${base}${p}`, { headers }); return r.ok ? await r.json() : null; }
+      catch { return null; }
+    };
+    const [zikr, quran] = await Promise.all([j('/api/zikr/summary'), j('/api/quran/summary')]);
+    const stats = {
+      zikrToday: zikr?.today?.total ?? 0,
+      zikrStreak: quran ? undefined : undefined,
+      quranStreakDays: quran?.streak ?? 0,
+      quranAyatThisMonth: quran?.stats?.last30Units ?? 0,
+      khatmsCompleted: quran?.profile?.khatmCount ?? 0,
+    };
+    aiWeekly.mutate(stats, { onError: () => toast.error('Nur is resting — try again in a moment.') });
   };
 
   // ── Data export / import ────────────────────────────────────────────────────
@@ -335,41 +345,70 @@ export default function Settings() {
             </div>
           </SectionCard>
 
-          {/* ── AI features ── */}
+          {/* ── AI companion (Nur) ── */}
           <SectionCard
-            icon={<LightBulbIcon className="w-5 h-5 text-brand-emerald" />}
-            title="AI suggestions"
-            subtitle="Optional dhikr recommendations — off by default"
+            icon={<LightBulbIcon className="w-5 h-5 text-fuchsia-400" />}
+            title="Nur — your AI companion"
+            subtitle="Gentle encouragement & reflection — never a source of religious evidence"
             delay={0.2}
           >
             <Toggle
               checked={aiEnabled}
               onChange={setAiEnabled}
-              title="Enable AI suggestions"
-              detail="Get personalised dhikr recommendations"
+              title="Enable Nur"
+              detail="Personalised encouragement, dhikr ideas & a weekly reflection"
             />
             {aiEnabled && (
               <div className="mt-3 space-y-3">
-                <button
-                  className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 gap-2"
-                  onClick={() => void getSuggestions()}
-                  disabled={loadingSuggest}
-                >
-                  {loadingSuggest
-                    ? <span className="loading loading-spinner loading-xs" />
-                    : <SparklesIcon className="w-4 h-4" />}
-                  Get suggestions
-                </button>
-                {suggestions && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                    className="rounded-xl border border-brand-emerald/25 bg-brand-emerald/5 p-3 space-y-1.5">
-                    {(suggestions.suggestions ?? []).map((sug, i) => (
-                      <p key={i} className="text-white/70 text-sm">📿 {sug}</p>
-                    ))}
-                    {suggestions.motivation && (
-                      <p className="text-brand-emerald/80 text-xs italic pt-1">{suggestions.motivation}</p>
-                    )}
-                  </motion.div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    className="btn btn-sm border-0 text-white gap-2 bg-gradient-to-r from-fuchsia-500 to-purple-600 hover:opacity-90"
+                    onClick={runSuggest}
+                    disabled={aiSuggest.isPending}
+                  >
+                    <SparklesIcon className="w-4 h-4" /> Personalised dhikr
+                  </button>
+                  <button
+                    className="btn btn-sm border-0 text-white gap-2 bg-gradient-to-r from-cyan-500 to-emerald-600 hover:opacity-90"
+                    onClick={() => void runWeekly()}
+                    disabled={aiWeekly.isPending}
+                  >
+                    <SparklesIcon className="w-4 h-4" /> Weekly reflection
+                  </button>
+                </div>
+
+                {(aiSuggest.isPending || aiSuggest.data) && (
+                  <AiPanel>
+                    <div className="p-4">
+                      <AiBadge />
+                      {aiSuggest.isPending ? <AiThinking label="Nur is choosing your dhikr…" /> : (
+                        <div className="mt-2 space-y-1.5">
+                          {(aiSuggest.data?.suggestions ?? []).map((s, i) => (
+                            <p key={i} className="text-white/80 text-sm">📿 {s}</p>
+                          ))}
+                          {aiSuggest.data?.motivation && (
+                            <p className="text-fuchsia-200/80 text-sm italic pt-1">{aiSuggest.data.motivation}</p>
+                          )}
+                        </div>
+                      )}
+                      <AiDisclaimer />
+                    </div>
+                  </AiPanel>
+                )}
+
+                {(aiWeekly.isPending || aiWeekly.data) && (
+                  <AiPanel>
+                    <div className="p-4">
+                      <AiBadge label="Nur · weekly reflection" />
+                      {aiWeekly.isPending ? <AiThinking label="Nur is looking over your week…" /> : (
+                        <div className="mt-2 space-y-1.5">
+                          <p className="text-white/80 text-sm leading-relaxed">{aiWeekly.data?.summary}</p>
+                          <p className="text-cyan-200/80 text-sm italic">{aiWeekly.data?.encouragement}</p>
+                        </div>
+                      )}
+                      <AiDisclaimer />
+                    </div>
+                  </AiPanel>
                 )}
               </div>
             )}

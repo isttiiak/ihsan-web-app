@@ -7,8 +7,11 @@ import {
   BookmarkIcon as BookmarkOutline, SpeakerWaveIcon, SpeakerXMarkIcon,
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolid, PlayIcon, PauseIcon } from '@heroicons/react/24/solid';
+import { SparklesIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useQuranSummary, useReadAyat, useToggleBookmark } from '../hooks/useQuran.js';
+import { useAiReflect } from '../hooks/useAi.js';
+import { AiPanel, AiThinking, AiDisclaimer, AiBadge } from '../components/ai/AiFlair.js';
 import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, selectedTranslations, TRANSLATIONS, type SurahMeta, type AyahText } from '../utils/quranData.js';
 import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrate.js';
 
@@ -70,6 +73,8 @@ export default function QuranReader() {
   const { data: summary } = useQuranSummary();
   const readAyat = useReadAyat();
   const toggleBookmark = useToggleBookmark();
+  const reflect = useAiReflect();
+  const [reflectOpen, setReflectOpen] = useState(false);
 
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [ayat, setAyat] = useState<AyahText[]>([]);
@@ -248,6 +253,17 @@ export default function QuranReader() {
   const goPrev = useCallback(() => {
     if (idx > firstIdx) goToIdx(idx - 1);
   }, [idx, firstIdx, goToIdx]);
+
+  // ── AI reflection (encouragement only) ──
+  const onReflect = useCallback(() => {
+    if (!current) return;
+    setReflectOpen(true);
+    reflect.mutate({ surah: surahNo, ayah: current.numberInSurah, text: current.translations[0] || current.arabic });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, surahNo]);
+
+  // Close the reflection when the ayah changes — a reflection belongs to one āyah.
+  useEffect(() => { setReflectOpen(false); }, [current?.number]);
 
   // ── fullscreen + keyboard ──
   const toggleFullscreen = useCallback(() => {
@@ -468,6 +484,55 @@ export default function QuranReader() {
                 className="range range-xs w-24 [--range-shdw:theme(colors.emerald.400)]"
               />
             </div>
+          </div>
+        )}
+
+        {/* ── ✨ Reflect with Nur (AI — encouragement only) ── */}
+        {!loading && current && user && (
+          <div>
+            {!reflectOpen ? (
+              <button
+                onClick={onReflect}
+                className="group relative w-full rounded-2xl p-[1.5px] overflow-hidden"
+              >
+                <motion.span
+                  aria-hidden className="absolute inset-0"
+                  style={{ background: 'linear-gradient(90deg,#10b981,#06b6d4,#a855f7,#ec4899,#f59e0b,#10b981)', backgroundSize: '300% 100%', opacity: 0.55 }}
+                  animate={{ backgroundPosition: ['0% 50%', '300% 50%'] }}
+                  transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
+                />
+                <span className="relative flex items-center justify-center gap-2 rounded-[calc(1rem-1.5px)] bg-brand-deep/95 px-4 py-2.5 text-sm font-bold text-white/80 group-hover:text-white">
+                  <SparklesIcon className="w-4 h-4 text-fuchsia-300" />
+                  Reflect on this āyah with Nur
+                </span>
+              </button>
+            ) : (
+              <AiPanel>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <AiBadge />
+                    <button className="text-white/40 hover:text-white text-xs" onClick={() => setReflectOpen(false)}>Close</button>
+                  </div>
+                  {reflect.isPending ? (
+                    <AiThinking />
+                  ) : reflect.isError ? (
+                    <div className="py-3 text-center">
+                      <p className="text-white/50 text-sm">Nur is resting right now — please try again in a moment.</p>
+                      <button className="mt-2 btn btn-xs bg-white/10 border-slate-400/15 text-white/70" onClick={onReflect}>Retry</button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-white/80 text-sm leading-relaxed">{reflect.data?.reflection}</p>
+                      <div className="flex items-center justify-between mt-2">
+                        <button className="text-fuchsia-300/70 hover:text-fuchsia-200 text-xs font-bold" onClick={onReflect}>↻ Another reflection</button>
+                        {reflect.data?.provider && <span className="text-white/20 text-[9px]">via {reflect.data.provider}</span>}
+                      </div>
+                    </>
+                  )}
+                  <AiDisclaimer />
+                </div>
+              </AiPanel>
+            )}
           </div>
         )}
       </div>

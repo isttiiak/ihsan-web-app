@@ -125,7 +125,7 @@ export default function QuranHabit() {
           <div className="grid sm:grid-cols-2 gap-2">
             {SPECIAL_SURAHS.map((sp) => (
               <button key={sp.surah}
-                className="rounded-2xl bg-white/3 border border-slate-400/8 hover:border-brand-gold/40 p-3 text-left transition-all"
+                className="rounded-2xl bg-white/[0.03] border border-transparent hover:border-brand-gold/40 p-3 text-left transition-all"
                 onClick={() => navigate(`/quran/read/${sp.surah}?mode=single`)}
               >
                 <p className="text-white/85 text-sm font-bold">{sp.emoji} {sp.name} <span className="text-white/25 font-normal">· {sp.surah}</span></p>
@@ -146,7 +146,7 @@ export default function QuranHabit() {
           <div className="grid sm:grid-cols-2 gap-2">
             {AYAH_BUNDLES.map((b) => (
               <button key={b.id}
-                className="rounded-2xl bg-white/3 border border-slate-400/8 hover:border-brand-emerald/40 p-3 text-left transition-all"
+                className="rounded-2xl bg-white/[0.03] border border-transparent hover:border-brand-emerald/40 p-3 text-left transition-all"
                 onClick={() => navigate(`/quran/read/${b.surah}?start=${b.fromAyah}&end=${b.toAyah}&mode=bundle`)}
               >
                 <p className="text-white/85 text-sm font-bold">{b.emoji} {b.title} <span className="text-white/25 font-normal">· {b.surah}:{b.fromAyah}{b.toAyah !== b.fromAyah ? `–${b.toAyah}` : ''}</span></p>
