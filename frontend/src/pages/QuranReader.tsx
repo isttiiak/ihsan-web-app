@@ -83,6 +83,7 @@ export default function QuranReader() {
   const [tafsirOpen, setTafsirOpen] = useState(false);
   const [tafsirEdition, setTafsirEdition] = useState<number>(getPreferredTafsir);
   const [simplifyOpen, setSimplifyOpen] = useState(false);
+  const [splitTafsir, setSplitTafsir] = useState(false); // fullscreen 2-pane reading
 
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [ayat, setAyat] = useState<AyahText[]>([]);
@@ -273,7 +274,7 @@ export default function QuranReader() {
 
   // ── Tafsir (authentic, from quran.com) + optional AI simplification ──
   const ayahNo = current?.numberInSurah ?? 0;
-  const tafsir = useTafsir(surahNo, ayahNo, tafsirEdition, tafsirOpen && ayahNo > 0);
+  const tafsir = useTafsir(surahNo, ayahNo, tafsirEdition, (tafsirOpen || splitTafsir) && ayahNo > 0);
   const tafsirLang = TAFSIRS.find((t) => t.id === tafsirEdition)?.language ?? 'en';
   const onSimplify = useCallback(() => {
     if (!tafsir.data?.text) return;
@@ -304,7 +305,11 @@ export default function QuranReader() {
   }, []);
 
   useEffect(() => {
-    const onFsChange = () => setFullscreen(!!document.fullscreenElement);
+    const onFsChange = () => {
+      const fs = !!document.fullscreenElement;
+      setFullscreen(fs);
+      if (!fs) setSplitTafsir(false); // split is a fullscreen-only mode
+    };
     document.addEventListener('fullscreenchange', onFsChange);
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
@@ -379,10 +384,10 @@ export default function QuranReader() {
         {/* ── THE CARD ── */}
         <div
           ref={cardRef}
-          className={`relative rounded-3xl border border-slate-400/10 bg-gradient-to-br from-[#0d1b17] via-[#0a1412] to-[#0d1420] overflow-hidden ${fullscreen ? 'fixed inset-0 z-50 rounded-none grid place-items-center p-6 sm:p-16' : 'p-6 sm:p-10'}`}
+          className={`relative rounded-3xl border border-slate-400/10 bg-gradient-to-br from-[#0d1b17] via-[#0a1412] to-[#0d1420] overflow-hidden ${fullscreen ? 'fixed inset-0 z-50 rounded-none flex' : 'p-6 sm:p-10'}`}
         >
           {/* top-right controls */}
-          <div className={`absolute top-4 right-4 flex items-center gap-2 z-10`}>
+          <div className={`absolute top-4 right-4 flex items-center gap-2 z-20`}>
             <button
               aria-label={playing ? 'Stop recitation' : 'Recite this ayah'}
               title="Recite only this ayah"
@@ -400,6 +405,17 @@ export default function QuranReader() {
                 {isBookmarked ? <BookmarkSolid className="w-4 h-4" /> : <BookmarkOutline className="w-4 h-4" />}
               </button>
             )}
+            {/* fullscreen-only: split the screen with the tafsir */}
+            {fullscreen && (
+              <button
+                aria-label={splitTafsir ? 'Hide tafsir pane' : 'Read tafsir side-by-side'}
+                title="Tafsir side-by-side"
+                onClick={() => setSplitTafsir((v) => !v)}
+                className={`w-10 h-10 rounded-full grid place-items-center border transition-all ${splitTafsir ? 'bg-brand-emerald/20 text-brand-emerald border-brand-emerald/50' : 'bg-white/5 text-white/60 border-slate-400/10 hover:text-white'}`}
+              >
+                <BookOpenIcon className="w-4 h-4" />
+              </button>
+            )}
             <button
               aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
               onClick={toggleFullscreen}
@@ -409,6 +425,8 @@ export default function QuranReader() {
             </button>
           </div>
 
+          {/* LEFT pane (the āyah + meaning). In fullscreen it centers; when split, it takes ~55%. */}
+          <div className={fullscreen ? `relative h-full grid place-items-center overflow-y-auto p-6 sm:p-12 ${splitTafsir ? 'w-[55%] border-r border-slate-400/15' : 'w-full'}` : 'contents'}>
           {loading || !current ? (
             <div className="min-h-[40vh] grid place-items-center">
               <span className="loading loading-spinner loading-lg text-brand-emerald" />
@@ -473,6 +491,42 @@ export default function QuranReader() {
                   : 'Next'}
                 <ChevronRightIcon className="w-4 h-4" />
               </button>
+            </div>
+          )}
+          </div>{/* end left pane */}
+
+          {/* RIGHT pane — tafsir side-by-side (fullscreen only) */}
+          {fullscreen && splitTafsir && (
+            <div className="w-[45%] h-full overflow-y-auto bg-brand-void/40 p-6 sm:p-8">
+              <div className="flex items-center gap-2 mb-3 sticky top-0 bg-brand-void/95 backdrop-blur -mt-2 pt-2 pb-2 z-10">
+                <BookOpenIcon className="w-4 h-4 text-brand-emerald shrink-0" />
+                <select
+                  aria-label="Tafsir edition"
+                  className="select select-xs flex-1 bg-white/5 border-slate-400/15 text-white/80 rounded-lg"
+                  value={tafsirEdition}
+                  onChange={(e) => changeTafsirEdition(Number(e.target.value))}
+                >
+                  <optgroup label="English">
+                    {TAFSIRS.filter((t) => t.language === 'en').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </optgroup>
+                  <optgroup label="বাংলা (Bengali)">
+                    {TAFSIRS.filter((t) => t.language === 'bn').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </optgroup>
+                </select>
+              </div>
+              {tafsir.isLoading ? (
+                <div className="py-10 grid place-items-center"><span className="loading loading-spinner text-brand-emerald" /></div>
+              ) : tafsir.isError ? (
+                <p className="text-white/50 text-sm">Couldn't load this tafsir — try another edition.</p>
+              ) : (
+                <>
+                  <p className="text-brand-emerald/70 text-xs font-bold mb-2">{surahNo}:{ayahNo} · {tafsir.data?.resourceName}</p>
+                  <div className={`text-white/85 ${tafsirFontSize} leading-8 whitespace-pre-line`}>{tafsir.data?.text}</div>
+                  <p className="text-white/25 text-[10px] mt-3">
+                    Sourced from <a className="underline" href={tafsir.data?.url} target="_blank" rel="noreferrer">quran.com</a> — authentic, unedited.
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>
