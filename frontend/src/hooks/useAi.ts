@@ -37,3 +37,15 @@ export function useAiWeekly() {
     },
   });
 }
+
+export interface SimplifyResult { simplified: string; ai: boolean; provider?: string }
+
+/** Faithful plain-language rephrase of a REAL (sourced) tafsir excerpt. */
+export function useAiSimplify() {
+  return useMutation({
+    mutationFn: async (vars: { text: string; language: 'en' | 'bn' }) => {
+      const { data } = await api.post<SimplifyResult & { ok: boolean }>('/api/ai/simplify', vars);
+      return data;
+    },
+  });
+}

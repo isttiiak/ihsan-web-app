@@ -54,3 +54,12 @@ export const quranHistorySchema = z.object({
   }),
   body: z.object({}).optional(),
 });
+
+export const quranTafsirSchema = z.object({
+  query: z.object({
+    surah: z.coerce.number().int().min(1).max(114),
+    ayah: z.coerce.number().int().min(1).max(286),
+    editionId: z.coerce.number().int(),
+  }),
+  body: z.object({}).optional(),
+});

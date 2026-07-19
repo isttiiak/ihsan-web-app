@@ -30,3 +30,13 @@ export const weeklyHandler = async (req: Request, res: Response, next: NextFunct
     next(err);
   }
 };
+
+export const simplifyHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { text, language } = req.body as { text: string; language: 'en' | 'bn' };
+    const result = await aiService.getSimplifiedTafsir({ text, language });
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+};

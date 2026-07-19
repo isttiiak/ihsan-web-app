@@ -19,3 +19,10 @@ export const aiWeeklySchema = z.object({
     stats: z.record(z.string(), z.unknown()).optional(),
   }),
 });
+
+export const aiSimplifySchema = z.object({
+  body: z.object({
+    text: z.string().min(1).max(8000),
+    language: z.enum(['en', 'bn']).default('en'),
+  }),
+});

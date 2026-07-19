@@ -62,3 +62,18 @@ export const deleteAll = async (req: Request, res: Response, next: NextFunction)
     res.json({ ok: true, ...result });
   } catch (err) { next(err); }
 };
+
+// GET /api/quran/tafsir?surah=&ayah=&editionId= — authentic tafsir (quran.com)
+export const getTafsir = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const surah = Number(req.query.surah);
+    const ayah = Number(req.query.ayah);
+    const editionId = Number(req.query.editionId);
+    const result = await quranService.getTafsir(surah, ayah, editionId);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    const status = (err as { status?: number }).status;
+    if (status) { res.status(status).json({ ok: false, error: (err as Error).message }); return; }
+    next(err);
+  }
+};

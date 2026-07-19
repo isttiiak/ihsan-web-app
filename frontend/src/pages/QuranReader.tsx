@@ -4,14 +4,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
   ChevronLeftIcon, ChevronRightIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon,
-  BookmarkIcon as BookmarkOutline, SpeakerWaveIcon, SpeakerXMarkIcon,
+  BookmarkIcon as BookmarkOutline, SpeakerWaveIcon, SpeakerXMarkIcon, BookOpenIcon,
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolid, PlayIcon, PauseIcon } from '@heroicons/react/24/solid';
 import { SparklesIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useQuranSummary, useReadAyat, useToggleBookmark } from '../hooks/useQuran.js';
-import { useAiReflect } from '../hooks/useAi.js';
+import { useAiReflect, useAiSimplify } from '../hooks/useAi.js';
+import { useTafsir } from '../hooks/useQuran.js';
 import { AiPanel, AiThinking, AiDisclaimer, AiBadge } from '../components/ai/AiFlair.js';
+import { TAFSIRS, getPreferredTafsir, setPreferredTafsir } from '../utils/tafsir.js';
 import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, selectedTranslations, TRANSLATIONS, type SurahMeta, type AyahText } from '../utils/quranData.js';
 import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrate.js';
 
@@ -74,7 +76,11 @@ export default function QuranReader() {
   const readAyat = useReadAyat();
   const toggleBookmark = useToggleBookmark();
   const reflect = useAiReflect();
+  const simplify = useAiSimplify();
   const [reflectOpen, setReflectOpen] = useState(false);
+  const [tafsirOpen, setTafsirOpen] = useState(false);
+  const [tafsirEdition, setTafsirEdition] = useState<number>(getPreferredTafsir);
+  const [simplifyOpen, setSimplifyOpen] = useState(false);
 
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [ayat, setAyat] = useState<AyahText[]>([]);
@@ -262,8 +268,25 @@ export default function QuranReader() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, surahNo]);
 
-  // Close the reflection when the ayah changes — a reflection belongs to one āyah.
-  useEffect(() => { setReflectOpen(false); }, [current?.number]);
+  // ── Tafsir (authentic, from quran.com) + optional AI simplification ──
+  const ayahNo = current?.numberInSurah ?? 0;
+  const tafsir = useTafsir(surahNo, ayahNo, tafsirEdition, tafsirOpen && ayahNo > 0);
+  const tafsirLang = TAFSIRS.find((t) => t.id === tafsirEdition)?.language ?? 'en';
+  const onSimplify = useCallback(() => {
+    if (!tafsir.data?.text) return;
+    setSimplifyOpen(true);
+    simplify.mutate({ text: tafsir.data.text, language: tafsir.data.language });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tafsir.data]);
+  const changeTafsirEdition = (id: number) => {
+    setTafsirEdition(id);
+    setPreferredTafsir(id);
+    setSimplifyOpen(false);
+    simplify.reset();
+  };
+
+  // Close AI panels when the ayah changes — they belong to one āyah.
+  useEffect(() => { setReflectOpen(false); setSimplifyOpen(false); }, [current?.number]);
 
   // ── fullscreen + keyboard ──
   const toggleFullscreen = useCallback(() => {
@@ -487,26 +510,111 @@ export default function QuranReader() {
           </div>
         )}
 
-        {/* ── ✨ Reflect with Rafiq (AI — encouragement only) ── */}
+        {/* ── Tafsir (authentic) + Reflect (AI) ── */}
         {!loading && current && user && (
-          <div>
-            {!reflectOpen ? (
+          <div className="space-y-3">
+            {/* trigger row */}
+            <div className="flex gap-2">
               <button
-                onClick={onReflect}
-                className="group relative w-full rounded-2xl p-[1.5px] overflow-hidden"
+                onClick={() => setTafsirOpen((o) => !o)}
+                className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${tafsirOpen ? 'bg-brand-emerald/15 border-brand-emerald/30 text-brand-emerald' : 'bg-white/5 border-slate-400/12 text-white/70 hover:text-white'}`}
               >
-                <motion.span
-                  aria-hidden className="absolute inset-0"
-                  style={{ background: 'linear-gradient(90deg,#10b981,#06b6d4,#a855f7,#ec4899,#f59e0b,#10b981)', backgroundSize: '300% 100%', opacity: 0.55 }}
-                  animate={{ backgroundPosition: ['0% 50%', '300% 50%'] }}
-                  transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
-                />
-                <span className="relative flex items-center justify-center gap-2 rounded-[calc(1rem-1.5px)] bg-brand-deep/95 px-4 py-2.5 text-sm font-bold text-white/80 group-hover:text-white">
-                  <SparklesIcon className="w-4 h-4 text-fuchsia-300" />
-                  Reflect on this āyah with Rafiq
-                </span>
+                <BookOpenIcon className="w-4 h-4" /> Tafsir
               </button>
-            ) : (
+              {!reflectOpen && (
+                <button onClick={onReflect} className="group relative flex-1 rounded-2xl p-[1.5px] overflow-hidden">
+                  <motion.span
+                    aria-hidden className="absolute inset-0"
+                    style={{ background: 'linear-gradient(90deg,#10b981,#06b6d4,#a855f7,#ec4899,#f59e0b,#10b981)', backgroundSize: '300% 100%', opacity: 0.55 }}
+                    animate={{ backgroundPosition: ['0% 50%', '300% 50%'] }}
+                    transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
+                  />
+                  <span className="relative flex items-center justify-center gap-2 rounded-[calc(1rem-1.5px)] bg-brand-deep/95 px-4 py-2.5 text-sm font-bold text-white/80 group-hover:text-white">
+                    <SparklesIcon className="w-4 h-4 text-fuchsia-300" /> Reflect
+                  </span>
+                </button>
+              )}
+            </div>
+
+            {/* Tafsir panel — REAL scholarly tafsir (sourced, not AI) */}
+            {tafsirOpen && (
+              <div className="rounded-2xl border border-slate-400/12 bg-brand-deep/70 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <select
+                    aria-label="Tafsir edition"
+                    className="select select-xs flex-1 bg-white/5 border-slate-400/15 text-white/80 rounded-lg"
+                    value={tafsirEdition}
+                    onChange={(e) => changeTafsirEdition(Number(e.target.value))}
+                  >
+                    <optgroup label="English">
+                      {TAFSIRS.filter((t) => t.language === 'en').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </optgroup>
+                    <optgroup label="বাংলা (Bengali)">
+                      {TAFSIRS.filter((t) => t.language === 'bn').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </optgroup>
+                  </select>
+                  <button className="text-white/40 hover:text-white text-xs shrink-0" onClick={() => setTafsirOpen(false)}>Close</button>
+                </div>
+
+                {tafsir.isLoading ? (
+                  <div className="py-6 grid place-items-center"><span className="loading loading-spinner text-brand-emerald" /></div>
+                ) : tafsir.isError ? (
+                  <p className="text-white/50 text-sm py-2">Couldn't load this tafsir — check your connection or try another edition.</p>
+                ) : (
+                  <>
+                    <div className={`max-h-72 overflow-y-auto pr-1 text-white/75 text-sm leading-relaxed whitespace-pre-line ${tafsirLang === 'bn' ? 'text-[15px]' : ''}`}>
+                      {tafsir.data?.text}
+                    </div>
+                    <p className="text-white/30 text-[10px]">
+                      📖 {tafsir.data?.resourceName} · sourced from{' '}
+                      <a className="underline" href={tafsir.data?.url} target="_blank" rel="noreferrer">quran.com</a> — authentic, unedited.
+                    </p>
+
+                    {/* AI simplify — faithful plain-language rephrase of the tafsir above */}
+                    {!simplifyOpen ? (
+                      <button onClick={onSimplify} className="group relative w-full rounded-xl p-[1.5px] overflow-hidden">
+                        <motion.span
+                          aria-hidden className="absolute inset-0"
+                          style={{ background: 'linear-gradient(90deg,#10b981,#06b6d4,#a855f7,#ec4899,#f59e0b,#10b981)', backgroundSize: '300% 100%', opacity: 0.5 }}
+                          animate={{ backgroundPosition: ['0% 50%', '300% 50%'] }}
+                          transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
+                        />
+                        <span className="relative flex items-center justify-center gap-2 rounded-[calc(0.75rem-1.5px)] bg-brand-deep/95 px-4 py-2 text-xs font-bold text-white/80 group-hover:text-white">
+                          <SparklesIcon className="w-3.5 h-3.5 text-fuchsia-300" />
+                          Simplify with Naseeh{tafsirLang === 'bn' ? ' (বাংলায়)' : ''}
+                        </span>
+                      </button>
+                    ) : (
+                      <AiPanel>
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <AiBadge label="Naseeh · simplified" />
+                            <button className="text-white/40 hover:text-white text-xs" onClick={() => setSimplifyOpen(false)}>Hide</button>
+                          </div>
+                          {simplify.isPending ? (
+                            <AiThinking label="Naseeh is simplifying the tafsir…" />
+                          ) : simplify.isError ? (
+                            <div className="py-3 text-center">
+                              <p className="text-white/50 text-sm">Couldn't simplify right now — the original tafsir above is always here.</p>
+                              <button className="mt-2 btn btn-xs bg-white/10 border-slate-400/15 text-white/70" onClick={onSimplify}>Retry</button>
+                            </div>
+                          ) : (
+                            <p className="text-white/80 text-sm leading-relaxed whitespace-pre-line">{simplify.data?.simplified}</p>
+                          )}
+                          <p className="text-white/35 text-[10px] leading-relaxed mt-2 flex items-start gap-1">
+                            <span aria-hidden>✨</span>
+                            <span>AI-simplified from the tafsir above — for study only, <b className="text-white/50">not a replacement for the original</b>. Read the source for the authoritative wording.</span>
+                          </p>
+                        </div>
+                      </AiPanel>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Reflect panel (AI — encouragement only) */}
+            {reflectOpen && (
               <AiPanel>
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-1.5">
@@ -517,7 +625,7 @@ export default function QuranReader() {
                     <AiThinking />
                   ) : reflect.isError ? (
                     <div className="py-3 text-center">
-                      <p className="text-white/50 text-sm">Rafiq is resting right now — please try again in a moment.</p>
+                      <p className="text-white/50 text-sm">Naseeh is resting right now — please try again in a moment.</p>
                       <button className="mt-2 btn btn-xs bg-white/10 border-slate-400/15 text-white/70" onClick={onReflect}>Retry</button>
                     </div>
                   ) : (

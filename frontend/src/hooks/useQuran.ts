@@ -159,6 +159,30 @@ export function useToggleBookmark() {
   });
 }
 
+export interface TafsirResult {
+  text: string;
+  resourceName: string;
+  editionId: number;
+  language: 'en' | 'bn';
+  url: string;
+}
+
+/** Authentic tafsir for an āyah (proxied from quran.com). */
+export function useTafsir(surah: number, ayah: number, editionId: number, enabled = true) {
+  const user = useAuthStore((s) => s.user);
+  return useQuery({
+    queryKey: ['quran', 'tafsir', surah, ayah, editionId],
+    queryFn: async () => {
+      const { data } = await api.get<TafsirResult & { ok: boolean }>(
+        `/api/quran/tafsir?surah=${surah}&ayah=${ayah}&editionId=${editionId}`
+      );
+      return data;
+    },
+    enabled: !!user && enabled && surah > 0 && ayah > 0,
+    staleTime: 24 * 60 * 60_000, // tafsir text never changes
+  });
+}
+
 export function useQuranHistory(days = 30, enabled = true) {
   const user = useAuthStore((s) => s.user);
   const today = localTodayStr();

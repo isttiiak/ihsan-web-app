@@ -40,7 +40,7 @@ function providers(): Provider[] {
 export const AI_AVAILABLE = (): boolean => providers().length > 0;
 
 /** The immutable guardrail prepended to every system prompt. */
-const GUARDRAIL = `You are "Rafiq", the gentle worship companion inside Ihsan, a Muslim habit app.
+const GUARDRAIL = `You are "Naseeh", the gentle worship companion inside Ihsan, a Muslim habit app.
 Your ONLY job is to ENCOURAGE, PERSONALIZE and warmly reflect. Follow these ABSOLUTE rules:
 1. NEVER quote, cite, number, or invent a hadith, a Qur'an verse reference, an isnād/chain, or a grading (sahih/hasan/da'if). No "the Prophet said", no surah:ayah citations.
 2. NEVER give a religious ruling or verdict — nothing is to be called halal, haram, obligatory, sinful, valid or invalid by you. You do not issue fatwa.
@@ -79,13 +79,18 @@ async function callProvider(p: Provider, system: string, user: string): Promise<
   }
 }
 
-/** Try each provider in order; returns the first non-empty completion. */
-async function complete(system: string, user: string): Promise<{ text: string; provider: string } | null> {
+/** Try each provider in order with a fully-formed system prompt. */
+async function completeRaw(system: string, user: string): Promise<{ text: string; provider: string } | null> {
   for (const p of providers()) {
-    const text = await callProvider(p, `${GUARDRAIL}\n\n${system}`, user);
+    const text = await callProvider(p, system, user);
     if (text && text.trim()) return { text: text.trim(), provider: p.name };
   }
   return null;
+}
+
+/** Encouragement path — always prefixed with the immutable guardrail. */
+async function complete(system: string, user: string): Promise<{ text: string; provider: string } | null> {
+  return completeRaw(`${GUARDRAIL}\n\n${system}`, user);
 }
 
 /** Parse a JSON object out of a model reply, tolerating ```json fences / prose. */
@@ -170,4 +175,26 @@ export async function getWeeklySummary(stats: Record<string, unknown>): Promise<
     ai: true,
     provider: out.provider,
   };
+}
+
+// ── Feature 4: simplify an EXISTING tafsir (faithful rephrase, not new claims) ─
+export interface SimplifyResult { simplified: string; ai: boolean; provider?: string }
+
+const SIMPLIFY_GUARD = `You simplify EXISTING Qur'an tafsir written by classical scholars — you are a faithful translator into plain language, NOT an author.
+ABSOLUTE rules:
+1. Restate ONLY what the given tafsir excerpt says. Do NOT add any hadith, verse number, ruling, or claim that is not already in the excerpt.
+2. Do NOT issue fatwa or declare anything authentic/weak/true/false yourself.
+3. If the excerpt is unclear or cut off, say so and tell the reader to see the full tafsir.
+4. Keep the scholar's meaning intact; just make the wording clear and simple for a beginner. Be concise.`;
+
+export async function getSimplifiedTafsir(input: { text: string; language: 'en' | 'bn' }): Promise<SimplifyResult> {
+  const langName = input.language === 'bn' ? 'simple Bengali (বাংলা)' : 'simple, clear English';
+  const out = await completeRaw(
+    SIMPLIFY_GUARD,
+    `Rewrite this tafsir excerpt faithfully in ${langName} for a beginner. Keep it to a few short paragraphs.\n\nTafsir excerpt:\n"""${input.text.slice(0, 6000)}"""`
+  );
+  if (!out) {
+    return { simplified: 'The simplified reading is unavailable right now — please read the original tafsir above.', ai: false };
+  }
+  return { simplified: out.text, ai: true, provider: out.provider };
 }

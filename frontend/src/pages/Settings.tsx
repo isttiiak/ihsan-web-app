@@ -112,7 +112,7 @@ export default function Settings() {
   // ── AI companion (encouragement only) ────────────────────────────────────────
   const runSuggest = () => {
     aiSuggest.mutate('A Muslim keeping daily zikr, salah, Quran and fasting habits in the Ihsan app.', {
-      onError: () => toast.error('Rafiq is resting — try again in a moment.'),
+      onError: () => toast.error('Naseeh is resting — try again in a moment.'),
     });
   };
 
@@ -133,7 +133,7 @@ export default function Settings() {
       quranAyatThisMonth: quran?.stats?.last30Units ?? 0,
       khatmsCompleted: quran?.profile?.khatmCount ?? 0,
     };
-    aiWeekly.mutate(stats, { onError: () => toast.error('Rafiq is resting — try again in a moment.') });
+    aiWeekly.mutate(stats, { onError: () => toast.error('Naseeh is resting — try again in a moment.') });
   };
 
   // ── Data export / import ────────────────────────────────────────────────────
@@ -345,17 +345,17 @@ export default function Settings() {
             </div>
           </SectionCard>
 
-          {/* ── AI companion (Rafiq) ── */}
+          {/* ── AI companion (Naseeh) ── */}
           <SectionCard
             icon={<LightBulbIcon className="w-5 h-5 text-fuchsia-400" />}
-            title="Rafiq — your AI companion"
+            title="Naseeh — your AI companion"
             subtitle="Gentle encouragement & reflection — never a source of religious evidence"
             delay={0.2}
           >
             <Toggle
               checked={aiEnabled}
               onChange={setAiEnabled}
-              title="Enable Rafiq"
+              title="Enable Naseeh"
               detail="Personalised encouragement, dhikr ideas & a weekly reflection"
             />
             {aiEnabled && (
@@ -381,7 +381,7 @@ export default function Settings() {
                   <AiPanel>
                     <div className="p-4">
                       <AiBadge />
-                      {aiSuggest.isPending ? <AiThinking label="Rafiq is choosing your dhikr…" /> : (
+                      {aiSuggest.isPending ? <AiThinking label="Naseeh is choosing your dhikr…" /> : (
                         <div className="mt-2 space-y-1.5">
                           {(aiSuggest.data?.suggestions ?? []).map((s, i) => (
                             <p key={i} className="text-white/80 text-sm">📿 {s}</p>
@@ -399,8 +399,8 @@ export default function Settings() {
                 {(aiWeekly.isPending || aiWeekly.data) && (
                   <AiPanel>
                     <div className="p-4">
-                      <AiBadge label="Rafiq · weekly reflection" />
-                      {aiWeekly.isPending ? <AiThinking label="Rafiq is looking over your week…" /> : (
+                      <AiBadge label="Naseeh · weekly reflection" />
+                      {aiWeekly.isPending ? <AiThinking label="Naseeh is looking over your week…" /> : (
                         <div className="mt-2 space-y-1.5">
                           <p className="text-white/80 text-sm leading-relaxed">{aiWeekly.data?.summary}</p>
                           <p className="text-cyan-200/80 text-sm italic">{aiWeekly.data?.encouragement}</p>

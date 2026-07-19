@@ -295,6 +295,60 @@ export async function getSummary(userId: string, today?: string): Promise<QuranS
   };
 }
 
+// ── Tafsir (authentic, sourced from quran.com — NOT AI) ──────────────────────
+/** Whitelisted tafsir editions (id → {name, language, slug}) available to the
+ * reader. Sourced from api.quran.com; text is real scholarly tafsir, never
+ * AI-generated. */
+export const TAFSIR_EDITIONS: Record<number, { name: string; language: 'en' | 'bn'; slug: string }> = {
+  169: { name: 'Ibn Kathir (Abridged)', language: 'en', slug: 'en-tafisr-ibn-kathir' },
+  168: { name: "Ma'arif al-Qur'an", language: 'en', slug: 'en-tafsir-maarif-ul-quran' },
+  817: { name: 'Tazkirul Quran', language: 'en', slug: 'tazkirul-quran-en' },
+  164: { name: 'Tafsir Ibn Kathir (Bangla)', language: 'bn', slug: 'bn-tafseer-ibn-e-kaseer' },
+  165: { name: 'Ahsanul Bayaan (Bangla)', language: 'bn', slug: 'bn-tafsir-ahsanul-bayaan' },
+  166: { name: 'Abu Bakr Zakaria (Bangla)', language: 'bn', slug: 'bn-tafsir-abu-bakr-zakaria' },
+};
+
+/** Turn tafsir HTML into readable plain text (paragraphs preserved). */
+function htmlToText(html: string): string {
+  return html
+    .replace(/<\s*(br|\/p|\/div|\/h\d)\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, 12000);
+}
+
+export interface TafsirResult {
+  text: string;
+  resourceName: string;
+  editionId: number;
+  language: 'en' | 'bn';
+  url: string;
+}
+
+export async function getTafsir(surah: number, ayah: number, editionId: number): Promise<TafsirResult> {
+  const meta = TAFSIR_EDITIONS[editionId];
+  if (!meta) throw Object.assign(new Error('Unknown tafsir edition'), { status: 400 });
+  const res = await fetch(`https://api.quran.com/api/v4/tafsirs/${editionId}/by_ayah/${surah}:${ayah}`);
+  if (!res.ok) throw Object.assign(new Error('Tafsir source unavailable'), { status: 502 });
+  const data = (await res.json()) as { tafsir?: { text?: string; resource_name?: string } };
+  const text = htmlToText(data.tafsir?.text ?? '');
+  return {
+    text: text || 'No tafsir text is available for this āyah in this edition.',
+    resourceName: data.tafsir?.resource_name ?? meta.name,
+    editionId,
+    language: meta.language,
+    url: `https://quran.com/${surah}:${ayah}/tafsirs/${meta.slug}`,
+  };
+}
+
 export async function deleteAllUserQuranData(userId: string): Promise<{ deletedCount: number }> {
   const result = await QuranLog.deleteMany({ userId });
   await QuranProfile.deleteOne({ userId });

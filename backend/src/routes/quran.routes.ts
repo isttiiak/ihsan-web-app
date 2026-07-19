@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import * as quranController from '../controllers/quran.controller.js';
-import { quranReadSchema, quranSummarySchema, quranProfileSchema, quranReadAyatSchema, quranBookmarkSchema, quranHistorySchema } from '../validation/quran.schemas.js';
+import { quranReadSchema, quranSummarySchema, quranProfileSchema, quranReadAyatSchema, quranBookmarkSchema, quranHistorySchema, quranTafsirSchema } from '../validation/quran.schemas.js';
 
 const router = Router();
 
@@ -17,6 +17,9 @@ router.post('/bookmark', requireAuth, validate(quranBookmarkSchema), quranContro
 
 // GET /api/quran/history?days=&today= — daily units for analytics
 router.get('/history', requireAuth, validate(quranHistorySchema), quranController.getHistory);
+
+// GET /api/quran/tafsir?surah=&ayah=&editionId= — authentic tafsir (quran.com)
+router.get('/tafsir', requireAuth, validate(quranTafsirSchema), quranController.getTafsir);
 
 // GET /api/quran/summary?today= — profile, streak, khatm progress, pace
 router.get('/summary', requireAuth, validate(quranSummarySchema), quranController.getSummary);

@@ -12,7 +12,7 @@ const AI_GRADIENT =
   'conic-gradient(from 0deg, #10b981, #06b6d4, #6366f1, #a855f7, #ec4899, #f59e0b, #10b981)';
 
 /** A colorful pill/badge that marks a surface as AI. */
-export function AiBadge({ label = 'Rafiq · AI companion' }: { label?: string }) {
+export function AiBadge({ label = 'Naseeh · AI companion' }: { label?: string }) {
   return (
     <span className="relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-black text-white overflow-hidden">
       <motion.span
@@ -29,7 +29,7 @@ export function AiBadge({ label = 'Rafiq · AI companion' }: { label?: string })
 }
 
 /** Prismatic "thinking" loader — colorful pulsing dots over a soft aurora. */
-export function AiThinking({ label = 'Rafiq is reflecting…' }: { label?: string }) {
+export function AiThinking({ label = 'Naseeh is reflecting…' }: { label?: string }) {
   const colors = ['#10b981', '#06b6d4', '#a855f7', '#ec4899', '#f59e0b'];
   return (
     <div className="relative flex flex-col items-center justify-center gap-3 py-6">
