@@ -38,6 +38,9 @@ export const cycleDaySchema = z.object({
       .array(z.enum(['cramps', 'headache', 'fatigue', 'nausea', 'backache', 'bloating', 'tenderness', 'insomnia']))
       .max(8)
       .optional(),
-    mood: z.enum(['calm', 'happy', 'low', 'irritable', 'anxious', 'tired']).nullable().optional(),
+    moods: z
+      .array(z.enum(['calm', 'happy', 'low', 'irritable', 'anxious', 'tired']))
+      .max(6)
+      .optional(),
   }),
 });

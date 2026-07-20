@@ -16,7 +16,10 @@ export interface ICycleDay extends Document {
   date: string; // YYYY-MM-DD (local, client-authoritative)
   flow: (typeof CYCLE_FLOWS)[number] | null;
   symptoms: string[];
-  mood: (typeof CYCLE_MOODS)[number] | null;
+  /** Multiple moods per day — a day can hold several feelings (Istiak). */
+  moods: string[];
+  /** Legacy single-mood field (pre-multi). Read-only fallback, no longer written. */
+  mood?: (typeof CYCLE_MOODS)[number] | null;
 }
 
 const CycleDaySchema = new Schema<ICycleDay>(
@@ -25,6 +28,8 @@ const CycleDaySchema = new Schema<ICycleDay>(
     date: { type: String, required: true },
     flow: { type: String, enum: [...CYCLE_FLOWS, null], default: null },
     symptoms: { type: [String], default: [] },
+    moods: { type: [String], default: [] },
+    // Legacy single mood kept so pre-existing rows aren't lost on read.
     mood: { type: String, enum: [...CYCLE_MOODS, null], default: null },
   },
   { timestamps: true }

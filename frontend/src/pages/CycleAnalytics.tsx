@@ -103,7 +103,7 @@ export default function CycleAnalytics() {
       if (d.flow === 'light') flowLight++;
       if (d.flow === 'medium') flowMed++;
       if (d.flow === 'heavy') flowHeavy++;
-      if (d.mood) moodCount.set(d.mood, (moodCount.get(d.mood) ?? 0) + 1);
+      for (const mo of d.moods ?? []) moodCount.set(mo, (moodCount.get(mo) ?? 0) + 1);
     }
     const topSymptoms = [...symCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
     const flowTotal = flowLight + flowMed + flowHeavy;

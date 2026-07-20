@@ -187,18 +187,19 @@ describe("Rayhanah Cycle API", () => {
       date: TODAY,
       flow: "medium",
       symptoms: ["cramps", "fatigue"],
-      mood: "tired",
+      moods: ["tired", "low"],
     });
     expect(put.status).toBe(200);
     expect(put.body.day.flow).toBe("medium");
+    expect(put.body.day.moods).toEqual(["tired", "low"]);
 
-    // Partial update keeps unspecified fields
-    await asM(request(app).put(`/api/cycle/day`)).send({ date: TODAY, mood: "calm" });
+    // Partial update keeps unspecified fields; moods can hold several feelings
+    await asM(request(app).put(`/api/cycle/day`)).send({ date: TODAY, moods: ["calm", "happy"] });
     const sum = await asM(request(app).get(`/api/cycle/summary?today=${TODAY}`));
     const day = sum.body.days.find((d) => d.date === TODAY);
     expect(day.flow).toBe("medium");
     expect(day.symptoms).toEqual(["cramps", "fatigue"]);
-    expect(day.mood).toBe("calm");
+    expect(day.moods).toEqual(["calm", "happy"]);
 
     // Invalid symptom rejected
     const bad = await asM(request(app).put(`/api/cycle/day`)).send({ date: TODAY, symptoms: ["hangry"] });

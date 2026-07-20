@@ -113,8 +113,8 @@ export async function getStatus(userId: string, today: string): Promise<CycleSta
 
 export interface CycleSummary extends CycleStatus {
   logs: Array<{ _id: string; type: string; startDate: string; endDate: string | null }>;
-  /** Wellness notes for the last ~60 days (flow/symptoms/mood) */
-  days: Array<{ date: string; flow: string | null; symptoms: string[]; mood: string | null }>;
+  /** Wellness notes for the last ~60 days (flow/symptoms/moods) */
+  days: Array<{ date: string; flow: string | null; symptoms: string[]; moods: string[] }>;
 }
 
 export async function getSummary(userId: string, today: string): Promise<CycleSummary> {
@@ -122,7 +122,7 @@ export async function getSummary(userId: string, today: string): Promise<CycleSu
   const [status, logs, days] = await Promise.all([
     getStatus(userId, today),
     CycleLog.find({ userId }).sort({ startDate: -1 }).limit(24).select('type startDate endDate'),
-    CycleDay.find({ userId, date: { $gte: daysSince, $lte: today } }).select('date flow symptoms mood'),
+    CycleDay.find({ userId, date: { $gte: daysSince, $lte: today } }).select('date flow symptoms moods mood'),
   ]);
   return {
     ...status,
@@ -132,18 +132,25 @@ export async function getSummary(userId: string, today: string): Promise<CycleSu
       startDate: l.startDate,
       endDate: l.endDate,
     })),
-    days: days.map((d) => ({ date: d.date, flow: d.flow, symptoms: d.symptoms, mood: d.mood })),
+    days: days.map((d) => ({
+      date: d.date,
+      flow: d.flow,
+      symptoms: d.symptoms,
+      // Merge any legacy single mood into the new array.
+      moods: d.moods?.length ? d.moods : (d.mood ? [d.mood] : []),
+    })),
   };
 }
 
 export async function upsertDay(
   userId: string,
-  input: { date: string; flow?: string | null; symptoms?: string[]; mood?: string | null }
+  input: { date: string; flow?: string | null; symptoms?: string[]; moods?: string[] }
 ): Promise<ICycleDay> {
   const set: Record<string, unknown> = {};
   if (input.flow !== undefined) set.flow = input.flow;
   if (input.symptoms !== undefined) set.symptoms = input.symptoms;
-  if (input.mood !== undefined) set.mood = input.mood;
+  // Writing moods clears the legacy single-mood field to avoid double-counting.
+  if (input.moods !== undefined) { set.moods = input.moods; set.mood = null; }
   return await CycleDay.findOneAndUpdate(
     { userId, date: input.date },
     { $set: set, $setOnInsert: { userId, date: input.date } },

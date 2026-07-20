@@ -71,11 +71,11 @@ export const addPastCycle = async (req: Request, res: Response, next: NextFuncti
 
 export const upsertDay = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { date, flow, symptoms, mood } = req.body as {
-      date: string; flow?: 'light' | 'medium' | 'heavy' | null; symptoms?: string[]; mood?: string | null;
+    const { date, flow, symptoms, moods } = req.body as {
+      date: string; flow?: 'light' | 'medium' | 'heavy' | null; symptoms?: string[]; moods?: string[];
     };
-    const day = await cycleService.upsertDay(req.user.uid, { date, flow, symptoms, mood });
-    res.json({ ok: true, day: { date: day.date, flow: day.flow, symptoms: day.symptoms, mood: day.mood } });
+    const day = await cycleService.upsertDay(req.user.uid, { date, flow, symptoms, moods });
+    res.json({ ok: true, day: { date: day.date, flow: day.flow, symptoms: day.symptoms, moods: day.moods } });
   } catch (err) {
     next(err);
   }

@@ -151,8 +151,11 @@ export default function RayhanahCycle() {
     const cur = todayNote?.symptoms ?? [];
     upsertDay.mutate({ date: today, symptoms: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] });
   };
-  const setMood = (mood: CycleMood) =>
-    upsertDay.mutate({ date: today, mood: todayNote?.mood === mood ? null : mood });
+  // Moods are multi-select — a day can hold several feelings (Istiak).
+  const toggleMood = (mood: CycleMood) => {
+    const cur = todayNote?.moods ?? [];
+    upsertDay.mutate({ date: today, moods: cur.includes(mood) ? cur.filter((m) => m !== mood) : [...cur, mood] });
+  };
 
   const handleEndConfirmed = () => {
     const startedOn = active?.startDate;
@@ -357,12 +360,12 @@ export default function RayhanahCycle() {
               </div>
             </div>
             <div>
-              <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">Heart</p>
+              <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">Heart <span className="normal-case font-normal text-white/25">· pick any that fit</span></p>
               <div className="flex flex-wrap gap-1.5">
                 {MOOD_OPTIONS.map((mo) => (
                   <button key={mo.id}
-                    className={`btn btn-xs rounded-full border ${todayNote?.mood === mo.id ? 'bg-purple-500/25 border-purple-400/40 text-purple-100' : 'bg-white/5 border-slate-400/10 text-white/50 hover:text-white'}`}
-                    onClick={() => setMood(mo.id)}
+                    className={`btn btn-xs rounded-full border ${todayNote?.moods?.includes(mo.id) ? 'bg-purple-500/25 border-purple-400/40 text-purple-100' : 'bg-white/5 border-slate-400/10 text-white/50 hover:text-white'}`}
+                    onClick={() => toggleMood(mo.id)}
                   >{mo.label}</button>
                 ))}
               </div>

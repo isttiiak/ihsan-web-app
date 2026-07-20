@@ -19,7 +19,7 @@ export interface CycleDayNote {
   date: string;
   flow: CycleFlow | null;
   symptoms: string[];
-  mood: CycleMood | null;
+  moods: CycleMood[];
 }
 
 export interface CycleSummary {
@@ -129,7 +129,7 @@ export function useAddPastCycle() {
 export function useUpsertCycleDay() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (vars: { date: string; flow?: CycleFlow | null; symptoms?: string[]; mood?: CycleMood | null }) => {
+    mutationFn: async (vars: { date: string; flow?: CycleFlow | null; symptoms?: string[]; moods?: CycleMood[] }) => {
       const { data } = await api.put('/api/cycle/day', vars);
       return data;
     },
@@ -140,12 +140,12 @@ export function useUpsertCycleDay() {
         if (!old) return old;
         const days = [...(old.days ?? [])];
         const i = days.findIndex((d) => d.date === vars.date);
-        const prev = i >= 0 ? days[i]! : { date: vars.date, flow: null, symptoms: [], mood: null };
+        const prev = i >= 0 ? days[i]! : { date: vars.date, flow: null, symptoms: [], moods: [] };
         const next = {
           ...prev,
           ...(vars.flow !== undefined ? { flow: vars.flow } : {}),
           ...(vars.symptoms !== undefined ? { symptoms: vars.symptoms } : {}),
-          ...(vars.mood !== undefined ? { mood: vars.mood } : {}),
+          ...(vars.moods !== undefined ? { moods: vars.moods } : {}),
         };
         if (i >= 0) days[i] = next; else days.push(next);
         return { ...old, days };
