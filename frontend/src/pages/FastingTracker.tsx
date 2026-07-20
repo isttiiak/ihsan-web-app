@@ -460,8 +460,8 @@ export default function FastingTracker() {
             )}
           </AnimatePresence>
 
-          {/* ── Week strip ── */}
-          <div className="flex justify-between gap-1">
+          {/* ── Week strip (min-w-0 so 8 days never push the page wider than the phone) ── */}
+          <div className="flex justify-between gap-1 [&>*]:min-w-0">
             {weekDays.map((d) => {
               const dayLog = logsByDate[d];
               const isSel = d === selectedDate;
