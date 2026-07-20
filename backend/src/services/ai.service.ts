@@ -7,9 +7,14 @@
  * any ruling (ḥalāl/ḥarām/fatwa) or claim authenticity; and must redirect all
  * such questions to qualified scholars and the app's own verified references.
  *
- * Providers (free tiers): Groq (primary — fast, working) then Google Gemini
- * (fallback). If neither answers, a warm static fallback is returned so the UI
- * never breaks.
+ * Provider: GROQ ONLY (free tier, fast, verified). Gemini was dropped — its
+ * free quota was unusable (429 on the first call). If Groq doesn't answer, a
+ * warm static fallback is returned so the UI never breaks.
+ *
+ * SCOPE (Istiak's decision): AI is used for SHORT, personal, non-evidential
+ * tasks — encouragement, nudges, comfort, recaps. It is deliberately NOT used
+ * to explain tafsir: that is sacred exegesis where a mis-worded paraphrase
+ * could distort meaning, and it burned the most tokens for the least benefit.
  */
 
 interface Provider {
@@ -19,7 +24,6 @@ interface Provider {
   model: string;
 }
 
-// Groq first (verified working); Gemini second (OpenAI-compatible endpoint).
 function providers(): Provider[] {
   return [
     {
@@ -27,12 +31,6 @@ function providers(): Provider[] {
       url: 'https://api.groq.com/openai/v1/chat/completions',
       key: process.env.GROQ_API_KEY,
       model: 'llama-3.3-70b-versatile',
-    },
-    {
-      name: 'gemini',
-      url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-      key: process.env.GEMINI_API_KEY,
-      model: 'gemini-2.0-flash',
     },
   ].filter((p) => !!p.key);
 }
@@ -90,8 +88,8 @@ async function completeRaw(system: string, user: string, maxTokens = 900): Promi
 }
 
 /** Encouragement path — always prefixed with the immutable guardrail. */
-async function complete(system: string, user: string): Promise<{ text: string; provider: string } | null> {
-  return completeRaw(`${GUARDRAIL}\n\n${system}`, user);
+async function complete(system: string, user: string, maxTokens = 900): Promise<{ text: string; provider: string } | null> {
+  return completeRaw(`${GUARDRAIL}\n\n${system}`, user, maxTokens);
 }
 
 /** Parse a JSON object out of a model reply, tolerating ```json fences / prose. */
@@ -178,28 +176,36 @@ export async function getWeeklySummary(stats: Record<string, unknown>): Promise<
   };
 }
 
-// ── Feature 4: simplify an EXISTING tafsir (faithful rephrase, not new claims) ─
-export interface SimplifyResult { simplified: string; ai: boolean; provider?: string }
+// NOTE: AI tafsir simplification was REMOVED on purpose (Istiak's decision).
+// Tafsir is sacred exegesis: a mis-worded paraphrase can distort a scholar's
+// meaning, and it consumed by far the most tokens of any feature. The reader
+// shows the authentic tafsir text only. AI stays on short, personal, clearly
+// non-evidential tasks below.
 
-const SIMPLIFY_GUARD = `You simplify EXISTING Qur'an tafsir written by classical scholars — you are a faithful translator into plain language, NOT an author.
-ABSOLUTE rules:
-1. Restate ONLY what the given tafsir excerpt says. Do NOT add any hadith, verse number, ruling, or claim that is not already in the excerpt.
-2. Do NOT issue fatwa or declare anything authentic/weak/true/false yourself.
-3. If the excerpt is unclear or cut off, say so and tell the reader to see the full tafsir.
-4. Keep the scholar's meaning intact; just make the wording clear and simple for a beginner. Be concise.`;
+// ── Feature 4: comeback nudge after time away ────────────────────────────────
+export interface NudgeResult { message: string; ai: boolean; provider?: string }
 
-export async function getSimplifiedTafsir(input: { text: string; language: 'en' | 'bn' }): Promise<SimplifyResult> {
-  const langName = input.language === 'bn' ? 'simple, everyday Bengali (বাংলা)' : 'simple, clear English';
-  const out = await completeRaw(
-    SIMPLIFY_GUARD,
-    `Rewrite this tafsir excerpt faithfully in ${langName} for a beginner. Cover the WHOLE excerpt so nothing important is dropped, in a few short paragraphs. Do not stop mid-sentence. Reply with ONLY the simplified text — no preamble like "Here is...".\n\nTafsir excerpt:\n"""${input.text.slice(0, 5000)}"""`,
-    // Bengali needs a big budget so the reply isn't cut off.
-    input.language === 'bn' ? 3000 : 1800
+export async function getComebackNudge(input: { daysAway: number; bestStreak?: number }): Promise<NudgeResult> {
+  const out = await complete(
+    `The user has been away from their worship tracking for a few days and just opened the app again. Write ONE short, warm welcome-back line (max 2 sentences). Make returning feel easy and shame-free — suggest the SMALLEST possible next step (a single āyah, one dhikr, one prayer logged). Never guilt them, never mention "streak loss" as a failure. Reply ONLY as JSON: {"message": string}.`,
+    `Days away: ${input.daysAway}. Their best run ever: ${input.bestStreak ?? 0} days.`,
+    220
   );
-  if (!out) {
-    return { simplified: 'The simplified reading is unavailable right now — please read the original tafsir above.', ai: false };
-  }
-  // Strip a leading "Here is a simplified…" preamble if the model adds one.
-  const cleaned = out.text.replace(/^\s*(here('|’)s|here is|sure[,!]?|below is)[^\n:]*[:\n]/i, '').trim();
-  return { simplified: cleaned || out.text, ai: true, provider: out.provider };
+  const fallback = `${input.daysAway} days away — and you came back. Start tiny today: one āyah, or one dhikr. That's enough.`;
+  if (!out) return { message: fallback, ai: false };
+  const parsed = parseLoose<{ message?: string }>(out.text);
+  return { message: parsed?.message ? String(parsed.message) : fallback, ai: !!parsed?.message, provider: out.provider };
+}
+
+// ── Feature 5: mood-aware comfort (Rayhanah) ─────────────────────────────────
+export async function getMoodComfort(input: { moods: string[]; symptoms?: string[] }): Promise<NudgeResult> {
+  const out = await complete(
+    `A Muslim woman logged how she feels today during her cycle. Write ONE gentle, comforting line (max 2 sentences) that acknowledges EXACTLY the feelings she named — warm, sisterly, never clinical, never preachy. If she named several, hold them together. Do NOT give medical advice, do NOT give any ruling, do NOT cite anything. Reply ONLY as JSON: {"message": string}.`,
+    `She feels: ${input.moods.join(', ') || 'unspecified'}${input.symptoms?.length ? `. Body: ${input.symptoms.join(', ')}` : ''}.`,
+    220
+  );
+  const fallback = 'Whatever today feels like, you are still held and still beloved to Allah. Be gentle with yourself.';
+  if (!out) return { message: fallback, ai: false };
+  const parsed = parseLoose<{ message?: string }>(out.text);
+  return { message: parsed?.message ? String(parsed.message) : fallback, ai: !!parsed?.message, provider: out.provider };
 }

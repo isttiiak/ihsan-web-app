@@ -59,9 +59,9 @@ export default function Feedback() {
           />
           <div className="relative">
             <motion.div
-              className="text-5xl mb-3"
-              animate={{ rotate: [0, -8, 8, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+              className="text-5xl mb-3 origin-bottom inline-block"
+              animate={{ rotate: [0, -5, 5, 0] }}
+              transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
             >💬</motion.div>
             <h1 className="text-2xl sm:text-3xl font-black text-white">Your voice shapes Ihsan</h1>
             <p className="text-white/55 text-sm sm:text-base mt-2.5 leading-relaxed">

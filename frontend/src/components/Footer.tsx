@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { HeartIcon } from '@heroicons/react/24/solid';
 
 export default function Footer() {
@@ -11,6 +12,23 @@ export default function Footer() {
             <HeartIcon className="w-4 h-4 text-red-300 animate-pulse" />
             <span>for the Ummah</span>
           </div>
+          <nav className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1.5 text-xs">
+            <Link to="/feedback" className="text-white/60 hover:text-brand-emerald underline underline-offset-2 transition-colors">
+              💬 Share feedback
+            </Link>
+            <span className="text-white/20">•</span>
+            <Link to="/contact" className="text-white/60 hover:text-cyan-300 underline underline-offset-2 transition-colors">
+              📨 Contact us
+            </Link>
+            <span className="text-white/20">•</span>
+            <Link to="/about" className="text-white/60 hover:text-brand-gold underline underline-offset-2 transition-colors">
+              About
+            </Link>
+            <span className="text-white/20">•</span>
+            <Link to="/privacy" className="text-white/60 hover:text-white underline underline-offset-2 transition-colors">
+              Privacy
+            </Link>
+          </nav>
           <p className="text-xs sm:text-sm text-white/70">
             © {new Date().getFullYear()} Ihsan — Privacy-first, open-source spiritual companion
           </p>

@@ -20,9 +20,16 @@ export const aiWeeklySchema = z.object({
   }),
 });
 
-export const aiSimplifySchema = z.object({
+export const aiComebackSchema = z.object({
   body: z.object({
-    text: z.string().min(1).max(8000),
-    language: z.enum(['en', 'bn']).default('en'),
+    daysAway: z.number().int().min(1).max(3650),
+    bestStreak: z.number().int().min(0).max(10000).optional(),
+  }),
+});
+
+export const aiComfortSchema = z.object({
+  body: z.object({
+    moods: z.array(z.enum(['calm', 'happy', 'low', 'irritable', 'anxious', 'tired'])).min(1).max(6),
+    symptoms: z.array(z.string().max(40)).max(8).optional(),
   }),
 });

@@ -24,6 +24,11 @@ export interface FormType {
 
 const ENDPOINT = 'https://api.web3forms.com/submit';
 
+// Web3Forms access keys are PUBLIC form identifiers (they ship in the client
+// bundle by design) — not secrets. Shared with the portfolio site; the subject
+// line is prefixed "[Ihsan …]" so submissions are easy to tell apart.
+const DEFAULT_ACCESS_KEY = '9ea1dea7-c9e9-428f-ad38-4dc061d2e057';
+
 export default function FeedbackForm({
   kind,
   types,
@@ -34,7 +39,7 @@ export default function FeedbackForm({
   submitLabel?: string;
 }) {
   const user = useAuthStore((s) => s.user);
-  const accessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY as string | undefined;
+  const accessKey = (import.meta.env.VITE_WEB3FORMS_ACCESS_KEY as string | undefined) || DEFAULT_ACCESS_KEY;
 
   const [name, setName] = useState(user?.displayName ?? '');
   const [email, setEmail] = useState(user?.email ?? '');

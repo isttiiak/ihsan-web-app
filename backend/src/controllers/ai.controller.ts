@@ -31,10 +31,20 @@ export const weeklyHandler = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const simplifyHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const comebackHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { text, language } = req.body as { text: string; language: 'en' | 'bn' };
-    const result = await aiService.getSimplifiedTafsir({ text, language });
+    const { daysAway, bestStreak } = req.body as { daysAway: number; bestStreak?: number };
+    const result = await aiService.getComebackNudge({ daysAway, bestStreak });
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const comfortHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { moods, symptoms } = req.body as { moods: string[]; symptoms?: string[] };
+    const result = await aiService.getMoodComfort({ moods, symptoms });
     res.json({ ok: true, ...result });
   } catch (err) {
     next(err);

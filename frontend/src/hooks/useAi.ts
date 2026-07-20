@@ -38,13 +38,23 @@ export function useAiWeekly() {
   });
 }
 
-export interface SimplifyResult { simplified: string; ai: boolean; provider?: string }
+export interface NudgeResult { message: string; ai: boolean; provider?: string }
 
-/** Faithful plain-language rephrase of a REAL (sourced) tafsir excerpt. */
-export function useAiSimplify() {
+/** Warm welcome-back line after time away. */
+export function useAiComeback() {
   return useMutation({
-    mutationFn: async (vars: { text: string; language: 'en' | 'bn' }) => {
-      const { data } = await api.post<SimplifyResult & { ok: boolean }>('/api/ai/simplify', vars);
+    mutationFn: async (vars: { daysAway: number; bestStreak?: number }) => {
+      const { data } = await api.post<NudgeResult & { ok: boolean }>('/api/ai/comeback', vars);
+      return data;
+    },
+  });
+}
+
+/** Gentle comfort line tuned to the moods she selected (Rayhanah). */
+export function useAiComfort() {
+  return useMutation({
+    mutationFn: async (vars: { moods: string[]; symptoms?: string[] }) => {
+      const { data } = await api.post<NudgeResult & { ok: boolean }>('/api/ai/comfort', vars);
       return data;
     },
   });

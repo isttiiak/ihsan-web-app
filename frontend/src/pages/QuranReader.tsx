@@ -10,7 +10,7 @@ import { BookmarkIcon as BookmarkSolid, PlayIcon, PauseIcon } from '@heroicons/r
 import { SparklesIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useQuranSummary, useReadAyat, useToggleBookmark } from '../hooks/useQuran.js';
-import { useAiReflect, useAiSimplify } from '../hooks/useAi.js';
+import { useAiReflect } from '../hooks/useAi.js';
 import { useTafsir } from '../hooks/useQuran.js';
 import { AiPanel, AiThinking, AiDisclaimer, AiBadge } from '../components/ai/AiFlair.js';
 import { TAFSIRS, getPreferredTafsir, setPreferredTafsir } from '../utils/tafsir.js';
@@ -78,11 +78,9 @@ export default function QuranReader() {
   const readAyat = useReadAyat();
   const toggleBookmark = useToggleBookmark();
   const reflect = useAiReflect();
-  const simplify = useAiSimplify();
   const [reflectOpen, setReflectOpen] = useState(false);
   const [tafsirOpen, setTafsirOpen] = useState(false);
   const [tafsirEdition, setTafsirEdition] = useState<number>(getPreferredTafsir);
-  const [simplifyOpen, setSimplifyOpen] = useState(false);
   const [splitTafsir, setSplitTafsir] = useState(false); // fullscreen 2-pane reading
 
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
@@ -275,22 +273,13 @@ export default function QuranReader() {
   // ── Tafsir (authentic, from quran.com) + optional AI simplification ──
   const ayahNo = current?.numberInSurah ?? 0;
   const tafsir = useTafsir(surahNo, ayahNo, tafsirEdition, (tafsirOpen || splitTafsir) && ayahNo > 0);
-  const tafsirLang = TAFSIRS.find((t) => t.id === tafsirEdition)?.language ?? 'en';
-  const onSimplify = useCallback(() => {
-    if (!tafsir.data?.text) return;
-    setSimplifyOpen(true);
-    simplify.mutate({ text: tafsir.data.text, language: tafsir.data.language });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tafsir.data]);
   const changeTafsirEdition = (id: number) => {
     setTafsirEdition(id);
     setPreferredTafsir(id);
-    setSimplifyOpen(false);
-    simplify.reset();
   };
 
-  // Close AI panels when the ayah changes — they belong to one āyah.
-  useEffect(() => { setReflectOpen(false); setSimplifyOpen(false); }, [current?.number]);
+  // Close the reflection when the ayah changes — it belongs to one āyah.
+  useEffect(() => { setReflectOpen(false); }, [current?.number]);
 
   // ── fullscreen + keyboard ──
   const toggleFullscreen = useCallback(() => {
@@ -497,8 +486,9 @@ export default function QuranReader() {
 
           {/* RIGHT pane — tafsir side-by-side (fullscreen only) */}
           {fullscreen && splitTafsir && (
-            <div className="w-[45%] h-full overflow-y-auto bg-brand-void/40 p-6 sm:p-8">
-              <div className="flex items-center gap-2 mb-3 sticky top-0 bg-brand-void/95 backdrop-blur -mt-2 pt-2 pb-2 z-10">
+            <div className="w-[45%] h-full overflow-y-auto bg-brand-void/40 px-6 sm:px-8 pb-6 pt-16">
+              {/* pr-52 reserves room for the floating play/bookmark/tafsir/fullscreen buttons */}
+              <div className="flex items-center gap-2 mb-3 sticky top-0 bg-brand-void/95 backdrop-blur -mt-2 pt-2 pb-2 pr-52 z-10">
                 <BookOpenIcon className="w-4 h-4 text-brand-emerald shrink-0" />
                 <select
                   aria-label="Tafsir edition"
@@ -627,44 +617,7 @@ export default function QuranReader() {
                       <a className="underline" href={tafsir.data?.url} target="_blank" rel="noreferrer">quran.com</a> — authentic, unedited.
                     </p>
 
-                    {/* AI simplify — faithful plain-language rephrase of the tafsir above */}
-                    {!simplifyOpen ? (
-                      <button onClick={onSimplify} className="group relative w-full rounded-xl p-[1.5px] overflow-hidden">
-                        <motion.span
-                          aria-hidden className="absolute inset-0"
-                          style={{ background: 'linear-gradient(90deg,#10b981,#06b6d4,#a855f7,#ec4899,#f59e0b,#10b981)', backgroundSize: '300% 100%', opacity: 0.5 }}
-                          animate={{ backgroundPosition: ['0% 50%', '300% 50%'] }}
-                          transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
-                        />
-                        <span className="relative flex items-center justify-center gap-2 rounded-[calc(0.75rem-1.5px)] bg-brand-deep px-4 py-2 text-xs font-bold text-white/80 group-hover:text-white">
-                          <SparklesIcon className="w-3.5 h-3.5 text-fuchsia-300" />
-                          Simplify with Naseeh{tafsirLang === 'bn' ? ' (বাংলায়)' : ''}
-                        </span>
-                      </button>
-                    ) : (
-                      <AiPanel>
-                        <div className="p-4">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <AiBadge label="Naseeh · simplified" />
-                            <button className="text-white/40 hover:text-white text-xs" onClick={() => setSimplifyOpen(false)}>Hide</button>
-                          </div>
-                          {simplify.isPending ? (
-                            <AiThinking label="Naseeh is simplifying the tafsir…" />
-                          ) : simplify.isError ? (
-                            <div className="py-3 text-center">
-                              <p className="text-white/50 text-sm">Couldn't simplify right now — the original tafsir above is always here.</p>
-                              <button className="mt-2 btn btn-xs bg-white/10 border-slate-400/15 text-white/70" onClick={onSimplify}>Retry</button>
-                            </div>
-                          ) : (
-                            <p className={`text-white/85 ${tafsirFontSize} leading-8 whitespace-pre-line`}>{simplify.data?.simplified}</p>
-                          )}
-                          <p className="text-white/35 text-[10px] leading-relaxed mt-2 flex items-start gap-1">
-                            <span aria-hidden>✨</span>
-                            <span>AI-simplified from the tafsir above — for study only, <b className="text-white/50">not a replacement for the original</b>. Read the source for the authoritative wording.</span>
-                          </p>
-                        </div>
-                      </AiPanel>
-                    )}
+                    {/* Tafsir is presented as the scholars wrote it — no AI rewording. */}
                   </>
                 )}
               </div>

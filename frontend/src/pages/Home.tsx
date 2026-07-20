@@ -8,6 +8,7 @@ import { useSalatLog } from '../hooks/useSalatLog.js';
 import { useFastingSummary } from '../hooks/useFasting.js';
 import { useQuranSummary } from '../hooks/useQuran.js';
 import { StreakBadge, GoalBadge } from '../components/StatusBadges.js';
+import ComebackNudge from '../components/ComebackNudge.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import {
   calcPrayerTimes,
@@ -213,6 +214,9 @@ export default function Home() {
     <AnimatedBackground variant="dark">
       <h1 className="sr-only">Ihsan — Islamic Productivity</h1>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+        {/* Welcome back after a quiet stretch — the gentlest possible restart */}
+        <div className="mb-6 empty:mb-0"><ComebackNudge /></div>
 
         {/* Pre-period heads-up — predicted start within 3 days */}
         {upcomingCycleDays !== null && (

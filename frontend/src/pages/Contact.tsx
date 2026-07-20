@@ -64,9 +64,9 @@ export default function Contact() {
           />
           <div className="relative">
             <motion.div
-              className="text-5xl mb-3"
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="text-5xl mb-3 inline-block"
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
             >📨</motion.div>
             <h1 className="text-2xl sm:text-3xl font-black text-white">Contact us</h1>
             <p className="text-white/55 text-sm sm:text-base mt-2.5 leading-relaxed">

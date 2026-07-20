@@ -15,6 +15,7 @@ import { useFastingSummary, useUpdateFastingProfile } from '../hooks/useFasting.
 import { getTrackingDay } from '../utils/trackingDay.js';
 import { getHijriDate } from '../utils/islamicCalendar.js';
 import { celebrateSmall } from '../utils/celebrate.js';
+import MoodComfort from '../components/MoodComfort.js';
 
 // ─── Sweet, powerful phrases for excused days (Istiak's spec) ─────────────────
 const PHRASES = [
@@ -338,38 +339,60 @@ export default function RayhanahCycle() {
               <span className="text-[10px] text-white/25">private — only you can see this</span>
             </div>
             <div>
-              <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">Flow</p>
+              <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">
+                Flow <span className="normal-case font-normal text-white/25">· pick one</span>
+              </p>
               <div className="flex flex-wrap gap-1.5">
-                {FLOW_OPTIONS.map((f) => (
-                  <button key={f.id}
-                    className={`btn btn-xs rounded-full border ${todayNote?.flow === f.id ? 'bg-pink-500/30 border-pink-400/50 text-pink-100' : 'bg-white/5 border-slate-400/10 text-white/50 hover:text-white'}`}
-                    onClick={() => setFlow(f.id)}
-                  >{f.label}</button>
-                ))}
+                {FLOW_OPTIONS.map((f) => {
+                  const on = todayNote?.flow === f.id;
+                  return (
+                    <button key={f.id}
+                      aria-pressed={on}
+                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-pink-500/35 border-pink-300/70 text-white ring-1 ring-pink-300/50' : 'bg-white/5 border-slate-400/10 text-white/50 hover:text-white'}`}
+                      onClick={() => setFlow(f.id)}
+                    >{on && '✓ '}{f.label}</button>
+                  );
+                })}
               </div>
             </div>
             <div>
-              <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">Body</p>
+              <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">
+                Body <span className="normal-case font-normal text-white/25">· pick any that fit</span>
+              </p>
               <div className="flex flex-wrap gap-1.5">
-                {SYMPTOM_OPTIONS.map((sy) => (
-                  <button key={sy.id}
-                    className={`btn btn-xs rounded-full border ${todayNote?.symptoms?.includes(sy.id) ? 'bg-rose-500/25 border-rose-400/40 text-rose-100' : 'bg-white/5 border-slate-400/10 text-white/50 hover:text-white'}`}
-                    onClick={() => toggleSymptom(sy.id)}
-                  >{sy.label}</button>
-                ))}
+                {SYMPTOM_OPTIONS.map((sy) => {
+                  const on = !!todayNote?.symptoms?.includes(sy.id);
+                  return (
+                    <button key={sy.id}
+                      aria-pressed={on}
+                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-rose-500/35 border-rose-300/70 text-white ring-1 ring-rose-300/50' : 'bg-white/5 border-slate-400/10 text-white/50 hover:text-white'}`}
+                      onClick={() => toggleSymptom(sy.id)}
+                    >{on && '✓ '}{sy.label}</button>
+                  );
+                })}
               </div>
             </div>
             <div>
-              <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">Heart <span className="normal-case font-normal text-white/25">· pick any that fit</span></p>
+              <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">
+                Heart <span className="normal-case font-normal text-white/25">· pick any that fit</span>
+              </p>
               <div className="flex flex-wrap gap-1.5">
-                {MOOD_OPTIONS.map((mo) => (
-                  <button key={mo.id}
-                    className={`btn btn-xs rounded-full border ${todayNote?.moods?.includes(mo.id) ? 'bg-purple-500/25 border-purple-400/40 text-purple-100' : 'bg-white/5 border-slate-400/10 text-white/50 hover:text-white'}`}
-                    onClick={() => toggleMood(mo.id)}
-                  >{mo.label}</button>
-                ))}
+                {MOOD_OPTIONS.map((mo) => {
+                  const on = !!todayNote?.moods?.includes(mo.id);
+                  return (
+                    <button key={mo.id}
+                      aria-pressed={on}
+                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-purple-500/35 border-purple-300/70 text-white ring-1 ring-purple-300/50' : 'bg-white/5 border-slate-400/10 text-white/50 hover:text-white'}`}
+                      onClick={() => toggleMood(mo.id)}
+                    >{on && '✓ '}{mo.label}</button>
+                  );
+                })}
               </div>
             </div>
+
+            {/* A gentle line tuned to exactly the feelings she named */}
+            <MoodComfort day={today} moods={todayNote?.moods ?? []} symptoms={todayNote?.symptoms} />
+
             {(todayNote?.symptoms?.length ?? 0) > 0 && (
               <p className="text-pink-200/70 text-xs leading-relaxed border-t border-slate-400/5 pt-2.5">
                 May Allah give you ease — no fatigue or pain touches a Muslim except that Allah wipes away
