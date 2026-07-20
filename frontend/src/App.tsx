@@ -32,6 +32,8 @@ const Friends = lazy(() => import('./pages/Friends.js'));
 const ConnectFriend = lazy(() => import('./pages/ConnectFriend.js'));
 const About = lazy(() => import('./pages/About.js'));
 const Privacy = lazy(() => import('./pages/Privacy.js'));
+const Feedback = lazy(() => import('./pages/Feedback.js'));
+const Contact = lazy(() => import('./pages/Contact.js'));
 const RayhanahCycle = lazy(() => import('./pages/RayhanahCycle.js'));
 const RamadanTracker = lazy(() => import('./pages/RamadanTracker.js'));
 const CycleAnalytics = lazy(() => import('./pages/CycleAnalytics.js'));
@@ -360,6 +362,8 @@ export default function App() {
               <Route path="/connect/:code" element={<ConnectFriend />} />
               <Route path="/about" element={<About />} />
               <Route path="/privacy" element={<Privacy />} />
+              <Route path="/feedback" element={<Feedback />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<AuthSignIn />} />
               <Route path="/signup" element={<AuthSignUp />} />
               <Route path="/auth/action" element={<AuthAction />} />

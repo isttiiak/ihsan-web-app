@@ -19,6 +19,8 @@ import {
   ArrowLeftIcon,
   InformationCircleIcon,
   ShieldCheckIcon,
+  ChatBubbleLeftRightIcon,
+  EnvelopeIcon,
 } from '@heroicons/react/24/outline';
 
 // ── Page metadata ─────────────────────────────────────────────────────────────
@@ -35,6 +37,8 @@ const PAGE_META: Record<string, { title: string; emoji: string }> = {
   '/settings':        { title: 'Settings',        emoji: '⚙️'  },
   '/about':           { title: 'About Ihsan',     emoji: '🕌' },
   '/privacy':         { title: 'Privacy',         emoji: '🔒' },
+  '/feedback':        { title: 'Feedback',        emoji: '💬' },
+  '/contact':         { title: 'Contact Us',      emoji: '📨' },
   '/profile':         { title: 'My Profile',      emoji: '👤' },
 };
 
@@ -52,6 +56,8 @@ const PARENT_ROUTES: Record<string, string> = {
   '/settings':        '/',
   '/about':           '/',
   '/privacy':         '/',
+  '/feedback':        '/',
+  '/contact':         '/',
   '/profile':         '/',
 };
 
@@ -350,6 +356,24 @@ export default function Navbar() {
                           Rayhanah Cycle
                         </Link>
                       )}
+
+                      {/* Feedback — set apart with a thin, low-opacity border */}
+                      <Link
+                        to="/feedback"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2.5 mt-1 rounded-xl border border-slate-400/15 text-white/70 hover:text-white hover:bg-white/6 hover:border-brand-emerald/40 text-sm transition-colors"
+                      >
+                        <ChatBubbleLeftRightIcon className="w-4 h-4 text-brand-emerald/70" />
+                        Share feedback
+                      </Link>
+                      <Link
+                        to="/contact"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/6 text-sm transition-colors"
+                      >
+                        <EnvelopeIcon className="w-4 h-4 text-cyan-300/60" />
+                        Contact us
+                      </Link>
 
                       <div className="border-t border-brand-border/60 mt-1 pt-1">
                         <button
