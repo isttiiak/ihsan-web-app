@@ -23,6 +23,14 @@ export default function QuranHabit() {
     return () => { alive = false; };
   }, []);
 
+  // Deep link from a finished duʿā: /quran#duas lands on the dua section
+  useEffect(() => {
+    if (window.location.hash === '#duas') {
+      const t = setTimeout(() => document.getElementById('duas')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
   const startKhatam = useStartKhatam();
   const toggleDua = useToggleDuaBookmark();
   const nameOf = (n: number) => surahs.find((s) => s.number === n)?.englishName ?? `Surah ${n}`;
@@ -95,9 +103,10 @@ export default function QuranHabit() {
           </div>
         </motion.div>
 
-        {/* ── streak + khatam mini ── */}
+        {/* ── streak + khatam mini — each card gets its OWN color so sections
+               are recognizable at a glance (Istiak's spec) ── */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4">
+          <div className="rounded-2xl border border-orange-500/25 bg-orange-500/[0.05] p-4">
             <p className="text-white font-black text-sm">🔥 {summary?.streak ?? 0}-day streak</p>
             <div className="flex items-end gap-1 h-10 mt-2">
               {(summary?.last7 ?? []).map((d) => (
@@ -108,7 +117,7 @@ export default function QuranHabit() {
             </div>
             <p className="text-white/25 text-[10px] mt-1">best: {summary?.bestStreak ?? 0} days</p>
           </div>
-          <Link to="/quran/khatam" className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 hover:border-brand-emerald/40 transition-all">
+          <Link to="/quran/khatam" className="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.05] p-4 hover:border-emerald-400/50 transition-all">
             <p className="text-white font-black text-sm">🕋 Khatam · {khatmPct.toFixed(1)}%</p>
             <div className="h-2 rounded-full bg-white/8 overflow-hidden mt-2.5">
               <div className="h-full rounded-full bg-gradient-to-r from-brand-emerald to-teal-400" style={{ width: `${khatmPct}%` }} />
@@ -123,7 +132,7 @@ export default function QuranHabit() {
             completion counts are an insight, not a homepage feature. */}
 
         {/* ── special surahs ── */}
-        <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
+        <div className="rounded-3xl border border-purple-500/25 bg-purple-500/[0.05] p-5">
           <h2 className="text-white font-black text-sm mb-3">🌟 Beloved surahs</h2>
           <div className="grid sm:grid-cols-2 gap-2">
             {SPECIAL_SURAHS.map((sp) => (
@@ -143,7 +152,7 @@ export default function QuranHabit() {
         </div>
 
         {/* ── ayah bundles ── */}
-        <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
+        <div className="rounded-3xl border border-cyan-500/25 bg-cyan-500/[0.05] p-5">
           <h2 className="text-white font-black text-sm mb-1">🛡️ Protection & light — ayah selections</h2>
           <p className="text-white/30 text-[11px] mb-3">Short, authentic selections the Prophet ﷺ taught us to hold onto.</p>
           <div className="grid sm:grid-cols-2 gap-2">
@@ -162,7 +171,7 @@ export default function QuranHabit() {
         </div>
 
         {/* ── duas from the Quran — the prophets' own words, each with its story ── */}
-        <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
+        <div id="duas" className="rounded-3xl border border-amber-500/25 bg-amber-500/[0.05] p-5 scroll-mt-20">
           <h2 className="text-white font-black text-sm mb-1">🤲 Duas from the Quran</h2>
           <p className="text-white/30 text-[11px] mb-3">Supplications Allah Himself relates — open one to read it with its story and reference.</p>
           <div className="grid sm:grid-cols-2 gap-1.5">
@@ -190,7 +199,7 @@ export default function QuranHabit() {
         </div>
 
         {/* Browse all surahs lives on the dedicated Read tab (no duplicate list here). */}
-        <Link to="/quran/browse" className="block rounded-3xl bg-brand-deep/80 border border-brand-border p-4 text-center hover:border-brand-emerald/40 transition-all">
+        <Link to="/quran/browse" className="block rounded-3xl border border-indigo-500/25 bg-indigo-500/[0.05] p-4 text-center hover:border-indigo-400/50 transition-all">
           <span className="text-white/70 text-sm font-bold">📚 Browse all 114 surahs →</span>
         </Link>
 

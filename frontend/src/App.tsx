@@ -214,7 +214,10 @@ export default function App() {
 
   // Every route change starts at the TOP of the new page — SPAs keep the old
   // scroll position by default (opening /quran from Home landed mid-page).
-  useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
+  // A #hash target (e.g. /quran#duas after finishing a duʿā) wins instead.
+  useEffect(() => {
+    if (!location.hash) window.scrollTo(0, 0);
+  }, [location.pathname, location.hash]);
 
   // Google Analytics 4: SPA page views (the gtag loader in index.html sets
   // send_page_view=false, so each route change is reported exactly once here)

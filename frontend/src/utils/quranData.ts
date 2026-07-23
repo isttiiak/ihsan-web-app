@@ -18,6 +18,9 @@ export interface AyahText {
   arabic: string;
   /** Translation texts in the same order as the requested edition ids */
   translations: string[];
+  /** Latin pronunciation (alquran.cloud en.transliteration) — present only
+   * when the reader has transliteration enabled */
+  transliteration?: string;
 }
 
 /** Translations the reader can show (up to two at once — Istiak's spec). */
@@ -57,25 +60,32 @@ export async function loadSurahList(): Promise<SurahMeta[]> {
   return list;
 }
 
-/** Arabic (Uthmani) + the selected translations (1–2) for one surah. */
-export async function loadSurahText(surah: number, editions?: string[]): Promise<AyahText[]> {
+const TRANSLIT_EDITION = 'en.transliteration';
+
+/** Arabic (Uthmani) + the selected translations (1–2) for one surah, plus the
+ * free transliteration edition when requested (pronunciation aid). */
+export async function loadSurahText(surah: number, editions?: string[], withTranslit = false): Promise<AyahText[]> {
   const eds = (editions?.length ? editions : selectedTranslations()).slice(0, 2);
-  const key = `ihsan_surah_text_${surah}_${eds.join('+')}_v2`;
+  const all = withTranslit ? [...eds, TRANSLIT_EDITION] : eds;
+  const key = `ihsan_surah_text_${surah}_${all.join('+')}_v2`;
   try {
     const cached = localStorage.getItem(key);
     if (cached) return JSON.parse(cached) as AyahText[];
   } catch { /* refetch */ }
 
-  const res = await fetch(`https://api.alquran.cloud/v1/surah/${surah}/editions/${['quran-uthmani', ...eds].join(',')}`);
+  const res = await fetch(`https://api.alquran.cloud/v1/surah/${surah}/editions/${['quran-uthmani', ...all].join(',')}`);
   const data = await res.json() as {
     data: Array<{ ayahs: Array<{ number: number; numberInSurah: number; text: string }> }>;
   };
-  const [ar, ...trs] = data.data;
+  const [ar, ...rest] = data.data;
+  const trs = withTranslit ? rest.slice(0, -1) : rest;
+  const translit = withTranslit ? rest[rest.length - 1] : undefined;
   const ayat: AyahText[] = (ar?.ayahs ?? []).map((a, i) => ({
     numberInSurah: a.numberInSurah,
     number: a.number,
     arabic: a.text,
     translations: trs.map((tr) => tr?.ayahs?.[i]?.text ?? ''),
+    ...(translit ? { transliteration: translit.ayahs?.[i]?.text ?? '' } : {}),
   }));
   try {
     localStorage.setItem(key, JSON.stringify(ayat));

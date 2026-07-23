@@ -12,6 +12,7 @@ import { useQuranSummary, useReadAyat, useToggleBookmark, useSetResume } from '.
 import { useTafsir } from '../hooks/useQuran.js';
 import { TAFSIRS, getPreferredTafsir, setPreferredTafsir } from '../utils/tafsir.js';
 import { QURANIC_DUAS } from '../utils/quranMeta.js';
+import { getArabicFont, getFontPx, translitEnabled } from '../utils/quranPrefs.js';
 import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, selectedTranslations, TRANSLATIONS, type SurahMeta, type AyahText } from '../utils/quranData.js';
 import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrate.js';
 
@@ -35,10 +36,8 @@ import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrat
  * the "top surahs" list.
  */
 
-const FONT_SIZES = ['text-2xl sm:text-3xl', 'text-3xl sm:text-4xl', 'text-4xl sm:text-5xl'];
-const TR_FONT_SIZES = ['text-xs sm:text-sm', 'text-sm sm:text-base', 'text-base sm:text-lg'];
-// Tafsir is dense prose — default larger + generous line-height for big screens.
-const TAFSIR_FONT_SIZES = ['text-[15px] sm:text-base', 'text-base sm:text-lg', 'text-lg sm:text-xl'];
+// Typography now comes from quranPrefs: user-chosen Arabic font (easy-to-read
+// default) + free-range px sliders for every text kind (Istiak's spec).
 
 // ── Resume tracking: where the reader left off, per surah ─────────────────────
 // localStorage is the fast cache; the SERVER copy (QuranProfile.readerPos) is
@@ -111,9 +110,15 @@ export default function QuranReader() {
     const v = Number(raw);
     return raw !== null && Number.isFinite(v) && v >= 0 && v <= 1 ? v : 0.4; // 40% default
   });
-  const fontSize = FONT_SIZES[Number(localStorage.getItem('ihsan_quran_font')) || 1] ?? FONT_SIZES[1]!;
-  const trFontSize = TR_FONT_SIZES[Number(localStorage.getItem('ihsan_quran_font_tr')) || 1] ?? TR_FONT_SIZES[1]!;
-  const tafsirFontSize = TAFSIR_FONT_SIZES[Number(localStorage.getItem('ihsan_tafsir_font')) || 1] ?? TAFSIR_FONT_SIZES[1]!;
+  // Typography prefs — read once per mount (the settings drawer writes them)
+  const arabicFont = useMemo(() => getArabicFont(), []);
+  const fs = useMemo(() => ({
+    arabic: getFontPx('arabic'),
+    translation: getFontPx('translation'),
+    translit: getFontPx('translit'),
+    tafsir: getFontPx('tafsir'),
+  }), []);
+  const showTranslit = useMemo(() => translitEnabled(), []);
   const editions = useMemo(() => selectedTranslations(), []);
   const editionLabel = (id: string) => TRANSLATIONS.find((t) => t.id === id)?.label ?? id;
 
@@ -143,7 +148,7 @@ export default function QuranReader() {
     resumePromptDoneRef.current = false;
     suppressSaveRef.current = false;
     seenRef.current = new Set();
-    Promise.all([loadSurahList(), loadSurahText(surahNo)])
+    Promise.all([loadSurahList(), loadSurahText(surahNo, undefined, showTranslit)])
       .then(([list, text]) => {
         if (!alive) return;
         setSurahs(list);
@@ -262,8 +267,10 @@ export default function QuranReader() {
     syncResume(0); // clear on the server too
     celebrateSmall();
     toast.success(msg, { id: 'reader-done', duration: 2200 });
-    setTimeout(() => navigate('/quran'), 850);
-  }, [surahNo, navigate, syncResume]);
+    // Finishing a duʿā returns to the DUA SECTION of the Quran home, not the
+    // top of the page (Istiak: landing mid-page felt wrong).
+    setTimeout(() => navigate(dua ? '/quran#duas' : '/quran'), 850);
+  }, [surahNo, navigate, syncResume, dua]);
 
   const goNext = useCallback(() => {
     stopAudio();
@@ -311,6 +318,7 @@ export default function QuranReader() {
   // and a Bengali-friendly font stack when a বাংলা edition is selected.
   const tafsirTextStyle = {
     color: '#d6d0bf',
+    fontSize: fs.tafsir,
     lineHeight: tafsirIsBn ? 2.15 : 1.95,
     ...(tafsirIsBn ? { fontFamily: "'Noto Sans Bengali', 'Hind Siliguri', 'Bangla Sangam MN', 'Vrinda', sans-serif" } : {}),
   } as const;
@@ -456,7 +464,7 @@ export default function QuranReader() {
             the split becomes a vertical stack — āyah first, tafsir below. */}
         <div
           ref={cardRef}
-          className={`relative rounded-3xl border border-slate-400/10 bg-gradient-to-br from-[#0d1b17] via-[#0a1412] to-[#0d1420] ${fullscreen ? 'fixed inset-0 z-50 rounded-none flex flex-col md:flex-row overflow-y-auto md:overflow-hidden' : 'overflow-hidden p-4 sm:p-10'}`}
+          className={`relative rounded-3xl border border-slate-400/10 bg-gradient-to-br from-[#0d1b17] via-[#0a1412] to-[#0d1420] ${fullscreen ? 'fixed inset-0 z-50 rounded-none flex flex-col md:flex-row overflow-y-auto overflow-x-hidden md:overflow-hidden' : 'overflow-hidden p-4 sm:p-10'}`}
         >
           {/* controls — in-flow row on phones (they overlapped the āyah header),
               floating top-right from sm up */}
@@ -529,7 +537,8 @@ export default function QuranReader() {
                 </div>
 
                 {/* Arabic — word hover highlight; timed highlight while reciting */}
-                <p dir="rtl" lang="ar" className={`${fontSize} leading-[2.2] font-serif text-[#e8e2d0]`}>
+                <p dir="rtl" lang="ar" className="leading-[2.1] text-[#e8e2d0]"
+                  style={{ fontSize: fs.arabic, fontFamily: arabicFont.stack }}>
                   {words.map((w, i) => (
                     <span
                       key={i}
@@ -540,9 +549,18 @@ export default function QuranReader() {
                   ))}
                 </p>
 
+                {/* Transliteration — Latin pronunciation aid (optional) */}
+                {showTranslit && current.transliteration && (
+                  <p className="text-brand-gold/60 italic leading-relaxed max-w-2xl mx-auto"
+                    style={{ fontSize: fs.translit }}>
+                    {current.transliteration}
+                  </p>
+                )}
+
                 <div className="space-y-3 max-w-2xl mx-auto">
                   {current.translations.map((tr, i) => (
-                    <p key={editions[i] ?? i} className={`${i === 0 ? 'text-white/60' : 'text-teal-100/50'} ${trFontSize} leading-relaxed`}>
+                    <p key={editions[i] ?? i} className={`${i === 0 ? 'text-white/60' : 'text-teal-100/50'} leading-relaxed`}
+                      style={{ fontSize: fs.translation }}>
                       {tr}
                     </p>
                   ))}
@@ -622,7 +640,7 @@ export default function QuranReader() {
                 ) : (
                   <>
                     <p className="text-amber-200/50 text-xs font-bold mb-3">{surahNo}:{ayahNo} · {tafsir.data?.resourceName}</p>
-                    <div className={`${tafsirFontSize} whitespace-pre-line`} style={tafsirTextStyle}>{tafsir.data?.text}</div>
+                    <div className={`whitespace-pre-line`} style={tafsirTextStyle}>{tafsir.data?.text}</div>
                     <p className="text-white/25 text-[10px] mt-4">
                       Sourced from <a className="underline" href={tafsir.data?.url} target="_blank" rel="noreferrer">quran.com</a> — authentic, unedited.
                     </p>
@@ -727,7 +745,7 @@ export default function QuranReader() {
                   <p className="text-white/50 text-sm py-2">Couldn't load this tafsir — check your connection or try another edition.</p>
                 ) : (
                   <>
-                    <div className={`max-h-96 overflow-y-auto pr-2 ${tafsirFontSize} whitespace-pre-line`} style={tafsirTextStyle}>
+                    <div className={`max-h-96 overflow-y-auto pr-2 whitespace-pre-line`} style={tafsirTextStyle}>
                       {tafsir.data?.text}
                     </div>
                     <p className="text-white/30 text-[10px]">

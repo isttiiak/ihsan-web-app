@@ -1,9 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useQuranSummary, useUpdateQuranProfile, useResetKhatam } from '../hooks/useQuran.js';
 import { TRANSLATIONS, selectedTranslations } from '../utils/quranData.js';
+import {
+  ARABIC_FONTS, getArabicFont, setArabicFont,
+  FONT_RANGES, getFontPx, setFontPx, type FontKind,
+  translitEnabled, setTranslitEnabled,
+} from '../utils/quranPrefs.js';
 import ConfirmDialog from './ConfirmDialog.js';
 
 /**
@@ -21,23 +26,28 @@ const RECITER_OPTIONS = [
   { id: 'minshawi', name: 'Muhammad Al-Minshawi' },
 ];
 
-function FontPicker({ label, storageKey }: { label: string; storageKey: string }) {
-  const [v, setV] = useState<number>(() => {
-    const n = Number(localStorage.getItem(storageKey));
-    return n >= 0 && n <= 2 ? n : 1;
-  });
+/** Free-range px slider (Istiak's spec: full flexibility, not 3 steps).
+ * Writes straight to localStorage — the reader picks it up on next open. */
+function SizeSlider({ label, kind, sample, sampleStyle }: {
+  label: string; kind: FontKind; sample?: string; sampleStyle?: CSSProperties;
+}) {
+  const { min, max } = FONT_RANGES[kind];
+  const [v, setV] = useState<number>(() => getFontPx(kind));
   return (
     <div>
-      <p className="text-white/50 text-xs font-bold mb-1.5">{label}</p>
-      <div className="flex gap-2">
-        {[0, 1, 2].map((i) => (
-          <button key={i}
-            className={`flex-1 btn btn-xs rounded-xl ${v === i ? 'bg-brand-emerald/25 border-brand-emerald/40 text-brand-emerald' : 'bg-white/5 border-slate-400/10 text-white/50'}`}
-            style={{ fontSize: 11 + i * 3 }}
-            onClick={() => { setV(i); localStorage.setItem(storageKey, String(i)); }}
-          >Aa</button>
-        ))}
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-white/50 text-xs font-bold">{label}</p>
+        <span className="text-white/30 text-[10px] tabular-nums">{v}px</span>
       </div>
+      <input
+        type="range" min={min} max={max} value={v}
+        aria-label={`${label} size`}
+        onChange={(e) => { const n = Number(e.target.value); setV(n); setFontPx(kind, n); }}
+        className="range range-xs w-full [--range-shdw:theme(colors.emerald.400)]"
+      />
+      {sample && (
+        <p className="text-white/60 mt-1 truncate" style={{ fontSize: v, ...sampleStyle }}>{sample}</p>
+      )}
     </div>
   );
 }
@@ -53,6 +63,8 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
   const [goal, setGoal] = useState<number>(savedGoal);
   const [reciter, setReciter] = useState(() => localStorage.getItem('ihsan_reciter') || 'dossari');
   const [translations, setTranslations] = useState<string[]>(selectedTranslations);
+  const [arabicFontId, setArabicFontId] = useState(() => getArabicFont().id);
+  const [translit, setTranslit] = useState(translitEnabled);
   // danger-zone double confirm: inline tap → ConfirmDialog (app-wide rule)
   const [confirmDanger, setConfirmDanger] = useState<null | 'khatam' | 'goal'>(null);
 
@@ -193,14 +205,44 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <FontPicker label="🔤 Arabic size" storageKey="ihsan_quran_font" />
-                <FontPicker label="🔡 Translation size" storageKey="ihsan_quran_font_tr" />
+              {/* ── Arabic font — the "clean" default is the easiest to read ── */}
+              <div className="rounded-2xl border border-purple-500/20 bg-purple-500/[0.05] p-4 space-y-2">
+                <p className="text-white/60 text-xs font-bold">🔤 Arabic font</p>
+                <select
+                  aria-label="Arabic font"
+                  className="select select-sm w-full bg-white/5 border-purple-400/15 text-white rounded-xl"
+                  value={arabicFontId}
+                  onChange={(e) => { setArabicFontId(e.target.value); setArabicFont(e.target.value); }}
+                >
+                  {ARABIC_FONTS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
+                </select>
+                <p dir="rtl" lang="ar" className="text-white/85 text-2xl leading-loose text-center pt-1"
+                  style={{ fontFamily: ARABIC_FONTS.find((f) => f.id === arabicFontId)?.stack }}>
+                  بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+                </p>
               </div>
 
-              <div>
-                <FontPicker label="📖 Tafsir size" storageKey="ihsan_tafsir_font" />
-                <p className="text-white/25 text-[10px] mt-1">Larger, easier to read on big screens.</p>
+              {/* ── Transliteration (pronunciation aid, free source) ── */}
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-4">
+                <label className="flex items-center justify-between gap-3 cursor-pointer">
+                  <div>
+                    <p className="text-white/70 text-sm font-bold">🗣️ Transliteration</p>
+                    <p className="text-white/35 text-[11px] mt-0.5">Latin pronunciation under the Arabic — for readers still learning the script.</p>
+                  </div>
+                  <input type="checkbox" className="toggle toggle-sm toggle-warning"
+                    checked={translit}
+                    onChange={(e) => { setTranslit(e.target.checked); setTranslitEnabled(e.target.checked); }} />
+                </label>
+              </div>
+
+              {/* ── Text sizes — one slider per text kind (Istiak's spec) ── */}
+              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.05] p-4 space-y-4">
+                <p className="text-white/60 text-xs font-bold">📏 Text sizes</p>
+                <SizeSlider label="Arabic" kind="arabic" sample="بِسْمِ اللَّهِ"
+                  sampleStyle={{ fontFamily: ARABIC_FONTS.find((f) => f.id === arabicFontId)?.stack, direction: 'rtl' }} />
+                <SizeSlider label="Translation" kind="translation" sample="In the name of Allah…" />
+                <SizeSlider label="Transliteration" kind="translit" sample="Bismillāhir-raḥmānir-raḥīm" />
+                <SizeSlider label="Tafsir" kind="tafsir" sample="The scholars explain…" />
               </div>
 
               <button
