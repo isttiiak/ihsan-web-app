@@ -159,6 +159,24 @@ export function useUpsertCycleDay() {
   });
 }
 
+/** Edit an episode's dates, or endDate:null to REOPEN it ("I'm not done
+ * yet") — daily wellness notes are untouched either way. */
+export function useEditCycleLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { logId: string; startDate?: string; endDate?: string | null }) => {
+      const { logId, ...body } = vars;
+      const { data } = await api.patch(`/api/cycle/logs/${logId}`, body);
+      return data as { ok: boolean };
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['cycle'] }),
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      toast.error(msg ?? 'Could not update the cycle — try again.', { id: 'cycle-edit' });
+    },
+  });
+}
+
 export function useDeleteCycleLog() {
   const qc = useQueryClient();
   return useMutation({

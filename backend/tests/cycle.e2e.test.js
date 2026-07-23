@@ -212,6 +212,39 @@ describe("Rayhanah Cycle API", () => {
     expect(bad.status).toBe(400);
   });
 
+  test("v4.9: edit a cycle's dates and REOPEN it without losing daily notes", async () => {
+    const token = fakeJwt({ uid: "aisha", email: "aisha@test.dev", name: "Aisha" });
+    const as = (r) => r.set("Authorization", `Bearer ${token}`);
+    await request(app).post(`/api/auth/verify`).send({ idToken: token });
+    await as(request(app).patch(`/api/user/me`)).send({ gender: "female" });
+
+    // A completed episode with a daily note inside it
+    const added = await as(request(app).post(`/api/cycle/logs`)).send({
+      startDate: "2026-07-10", endDate: "2026-07-15", type: "hayd", today: "2026-07-23",
+    });
+    expect(added.status).toBe(200);
+    const logId = added.body.log._id;
+    await as(request(app).put(`/api/cycle/day`)).send({ date: "2026-07-12", flow: "medium", symptoms: ["cramps"] });
+
+    // Edit the end date
+    const edit = await as(request(app).patch(`/api/cycle/logs/${logId}`)).send({ endDate: "2026-07-16" });
+    expect(edit.status).toBe(200);
+    expect(edit.body.log.endDate).toBe("2026-07-16");
+
+    // REOPEN — endDate null; the daily note survives
+    const reopen = await as(request(app).patch(`/api/cycle/logs/${logId}`)).send({ endDate: null });
+    expect(reopen.status).toBe(200);
+    expect(reopen.body.log.endDate).toBeNull();
+
+    const sum = await as(request(app).get(`/api/cycle/summary?today=2026-07-23`));
+    expect(sum.body.active).toBeTruthy();
+    expect(sum.body.days.some((d) => d.date === "2026-07-12" && d.flow === "medium")).toBe(true);
+
+    // Overlap and bad edits are rejected
+    const bad = await as(request(app).patch(`/api/cycle/logs/${logId}`)).send({ startDate: "2026-07-20", endDate: "2026-07-18" });
+    expect(bad.status).toBe(400);
+  });
+
   test("delete all wipes cycle data", async () => {
     const del = await asM(request(app).delete(`/api/cycle/all`));
     expect(del.status).toBe(200);

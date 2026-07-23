@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import * as cycleController from '../controllers/cycle.controller.js';
-import { startCycleSchema, endCycleSchema, cycleProfileSchema, cycleDaySchema, pastCycleSchema } from '../validation/cycle.schemas.js';
+import { startCycleSchema, endCycleSchema, cycleProfileSchema, cycleDaySchema, pastCycleSchema, editCycleLogSchema } from '../validation/cycle.schemas.js';
 
 const router = Router();
 
@@ -25,6 +25,10 @@ router.put('/day', requireAuth, validate(cycleDaySchema), cycleController.upsert
 router.patch('/profile', requireAuth, validate(cycleProfileSchema), cycleController.updateProfile);
 
 // DELETE /api/cycle/logs/:logId — remove one episode
+// PATCH /api/cycle/logs/:logId — edit dates, or endDate:null to REOPEN the
+// most recent episode ("I'm not done yet"); daily notes are never touched
+router.patch('/logs/:logId', requireAuth, validate(editCycleLogSchema), cycleController.editLog);
+
 router.delete('/logs/:logId', requireAuth, cycleController.deleteLog);
 
 // DELETE /api/cycle/all — remove everything (Settings "Your data")

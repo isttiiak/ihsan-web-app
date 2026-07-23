@@ -81,6 +81,21 @@ export const upsertDay = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
+export const editLog = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const logId = typeof req.params.logId === 'string' ? req.params.logId : '';
+    const { startDate, endDate } = req.body as { startDate?: string; endDate?: string | null };
+    const result = await cycleService.editCycleLog(req.user.uid, logId, { startDate, endDate });
+    if (!result.ok) {
+      res.status(400).json({ ok: false, error: result.error });
+      return;
+    }
+    res.json({ ok: true, log: result.log });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const deleteLog = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const logId = typeof req.params.logId === 'string' ? req.params.logId : '';

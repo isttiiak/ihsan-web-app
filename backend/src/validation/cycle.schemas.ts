@@ -30,6 +30,18 @@ export const pastCycleSchema = z.object({
   }),
 });
 
+export const editCycleLogSchema = z.object({
+  body: z
+    .object({
+      startDate: dateField.optional(),
+      // null = REOPEN the episode ("I'm not done yet")
+      endDate: dateField.nullable().optional(),
+    })
+    .refine((b) => b.startDate !== undefined || b.endDate !== undefined, {
+      message: 'Nothing to change',
+    }),
+});
+
 export const cycleDaySchema = z.object({
   body: z.object({
     date: dateField,

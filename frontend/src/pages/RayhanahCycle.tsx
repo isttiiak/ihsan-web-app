@@ -6,7 +6,7 @@ import AnimatedBackground from '../components/AnimatedBackground.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import {
   useCycleSummary, useStartCycle, useEndCycle, useSetMadhab, useDeleteCycleLog, useIsFemale,
-  useUpsertCycleDay, type CycleFlow, type CycleMood,
+  useUpsertCycleDay, useEditCycleLog, type CycleFlow, type CycleMood,
 } from '../hooks/useCycle.js';
 import CycleCalendar from '../components/CycleCalendar.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
@@ -132,6 +132,11 @@ export default function RayhanahCycle() {
   const [garden, setGarden] = useState<Record<string, boolean>>(loadGarden);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  // Edit an episode (dates) or reopen the most recent one ("I'm not done yet")
+  const editCycle = useEditCycleLog();
+  const [editTarget, setEditTarget] = useState<{ _id: string; startDate: string; endDate: string | null } | null>(null);
+  const [editStart, setEditStart] = useState('');
+  const [editEnd, setEditEnd] = useState('');
 
   useEffect(() => { setGarden(loadGarden()); }, [today]);
 
@@ -145,6 +150,24 @@ export default function RayhanahCycle() {
 
   const active = summary?.active ?? null;
   const todayNote = summary?.days?.find((d) => d.date === today) ?? null;
+
+  // "I'm not done yet": the most recent completed episode, offered for reopen
+  // when it ended within the last 3 days and nothing is active. Daily notes
+  // belong to their dates, so reopening loses NOTHING.
+  const lastEnded = useMemo(() => {
+    if (active) return null;
+    const done = (summary?.logs ?? []).filter((l) => l.endDate);
+    if (!done.length) return null;
+    const latest = [...done].sort((a, b) => (a.startDate < b.startDate ? 1 : -1))[0]!;
+    const diffDays = Math.round((new Date(today + 'T12:00:00').getTime() - new Date(latest.endDate + 'T12:00:00').getTime()) / 86_400_000);
+    return diffDays >= 0 && diffDays <= 3 ? latest : null;
+  }, [summary, active, today]);
+
+  const openEdit = (l: { _id: string; startDate: string; endDate: string | null }) => {
+    setEditTarget(l);
+    setEditStart(l.startDate);
+    setEditEnd(l.endDate ?? '');
+  };
 
   const setFlow = (flow: CycleFlow) =>
     upsertDay.mutate({ date: today, flow: todayNote?.flow === flow ? null : flow });
@@ -452,6 +475,35 @@ export default function RayhanahCycle() {
           </p>
         </div>
 
+        {/* ── "I'm not done yet" — reopen a too-early end (Istiak's sister's
+               request): flow paused for a few hours, the end was marked, and
+               the only way back used to be deleting the cycle WITH its notes.
+               Reopening keeps every daily log. ── */}
+        {lastEnded && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border border-pink-400/25 bg-pink-500/[0.06] p-4 flex flex-col sm:flex-row sm:items-center gap-3"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-pink-100/90 text-sm font-bold">Ended too early?</p>
+              <p className="text-white/40 text-xs mt-0.5 leading-relaxed">
+                If the flow returned after you marked {formatDay(lastEnded.endDate!)} as the end, you can reopen
+                that cycle — all your daily notes stay exactly where they are.
+              </p>
+            </div>
+            <button
+              className="btn btn-sm rounded-xl border border-pink-400/40 bg-pink-500/15 text-pink-100 hover:bg-pink-500/25 shrink-0"
+              disabled={editCycle.isPending}
+              onClick={() => editCycle.mutate(
+                { logId: lastEnded._id, endDate: null },
+                { onSuccess: () => toast.success("Cycle reopened — take your time 🌸", { id: 'cycle-reopen' }) }
+              )}
+            >
+              🌸 I'm not done yet
+            </button>
+          </motion.div>
+        )}
+
         {/* ── Settings + history ─────────────────────────────────────────────── */}
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5 space-y-4">
           <div className="flex items-center justify-between">
@@ -492,6 +544,7 @@ export default function RayhanahCycle() {
                         <span className="text-white/70 flex-1">
                           {formatDay(l.startDate)} — {l.endDate ? formatDay(l.endDate) : 'ongoing'}
                         </span>
+                        <button aria-label="Edit entry" className="text-white/25 hover:text-pink-200" onClick={() => openEdit(l)}>✏️</button>
                         <button aria-label="Delete entry" className="text-white/25 hover:text-red-300" onClick={() => setConfirmDelete(l._id)}>🗑</button>
                       </div>
                     ))}
@@ -604,6 +657,73 @@ export default function RayhanahCycle() {
         onConfirm={() => { if (confirmDelete) deleteLog.mutate(confirmDelete); setConfirmDelete(null); }}
         onCancel={() => setConfirmDelete(null)}
       />
+
+      {/* ── Edit a cycle's dates / reopen it ────────────────────────────────── */}
+      <AnimatePresence>
+        {editTarget && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm grid place-items-center p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setEditTarget(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
+              className="w-full max-w-sm rounded-3xl bg-brand-deep border border-pink-400/25 p-6 space-y-4"
+              role="dialog" aria-label="Edit cycle"
+            >
+              <div>
+                <h3 className="text-white font-black">✏️ Edit this cycle</h3>
+                <p className="text-white/40 text-xs mt-1 leading-relaxed">
+                  Adjust the dates, or clear the end date if it hasn't truly finished.
+                  Your daily notes belong to their days — they are never lost.
+                </p>
+              </div>
+              <div className="space-y-2.5">
+                <div>
+                  <label className="text-white/50 text-xs font-bold" htmlFor="edit-cycle-start">Start date</label>
+                  <input id="edit-cycle-start" type="date" value={editStart} max={today}
+                    onChange={(e) => setEditStart(e.target.value)}
+                    className="input input-sm w-full mt-1 bg-white/5 border-pink-400/20 text-white rounded-xl" />
+                </div>
+                <div>
+                  <label className="text-white/50 text-xs font-bold" htmlFor="edit-cycle-end">End date</label>
+                  <input id="edit-cycle-end" type="date" value={editEnd} min={editStart} max={today}
+                    onChange={(e) => setEditEnd(e.target.value)}
+                    className="input input-sm w-full mt-1 bg-white/5 border-pink-400/20 text-white rounded-xl" />
+                  {editTarget.endDate && (
+                    <button
+                      className="mt-1.5 text-pink-200/70 hover:text-pink-100 text-[11px] underline"
+                      onClick={() => setEditEnd('')}
+                    >Clear the end date — this cycle is still ongoing</button>
+                  )}
+                  {editEnd === '' && (
+                    <p className="text-pink-200/60 text-[11px] mt-1">🌸 Saving without an end date reopens the cycle.</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button className="flex-1 btn btn-sm rounded-xl bg-white/5 border-slate-500/20 text-white/60"
+                  onClick={() => setEditTarget(null)}>Cancel</button>
+                <button
+                  className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-pink-500/80 hover:bg-pink-500"
+                  disabled={editCycle.isPending || !editStart}
+                  onClick={() => editCycle.mutate(
+                    { logId: editTarget._id, startDate: editStart, endDate: editEnd === '' ? null : editEnd },
+                    {
+                      onSuccess: () => {
+                        toast.success(editEnd === '' ? 'Cycle reopened 🌸' : 'Cycle updated ✏️', { id: 'cycle-edit' });
+                        setEditTarget(null);
+                      },
+                    }
+                  )}
+                >
+                  {editCycle.isPending ? <span className="loading loading-spinner loading-xs" /> : 'Save'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Ramadan qada prompt ─────────────────────────────────────────────── */}
       <AnimatePresence>

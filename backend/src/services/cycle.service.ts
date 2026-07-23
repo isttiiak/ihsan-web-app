@@ -222,6 +222,56 @@ export async function endCycle(
   return { ok: true, log: open };
 }
 
+/**
+ * Edit an episode's dates — or REOPEN it (endDate null) when it was ended too
+ * early (Istiak: a sister marked the end, the flow returned hours later, and
+ * the only path back was deleting the whole cycle WITH its daily notes).
+ * Daily wellness notes live in CycleDay docs keyed by date, so editing or
+ * reopening here never touches them.
+ */
+export async function editCycleLog(
+  userId: string,
+  logId: string,
+  input: { startDate?: string; endDate?: string | null }
+): Promise<{ ok: boolean; error?: string; log?: ICycleLog }> {
+  const log = await CycleLog.findOne({ userId, _id: logId });
+  if (!log) return { ok: false, error: 'Cycle not found.' };
+
+  const startDate = input.startDate ?? log.startDate;
+  const endDate = input.endDate === undefined ? log.endDate : input.endDate;
+
+  if (!DAY_STR_RE.test(startDate)) return { ok: false, error: 'Invalid start date' };
+  if (endDate !== null && !DAY_STR_RE.test(endDate)) return { ok: false, error: 'Invalid end date' };
+  if (endDate !== null && endDate < startDate) return { ok: false, error: 'End date is before the start date.' };
+  if (endDate !== null && daysBetween(startDate, endDate) + 1 > 60) {
+    return { ok: false, error: 'That episode is longer than 60 days — please split it.' };
+  }
+
+  if (endDate === null) {
+    // Reopening: only ONE cycle may be open, and only the most recent
+    // episode can resume (a later episode would contradict it).
+    const otherOpen = await CycleLog.findOne({ userId, endDate: null, _id: { $ne: log._id } });
+    if (otherOpen) return { ok: false, error: 'Another cycle is already active.' };
+    const later = await CycleLog.findOne({ userId, _id: { $ne: log._id }, startDate: { $gt: log.startDate } });
+    if (later) return { ok: false, error: 'Only your most recent cycle can be reopened.' };
+  }
+
+  // Overlap check against every OTHER episode
+  const clash = await CycleLog.findOne({
+    userId,
+    _id: { $ne: log._id },
+    ...(endDate === null
+      ? { $or: [{ endDate: null }, { endDate: { $gte: startDate } }] }
+      : { startDate: { $lte: endDate }, $or: [{ endDate: null }, { endDate: { $gte: startDate } }] }),
+  });
+  if (clash) return { ok: false, error: 'Those dates overlap another logged cycle.' };
+
+  log.startDate = startDate;
+  log.endDate = endDate;
+  await log.save();
+  return { ok: true, log };
+}
+
 export async function deleteLog(userId: string, logId: string): Promise<boolean> {
   const res = await CycleLog.deleteOne({ userId, _id: logId });
   return res.deletedCount > 0;
