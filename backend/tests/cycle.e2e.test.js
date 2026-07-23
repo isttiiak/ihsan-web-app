@@ -92,8 +92,14 @@ describe("Rayhanah Cycle API", () => {
 
     // Substituted score: zikr goal met 40 + streak 1*2 + quran 0 + salawat 10 = 52
     expect(me.score).toBe(52);
-    // Chips are filled from the same real effort — never 0/5-empty, no flag
-    expect(me.salatToday).toBeGreaterThan(0);
+    // The masked salat chip is capped by prayers plausibly elapsed at the
+    // viewer's local clock (a 4/5 at Dhuhr was a synthetic-number giveaway) —
+    // mirror the service's coarse windows so this test is stable at any hour.
+    const now = new Date();
+    const localMin = (((now.getUTCHours() * 60 + now.getUTCMinutes() + TZ) % 1440) + 1440) % 1440;
+    const h = localMin / 60;
+    const prayersElapsed = h >= 20 ? 5 : h >= 18.5 ? 4 : h >= 16 ? 3 : h >= 12.5 ? 2 : h >= 5 ? 1 : 0;
+    expect(me.salatToday).toBe(Math.min(prayersElapsed, Math.round(5 * Math.min(1, me.score / 100))));
     expect(me.fastedToday).toBe(true); // zikr goal met
     expect(me).not.toHaveProperty("excused");
     expect(me).not.toHaveProperty("excusedToday");

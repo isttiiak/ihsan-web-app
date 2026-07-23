@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
@@ -225,6 +226,13 @@ export default function SalatTracker() {
   // Handle primary status tap
   const handleStatus = (prayer: PrayerId, status: PrayerStatus) => {
     if (!user) { setShowGuestDialog(true); return; }
+    // HARD BLOCK (Istiak's spec): a prayer whose time hasn't arrived today
+    // cannot be logged in any state — the row is visually locked, and this
+    // guard closes every other code path.
+    if (selectedDate === todayStr() && isFuturePrayer(prayer, todayPrayerTimes?.times)) {
+      toast.error("This prayer's time hasn't arrived yet.", { id: 'salat-early', icon: '🔒' });
+      return;
+    }
     const current = log?.prayers[prayer];
     // If tapping the already-active status, clear it (toggle off)
     const newStatus: PrayerStatus = normaliseStatus(current?.status) === status ? 'pending' : status;

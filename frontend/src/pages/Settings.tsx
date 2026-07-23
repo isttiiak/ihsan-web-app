@@ -83,7 +83,10 @@ function Toggle({ checked, onChange, title, detail, accent = 'toggle-success' }:
 }
 
 export default function Settings() {
-  const { aiEnabled, setAiEnabled } = useAuthStore();
+  const { aiEnabled, setAiEnabled, user } = useAuthStore();
+  // Rayhanah is a sisters-only feature — its delete row must not appear for
+  // anyone else (a brother seeing a 🌸 cycle-data row was a bug).
+  const dataTargets = DATA_TARGETS.filter((t) => t.id !== 'cycle' || user?.gender === 'female');
   const {
     reduceMotion, highContrast, showNoorAllTime, showNoorToday,
     setReduceMotion, setHighContrast, setShowNoorAllTime, setShowNoorToday,
@@ -478,7 +481,7 @@ export default function Settings() {
 
             <p className="text-red-400/70 text-[11px] uppercase tracking-widest font-bold mb-2">Danger zone — cannot be undone</p>
             <div className="space-y-2">
-              {DATA_TARGETS.map((t) => (
+              {dataTargets.map((t) => (
                 <div key={t.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-red-500/15 bg-red-500/[0.04]">
                   <span className="text-lg shrink-0">{t.emoji}</span>
                   <div className="flex-1 min-w-0">

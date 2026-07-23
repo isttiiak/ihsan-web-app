@@ -277,7 +277,16 @@ async function statsForUser(
       quranGoal: base.quranGoal,
       salawatDone,
     });
-    base.salatToday = Math.round(5 * Math.min(1, score / 100));
+    // Cap the substituted salat chip at the number of prayers whose time has
+    // plausibly arrived at the viewer's local clock — a 4/5 at Dhuhr time was
+    // a dead giveaway that the number was synthetic (defeating the privacy
+    // goal). Coarse fixed windows; friends overwhelmingly share a locale.
+    // timezoneOffset is POSITIVE EAST here (frontend sends -getTimezoneOffset())
+    const nowUtc = new Date();
+    const localMinutes = (((nowUtc.getUTCHours() * 60 + nowUtc.getUTCMinutes() + timezoneOffset) % 1440) + 1440) % 1440;
+    const h = localMinutes / 60;
+    const prayersElapsed = h >= 20 ? 5 : h >= 18.5 ? 4 : h >= 16 ? 3 : h >= 12.5 ? 2 : h >= 5 ? 1 : 0;
+    base.salatToday = Math.min(prayersElapsed, Math.round(5 * Math.min(1, score / 100)));
     base.fastedToday = base.zikrGoalMet;
   }
 
