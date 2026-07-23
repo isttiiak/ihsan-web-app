@@ -210,7 +210,7 @@ export async function importAll(uid: string, data: BackupFile): Promise<ImportCo
           const { _id, __v, userId, createdAt, updatedAt, ...rest } = d as PlainDoc & { _id?: unknown; __v?: unknown; userId?: unknown; createdAt?: unknown; updatedAt?: unknown };
           return { replaceOne: { filter: { userId: uid, startDate: d.startDate }, replacement: { ...rest, userId: uid, startDate: d.startDate }, upsert: true } };
         });
-      if (ops.length) { await CycleLog.bulkWrite(ops); counts.cycleEntries += ops.length; }
+      if (ops.length) { await CycleLog.bulkWrite(ops as never); counts.cycleEntries += ops.length; }
     }
     counts.cycleEntries += await replaceByDate(CycleDay, data.cycle.days, 3000);
   }

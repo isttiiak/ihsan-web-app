@@ -1,8 +1,12 @@
-import admin from 'firebase-admin';
+import type { DecodedIdToken } from 'firebase-admin/auth';
+
+// firebase-admin v14 pulls in `jose` (ESM-only) at module load. Import the
+// admin subpackages lazily so ts-jest / CJS-loaded tests never touch them
+// when DEV_AUTH_BYPASS short-circuits the auth middleware.
 
 let initialized = false;
 
-export const initFirebaseAdmin = (): void => {
+export const initFirebaseAdmin = async (): Promise<void> => {
   if (initialized) return;
   const { FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY } = process.env;
 
@@ -13,8 +17,9 @@ export const initFirebaseAdmin = (): void => {
     return;
   }
 
-  admin.initializeApp({
-    credential: admin.credential.cert({
+  const { initializeApp, cert } = await import('firebase-admin/app');
+  initializeApp({
+    credential: cert({
       projectId: FIREBASE_PROJECT_ID,
       clientEmail: FIREBASE_CLIENT_EMAIL,
       privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
@@ -29,9 +34,10 @@ export const initFirebaseAdmin = (): void => {
 
 export const isFirebaseInitialized = (): boolean => initialized;
 
-export const verifyFirebaseToken = async (idToken: string): Promise<admin.auth.DecodedIdToken> => {
+export const verifyFirebaseToken = async (idToken: string): Promise<DecodedIdToken> => {
   if (!initialized) throw new Error('Firebase Admin not initialized');
-  return admin.auth().verifyIdToken(idToken);
+  const { getAuth } = await import('firebase-admin/auth');
+  return getAuth().verifyIdToken(idToken);
 };
 
 export const decodeUnverifiedJwt = (jwt: string): Record<string, unknown> | null => {

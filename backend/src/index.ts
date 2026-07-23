@@ -8,7 +8,7 @@ const PORT = process.env.PORT ?? 5000;
 
 (async () => {
   try {
-    initFirebaseAdmin();
+    await initFirebaseAdmin();
     // Listen BEFORE the DB connect: /api/health (no DB) answers immediately,
     // so Render marks the service live seconds earlier on cold starts.
     // Mongoose buffers model queries until the connection is up.
