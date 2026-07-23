@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useZikrStore } from '../store/useZikrStore.js';
@@ -63,12 +64,14 @@ export default function EditZikrModal({ name, onClose }: { name: string | null; 
     }
   };
 
-  return (
+  // Portaled: page ancestors create stacking contexts that let the sticky
+  // navbar float over in-tree modals.
+  return createPortal(
     <AnimatePresence>
       {name && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-4"
+          className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-4"
           onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
           <motion.div
@@ -117,6 +120,7 @@ export default function EditZikrModal({ name, onClose }: { name: string | null; 
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

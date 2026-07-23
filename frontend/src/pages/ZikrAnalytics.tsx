@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -86,7 +88,11 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
       });
       // Local live counter only reflects TODAY — don't inflate it with backfills
       if (daysBack === 0) addConfirmedCounts(selectedType, parsedAmount);
-      await queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      // Close IMMEDIATELY — the modal used to await the full analytics
+      // refetch here, which made saving feel slow on mobile networks. The
+      // refetch happens in the background; the charts catch up on their own.
+      void queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      toast.success(`+${parsedAmount.toLocaleString()} ${selectedType} logged for ${dayLabel(daysBack).toLowerCase()} 📿`, { id: 'zikr-backfill' });
       onClose();
     } catch {
       setSubmitError('Failed to save. Check your connection and try again.');
@@ -117,12 +123,15 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
     });
   };
 
-  return (
+  // Portaled to <body>: rendering inside the page's transformed/animated
+  // ancestors created a stacking context that let the sticky navbar float
+  // OVER the form. max-h + scroll keep it usable with the keyboard open.
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
@@ -130,7 +139,7 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
         transition={{ type: 'spring', damping: 25 }}
-        className="bg-brand-surface rounded-3xl w-full max-w-md shadow-2xl border border-brand-border overflow-hidden"
+        className="bg-brand-surface rounded-3xl w-full max-w-md shadow-2xl border border-brand-border overflow-hidden max-h-[88vh] overflow-y-auto"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-brand-border/60">
@@ -343,7 +352,8 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
           )}
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 }
 

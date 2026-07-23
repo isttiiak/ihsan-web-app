@@ -119,10 +119,20 @@ export default function ZikrLibrarySection() {
       </p>
 
       {ZIKR_LIBRARY.map((cat) => (
-        <div key={cat.id} className="rounded-2xl border border-emerald-500/10 bg-white/3 overflow-hidden">
+        <div key={cat.id} id={`zikr-cat-${cat.id}`} className="rounded-2xl border border-emerald-500/10 bg-white/3 overflow-hidden">
           <button
             className="w-full px-4 py-3 flex items-center justify-between text-left"
-            onClick={() => setOpenCat(openCat === cat.id ? null : cat.id)}
+            onClick={() => {
+              const opening = openCat !== cat.id;
+              setOpenCat(opening ? cat.id : null);
+              // When another section collapses above, the page used to land at
+              // the END of the newly expanded list — pin the header instead.
+              if (opening) {
+                setTimeout(() => {
+                  document.getElementById(`zikr-cat-${cat.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 280);
+              }
+            }}
             aria-expanded={openCat === cat.id}
           >
             <span className="text-white/80 text-sm font-bold">{cat.emoji} {cat.title}
@@ -150,11 +160,11 @@ export default function ZikrLibrarySection() {
                             </a>
                           </div>
                           <button
-                            className={`btn btn-xs rounded-lg shrink-0 ${added ? 'bg-brand-emerald/15 border-brand-emerald/30 text-brand-emerald cursor-default' : 'bg-white/5 border-emerald-500/20 text-white/70 hover:border-brand-emerald/50'}`}
+                            className={`btn btn-xs rounded-lg shrink-0 ${added ? 'bg-brand-emerald border-brand-emerald text-white font-bold cursor-default !opacity-100' : 'bg-white/5 border-emerald-500/20 text-white/70 hover:border-brand-emerald/50'}`}
                             disabled={added || adding === item.name}
                             onClick={() => addFromLibrary(item)}
                           >
-                            {added ? '✓ In your list' : adding === item.name ? '…' : '＋ Add'}
+                            {added ? '✓ In your list' : adding === item.name ? '…' : '＋ Add to list'}
                           </button>
                         </div>
                       </div>

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { useZikrStore } from '../store/useZikrStore.js';
 import type { CustomMeaning } from '../store/useZikrStore.js';
 import { useAuthStore } from '../store/useAuthStore.js';
+import { useUiStore } from '../store/useUiStore.js';
 import { useZikrTypes, useAddZikrType, useDeleteZikrType } from '../hooks/useZikrTypes.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -188,6 +189,7 @@ export default function ZikrCounter() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const { types, selected, counts, pending, isFlushing, customMeanings, selectType, increment, decrement, reset, scheduleFlush, setTypes, setCustomMeaning, removeType } = useZikrStore();
+  const reduceMotion = useUiStore((s) => s.reduceMotion);
   const [hiddenTypes, setHiddenTypes] = useState<string[]>(getHiddenZikr);
   const { data: fetchedTypes } = useZikrTypes();
   const addZikrType = useAddZikrType();
@@ -498,27 +500,26 @@ export default function ZikrCounter() {
             <ArrowsPointingOutIcon className="w-4 h-4" />
           </button>
 
-          {/* Number */}
+          {/* Number — a single cheap pop per tap (the old exit+enter pair ran
+              TWO spring animations per count and janked low-end phones);
+              reduce-motion users get an instant swap. */}
           <div className="pt-10 pb-4 text-center">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${selected}:${currentCount}`}
-                initial={{ scale: 0.85, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 1.15, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+            <motion.div
+              key={`${selected}:${currentCount}`}
+              initial={reduceMotion ? false : { scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'tween', duration: 0.12, ease: 'easeOut' }}
+            >
+              <div
+                className="text-8xl sm:text-9xl font-black text-white leading-none"
+                style={{
+                  textShadow: `0 0 40px ${color.glow}`,
+                  transition: 'text-shadow 0.25s ease',
+                }}
               >
-                <div
-                  className="text-8xl sm:text-9xl font-black text-white leading-none"
-                  style={{
-                    textShadow: `0 0 40px ${color.glow}, 0 0 90px ${color.glow}60`,
-                    transition: 'text-shadow 0.25s ease',
-                  }}
-                >
-                  {currentCount}
-                </div>
-              </motion.div>
-            </AnimatePresence>
+                {currentCount}
+              </div>
+            </motion.div>
           </div>
 
           {/* Divider */}
@@ -935,14 +936,16 @@ export default function ZikrCounter() {
       document.body,
       )}
 
-      {/* ── Add custom dhikr modal ── */}
+      {/* ── Add custom dhikr modal — portaled so the sticky navbar can never
+             float over the form (page ancestors create stacking contexts) ── */}
+      {createPortal(
       <AnimatePresence>
         {showAddCustom && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-4"
             onClick={(e) => { if (e.target === e.currentTarget) setShowAddCustom(false); }}
           >
             <motion.div
@@ -1042,7 +1045,9 @@ export default function ZikrCounter() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+      )}
 
       {/* ── Guest data-loss dialog ── */}
       <AnimatePresence>
@@ -1095,12 +1100,13 @@ export default function ZikrCounter() {
         )}
       </AnimatePresence>
 
-      {/* ── Manage my zikr list (remove) ── */}
+      {/* ── Manage my zikr list (remove) — portaled above the navbar ── */}
+      {createPortal(
       <AnimatePresence>
         {showManage && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-4"
             onClick={(e) => { if (e.target === e.currentTarget) setShowManage(false); }}
           >
             <motion.div
@@ -1151,7 +1157,9 @@ export default function ZikrCounter() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+      )}
 
       <ConfirmDialog
         open={!!confirmDelete}
