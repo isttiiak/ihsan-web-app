@@ -63,7 +63,7 @@ export default function QuranBrowse() {
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-white font-bold text-sm">{s.englishName}</span>
-                  <span className="block text-white/35 text-xs truncate">{s.englishNameTranslation} · {s.numberOfAyahs} āyāt · {s.revelationType}</span>
+                  <span className="block text-white/30 text-xs truncate">{s.englishNameTranslation} · {s.numberOfAyahs} āyāt · {s.revelationType}</span>
                 </span>
                 <span className="text-xl text-white/70 font-serif" dir="rtl">{s.name}</span>
               </button>

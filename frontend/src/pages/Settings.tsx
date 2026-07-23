@@ -103,7 +103,7 @@ function SectionCard({ icon, title, subtitle, delay, children }: {
           {icon}
           <h2 className="text-base sm:text-lg font-black text-white">{title}</h2>
         </div>
-        {subtitle && <p className="text-white/35 text-xs mb-4">{subtitle}</p>}
+        {subtitle && <p className="text-white/30 text-xs mb-4">{subtitle}</p>}
         {!subtitle && <div className="mb-4" />}
         {children}
       </div>
@@ -128,7 +128,7 @@ function Toggle({ checked, onChange, title, detail, accent = 'toggle-success' }:
       />
       <div className="min-w-0">
         <p className="font-semibold text-white/80 text-sm">{title}</p>
-        <p className="text-white/35 text-xs leading-snug">{detail}</p>
+        <p className="text-white/30 text-xs leading-snug">{detail}</p>
       </div>
     </label>
   );
@@ -543,15 +543,21 @@ export default function Settings() {
               )}
             </div>
 
-            <p className="text-red-400/70 text-[11px] uppercase tracking-widest font-bold mb-2">Danger zone — cannot be undone</p>
-            <div className="space-y-3">
+            {/* separator: everything below is destructive (Istiak's spec) */}
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 border-t border-red-500/25" />
+              <span className="text-red-400/80 text-[11px] uppercase tracking-widest font-bold">⚠️ Danger zone</span>
+              <div className="flex-1 border-t border-red-500/25" />
+            </div>
+            <div className="rounded-2xl bg-red-500/[0.08] border border-red-500/25 p-3 space-y-3">
+              <p className="text-red-300/60 text-[11px]">These actions cannot be undone — take a full backup first.</p>
               {dangerGroups.map((g) => (
                 <div key={g.id} className={`rounded-2xl border ${g.card} p-3 space-y-1.5`}>
                   <p className="text-white/70 text-xs font-black">{g.emoji} {g.title}</p>
                   {g.rows.map((row) => (
                     <div key={row.id} className={`flex items-center gap-3 py-1.5 ${row.sub ? 'pl-4 border-l-2 border-white/5 ml-1' : ''}`}>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm ${row.sub ? 'text-white/55' : 'text-white/75 font-semibold'}`}>{row.label}</p>
+                        <p className={`text-sm ${row.sub ? 'text-white/50' : 'text-white/75 font-semibold'}`}>{row.label}</p>
                         <p className="text-white/30 text-[11px]">{row.detail}</p>
                       </div>
                       {confirmTarget === row.id ? (

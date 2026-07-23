@@ -35,11 +35,17 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
     return null;
   };
 
-  // Predicted window: nextStart .. nextStart + avgPeriodDays - 1
+  // Predicted windows for the NEXT 3 cycles (Istiak: match the analytics
+  // page) — window n starts at nextStart + n·avgCycleDays, each lasting
+  // avgPeriodDays.
   const predictedDays = new Set<string>();
   if (summary.prediction.nextStart) {
-    for (let i = 0; i < Math.max(1, summary.prediction.avgPeriodDays); i++) {
-      predictedDays.add(shiftStr(summary.prediction.nextStart, i));
+    const cycleLen = Math.max(1, summary.prediction.avgCycleDays || 28);
+    for (let w = 0; w < 3; w++) {
+      const windowStart = shiftStr(summary.prediction.nextStart, w * cycleLen);
+      for (let i = 0; i < Math.max(1, summary.prediction.avgPeriodDays); i++) {
+        predictedDays.add(shiftStr(windowStart, i));
+      }
     }
   }
   const noteByDate = new Map(summary.days.map((d) => [d.date, d]));
@@ -86,10 +92,10 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
               title={cycleType ? (cycleType === 'nifas' ? 'Nifās day' : 'Period day') : predicted ? 'Expected period' : undefined}
               className={[
                 'relative aspect-square rounded-xl grid place-items-center text-[11px] font-bold transition-all',
-                cycleType === 'hayd' ? 'bg-pink-500/35 text-pink-100' :
-                cycleType === 'nifas' ? 'bg-purple-500/35 text-purple-100' :
+                cycleType === 'hayd' ? 'bg-pink-500/30 text-pink-100' :
+                cycleType === 'nifas' ? 'bg-purple-500/30 text-purple-100' :
                 predicted ? 'border border-dashed border-pink-400/50 text-pink-200/80' :
-                'text-white/45 bg-white/[0.03]',
+                'text-white/40 bg-white/[0.03]',
                 isToday ? 'ring-2 ring-white/70' : '',
               ].join(' ')}
             >
@@ -105,11 +111,18 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
         })}
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[10px] text-white/35">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[10px] text-white/30">
         <span><span className="inline-block w-2.5 h-2.5 rounded bg-pink-500/50 align-middle mr-1" />period</span>
         <span><span className="inline-block w-2.5 h-2.5 rounded bg-purple-500/50 align-middle mr-1" />nifās</span>
-        <span><span className="inline-block w-2.5 h-2.5 rounded border border-dashed border-pink-400/60 align-middle mr-1" />expected</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded border border-dashed border-pink-400/60 align-middle mr-1" />expected (next 3)</span>
         <span><span className="inline-block w-2.5 h-2.5 rounded ring-2 ring-white/70 align-middle mr-1" />today</span>
+      </div>
+      {/* the small dots are the flow notes from "How are you today?" */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-[10px] text-white/30">
+        <span className="text-white/25">flow notes:</span>
+        <span><span className="inline-block w-1.5 h-1.5 rounded-full align-middle mr-1" style={{ background: FLOW_DOT.light }} />light</span>
+        <span><span className="inline-block w-1.5 h-1.5 rounded-full align-middle mr-1" style={{ background: FLOW_DOT.medium }} />medium</span>
+        <span><span className="inline-block w-1.5 h-1.5 rounded-full align-middle mr-1" style={{ background: FLOW_DOT.heavy }} />heavy</span>
       </div>
     </div>
   );

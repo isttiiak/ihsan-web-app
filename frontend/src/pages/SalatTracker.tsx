@@ -549,7 +549,7 @@ export default function SalatTracker() {
                         <span className="text-base shrink-0">🕯️</span>
                         <div className="min-w-0">
                           <p className="text-brand-gold font-bold text-xs leading-tight">Don't forget Witr — it's wājib!</p>
-                          <p className="text-white/35 text-xs leading-relaxed mt-0.5">
+                          <p className="text-white/30 text-xs leading-relaxed mt-0.5">
                             Pray Witr after Isha before Fajr — usually 3 rak'ahs with Qunūt du'ā. The Prophet ﷺ never abandoned it, even while travelling.
                           </p>
                           <a
@@ -691,7 +691,7 @@ export default function SalatTracker() {
                         const minRakat = computeMinRakat(naflEntry.types ?? []);
                         const currentRakat = naflEntry.rakat ?? minRakat;
                         return (
-                          <div className={`flex items-center gap-3 px-2 py-1.5 rounded-xl transition-colors ${minRakat > 2 ? 'bg-cyan-500/8 border border-cyan-400/20' : ''}`}>
+                          <div className={`flex items-center gap-3 px-2 py-1.5 rounded-xl transition-colors ${minRakat > 2 ? 'bg-cyan-500/10 border border-cyan-400/20' : ''}`}>
                             <p className="text-white/30 text-xs">Rak'ahs prayed:</p>
                             <div className="flex items-center gap-2">
                               <motion.button

@@ -128,7 +128,7 @@ export default function FastingAnalytics() {
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                     className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] px-3 py-3"
                   >
-                    <p className="text-white/35 text-[10px] uppercase tracking-widest font-bold">{s.label}</p>
+                    <p className="text-white/30 text-[10px] uppercase tracking-widest font-bold">{s.label}</p>
                     <p className="text-white font-black text-2xl tabular-nums mt-0.5">{s.value}</p>
                     <p className="text-white/25 text-[10px]">{s.sub}</p>
                   </motion.div>
@@ -155,7 +155,7 @@ export default function FastingAnalytics() {
                           </span>
                           <span className="text-white/80 text-xs font-bold tabular-nums">{count}</span>
                         </div>
-                        <div className="w-full bg-white/8 rounded-full h-2.5 overflow-hidden">
+                        <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${count > 0 ? Math.max(pct, 4) : 0}%` }}

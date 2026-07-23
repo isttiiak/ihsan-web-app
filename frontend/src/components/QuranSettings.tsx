@@ -2,14 +2,13 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { useQuranSummary, useUpdateQuranProfile, useResetKhatam } from '../hooks/useQuran.js';
+import { useQuranSummary, useUpdateQuranProfile } from '../hooks/useQuran.js';
 import { TRANSLATIONS, selectedTranslations } from '../utils/quranData.js';
 import {
   ARABIC_FONTS, getArabicFont, setArabicFont,
   FONT_RANGES, getFontPx, setFontPx, type FontKind,
   translitEnabled, setTranslitEnabled,
 } from '../utils/quranPrefs.js';
-import ConfirmDialog from './ConfirmDialog.js';
 
 /**
  * Quran settings — a right-side DRAWER (Istiak's spec), available from every
@@ -57,7 +56,6 @@ const GOAL_PRESETS = [1, 3, 5, 10, 20];
 export default function QuranSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data: summary } = useQuranSummary();
   const updateProfile = useUpdateQuranProfile();
-  const resetKhatam = useResetKhatam();
 
   const savedGoal = summary?.profile.dailyGoalAyat ?? 0;
   const [goal, setGoal] = useState<number>(savedGoal);
@@ -65,8 +63,6 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
   const [translations, setTranslations] = useState<string[]>(selectedTranslations);
   const [arabicFontId, setArabicFontId] = useState(() => getArabicFont().id);
   const [translit, setTranslit] = useState(translitEnabled);
-  // danger-zone double confirm: inline tap → ConfirmDialog (app-wide rule)
-  const [confirmDanger, setConfirmDanger] = useState<null | 'khatam' | 'goal'>(null);
 
   // Keep the local goal field in sync when the drawer (re)opens with fresh data
   useEffect(() => { if (open) setGoal(summary?.profile.dailyGoalAyat ?? 0); }, [open, summary?.profile.dailyGoalAyat]);
@@ -189,14 +185,14 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
               <div className="space-y-2.5">
                 <p className="text-white/50 text-xs font-bold">🌐 Translations <span className="text-white/25 font-normal">(up to two shown together)</span></p>
                 <div>
-                  <label className="text-white/35 text-[10px] font-bold" htmlFor="q-tr1">Primary</label>
+                  <label className="text-white/30 text-[10px] font-bold" htmlFor="q-tr1">Primary</label>
                   <select id="q-tr1" className="select select-sm w-full mt-1 bg-white/5 border-emerald-500/10 text-white rounded-xl"
                     value={primary} onChange={(e) => setPrimary(e.target.value)}>
                     {TRANSLATIONS.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-white/35 text-[10px] font-bold" htmlFor="q-tr2">Second (optional)</label>
+                  <label className="text-white/30 text-[10px] font-bold" htmlFor="q-tr2">Second (optional)</label>
                   <select id="q-tr2" className="select select-sm w-full mt-1 bg-white/5 border-emerald-500/10 text-white rounded-xl"
                     value={secondary} onChange={(e) => setSecondary(e.target.value)}>
                     <option value="none">None — one translation only</option>
@@ -216,7 +212,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                 >
                   {ARABIC_FONTS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
                 </select>
-                <p dir="rtl" lang="ar" className="text-white/85 text-2xl leading-loose text-center pt-1"
+                <p dir="rtl" lang="ar" className="text-white/80 text-2xl leading-loose text-center pt-1"
                   style={{ fontFamily: ARABIC_FONTS.find((f) => f.id === arabicFontId)?.stack }}>
                   بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
                 </p>
@@ -227,7 +223,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                 <label className="flex items-center justify-between gap-3 cursor-pointer">
                   <div>
                     <p className="text-white/70 text-sm font-bold">🗣️ Transliteration</p>
-                    <p className="text-white/35 text-[11px] mt-0.5">Latin pronunciation under the Arabic — for readers still learning the script.</p>
+                    <p className="text-white/30 text-[11px] mt-0.5">Latin pronunciation under the Arabic — for readers still learning the script.</p>
                   </div>
                   <input type="checkbox" className="toggle toggle-sm toggle-warning"
                     checked={translit}
@@ -252,52 +248,13 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                 Save reading settings
               </button>
 
-              {/* ── Danger zone — restart options with proper double-confirm ── */}
-              <div className="rounded-2xl border border-red-500/20 bg-red-500/[0.04] p-4 space-y-2.5">
-                <p className="text-red-400/70 text-[11px] uppercase tracking-widest font-bold">Danger zone</p>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white/70 text-sm font-semibold">🕋 Reset khatam journey</p>
-                    <p className="text-white/35 text-[11px]">Bookmark returns to 1:1 and the journey un-starts. Completed khatm count stays.</p>
-                  </div>
-                  <button className="btn btn-xs rounded-lg bg-red-500/10 border-red-500/30 text-red-300 hover:bg-red-500/20 shrink-0"
-                    onClick={() => setConfirmDanger('khatam')}>Reset</button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white/70 text-sm font-semibold">🎯 Remove reading goal</p>
-                    <p className="text-white/35 text-[11px]">Back to no daily target — reading still counts and history stays.</p>
-                  </div>
-                  <button className="btn btn-xs rounded-lg bg-red-500/10 border-red-500/30 text-red-300 hover:bg-red-500/20 shrink-0"
-                    disabled={savedGoal === 0}
-                    onClick={() => setConfirmDanger('goal')}>Remove</button>
-                </div>
-              </div>
+              {/* Deletes/resets live in ONE place now (Istiak's spec): the main
+                  Settings danger zone — including khatam reset + goal removal. */}
+              <p className="text-white/25 text-[11px] leading-relaxed">
+                Looking to reset the khatam journey or remove the goal? Every data
+                reset lives in <a href="/settings" className="underline text-white/40">Settings → Danger zone</a>.
+              </p>
             </div>
-
-            <ConfirmDialog
-              open={confirmDanger !== null}
-              title={confirmDanger === 'khatam' ? 'Reset your khatam journey?' : 'Remove your reading goal?'}
-              message={confirmDanger === 'khatam'
-                ? 'Your bookmark goes back to the very beginning (1:1) and the journey becomes un-started. Your completed khatm count and reading history are kept.'
-                : 'Your daily āyah target will be removed. Reading still counts toward your history — there will simply be no goal ring.'}
-              confirmLabel={confirmDanger === 'khatam' ? 'Yes, reset khatam' : 'Yes, remove goal'}
-              onConfirm={() => {
-                if (confirmDanger === 'khatam') {
-                  resetKhatam.mutate(undefined, {
-                    onSuccess: () => toast.success('Khatam journey reset 🕋', { id: 'khatam-reset' }),
-                    onError: () => toast.error('Could not reset — try again.', { id: 'khatam-reset' }),
-                  });
-                } else if (confirmDanger === 'goal') {
-                  updateProfile.mutate({ dailyGoalAyat: 0 }, {
-                    onSuccess: () => { setGoal(0); toast.success('Reading goal removed 🌿', { id: 'quran-goal' }); },
-                    onError: () => toast.error('Could not save — try again.', { id: 'quran-goal' }),
-                  });
-                }
-                setConfirmDanger(null);
-              }}
-              onCancel={() => setConfirmDanger(null)}
-            />
           </motion.aside>
         </>
       )}

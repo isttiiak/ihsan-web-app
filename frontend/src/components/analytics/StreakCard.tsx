@@ -61,12 +61,12 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
       }`}
     >
       <motion.div
-        className="pointer-events-none absolute -top-20 -left-16 w-72 h-72 rounded-full blur-3xl bg-gradient-radial from-brand-gold/45 to-transparent"
+        className="pointer-events-none absolute -top-20 -left-16 w-72 h-72 rounded-full blur-3xl bg-gradient-radial from-brand-gold/40 to-transparent"
         animate={prefersReducedMotion ? {} : { scale: [1, 1.08, 1], opacity: [0.35, 0.55, 0.35] }}
         transition={{ duration: 6, repeat: Infinity }}
       />
       <motion.div
-        className="pointer-events-none absolute -bottom-24 -right-20 w-80 h-80 rounded-full blur-3xl bg-gradient-radial from-brand-magenta/35 to-transparent"
+        className="pointer-events-none absolute -bottom-24 -right-20 w-80 h-80 rounded-full blur-3xl bg-gradient-radial from-brand-magenta/30 to-transparent"
         animate={prefersReducedMotion ? {} : { scale: [1.1, 1, 1.1] }}
         transition={{ duration: 8, repeat: Infinity }}
       />
@@ -154,7 +154,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
             >
               {currentStreak || 0}
             </motion.div>
-            <p className="text-xs font-bold text-white/85">Day Streak</p>
+            <p className="text-xs font-bold text-white/80">Day Streak</p>
           </div>
 
           <div className="text-center border-l border-emerald-500/10">
@@ -310,7 +310,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
           <p className="text-base font-bold text-white/95 mb-2 flex items-center gap-1.5">
             <BoltIcon className="w-4 h-4" /> How Streaks Work:
           </p>
-          <div className="space-y-1.5 text-sm text-white/85">
+          <div className="space-y-1.5 text-sm text-white/80">
             <p className="flex items-start gap-2">
               <CheckCircleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>Complete your daily zikr goal to continue your streak</span>

@@ -781,7 +781,7 @@ export default function Profile() {
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${
                         !googleIsPrimary
                           ? 'bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald'
-                          : 'bg-white/5 border border-brand-border text-white/35'
+                          : 'bg-white/5 border border-brand-border text-white/30'
                       }`}>
                         {!googleIsPrimary ? 'PRIMARY' : 'SECONDARY'}
                       </span>
@@ -810,7 +810,7 @@ export default function Profile() {
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${
                           googleIsPrimary
                             ? 'bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald'
-                            : 'bg-white/5 border border-brand-border text-white/35'
+                            : 'bg-white/5 border border-brand-border text-white/30'
                         }`}>
                           {googleIsPrimary ? 'PRIMARY' : 'SECONDARY'}
                         </span>
@@ -846,7 +846,7 @@ export default function Profile() {
                           disabled={unlinkingGoogle || googleIsPrimary}
                           className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all whitespace-nowrap ${
                             googleIsPrimary
-                              ? 'bg-white/3 border border-brand-border text-white/20 cursor-not-allowed'
+                              ? 'bg-white/5 border border-brand-border text-white/20 cursor-not-allowed'
                               : 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/60'
                           }`}
                         >
@@ -1119,7 +1119,7 @@ export default function Profile() {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-lg font-black text-white">Change Profile Photo</h3>
-                <p className="text-white/35 text-xs mt-0.5">How would you like to update?</p>
+                <p className="text-white/30 text-xs mt-0.5">How would you like to update?</p>
               </div>
               <button onClick={() => setShowPhotoChoice(false)} className="text-white/40 hover:text-white p-1 transition-colors">
                 <XMarkIcon className="w-5 h-5" />
@@ -1193,7 +1193,7 @@ export default function Profile() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-black text-white">Choose Avatar</h3>
-                <p className="text-white/35 text-xs mt-0.5">Nature-themed icons — no upload required</p>
+                <p className="text-white/30 text-xs mt-0.5">Nature-themed icons — no upload required</p>
               </div>
               <button onClick={() => setAvatarModalOpen(false)} className="text-white/40 hover:text-white transition-colors p-1">
                 <XMarkIcon className="w-5 h-5" />
@@ -1252,7 +1252,7 @@ export default function Profile() {
               </div>
             </div>
 
-            <p className="text-white/35 text-xs leading-relaxed px-2">
+            <p className="text-white/30 text-xs leading-relaxed px-2">
               Compressed to 400px JPEG. Stored securely in your account.
             </p>
 

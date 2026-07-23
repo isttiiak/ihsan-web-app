@@ -160,29 +160,6 @@ const GLOW_PALETTE = [
   { glow: 'rgba(168,85,247,0.9)',  ring: 'rgba(168,85,247,0.3)',  bar: 'bg-purple-500',    solid: '#a855f7' },
 ];
 
-// Sparkle positions for the full-screen focus overlay — spread across the whole viewport
-const FS_SPARKLES = [
-  { x: '4%',  y: '8%',  size: 3, dur: 3.2, del: 0.0 },
-  { x: '14%', y: '82%', size: 2, dur: 4.1, del: 0.5 },
-  { x: '24%', y: '28%', size: 4, dur: 2.8, del: 1.0 },
-  { x: '33%', y: '68%', size: 2, dur: 3.7, del: 0.3 },
-  { x: '41%', y: '13%', size: 3, dur: 4.5, del: 0.8 },
-  { x: '54%', y: '90%', size: 2, dur: 3.0, del: 1.5 },
-  { x: '63%', y: '22%', size: 4, dur: 2.5, del: 0.2 },
-  { x: '71%', y: '58%', size: 3, dur: 4.2, del: 1.1 },
-  { x: '79%', y: '8%',  size: 2, dur: 3.8, del: 0.7 },
-  { x: '89%', y: '78%', size: 3, dur: 3.3, del: 0.4 },
-  { x: '7%',  y: '48%', size: 2, dur: 4.8, del: 1.3 },
-  { x: '17%', y: '18%', size: 3, dur: 2.9, del: 0.9 },
-  { x: '47%', y: '42%', size: 2, dur: 4.0, del: 0.6 },
-  { x: '59%', y: '75%', size: 4, dur: 3.5, del: 1.2 },
-  { x: '87%', y: '38%', size: 2, dur: 2.7, del: 1.6 },
-  { x: '29%', y: '93%', size: 3, dur: 3.9, del: 0.1 },
-  { x: '77%', y: '32%', size: 2, dur: 4.3, del: 0.8 },
-  { x: '51%', y: '62%', size: 3, dur: 3.1, del: 1.4 },
-  { x: '93%', y: '12%', size: 2, dur: 4.6, del: 0.5 },
-  { x: '11%', y: '70%', size: 4, dur: 2.6, del: 1.0 },
-];
 
 export default function ZikrCounter() {
   const navigate = useNavigate();
@@ -431,7 +408,7 @@ export default function ZikrCounter() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="flex items-center gap-2 bg-white/8 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-emerald-500/15"
+          className="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-emerald-500/15"
           style={{ background: 'rgba(255,255,255,0.07)' }}
         >
           {/* Selected name — glowing accent */}
@@ -487,7 +464,7 @@ export default function ZikrCounter() {
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.08 }}
-          className="relative rounded-3xl border border-emerald-500/20 bg-white/8 backdrop-blur-lg shadow-2xl overflow-hidden"
+          className="relative rounded-3xl border border-emerald-500/20 bg-white/10 backdrop-blur-lg shadow-2xl overflow-hidden"
           style={{ background: 'rgba(255,255,255,0.07)' }}
         >
           {/* Focus mode button */}
@@ -635,7 +612,7 @@ export default function ZikrCounter() {
         </motion.div>
 
         {/* Keyboard hint */}
-        <p className="text-center text-white/35 text-xs">
+        <p className="text-center text-white/30 text-xs">
           Press <kbd className="kbd kbd-xs bg-white/15 text-white border-emerald-500/20">Space</kbd> to count
         </p>
 
@@ -668,15 +645,17 @@ export default function ZikrCounter() {
                 aria-expanded={refExpanded}
                 className="w-full px-4 py-3 flex items-center justify-between text-left"
               >
-                <span className="text-white/45 text-[11px] uppercase tracking-widest font-bold">📖 Full text & reference</span>
+                <span className="text-white/40 text-[11px] uppercase tracking-widest font-bold">📖 Full text & reference</span>
                 <ChevronDownIcon className={`w-4 h-4 text-white/30 transition-transform ${refExpanded ? 'rotate-180' : ''}`} />
               </button>
               <AnimatePresence>
                 {refExpanded && (
                   <motion.div
-                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="overflow-hidden"
+                    // NO height animation: measuring 'auto' before the Arabic
+                    // web font loads clipped long texts (Durud Ibrahim showed
+                    // half its lines). Fade only — content always full height.
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                   >
                     <div className="px-4 pb-4 space-y-3">
                       {full?.arabic && (
@@ -687,7 +666,7 @@ export default function ZikrCounter() {
                         </p>
                       )}
                       {full?.meaning && (
-                        <p className="text-sm text-white/65 leading-relaxed">{full.meaning}</p>
+                        <p className="text-sm text-white/60 leading-relaxed">{full.meaning}</p>
                       )}
                       {full?.virtue && (
                         <p className="text-brand-gold/60 text-xs leading-relaxed">✨ {full.virtue}</p>
@@ -738,70 +717,38 @@ export default function ZikrCounter() {
             className="fixed inset-0 flex flex-col overflow-hidden"
             style={{ zIndex: 99999, background: '#030609' }}
           >
-            {/* ── Animated color orbs ── */}
+            {/* ── Calm ambiance (redesigned, Istiak's spec): ONE fixed emerald
+                   tone — no per-tap rainbow cycling, no sparkle strobing.
+                   Two slow breathing orbs, nothing else moves. ── */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
               <motion.div
                 className="absolute rounded-full"
                 style={{
-                  width: '70vw', height: '70vw',
-                  left: '5%', top: '-10%',
-                  background: `radial-gradient(circle, ${color.solid}18 0%, transparent 70%)`,
+                  width: '75vw', height: '75vw',
+                  left: '0%', top: '-15%',
+                  background: 'radial-gradient(circle, rgba(16,185,129,0.10) 0%, transparent 70%)',
+                  filter: 'blur(70px)',
+                }}
+                animate={{ scale: [1, 1.08, 1], opacity: [0.8, 1, 0.8] }}
+                transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <motion.div
+                className="absolute rounded-full"
+                style={{
+                  width: '60vw', height: '60vw',
+                  right: '-10%', bottom: '-10%',
+                  background: 'radial-gradient(circle, rgba(13,148,136,0.08) 0%, transparent 70%)',
                   filter: 'blur(60px)',
-                  transition: 'background 0.6s ease',
                 }}
-                animate={{ x: [0, 60, -30, 0], y: [0, 40, -20, 0] }}
-                transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+                animate={{ scale: [1, 1.06, 1], opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 5 }}
               />
-              <motion.div
-                className="absolute rounded-full"
-                style={{
-                  width: '55vw', height: '55vw',
-                  right: '-5%', bottom: '-5%',
-                  background: `radial-gradient(circle, ${color.solid}12 0%, transparent 70%)`,
-                  filter: 'blur(50px)',
-                  transition: 'background 0.6s ease',
-                }}
-                animate={{ x: [0, -50, 25, 0], y: [0, -35, 20, 0] }}
-                transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-              />
-              <motion.div
-                className="absolute rounded-full"
-                style={{
-                  width: '40vw', height: '40vw',
-                  left: '40%', top: '30%',
-                  background: `radial-gradient(circle, ${color.solid}08 0%, transparent 70%)`,
-                  filter: 'blur(40px)',
-                  transition: 'background 0.6s ease',
-                }}
-                animate={{ x: [0, 30, -40, 0], y: [0, -25, 35, 0] }}
-                transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-              />
-            </div>
-
-            {/* ── Sparkle particles ── */}
-            <div className="absolute inset-0 pointer-events-none">
-              {FS_SPARKLES.map((s, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute rounded-full"
-                  style={{
-                    left: s.x, top: s.y,
-                    width: s.size, height: s.size,
-                    background: color.solid,
-                    boxShadow: `0 0 ${s.size * 4}px ${color.solid}`,
-                    transition: 'background 0.6s ease, box-shadow 0.6s ease',
-                  }}
-                  animate={{ opacity: [0, 0.85, 0], scale: [0.4, 1.6, 0.4] }}
-                  transition={{ duration: s.dur, delay: s.del, repeat: Infinity, ease: 'easeInOut' }}
-                />
-              ))}
             </div>
 
             {/* ── Top bar: zikr selector + close ── */}
             <div className="relative z-10 flex items-center justify-between px-5 sm:px-8 pt-5 pb-2 flex-shrink-0">
               <div className="flex items-center gap-1.5 opacity-55 hover:opacity-90 transition-opacity cursor-pointer">
-                <span className="text-sm font-bold truncate max-w-[160px] sm:max-w-[260px]"
-                  style={{ color: color.solid, textShadow: `0 0 12px ${color.solid}80`, transition: 'color 0.4s ease' }}>
+                <span className="text-sm font-bold truncate max-w-[160px] sm:max-w-[260px] text-emerald-300/90">
                   {selected}
                 </span>
                 <select
@@ -820,7 +767,7 @@ export default function ZikrCounter() {
               </div>
               <button
                 onClick={() => setFullScreen(false)}
-                className="p-2 rounded-xl bg-white/6 hover:bg-white/14 text-white/35 hover:text-white/80 transition-all"
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/30 hover:text-white/80 transition-all"
                 title="Exit focus mode (Esc)"
                 aria-label="Exit full-screen focus mode"
               >
@@ -838,7 +785,7 @@ export default function ZikrCounter() {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   dir="rtl"
-                  className="text-white/18 text-center"
+                  className="text-white/20 text-center"
                   style={{
                     fontFamily: "'Amiri', 'Scheherazade New', serif",
                     fontSize: 'clamp(22px, 5vw, 40px)',
@@ -848,24 +795,20 @@ export default function ZikrCounter() {
                 </motion.p>
               )}
 
-              {/* Huge counter number */}
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={`fs:${selected}:${currentCount}`}
-                  initial={{ scale: 0.82, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 1.15, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 520, damping: 30 }}
-                  className="font-black text-white tabular-nums leading-none block text-center"
-                  style={{
-                    fontSize: 'clamp(100px, 28vw, 260px)',
-                    textShadow: `0 0 80px ${color.solid}, 0 0 200px ${color.solid}50`,
-                    transition: 'text-shadow 0.4s ease',
-                  }}
-                >
-                  {currentCount}
-                </motion.span>
-              </AnimatePresence>
+              {/* Huge counter number — one soft pop per tap, steady gentle glow */}
+              <motion.span
+                key={`fs:${selected}:${currentCount}`}
+                initial={reduceMotion ? false : { scale: 0.94 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'tween', duration: 0.14, ease: 'easeOut' }}
+                className="font-black text-white/95 tabular-nums leading-none block text-center"
+                style={{
+                  fontSize: 'clamp(100px, 28vw, 260px)',
+                  textShadow: '0 0 60px rgba(16,185,129,0.35)',
+                }}
+              >
+                {currentCount}
+              </motion.span>
 
               {/* Transliteration — faint caption below number */}
               {meaning?.transliteration && (
@@ -874,28 +817,28 @@ export default function ZikrCounter() {
                 </p>
               )}
 
-              {/* Long colored count button with ripple */}
+              {/* Count button — deep calm emerald, soft ripple, no glare */}
               <div className="relative" style={{ width: 'min(88vw, 520px)' }}>
-                {/* Ripple effect on each count */}
-                <motion.div
-                  key={`ripple:${currentCount}`}
-                  className="absolute inset-0 rounded-3xl pointer-events-none"
-                  initial={{ scale: 1, opacity: 0.45 }}
-                  animate={{ scale: 1.35, opacity: 0 }}
-                  transition={{ duration: 0.55, ease: 'easeOut' }}
-                  style={{ background: color.solid }}
-                />
+                {!reduceMotion && (
+                  <motion.div
+                    key={`ripple:${currentCount}`}
+                    className="absolute inset-0 rounded-3xl pointer-events-none"
+                    initial={{ scale: 1, opacity: 0.25 }}
+                    animate={{ scale: 1.25, opacity: 0 }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                    style={{ background: '#10b981' }}
+                  />
+                )}
                 <motion.button
-                  whileTap={{ scale: 0.96 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={onIncrement}
-                  className="relative flex items-center justify-center gap-3 font-black rounded-3xl w-full select-none outline-none border-0"
+                  className="relative flex items-center justify-center gap-3 font-black rounded-3xl w-full select-none outline-none border border-emerald-400/25 text-white"
                   style={{
                     height: '76px',
                     fontSize: 'clamp(20px, 3vw, 28px)',
-                    background: color.solid,
-                    color: '#030609',
-                    boxShadow: `0 0 50px ${color.solid}55, 0 16px 60px ${color.solid}25`,
-                    transition: 'background 0.4s ease, box-shadow 0.4s ease',
+                    background: 'linear-gradient(180deg, rgba(16,185,129,0.32) 0%, rgba(6,95,70,0.45) 100%)',
+                    boxShadow: '0 12px 40px rgba(16,185,129,0.18)',
+                    backdropFilter: 'blur(6px)',
                   }}
                 >
                   <PlusIcon className="w-8 h-8 sm:w-9 sm:h-9" />
@@ -920,7 +863,7 @@ export default function ZikrCounter() {
 
             {/* Bottom: keyboard hint on desktop, tap-to-close button on mobile */}
             <div className="relative z-10 flex flex-col items-center gap-3 pb-6 flex-shrink-0">
-              <p className="hidden sm:block text-white/18 text-[11px] tracking-wider">
+              <p className="hidden sm:block text-white/20 text-[11px] tracking-wider">
                 SPACE to count · ESC to exit
               </p>
               <button
@@ -945,7 +888,7 @@ export default function ZikrCounter() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-4"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-4"
             onClick={(e) => { if (e.target === e.currentTarget) setShowAddCustom(false); }}
           >
             <motion.div
@@ -1106,7 +1049,7 @@ export default function ZikrCounter() {
         {showManage && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-4"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-4"
             onClick={(e) => { if (e.target === e.currentTarget) setShowManage(false); }}
           >
             <motion.div

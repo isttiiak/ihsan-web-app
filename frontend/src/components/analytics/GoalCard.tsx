@@ -58,12 +58,12 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
       )}
 
       <motion.div
-        className="pointer-events-none absolute -top-20 -right-16 w-72 h-72 rounded-full blur-3xl bg-gradient-radial from-brand-magenta/45 to-transparent"
+        className="pointer-events-none absolute -top-20 -right-16 w-72 h-72 rounded-full blur-3xl bg-gradient-radial from-brand-magenta/40 to-transparent"
         animate={prefersReducedMotion ? {} : { scale: [1, 1.08, 1], opacity: [0.35, 0.55, 0.35] }}
         transition={{ duration: 6, repeat: Infinity }}
       />
       <motion.div
-        className="pointer-events-none absolute -bottom-24 -left-20 w-80 h-80 rounded-full blur-3xl bg-gradient-radial from-brand-magenta/35 to-transparent"
+        className="pointer-events-none absolute -bottom-24 -left-20 w-80 h-80 rounded-full blur-3xl bg-gradient-radial from-brand-magenta/30 to-transparent"
         animate={prefersReducedMotion ? {} : { scale: [1.1, 1, 1.1] }}
         transition={{ duration: 8, repeat: Infinity }}
       />

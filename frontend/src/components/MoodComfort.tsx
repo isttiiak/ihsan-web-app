@@ -64,7 +64,7 @@ export default function MoodComfort({
           <span className="text-white/40 text-xs">finding the right words…</span>
         </div>
       ) : (
-        <p className="text-purple-100/85 text-sm leading-relaxed mt-2">{message}</p>
+        <p className="text-purple-100/80 text-sm leading-relaxed mt-2">{message}</p>
       )}
       <p className="text-white/30 text-[10px] mt-2">
         ✨ A companion's words — not medical or religious advice.

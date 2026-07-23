@@ -59,7 +59,7 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
             <span className="text-3xl">👥</span>
             <div>
               <h3 className="text-lg font-black text-white leading-tight">Your friends</h3>
-              <p className="text-white/35 text-[11px]">
+              <p className="text-white/30 text-[11px]">
                 {friends ? `${friends.length} connected` : 'Loading…'}
               </p>
             </div>
@@ -93,7 +93,7 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
                     <Avatar name={f.displayName} photoUrl={f.photoUrl} />
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-bold text-sm truncate">{f.displayName}</p>
-                      <p className="text-white/35 text-[11px]">{formatConnectedSince(f.connectedSince)}</p>
+                      <p className="text-white/30 text-[11px]">{formatConnectedSince(f.connectedSince)}</p>
                     </div>
                     {!confirming && (
                       <button
@@ -234,7 +234,7 @@ export default function Friends() {
             >
               <p className="text-4xl">🌱</p>
               <p className="text-white/70 font-bold text-sm">No friends connected yet</p>
-              <p className="text-white/35 text-xs max-w-xs mx-auto leading-relaxed">
+              <p className="text-white/30 text-xs max-w-xs mx-auto leading-relaxed">
                 Invite a friend who uses Ihsan — the moment they open your link,
                 you'll both appear here and can gently push each other toward good.
               </p>
@@ -276,7 +276,7 @@ export default function Friends() {
                     transition={{ delay: 0.05 + i * 0.06 }}
                     className={`rounded-2xl border p-3.5 ${
                       f.isMe
-                        ? 'border-brand-emerald/40 bg-brand-emerald/8'
+                        ? 'border-brand-emerald/40 bg-brand-emerald/10'
                         : 'border-emerald-500/10 bg-white/[0.04]'
                     }`}
                   >
@@ -305,23 +305,23 @@ export default function Friends() {
                     </div>
                     {/* Stat chips — prayer, zikr streak, today's zikr, fasted today, quran pages */}
                     <div className="flex flex-wrap gap-1.5 mt-2.5 pl-10">
-                      <span className="px-2 py-0.5 rounded-full bg-white/8 border border-emerald-500/10 text-[10px] font-bold text-white/60">
+                      <span className="px-2 py-0.5 rounded-full bg-white/10 border border-emerald-500/10 text-[10px] font-bold text-white/60">
                         🕌 {f.salatToday}/5 prayers
                       </span>
                       <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold text-white/70 ${sv.cls}`}>
                         <span className={sv.iconCls}>{sv.icon}</span> {f.zikrStreak}d zikr streak
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-white/8 border border-emerald-500/10 text-[10px] font-bold text-white/60">
+                      <span className="px-2 py-0.5 rounded-full bg-white/10 border border-emerald-500/10 text-[10px] font-bold text-white/60">
                         📿 {f.zikrToday.toLocaleString()} zikr today
                       </span>
                       <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
                         f.fastedToday
                           ? 'bg-brand-gold/15 border-brand-gold/40 text-brand-gold'
-                          : 'bg-white/8 border-emerald-500/10 text-white/35'
+                          : 'bg-white/10 border-emerald-500/10 text-white/30'
                       }`}>
                         🌙 {f.fastedToday ? 'fasting today' : 'not fasting'}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-white/8 border border-emerald-500/10 text-[10px] font-bold text-white/60">
+                      <span className="px-2 py-0.5 rounded-full bg-white/10 border border-emerald-500/10 text-[10px] font-bold text-white/60">
                         📖 {f.quranPagesToday}/{f.quranGoal} pages
                       </span>
                     </div>
@@ -349,7 +349,7 @@ export default function Friends() {
                   initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }} className="overflow-hidden"
                 >
-                  <div className="px-4 pb-4 pt-1 space-y-1.5 text-xs text-white/45 border-t border-emerald-500/5">
+                  <div className="px-4 pb-4 pt-1 space-y-1.5 text-xs text-white/40 border-t border-emerald-500/5">
                     <p>
                       Noor (<span className="text-white/60">نور</span>, "light") is a gentle daily measure of
                       your worship — out of <b className="text-white/70">100</b>:
@@ -397,7 +397,7 @@ export default function Friends() {
                   <span className="text-3xl">🤝</span>
                   <div>
                     <h3 className="text-lg font-black text-white leading-tight">Connect a friend</h3>
-                    <p className="text-white/35 text-[11px]">One link — they open it, you're connected</p>
+                    <p className="text-white/30 text-[11px]">One link — they open it, you're connected</p>
                   </div>
                 </div>
                 <button onClick={() => setInviteOpen(false)} aria-label="Close" className="text-white/30 hover:text-white p-1">

@@ -112,13 +112,32 @@ export default function QuranReader() {
   });
   // Typography prefs — read once per mount (the settings drawer writes them)
   const arabicFont = useMemo(() => getArabicFont(), []);
-  const fs = useMemo(() => ({
+  const baseFs = useMemo(() => ({
     arabic: getFontPx('arabic'),
     translation: getFontPx('translation'),
     translit: getFontPx('translit'),
     tafsir: getFontPx('tafsir'),
   }), []);
   const showTranslit = useMemo(() => translitEnabled(), []);
+  // In-app ZOOM (Istiak's spec): big screens have room to spare — scale every
+  // reader text together, without touching the browser zoom. Persisted.
+  const [zoom, setZoom] = useState<number>(() => {
+    const v = Number(localStorage.getItem('ihsan_reader_zoom'));
+    return Number.isFinite(v) && v >= 0.8 && v <= 1.8 ? v : 1;
+  });
+  const changeZoom = useCallback((delta: number) => {
+    setZoom((z) => {
+      const n = delta === 0 ? 1 : Math.min(1.8, Math.max(0.8, Math.round((z + delta) * 10) / 10));
+      localStorage.setItem('ihsan_reader_zoom', String(n));
+      return n;
+    });
+  }, []);
+  const fs = useMemo(() => ({
+    arabic: Math.round(baseFs.arabic * zoom),
+    translation: Math.round(baseFs.translation * zoom),
+    translit: Math.round(baseFs.translit * zoom),
+    tafsir: Math.round(baseFs.tafsir * zoom),
+  }), [baseFs, zoom]);
   const editions = useMemo(() => selectedTranslations(), []);
   const editionLabel = (id: string) => TRANSLATIONS.find((t) => t.id === id)?.label ?? id;
 
@@ -362,13 +381,18 @@ export default function QuranReader() {
     if (fullscreen) {
       if (navbar) navbar.style.zIndex = '0';
       document.body.style.overflow = 'hidden';
+      // the page BEHIND the overlay could still spawn a horizontal scrollbar —
+      // clamp the root element too (Istiak: h-scrollbar at the bottom persisted)
+      document.documentElement.style.overflow = 'hidden';
     } else {
       if (navbar) navbar.style.zIndex = '';
       document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     }
     return () => {
       if (navbar) navbar.style.zIndex = '';
       document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     };
   }, [fullscreen]);
 
@@ -469,6 +493,27 @@ export default function QuranReader() {
           {/* controls — in-flow row on phones (they overlapped the āyah header),
               floating top-right from sm up */}
           <div className={`flex items-center justify-end gap-2 z-20 ${fullscreen ? 'absolute top-3 right-3 sm:top-4 sm:right-4' : 'sm:absolute sm:top-4 sm:right-4 mb-2 sm:mb-0'}`}>
+            {/* in-app zoom — works in the card AND fullscreen (Istiak's spec) */}
+            <div className="flex items-center rounded-full bg-white/5 border border-emerald-500/10 overflow-hidden">
+              <button
+                aria-label="Zoom out"
+                onClick={() => changeZoom(-0.1)}
+                disabled={zoom <= 0.8}
+                className="w-8 h-9 sm:h-10 grid place-items-center text-white/50 hover:text-white disabled:opacity-25 text-base font-black"
+              >−</button>
+              <button
+                aria-label="Reset zoom"
+                title="Reset zoom"
+                onClick={() => changeZoom(0)}
+                className={`px-1 text-[10px] font-bold tabular-nums ${zoom === 1 ? 'text-white/25' : 'text-brand-emerald'}`}
+              >{Math.round(zoom * 100)}%</button>
+              <button
+                aria-label="Zoom in"
+                onClick={() => changeZoom(0.1)}
+                disabled={zoom >= 1.8}
+                className="w-8 h-9 sm:h-10 grid place-items-center text-white/50 hover:text-white disabled:opacity-25 text-base font-black"
+              >＋</button>
+            </div>
             <button
               aria-label={playing ? 'Stop recitation' : 'Recite this ayah'}
               title="Recite only this ayah"
@@ -542,7 +587,7 @@ export default function QuranReader() {
                   {words.map((w, i) => (
                     <span
                       key={i}
-                      className={`transition-colors duration-150 rounded px-0.5 cursor-default ${playing && i === wordIdx ? 'bg-brand-emerald/35 text-white' : 'hover:bg-white/10'}`}
+                      className={`transition-colors duration-150 rounded px-0.5 cursor-default ${playing && i === wordIdx ? 'bg-brand-emerald/30 text-white' : 'hover:bg-white/10'}`}
                     >
                       {w}{' '}
                     </span>
@@ -693,14 +738,14 @@ export default function QuranReader() {
             <div className="flex gap-2">
               <button
                 onClick={() => setTafsirOpen((o) => !o)}
-                className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${tafsirOpen ? 'bg-brand-emerald/15 border-brand-emerald/30 text-brand-emerald' : 'bg-white/5 border-emerald-500/12 text-white/70 hover:text-white'}`}
+                className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${tafsirOpen ? 'bg-brand-emerald/15 border-brand-emerald/30 text-brand-emerald' : 'bg-white/5 border-emerald-500/10 text-white/70 hover:text-white'}`}
               >
                 <BookOpenIcon className="w-4 h-4" /> Tafsir
               </button>
               {dua?.context && (
                 <button
                   onClick={() => setContextOpen((o) => !o)}
-                  className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${contextOpen ? 'bg-brand-gold/15 border-brand-gold/35 text-brand-gold' : 'bg-white/5 border-emerald-500/12 text-white/70 hover:text-white'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${contextOpen ? 'bg-brand-gold/15 border-brand-gold/30 text-brand-gold' : 'bg-white/5 border-emerald-500/10 text-white/70 hover:text-white'}`}
                 >
                   📜 Why this duʿā
                 </button>
@@ -721,7 +766,7 @@ export default function QuranReader() {
 
             {/* Calm reading surface: warm dark ground + warm ink, never pure white */}
             {tafsirOpen && (
-              <div className="rounded-2xl border border-amber-100/8 bg-[#12100c] p-4 sm:p-5 space-y-3">
+              <div className="rounded-2xl border border-amber-100/10 bg-[#12100c] p-4 sm:p-5 space-y-3">
                 <div className="flex items-center gap-2">
                   <select
                     aria-label="Tafsir edition"

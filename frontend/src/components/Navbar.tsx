@@ -193,7 +193,7 @@ export default function Navbar() {
           <div className="flex items-center gap-0.5 flex-shrink-0 min-w-0">
             <Link
               to="/"
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl hover:bg-white/8 transition-all group"
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl hover:bg-white/10 transition-all group"
             >
               <img src={logo as string} alt="Ihsan" className="w-5 h-5 flex-shrink-0" />
               <span className="font-bold text-white text-sm hidden sm:inline group-hover:text-brand-emerald transition-colors">Ihsan</span>
@@ -203,7 +203,7 @@ export default function Navbar() {
               <div className="flex items-center gap-0.5 min-w-0">
                 <button
                   onClick={() => navigate(parentPath)}
-                  className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/8 transition-all text-xs font-medium flex-shrink-0"
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all text-xs font-medium flex-shrink-0"
                 >
                   <ArrowLeftIcon className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">{parentMeta.emoji} {parentMeta.title}</span>
@@ -316,7 +316,7 @@ export default function Navbar() {
                       <Link
                         to="/profile"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/6 text-sm transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
                       >
                         <UserCircleIcon className="w-4 h-4 text-brand-emerald/70" />
                         Edit Profile
@@ -324,7 +324,7 @@ export default function Navbar() {
                       <Link
                         to="/settings"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/6 text-sm transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
                       >
                         <Cog6ToothIcon className="w-4 h-4 text-white/40" />
                         Settings
@@ -332,7 +332,7 @@ export default function Navbar() {
                       <Link
                         to="/about"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/6 text-sm transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
                       >
                         <InformationCircleIcon className="w-4 h-4 text-brand-gold/60" />
                         About Us
@@ -340,7 +340,7 @@ export default function Navbar() {
                       <Link
                         to="/privacy"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/6 text-sm transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
                       >
                         <ShieldCheckIcon className="w-4 h-4 text-cyan-300/60" />
                         Privacy
@@ -361,7 +361,7 @@ export default function Navbar() {
                       <Link
                         to="/feedback"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 mt-1 rounded-xl border border-emerald-500/15 text-white/70 hover:text-white hover:bg-white/6 hover:border-brand-emerald/40 text-sm transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2.5 mt-1 rounded-xl border border-emerald-500/15 text-white/70 hover:text-white hover:bg-white/5 hover:border-brand-emerald/40 text-sm transition-colors"
                       >
                         <ChatBubbleLeftRightIcon className="w-4 h-4 text-brand-emerald/70" />
                         Share feedback
@@ -369,7 +369,7 @@ export default function Navbar() {
                       <Link
                         to="/contact"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/6 text-sm transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
                       >
                         <EnvelopeIcon className="w-4 h-4 text-cyan-300/60" />
                         Contact us

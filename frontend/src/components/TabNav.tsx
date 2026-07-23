@@ -31,7 +31,7 @@ export default function TabNav({ items }: { items: TabNavItem[] }) {
           <button
             key={item.label}
             onClick={item.onClick}
-            className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all whitespace-nowrap px-3"
+            className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all whitespace-nowrap px-3"
           >
             {item.label}
           </button>
@@ -39,7 +39,7 @@ export default function TabNav({ items }: { items: TabNavItem[] }) {
           <Link
             key={item.label}
             to={item.to}
-            className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all whitespace-nowrap px-3"
+            className="flex-1 text-center text-xs font-semibold py-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all whitespace-nowrap px-3"
           >
             {item.label}
           </Link>

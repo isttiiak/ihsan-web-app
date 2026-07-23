@@ -77,7 +77,7 @@ export default function QuranBookmarks() {
           {([['ayat', `🔖 Āyāt${(summary?.bookmarks?.length ?? 0) > 0 ? ` · ${summary?.bookmarks?.length}` : ''}`], ['duas', `🤲 Duas${savedDuas.length > 0 ? ` · ${savedDuas.length}` : ''}`]] as const).map(([id, label]) => (
             <button key={id}
               onClick={() => setTab(id)}
-              className={`flex-1 text-center text-xs font-bold py-1.5 rounded-lg transition-all ${tab === id ? 'bg-white/10 text-white' : 'text-white/45 hover:text-white'}`}
+              className={`flex-1 text-center text-xs font-bold py-1.5 rounded-lg transition-all ${tab === id ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'}`}
             >{label}</button>
           ))}
         </div>
@@ -103,7 +103,7 @@ export default function QuranBookmarks() {
                   className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 hover:border-brand-gold/30 transition-all"
                 >
                   <button className="w-full text-left" onClick={() => navigate(`/quran/read/${d.surah}?start=${d.fromAyah}&end=${d.toAyah}&mode=bundle&dua=${d.id}`)}>
-                    <p className="text-white/85 text-sm font-bold">{d.emoji} {d.title}</p>
+                    <p className="text-white/80 text-sm font-bold">{d.emoji} {d.title}</p>
                     <p className="text-brand-gold/50 text-[11px] mt-1">Quran {d.surah}:{d.fromAyah}{d.toAyah !== d.fromAyah ? `–${d.toAyah}` : ''} · read with its story →</p>
                   </button>
                   <div className="flex justify-end mt-1">
@@ -146,7 +146,7 @@ export default function QuranBookmarks() {
                   {g.items.map((b) => {
                     const a = ayahText(b.surah, b.ayah);
                     return (
-                      <div key={`${b.surah}:${b.ayah}`} className="rounded-2xl bg-white/3 border border-emerald-500/8 p-3.5 hover:border-brand-emerald/30 transition-all">
+                      <div key={`${b.surah}:${b.ayah}`} className="rounded-2xl bg-white/5 border border-emerald-500/10 p-3.5 hover:border-brand-emerald/30 transition-all">
                         <button className="w-full text-left" onClick={() => navigate(`/quran/read/${b.surah}?start=${b.ayah}`)}>
                           <p className="text-brand-emerald text-[11px] font-black mb-1.5">Āyah {b.ayah} →</p>
                           {a ? (

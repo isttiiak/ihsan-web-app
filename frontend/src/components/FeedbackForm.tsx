@@ -101,7 +101,7 @@ export default function FeedbackForm({
           <CheckCircleIcon className="w-16 h-16 text-brand-emerald mx-auto" />
         </motion.div>
         <h2 className="text-white font-black text-xl mt-3">JazākAllāhu khayran! 💚</h2>
-        <p className="text-white/55 text-sm mt-2 leading-relaxed max-w-md mx-auto">
+        <p className="text-white/50 text-sm mt-2 leading-relaxed max-w-md mx-auto">
           Your {kind === 'feedback' ? 'feedback' : 'message'} reached us. Every note genuinely shapes what
           Ihsan becomes next — and if it needs a reply, we'll write back to <b className="text-white/75">{email}</b>.
         </p>
@@ -141,7 +141,7 @@ export default function FeedbackForm({
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setTypeId(t.id)}
                 className={`rounded-2xl border p-3 text-left transition-all ${
-                  on ? t.active : 'bg-white/[0.03] border-emerald-500/12 text-white/60 hover:border-emerald-500/25 hover:text-white/80'
+                  on ? t.active : 'bg-white/[0.03] border-emerald-500/10 text-white/60 hover:border-emerald-500/25 hover:text-white/80'
                 }`}
               >
                 <span className="text-lg">{t.emoji}</span>

@@ -329,7 +329,7 @@ export default function RayhanahCycle() {
             </p>
             <div className="mt-3 space-y-1.5">
               {GARDEN_ITEMS.map((g) => (
-                <div key={g.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-white/3 hover:bg-white/6 transition-colors">
+                <div key={g.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-white/5 hover:bg-white/5 transition-colors">
                   <button
                     aria-label={`Mark ${g.label}`}
                     onClick={() => toggleGarden(g.id)}
@@ -371,7 +371,7 @@ export default function RayhanahCycle() {
                   return (
                     <button key={f.id}
                       aria-pressed={on}
-                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-pink-500/35 border-pink-300/70 text-white ring-1 ring-pink-300/50' : 'bg-white/5 border-emerald-500/10 text-white/50 hover:text-white'}`}
+                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-pink-500/30 border-pink-300/70 text-white ring-1 ring-pink-300/50' : 'bg-white/5 border-emerald-500/10 text-white/50 hover:text-white'}`}
                       onClick={() => setFlow(f.id)}
                     >{on && '✓ '}{f.label}</button>
                   );
@@ -388,7 +388,7 @@ export default function RayhanahCycle() {
                   return (
                     <button key={sy.id}
                       aria-pressed={on}
-                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-rose-500/35 border-rose-300/70 text-white ring-1 ring-rose-300/50' : 'bg-white/5 border-emerald-500/10 text-white/50 hover:text-white'}`}
+                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-rose-500/30 border-rose-300/70 text-white ring-1 ring-rose-300/50' : 'bg-white/5 border-emerald-500/10 text-white/50 hover:text-white'}`}
                       onClick={() => toggleSymptom(sy.id)}
                     >{on && '✓ '}{sy.label}</button>
                   );
@@ -405,7 +405,7 @@ export default function RayhanahCycle() {
                   return (
                     <button key={mo.id}
                       aria-pressed={on}
-                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-purple-500/35 border-purple-300/70 text-white ring-1 ring-purple-300/50' : 'bg-white/5 border-emerald-500/10 text-white/50 hover:text-white'}`}
+                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-purple-500/30 border-purple-300/70 text-white ring-1 ring-purple-300/50' : 'bg-white/5 border-emerald-500/10 text-white/50 hover:text-white'}`}
                       onClick={() => toggleMood(mo.id)}
                     >{on && '✓ '}{mo.label}</button>
                   );
@@ -425,21 +425,48 @@ export default function RayhanahCycle() {
           </div>
         )}
 
+        {/* ── "I'm not done yet" — ABOVE the calendar so it's the first thing
+               she sees after ending too early (Istiak's spec) ── */}
+        {lastEnded && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border border-pink-400/25 bg-pink-500/[0.06] p-4 flex flex-col sm:flex-row sm:items-center gap-3"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-pink-100/90 text-sm font-bold">Ended too early?</p>
+              <p className="text-white/40 text-xs mt-0.5 leading-relaxed">
+                If the flow returned after you marked {formatDay(lastEnded.endDate!)} as the end, you can reopen
+                that cycle — all your daily notes stay exactly where they are.
+              </p>
+            </div>
+            <button
+              className="btn btn-sm rounded-xl border border-pink-400/40 bg-pink-500/15 text-pink-100 hover:bg-pink-500/25 shrink-0"
+              disabled={editCycle.isPending}
+              onClick={() => editCycle.mutate(
+                { logId: lastEnded._id, endDate: null },
+                { onSuccess: () => toast.success("Cycle reopened — take your time 🌸", { id: 'cycle-reopen' }) }
+              )}
+            >
+              🌸 I'm not done yet
+            </button>
+          </motion.div>
+        )}
+
         {/* ── Cycle calendar + stats ────────────────────────────────────────── */}
         {summary && <CycleCalendar summary={summary} today={today} />}
         {summary && summary.prediction.basedOnCycles > 0 && (
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
               <p className="text-2xl font-black text-pink-200">{summary.prediction.avgCycleDays}</p>
-              <p className="text-white/35 text-[10px] font-bold uppercase tracking-wide mt-1">avg cycle days</p>
+              <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">avg cycle days</p>
             </div>
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
               <p className="text-2xl font-black text-pink-200">{summary.prediction.avgPeriodDays}</p>
-              <p className="text-white/35 text-[10px] font-bold uppercase tracking-wide mt-1">avg period days</p>
+              <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">avg period days</p>
             </div>
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
               <p className="text-2xl font-black text-pink-200">{summary.prediction.basedOnCycles + 1}</p>
-              <p className="text-white/35 text-[10px] font-bold uppercase tracking-wide mt-1">cycles learned</p>
+              <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">cycles learned</p>
             </div>
           </div>
         )}
@@ -467,7 +494,7 @@ export default function RayhanahCycle() {
               </ul>
             </div>
           </div>
-          <p className="text-white/35 text-[11px] leading-relaxed">
+          <p className="text-white/30 text-[11px] leading-relaxed">
             The Prophet ﷺ told ʿĀʾishah (may Allah be pleased with her) during Hajj:
             do everything the pilgrim does, except ṭawāf —{' '}
             <a className="underline" href="https://sunnah.com/bukhari:305" target="_blank" rel="noreferrer">Ṣaḥīḥ al-Bukhārī 305</a>.
@@ -475,41 +502,12 @@ export default function RayhanahCycle() {
           </p>
         </div>
 
-        {/* ── "I'm not done yet" — reopen a too-early end (Istiak's sister's
-               request): flow paused for a few hours, the end was marked, and
-               the only way back used to be deleting the cycle WITH its notes.
-               Reopening keeps every daily log. ── */}
-        {lastEnded && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-pink-400/25 bg-pink-500/[0.06] p-4 flex flex-col sm:flex-row sm:items-center gap-3"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="text-pink-100/90 text-sm font-bold">Ended too early?</p>
-              <p className="text-white/40 text-xs mt-0.5 leading-relaxed">
-                If the flow returned after you marked {formatDay(lastEnded.endDate!)} as the end, you can reopen
-                that cycle — all your daily notes stay exactly where they are.
-              </p>
-            </div>
-            <button
-              className="btn btn-sm rounded-xl border border-pink-400/40 bg-pink-500/15 text-pink-100 hover:bg-pink-500/25 shrink-0"
-              disabled={editCycle.isPending}
-              onClick={() => editCycle.mutate(
-                { logId: lastEnded._id, endDate: null },
-                { onSuccess: () => toast.success("Cycle reopened — take your time 🌸", { id: 'cycle-reopen' }) }
-              )}
-            >
-              🌸 I'm not done yet
-            </button>
-          </motion.div>
-        )}
-
         {/* ── Settings + history ─────────────────────────────────────────────── */}
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white font-bold text-sm">Hayd maximum (madhab)</p>
-              <p className="text-white/35 text-xs">Ḥanafī: 10 days · Majority (Shāfiʿī/Ḥanbalī/Mālikī): 15 days</p>
+              <p className="text-white/30 text-xs">Ḥanafī: 10 days · Majority (Shāfiʿī/Ḥanbalī/Mālikī): 15 days</p>
             </div>
             <div className="join">
               {(['hanafi', 'majority'] as const).map((m) => (
@@ -539,7 +537,7 @@ export default function RayhanahCycle() {
                 ) : (
                   <div className="space-y-1.5 pt-1">
                     {(summary?.logs ?? []).map((l) => (
-                      <div key={l._id} className="flex items-center gap-3 rounded-xl bg-white/3 px-3 py-2 text-xs">
+                      <div key={l._id} className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2 text-xs">
                         <span>{l.type === 'nifas' ? '🤱' : '🌸'}</span>
                         <span className="text-white/70 flex-1">
                           {formatDay(l.startDate)} — {l.endDate ? formatDay(l.endDate) : 'ongoing'}
@@ -624,7 +622,7 @@ export default function RayhanahCycle() {
               </p>
               <div className="space-y-1.5">
                 {GHUSL_STEPS.map((step, i) => (
-                  <button key={step} className="w-full flex items-start gap-3 rounded-xl px-3 py-2.5 bg-white/3 hover:bg-white/6 text-left"
+                  <button key={step} className="w-full flex items-start gap-3 rounded-xl px-3 py-2.5 bg-white/5 hover:bg-white/5 text-left"
                     onClick={() => setGhuslChecked((c) => c.map((v, j) => (j === i ? !v : v)))}
                   >
                     <span className={`w-5 h-5 rounded-full grid place-items-center border text-[10px] flex-shrink-0 mt-0.5 ${ghuslChecked[i] ? 'bg-emerald-500 border-emerald-400 text-white' : 'border-emerald-500/20 text-white/30'}`}>

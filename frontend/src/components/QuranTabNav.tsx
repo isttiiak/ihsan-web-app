@@ -45,7 +45,7 @@ export default function QuranTabNav({ active }: { active: QuranTab }) {
           onClick={() => setMenuOpen((v) => !v)}
           aria-expanded={menuOpen}
           aria-haspopup="menu"
-          className="flex-1 flex items-center justify-between gap-2 rounded-xl bg-white/5 border border-emerald-500/12 px-3.5 py-2.5 text-white font-bold text-sm"
+          className="flex-1 flex items-center justify-between gap-2 rounded-xl bg-white/5 border border-emerald-500/10 px-3.5 py-2.5 text-white font-bold text-sm"
         >
           <span className="truncate">{activeTab.label}</span>
           <Bars3Icon className="w-5 h-5 text-white/50 shrink-0" />
@@ -63,7 +63,7 @@ export default function QuranTabNav({ active }: { active: QuranTab }) {
               </span>
             ) : (
               <Link key={t.id} to={t.to}
-                className="shrink-0 text-center text-xs font-semibold py-1.5 rounded-lg text-white/45 hover:text-white hover:bg-white/8 transition-all whitespace-nowrap px-3">
+                className="shrink-0 text-center text-xs font-semibold py-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all whitespace-nowrap px-3">
                 {t.label}
               </Link>
             )
@@ -97,8 +97,8 @@ export default function QuranTabNav({ active }: { active: QuranTab }) {
                   to={t.to}
                   role="menuitem"
                   onClick={() => setMenuOpen(false)}
-                  className={`flex items-center justify-between px-4 py-3 text-sm border-b border-emerald-500/8 last:border-0 transition-colors ${
-                    t.id === active ? 'bg-brand-emerald/12 text-brand-emerald font-bold' : 'text-white/70 active:bg-white/5'
+                  className={`flex items-center justify-between px-4 py-3 text-sm border-b border-emerald-500/10 last:border-0 transition-colors ${
+                    t.id === active ? 'bg-brand-emerald/10 text-brand-emerald font-bold' : 'text-white/70 active:bg-white/5'
                   }`}
                 >
                   <span>{t.label}</span>
@@ -108,7 +108,7 @@ export default function QuranTabNav({ active }: { active: QuranTab }) {
               <button
                 role="menuitem"
                 onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}
-                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-white/70 active:bg-white/5 border-t border-emerald-500/12"
+                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-white/70 active:bg-white/5 border-t border-emerald-500/10"
               >
                 <Cog6ToothIcon className="w-4 h-4 text-white/50" />
                 Quran settings

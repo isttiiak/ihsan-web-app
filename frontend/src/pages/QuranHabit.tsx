@@ -53,7 +53,7 @@ export default function QuranHabit() {
         {/* ── Today hero ── */}
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl p-6 border border-brand-emerald/20 bg-gradient-to-br from-brand-emerald/12 via-teal-500/8 to-brand-deep"
+          className="rounded-3xl p-6 border border-brand-emerald/20 bg-gradient-to-br from-brand-emerald/10 via-teal-500/10 to-brand-deep"
         >
           <div className="flex items-center gap-5">
             <div className="relative w-24 h-24 shrink-0">
@@ -111,7 +111,7 @@ export default function QuranHabit() {
             <div className="flex items-end gap-1 h-10 mt-2">
               {(summary?.last7 ?? []).map((d) => (
                 <div key={d.date} title={`${d.date}: ${d.units} ayat`}
-                  className={`flex-1 rounded-t ${d.units > 0 ? 'bg-brand-gold/70' : 'bg-white/8'}`}
+                  className={`flex-1 rounded-t ${d.units > 0 ? 'bg-brand-gold/70' : 'bg-white/10'}`}
                   style={{ height: `${Math.max(10, (d.units / maxLast7) * 100)}%` }} />
               ))}
             </div>
@@ -119,7 +119,7 @@ export default function QuranHabit() {
           </div>
           <Link to="/quran/khatam" className="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.05] p-4 hover:border-emerald-400/50 transition-all">
             <p className="text-white font-black text-sm">🕋 Khatam · {khatmPct.toFixed(1)}%</p>
-            <div className="h-2 rounded-full bg-white/8 overflow-hidden mt-2.5">
+            <div className="h-2 rounded-full bg-white/10 overflow-hidden mt-2.5">
               <div className="h-full rounded-full bg-gradient-to-r from-brand-emerald to-teal-400" style={{ width: `${khatmPct}%` }} />
             </div>
             <p className="text-white/25 text-[10px] mt-1.5">
@@ -140,7 +140,7 @@ export default function QuranHabit() {
                 className="rounded-2xl bg-white/[0.03] border border-transparent hover:border-brand-gold/40 p-3 text-left transition-all"
                 onClick={() => navigate(`/quran/read/${sp.surah}?mode=single`)}
               >
-                <p className="text-white/85 text-sm font-bold">{sp.emoji} {sp.name} <span className="text-white/25 font-normal">· {sp.surah}</span></p>
+                <p className="text-white/80 text-sm font-bold">{sp.emoji} {sp.name} <span className="text-white/25 font-normal">· {sp.surah}</span></p>
                 <p className="text-white/40 text-[11px] mt-1 leading-relaxed">{sp.note}</p>
                 {sp.ref && (
                   <a className="text-brand-gold/60 text-[10px] underline" href={sp.ref.url} target="_blank" rel="noreferrer"
@@ -161,7 +161,7 @@ export default function QuranHabit() {
                 className="rounded-2xl bg-white/[0.03] border border-transparent hover:border-brand-emerald/40 p-3 text-left transition-all"
                 onClick={() => navigate(`/quran/read/${b.surah}?start=${b.fromAyah}&end=${b.toAyah}&mode=bundle`)}
               >
-                <p className="text-white/85 text-sm font-bold">{b.emoji} {b.title} <span className="text-white/25 font-normal">· {b.surah}:{b.fromAyah}{b.toAyah !== b.fromAyah ? `–${b.toAyah}` : ''}</span></p>
+                <p className="text-white/80 text-sm font-bold">{b.emoji} {b.title} <span className="text-white/25 font-normal">· {b.surah}:{b.fromAyah}{b.toAyah !== b.fromAyah ? `–${b.toAyah}` : ''}</span></p>
                 <p className="text-white/40 text-[11px] mt-1 leading-relaxed">{b.virtue}</p>
                 <a className="text-brand-emerald/60 text-[10px] underline" href={b.ref.url} target="_blank" rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}>{b.ref.text}</a>
@@ -179,13 +179,13 @@ export default function QuranHabit() {
               const saved = savedDuas.includes(d.id);
               return (
                 <div key={d.id}
-                  className="group flex items-center gap-2.5 rounded-xl bg-white/3 border border-transparent hover:border-brand-gold/35 hover:bg-white/[0.06] px-3 py-2 transition-all cursor-pointer"
+                  className="group flex items-center gap-2.5 rounded-xl bg-white/5 border border-transparent hover:border-brand-gold/30 hover:bg-white/[0.06] px-3 py-2 transition-all cursor-pointer"
                   onClick={() => navigate(`/quran/read/${d.surah}?start=${d.fromAyah}&end=${d.toAyah}&mode=bundle&dua=${d.id}`)}
                   role="button" tabIndex={0}
                   onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/quran/read/${d.surah}?start=${d.fromAyah}&end=${d.toAyah}&mode=bundle&dua=${d.id}`); }}
                 >
                   <span className="group-hover:scale-110 transition-transform">{d.emoji}</span>
-                  <span className="flex-1 text-white/65 group-hover:text-white/85 text-xs transition-colors">{d.title}</span>
+                  <span className="flex-1 text-white/60 group-hover:text-white/80 text-xs transition-colors">{d.title}</span>
                   <span className="text-white/25 text-[10px]">{d.surah}:{d.fromAyah}</span>
                   <button
                     aria-label={saved ? `Remove ${d.title} from saved duas` : `Save ${d.title}`}

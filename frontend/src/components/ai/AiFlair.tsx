@@ -80,7 +80,7 @@ export function AiPanel({ children, className = '' }: { children: ReactNode; cla
 /** The non-negotiable label under every AI output. */
 export function AiDisclaimer() {
   return (
-    <p className="text-white/35 text-[10px] leading-relaxed mt-2 flex items-start gap-1">
+    <p className="text-white/30 text-[10px] leading-relaxed mt-2 flex items-start gap-1">
       <span aria-hidden>✨</span>
       <span>
         AI-generated encouragement — a companion, <b className="text-white/50">never a source of religious evidence</b>.

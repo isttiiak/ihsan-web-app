@@ -222,11 +222,11 @@ export default function Home() {
         {upcomingCycleDays !== null && (
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <Link to="/cycle">
-              <div className="rounded-2xl border border-pink-400/20 bg-pink-500/8 px-5 py-3.5 hover:border-pink-300/35 transition-all">
+              <div className="rounded-2xl border border-pink-400/20 bg-pink-500/10 px-5 py-3.5 hover:border-pink-300/30 transition-all">
                 <p className="text-pink-100/90 font-bold text-sm">
                   🌷 {upcomingCycleDays === 0 ? 'Your period may begin today' : `Your period may begin in ~${upcomingCycleDays} day${upcomingCycleDays > 1 ? 's' : ''}`}
                 </p>
-                <p className="text-white/35 text-xs mt-0.5">Based on your own rhythm — open Rayhanah Cycle to see your calendar →</p>
+                <p className="text-white/30 text-xs mt-0.5">Based on your own rhythm — open Rayhanah Cycle to see your calendar →</p>
               </div>
             </Link>
           </motion.div>
@@ -277,17 +277,17 @@ export default function Home() {
                         <p className="text-red-300 font-black text-sm leading-tight">
                           {prayerWidgetData.forbiddenWindow.label.replace('Forbidden — ', '')}
                         </p>
-                        <p className="text-white/35 text-[10px] mt-0.5">
+                        <p className="text-white/30 text-[10px] mt-0.5">
                           ends {formatTime(prayerWidgetData.forbiddenWindow.end)} — no prayer
                         </p>
                       </>
                     ) : prayerWidgetData.currentMandatory ? (
                       <>
-                        <p className="text-white/35 text-[10px] uppercase tracking-widest leading-none mb-0.5">Current</p>
+                        <p className="text-white/30 text-[10px] uppercase tracking-widest leading-none mb-0.5">Current</p>
                         <p className="text-white font-black text-sm leading-tight">
                           {PRAYER_META.find((p) => p.id === prayerWidgetData.currentMandatory)?.name}
                         </p>
-                        <p className="text-white/35 text-[10px] mt-0.5">
+                        <p className="text-white/30 text-[10px] mt-0.5">
                           ends {formatTime(prayerWidgetData.currentMandatoryEnd!)}
                         </p>
                         {/* Nafl alongside mandatory (Awabeen during Maghrib, Tahajjud during Isha) */}
@@ -306,7 +306,7 @@ export default function Home() {
                       <>
                         <p className="text-cyan-400/60 text-[10px] uppercase tracking-widest leading-none mb-0.5">Nafl Time</p>
                         <p className="text-cyan-300 font-black text-sm leading-tight">{prayerWidgetData.naflWindow.name}</p>
-                        <p className="text-white/35 text-[10px] mt-0.5">
+                        <p className="text-white/30 text-[10px] mt-0.5">
                           {formatTime(prayerWidgetData.naflWindow.start)} – {formatTime(prayerWidgetData.naflWindow.end)}
                         </p>
                       </>
@@ -325,7 +325,7 @@ export default function Home() {
                   {/* Ends-in counter (right side of left section) */}
                   {(prayerWidgetData.endHh > 0 || prayerWidgetData.endMm > 0) && (
                     <div className="text-right shrink-0">
-                      <p className="text-white/35 text-[10px] uppercase tracking-widest leading-none mb-0.5">Ends in</p>
+                      <p className="text-white/30 text-[10px] uppercase tracking-widest leading-none mb-0.5">Ends in</p>
                       <p className={`font-black text-base tabular-nums leading-tight ${
                         prayerWidgetData.forbiddenWindow ? 'text-red-400' : 'text-brand-gold'
                       }`}>
@@ -346,7 +346,7 @@ export default function Home() {
                       {PRAYER_META.find((p) => p.id === prayerWidgetData.nextMandatory)?.icon}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-white/35 text-[10px] uppercase tracking-widest leading-none mb-0.5">Next</p>
+                      <p className="text-white/30 text-[10px] uppercase tracking-widest leading-none mb-0.5">Next</p>
                       <p className="text-brand-emerald font-bold text-xs leading-tight">
                         {PRAYER_META.find((p) => p.id === prayerWidgetData.nextMandatory)?.name}
                       </p>
@@ -405,7 +405,7 @@ export default function Home() {
                   <span className="text-2xl shrink-0">{day.icon}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-white font-bold text-sm leading-tight">{day.name}</p>
-                    <p className="text-white/45 text-xs leading-snug truncate mt-0.5">{day.shortDesc}</p>
+                    <p className="text-white/40 text-xs leading-snug truncate mt-0.5">{day.shortDesc}</p>
                   </div>
                   <span className="text-white/30 text-xs shrink-0 font-bold">→</span>
                 </motion.div>
@@ -525,7 +525,7 @@ export default function Home() {
               >🤝</motion.span>
               <div className="min-w-0 flex-1">
                 <h2 className="text-lg sm:text-xl font-black text-white">Friends & Leaderboard</h2>
-                <p className="text-white/45 text-xs sm:text-sm">
+                <p className="text-white/40 text-xs sm:text-sm">
                   Connect with friends, share your streaks, and race each other to good deeds — Quran 2:148
                 </p>
               </div>
@@ -533,7 +533,7 @@ export default function Home() {
                 Compete →
               </span>
               <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent pointer-events-none"
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
                 initial={{ x: '-100%' }}
                 whileHover={{ x: '100%' }}
                 transition={{ duration: 0.7 }}

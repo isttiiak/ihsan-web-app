@@ -10,32 +10,32 @@ import FeedbackForm, { type FormType } from '../components/FeedbackForm.js';
 const TYPES: FormType[] = [
   {
     id: 'question', label: 'A question', emoji: '❓',
-    active: 'bg-cyan-500/15 border-cyan-400/45 text-cyan-100',
+    active: 'bg-cyan-500/15 border-cyan-400/40 text-cyan-100',
     hint: 'How something works, or where to find it',
   },
   {
     id: 'account', label: 'Account help', emoji: '🔑',
-    active: 'bg-indigo-500/15 border-indigo-400/45 text-indigo-100',
+    active: 'bg-indigo-500/15 border-indigo-400/40 text-indigo-100',
     hint: 'Sign-in trouble, or data that looks wrong',
   },
   {
     id: 'privacy', label: 'Privacy & my data', emoji: '🔒',
-    active: 'bg-brand-emerald/15 border-brand-emerald/45 text-emerald-100',
+    active: 'bg-brand-emerald/15 border-brand-emerald/40 text-emerald-100',
     hint: 'Export, deletion, or a privacy question',
   },
   {
     id: 'collab', label: 'Collaborate', emoji: '🤝',
-    active: 'bg-brand-gold/15 border-brand-gold/45 text-amber-100',
+    active: 'bg-brand-gold/15 border-brand-gold/40 text-amber-100',
     hint: 'Scholars, translators, designers, developers',
   },
   {
     id: 'report', label: 'Report a concern', emoji: '⚠️',
-    active: 'bg-red-500/15 border-red-400/45 text-red-100',
+    active: 'bg-red-500/15 border-red-400/40 text-red-100',
     hint: 'Misuse, security, or anything serious',
   },
   {
     id: 'other', label: 'Something else', emoji: '✨',
-    active: 'bg-fuchsia-500/15 border-fuchsia-400/45 text-fuchsia-100',
+    active: 'bg-fuchsia-500/15 border-fuchsia-400/40 text-fuchsia-100',
     hint: "Anything that doesn't fit above",
   },
 ];
@@ -54,7 +54,7 @@ export default function Contact() {
         {/* hero */}
         <motion.div
           initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }}
-          className="relative rounded-3xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/12 via-indigo-500/8 to-brand-deep p-6 sm:p-8 overflow-hidden"
+          className="relative rounded-3xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/10 via-indigo-500/10 to-brand-deep p-6 sm:p-8 overflow-hidden"
         >
           <motion.div
             aria-hidden
@@ -69,7 +69,7 @@ export default function Contact() {
               transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
             >📨</motion.div>
             <h1 className="text-2xl sm:text-3xl font-black text-white">Contact us</h1>
-            <p className="text-white/55 text-sm sm:text-base mt-2.5 leading-relaxed">
+            <p className="text-white/50 text-sm sm:text-base mt-2.5 leading-relaxed">
               Questions, privacy requests, or a wish to help build Ihsan — this reaches us directly.
               As-salāmu ʿalaykum, and thank you for taking the time.
             </p>
@@ -82,10 +82,10 @@ export default function Contact() {
             <motion.div
               key={p.title}
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 * i }}
-              className="rounded-2xl border border-emerald-500/12 bg-white/[0.03] p-4"
+              className="rounded-2xl border border-emerald-500/10 bg-white/[0.03] p-4"
             >
               <div className="text-2xl">{p.emoji}</div>
-              <p className="text-white/85 text-sm font-bold mt-1.5">{p.title}</p>
+              <p className="text-white/80 text-sm font-bold mt-1.5">{p.title}</p>
               <p className="text-white/40 text-xs mt-0.5 leading-snug">{p.text}</p>
             </motion.div>
           ))}

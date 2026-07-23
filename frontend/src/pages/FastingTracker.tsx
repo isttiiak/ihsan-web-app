@@ -520,7 +520,7 @@ export default function FastingTracker() {
               {/* Date */}
               <div>
                 <p className="text-white font-black text-xl leading-tight">{friendlyDate(selectedDate)}</p>
-                <p className="text-white/35 text-xs">
+                <p className="text-white/30 text-xs">
                   {dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                   {ruling.hijriLabel && <span className="text-brand-gold/50"> · {ruling.hijriLabel}</span>}
                 </p>
@@ -739,7 +739,7 @@ export default function FastingTracker() {
                     <p className="font-bold text-sm leading-tight" style={{ color: r.color }}>
                       {r.label} <span className="text-white/40 font-normal text-[11px]">— sunnah fast!</span>
                     </p>
-                    <p className="text-white/45 text-[11px] leading-snug">{r.virtue}</p>
+                    <p className="text-white/40 text-[11px] leading-snug">{r.virtue}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <RefLink r={r.ref} />
                       {r.specialDayId && (
@@ -876,7 +876,7 @@ export default function FastingTracker() {
                           <div key={m.id} className="rounded-xl border px-2.5 py-2"
                             style={{ background: `${m.color}10`, borderColor: `${m.color}30` }}>
                             <p className="text-[11px] font-bold leading-tight" style={{ color: m.color }}>{m.emoji} {m.label}</p>
-                            <p className="text-white/35 text-[10px] leading-snug mt-0.5">{m.when}</p>
+                            <p className="text-white/30 text-[10px] leading-snug mt-0.5">{m.when}</p>
                             <div className="mt-1"><RefLink r={m.ref} /></div>
                           </div>
                         ))}
@@ -889,7 +889,7 @@ export default function FastingTracker() {
                       {PROHIBITED_INFO.map((p) => (
                         <div key={p.id} className="rounded-xl bg-red-500/10 border border-red-500/25 px-3 py-2">
                           <p className="text-red-300 text-[11px] font-bold">{p.emoji} {p.label}</p>
-                          <p className="text-white/35 text-[10px] leading-snug">{p.detail}</p>
+                          <p className="text-white/30 text-[10px] leading-snug">{p.detail}</p>
                           <div className="mt-0.5">{p.refs.map((r) => <RefLink key={r.url} r={r} />)}</div>
                         </div>
                       ))}
@@ -899,9 +899,9 @@ export default function FastingTracker() {
                     <div className="space-y-1.5">
                       <p className="text-brand-gold/80 text-[10px] uppercase tracking-widest font-bold">⚠️ Better to avoid</p>
                       {DISLIKED_INFO.map((p) => (
-                        <div key={p.id} className="rounded-xl bg-brand-gold/8 border border-brand-gold/20 px-3 py-2">
+                        <div key={p.id} className="rounded-xl bg-brand-gold/10 border border-brand-gold/20 px-3 py-2">
                           <p className="text-brand-gold/90 text-[11px] font-bold">{p.emoji} {p.label}</p>
-                          <p className="text-white/35 text-[10px] leading-snug">{p.detail}</p>
+                          <p className="text-white/30 text-[10px] leading-snug">{p.detail}</p>
                           <div className="mt-0.5">{p.refs.map((r) => <RefLink key={r.url} r={r} />)}</div>
                         </div>
                       ))}
@@ -954,7 +954,7 @@ export default function FastingTracker() {
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left transition-all ${
                       category === 'voluntary' && effectiveKind === m.id
                         ? 'border-emerald-500/40 bg-white/10'
-                        : 'border-emerald-500/8 bg-white/[0.03] hover:bg-white/[0.07]'
+                        : 'border-emerald-500/10 bg-white/[0.03] hover:bg-white/[0.07]'
                     }`}
                   >
                     <span className="text-xl shrink-0">{m.emoji}</span>
@@ -965,7 +965,7 @@ export default function FastingTracker() {
                           <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-brand-emerald/20 text-brand-emerald">today ✓</span>
                         )}
                       </p>
-                      <p className="text-white/35 text-[10px] leading-snug">{m.when}</p>
+                      <p className="text-white/30 text-[10px] leading-snug">{m.when}</p>
                     </div>
                   </button>
                 ))}
@@ -974,25 +974,25 @@ export default function FastingTracker() {
                 <p className="text-white/30 text-[10px] uppercase tracking-widest font-bold pt-2">Obligatory make-ups</p>
                 <button
                   onClick={() => { setCategory('qada'); setShowTypeSheet(false); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'qada' ? 'border-emerald-500/40 bg-white/10' : 'border-emerald-500/8 bg-white/[0.03] hover:bg-white/[0.07]'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'qada' ? 'border-emerald-500/40 bg-white/10' : 'border-emerald-500/10 bg-white/[0.03] hover:bg-white/[0.07]'}`}
                 >
                   <span className="text-xl">🔄</span>
                   <div>
                     <p className="text-xs font-bold text-brand-gold">Qaḍā — make-up day
                       {qadaRemaining > 0 && <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-brand-gold/20">{qadaRemaining} left</span>}
                     </p>
-                    <p className="text-white/35 text-[10px]">Making up a missed Ramaḍān day</p>
+                    <p className="text-white/30 text-[10px]">Making up a missed Ramaḍān day</p>
                   </div>
                 </button>
                 {kaffarahActive && (
                   <button
                     onClick={() => { setCategory('kaffarah'); setShowTypeSheet(false); }}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'kaffarah' ? 'border-emerald-500/40 bg-white/10' : 'border-emerald-500/8 bg-white/[0.03] hover:bg-white/[0.07]'}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'kaffarah' ? 'border-emerald-500/40 bg-white/10' : 'border-emerald-500/10 bg-white/[0.03] hover:bg-white/[0.07]'}`}
                   >
                     <span className="text-xl">⚖️</span>
                     <div>
                       <p className="text-xs font-bold text-purple-300">Kaffārah — expiation day</p>
-                      <p className="text-white/35 text-[10px]">Consecutive run: {summary?.kaffarah.currentRun ?? 0}/{summary?.profile.kaffarah.targetDays ?? 60}</p>
+                      <p className="text-white/30 text-[10px]">Consecutive run: {summary?.kaffarah.currentRun ?? 0}/{summary?.profile.kaffarah.targetDays ?? 60}</p>
                     </div>
                   </button>
                 )}
@@ -1000,12 +1000,12 @@ export default function FastingTracker() {
                   <button
                     key={v.id}
                     onClick={() => { setCategory('nadhr'); setVowId(v.id); setShowTypeSheet(false); }}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'nadhr' && vowId === v.id ? 'border-emerald-500/40 bg-white/10' : 'border-emerald-500/8 bg-white/[0.03] hover:bg-white/[0.07]'}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'nadhr' && vowId === v.id ? 'border-emerald-500/40 bg-white/10' : 'border-emerald-500/10 bg-white/[0.03] hover:bg-white/[0.07]'}`}
                   >
                     <span className="text-xl">🤝</span>
                     <div>
                       <p className="text-xs font-bold text-cyan-300">Vow: {v.title}</p>
-                      <p className="text-white/35 text-[10px]">{v.completed}/{v.targetDays} days done</p>
+                      <p className="text-white/30 text-[10px]">{v.completed}/{v.targetDays} days done</p>
                     </div>
                   </button>
                 ))}
@@ -1212,7 +1212,7 @@ export default function FastingTracker() {
                     <p className="text-white/60 text-xs leading-relaxed">{c.info.detail}</p>
                     {c.info.refs.map((r) => (
                       <div key={r.url} className="space-y-0.5 pt-1">
-                        <p className="text-white/35 text-xs italic">{r.text}</p>
+                        <p className="text-white/30 text-xs italic">{r.text}</p>
                         <RefLink r={r} />
                       </div>
                     ))}

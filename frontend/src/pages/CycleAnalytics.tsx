@@ -153,26 +153,26 @@ export default function CycleAnalytics() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                 <p className="text-2xl font-black text-pink-200">{stats.haydCount}</p>
-                <p className="text-white/35 text-[10px] font-bold uppercase mt-1">cycles tracked</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">cycles tracked</p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                 <p className="text-2xl font-black text-pink-200">{stats.gaps.length ? Math.round(stats.mean) : '—'}</p>
-                <p className="text-white/35 text-[10px] font-bold uppercase mt-1">avg cycle days</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">avg cycle days</p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                 <p className="text-2xl font-black text-pink-200">{stats.lengths.length ? Math.round(stats.meanLen) : '—'}</p>
-                <p className="text-white/35 text-[10px] font-bold uppercase mt-1">avg period days</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">avg period days</p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                 <p className={`text-sm font-black mt-1.5 ${stats.regularity.tone}`}>{stats.regularity.label}</p>
-                <p className="text-white/35 text-[10px] font-bold uppercase mt-1.5">regularity {stats.gaps.length > 1 ? `(±${Math.round(stats.sd)}d)` : ''}</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1.5">regularity {stats.gaps.length > 1 ? `(±${Math.round(stats.sd)}d)` : ''}</p>
               </div>
             </div>
 
             {/* Predicted windows */}
             <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
               <h2 className="text-white font-black">🔮 Expected windows</h2>
-              <p className="text-white/35 text-xs mt-0.5">
+              <p className="text-white/30 text-xs mt-0.5">
                 Mean cycle ± variability — a window, not a promise. Your body sets the truth.
               </p>
               {stats.windows.length === 0 ? (
@@ -183,7 +183,7 @@ export default function CycleAnalytics() {
                     <motion.div
                       key={w.center}
                       initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
-                      className="flex items-center gap-3 rounded-xl bg-pink-500/8 border border-pink-400/15 px-4 py-2.5"
+                      className="flex items-center gap-3 rounded-xl bg-pink-500/10 border border-pink-400/15 px-4 py-2.5"
                     >
                       <span className="text-lg">{['🌸', '🌷', '🌺'][i]}</span>
                       <div className="flex-1">
@@ -203,7 +203,7 @@ export default function CycleAnalytics() {
                 <div className="space-y-1.5">
                   {stats.gaps.slice(-8).map((g) => (
                     <div key={g.from} className="flex items-center gap-2 text-xs">
-                      <span className="text-white/35 w-14">{fmt(g.from)}</span>
+                      <span className="text-white/30 w-14">{fmt(g.from)}</span>
                       <div className="flex-1 h-4 rounded-full bg-white/5 overflow-hidden">
                         <div className="h-full rounded-full bg-gradient-to-r from-pink-500/60 to-rose-400/60" style={{ width: `${(g.days / maxGap) * 100}%` }} />
                       </div>
@@ -217,7 +217,7 @@ export default function CycleAnalytics() {
                     <div className="space-y-1.5">
                       {stats.lengths.slice(-8).map((l) => (
                         <div key={l.from} className="flex items-center gap-2 text-xs">
-                          <span className="text-white/35 w-14">{fmt(l.from)}</span>
+                          <span className="text-white/30 w-14">{fmt(l.from)}</span>
                           <div className="flex-1 h-4 rounded-full bg-white/5 overflow-hidden">
                             <div className="h-full rounded-full bg-gradient-to-r from-purple-500/50 to-pink-400/50" style={{ width: `${(l.days / maxLen) * 100}%` }} />
                           </div>
@@ -242,7 +242,7 @@ export default function CycleAnalytics() {
                         <div className="flex-1 h-3 rounded-full bg-white/5 overflow-hidden">
                           <div className="h-full rounded-full bg-rose-400/50" style={{ width: `${Math.min(100, n * 12)}%` }} />
                         </div>
-                        <span className="text-white/35 w-10 text-right">{n} day{n > 1 ? 's' : ''}</span>
+                        <span className="text-white/30 w-10 text-right">{n} day{n > 1 ? 's' : ''}</span>
                       </div>
                     ))}
                   </div>
@@ -275,7 +275,7 @@ export default function CycleAnalytics() {
               ) : (
                 <div className="space-y-1.5">
                   {(summary?.logs ?? []).map((l) => (
-                    <div key={l._id} className="flex items-center gap-3 rounded-xl bg-white/3 px-3 py-2 text-xs">
+                    <div key={l._id} className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2 text-xs">
                       <span>{l.type === 'nifas' ? '🤱' : '🌸'}</span>
                       <span className="text-white/70 flex-1">
                         {fmtFull(l.startDate)} — {l.endDate ? fmtFull(l.endDate) : 'ongoing'}

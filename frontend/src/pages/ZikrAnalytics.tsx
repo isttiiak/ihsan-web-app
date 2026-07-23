@@ -131,7 +131,7 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
@@ -145,7 +145,7 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-brand-border/60">
           <div>
             <h3 className="text-lg font-black text-brand-emerald">Log Missed Counts</h3>
-            <p className="text-white/35 text-xs mt-0.5">Add zikr you counted outside the app today</p>
+            <p className="text-white/30 text-xs mt-0.5">Add zikr you counted outside the app today</p>
           </div>
           <button onClick={onClose} className="text-white/40 hover:text-white p-1 transition-colors">
             <XMarkIcon className="w-5 h-5" />
@@ -201,15 +201,7 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
                 </button>
               </div>
 
-              {/* Today's existing count (only meaningful for today) */}
-              {daysBack === 0 && (
-                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-emerald-500/10">
-                  <span className="text-white/50 text-sm">Today's count so far</span>
-                  <span className="text-white font-black text-lg tabular-nums">{existingCount.toLocaleString()}</span>
-                </div>
-              )}
-
-              {/* Amount to add */}
+              {/* Amount FIRST (Istiak: type → save, fastest path), context after */}
               <div className="space-y-1.5">
                 <label className="text-xs text-white/50 uppercase tracking-wider font-bold">Counts to add</label>
                 <input
@@ -223,6 +215,14 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
                   autoFocus
                 />
               </div>
+
+              {/* Today's existing count (only meaningful for today) */}
+              {daysBack === 0 && (
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-emerald-500/10">
+                  <span className="text-white/50 text-sm">Today's count so far</span>
+                  <span className="text-white font-black text-lg tabular-nums">{existingCount.toLocaleString()}</span>
+                </div>
+              )}
 
               {/* Total preview */}
               {parsedAmount > 0 && (

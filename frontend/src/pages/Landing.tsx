@@ -155,7 +155,7 @@ export default function Landing() {
           <div className="rounded-3xl border border-emerald-500/10 bg-brand-deep/70 p-6 sm:p-8 text-center">
             <div className="text-4xl mb-2">🌅</div>
             <h3 className="text-white font-black text-lg">Your day begins at Fajr — not midnight</h3>
-            <p className="text-white/45 text-sm mt-2 max-w-xl mx-auto leading-relaxed">
+            <p className="text-white/40 text-sm mt-2 max-w-xl mx-auto leading-relaxed">
               Isha prayed after midnight and suhoor before dawn belong to the right day, because Ihsan's
               tracking day flows the way a worship day actually does: dawn to dawn.
             </p>
@@ -167,7 +167,7 @@ export default function Landing() {
           <h2 className="text-2xl sm:text-3xl font-black text-white">
             "So compete with one another in doing good."
           </h2>
-          <p className="text-white/35 text-sm mt-2">
+          <p className="text-white/30 text-sm mt-2">
             <a className="underline" href="https://quran.com/2/148" target="_blank" rel="noreferrer">Quran 2:148</a>
           </p>
           <div className="flex flex-wrap justify-center gap-3 mt-7">

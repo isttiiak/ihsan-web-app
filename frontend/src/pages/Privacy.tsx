@@ -76,7 +76,7 @@ export default function Privacy() {
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="text-center py-6 space-y-2">
             <p className="text-5xl">🔒</p>
             <h2 className="text-3xl font-black text-white">Privacy</h2>
-            <p className="text-white/45 text-sm max-w-md mx-auto leading-relaxed">
+            <p className="text-white/40 text-sm max-w-md mx-auto leading-relaxed">
               Plain words, no legal maze: here is exactly what Ihsan stores, what it never touches,
               and how you stay in control.
             </p>
@@ -92,7 +92,7 @@ export default function Privacy() {
               <p className="text-white font-bold text-sm mb-2">{s.emoji} {s.title}</p>
               <ul className="space-y-1.5">
                 {s.body.map((line, j) => (
-                  <li key={j} className="text-white/45 text-xs leading-relaxed pl-3 border-l-2 border-emerald-500/10">{line}</li>
+                  <li key={j} className="text-white/40 text-xs leading-relaxed pl-3 border-l-2 border-emerald-500/10">{line}</li>
                 ))}
               </ul>
             </motion.div>

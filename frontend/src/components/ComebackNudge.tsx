@@ -75,12 +75,12 @@ export default function ComebackNudge() {
           <div className="flex items-center justify-between mb-2">
             <AiBadge label="Welcome back" />
             <button
-              className="text-white/35 hover:text-white text-xs"
+              className="text-white/30 hover:text-white text-xs"
               onClick={() => setDismissed(true)}
               aria-label="Dismiss"
             >Dismiss</button>
           </div>
-          <p className="text-white/85 text-sm leading-relaxed">{message}</p>
+          <p className="text-white/80 text-sm leading-relaxed">{message}</p>
           <div className="flex flex-wrap gap-2 mt-3">
             <Link to="/quran/browse" className="btn btn-xs rounded-xl border-0 text-white font-bold bg-brand-emerald hover:bg-brand-emerald-dim">
               📖 Read one āyah

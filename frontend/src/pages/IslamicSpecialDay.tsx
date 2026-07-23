@@ -62,7 +62,7 @@ export default function IslamicSpecialDay() {
               </span>
               <h1 className="text-3xl sm:text-4xl font-black text-white mb-1">{day.name}</h1>
               <p className="font-arabic text-white/40 text-lg mb-3">{day.arabicName}</p>
-              <p className="text-white/65 text-sm leading-relaxed max-w-lg mx-auto">{day.shortDesc}</p>
+              <p className="text-white/60 text-sm leading-relaxed max-w-lg mx-auto">{day.shortDesc}</p>
 
               {FASTING_DAY_IDS.has(day.id) && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
@@ -112,9 +112,9 @@ export default function IslamicSpecialDay() {
                   >
                     <span className="text-xl shrink-0 mt-0.5">{todo.icon}</span>
                     <div className="min-w-0">
-                      <p className="text-white/85 text-sm font-semibold leading-snug">{todo.action}</p>
+                      <p className="text-white/80 text-sm font-semibold leading-snug">{todo.action}</p>
                       {todo.note && (
-                        <p className="text-white/35 text-xs mt-0.5 leading-relaxed">{todo.note}</p>
+                        <p className="text-white/30 text-xs mt-0.5 leading-relaxed">{todo.note}</p>
                       )}
                     </div>
                   </motion.div>

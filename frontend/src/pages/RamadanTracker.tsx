@@ -123,12 +123,12 @@ export default function RamadanTracker() {
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5 space-y-3">
             <h2 className="text-white font-black">🧭 Prepare your heart</h2>
             <div className="space-y-2 text-sm">
-              <Link to="/fasting" className="flex items-center gap-3 rounded-xl px-3 py-3 bg-white/3 hover:bg-white/6 transition-colors">
+              <Link to="/fasting" className="flex items-center gap-3 rounded-xl px-3 py-3 bg-white/5 hover:bg-white/5 transition-colors">
                 <span className="text-lg">🧾</span>
                 <span className="flex-1 text-white/75">Clear your qaḍā days before Ramadan arrives</span>
                 <span className="text-brand-gold/70 text-xs">Open →</span>
               </Link>
-              <Link to="/fasting" className="flex items-center gap-3 rounded-xl px-3 py-3 bg-white/3 hover:bg-white/6 transition-colors">
+              <Link to="/fasting" className="flex items-center gap-3 rounded-xl px-3 py-3 bg-white/5 hover:bg-white/5 transition-colors">
                 <span className="text-lg">🌗</span>
                 <span className="flex-1 text-white/75">
                   Warm up in Shaʿbān — the Prophet ﷺ fasted in it more than any month besides Ramadan
@@ -136,7 +136,7 @@ export default function RamadanTracker() {
                 </span>
                 <span className="text-brand-gold/70 text-xs">Open →</span>
               </Link>
-              <Link to="/quran" className="flex items-center gap-3 rounded-xl px-3 py-3 bg-white/3 hover:bg-white/6 transition-colors">
+              <Link to="/quran" className="flex items-center gap-3 rounded-xl px-3 py-3 bg-white/5 hover:bg-white/5 transition-colors">
                 <span className="text-lg">📖</span>
                 <span className="flex-1 text-white/75">Build your Quran habit now so the month of the Quran finds you ready</span>
                 <span className="text-brand-gold/70 text-xs">Open →</span>
@@ -146,7 +146,7 @@ export default function RamadanTracker() {
 
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
             <h2 className="text-white font-black mb-2">✨ Why this month is everything</h2>
-            <ul className="space-y-2 text-xs text-white/55 leading-relaxed">
+            <ul className="space-y-2 text-xs text-white/50 leading-relaxed">
               <li>
                 • "Whoever fasts Ramadan out of faith and seeking reward, his previous sins are forgiven." —{' '}
                 <a className="underline" href="https://sunnah.com/bukhari:38" target="_blank" rel="noreferrer">Bukhārī 38</a>
@@ -183,10 +183,10 @@ export default function RamadanTracker() {
         >
           <div className="relative">
             <p className="text-brand-gold/80 text-xs font-bold uppercase tracking-widest">🌙 Ramadan {window_.hijriYear} AH</p>
-            <h2 className="text-3xl font-black text-white mt-1">Day {dayNo} <span className="text-white/35 text-lg">of {window_.days.length}</span></h2>
+            <h2 className="text-3xl font-black text-white mt-1">Day {dayNo} <span className="text-white/30 text-lg">of {window_.days.length}</span></h2>
 
             {/* progress */}
-            <div className="mt-3 h-2.5 rounded-full bg-white/8 overflow-hidden">
+            <div className="mt-3 h-2.5 rounded-full bg-white/10 overflow-hidden">
               <motion.div
                 className="h-full rounded-full bg-gradient-to-r from-brand-gold to-amber-400"
                 initial={{ width: 0 }}
@@ -200,12 +200,12 @@ export default function RamadanTracker() {
             {prayerTimes ? (
               <div className="flex gap-3 mt-4">
                 <div className="flex-1 rounded-2xl bg-white/5 border border-emerald-500/10 p-3 text-center">
-                  <p className="text-white/35 text-[10px] font-bold uppercase">Suhoor ends (Fajr)</p>
+                  <p className="text-white/30 text-[10px] font-bold uppercase">Suhoor ends (Fajr)</p>
                   <p className="text-white font-black text-lg">{formatTime(prayerTimes.fajr)}</p>
                   <p className="text-white/25 text-[10px]">"Take suhoor — there is blessing in it" · <a className="underline" href="https://sunnah.com/bukhari:1923" target="_blank" rel="noreferrer">Bukhārī 1923</a></p>
                 </div>
                 <div className="flex-1 rounded-2xl bg-white/5 border border-emerald-500/10 p-3 text-center">
-                  <p className="text-white/35 text-[10px] font-bold uppercase">Iftar (Maghrib)</p>
+                  <p className="text-white/30 text-[10px] font-bold uppercase">Iftar (Maghrib)</p>
                   <p className="text-white font-black text-lg">{formatTime(prayerTimes.maghrib)}</p>
                   <p className="text-white/25 text-[10px]">"People remain upon good while they hasten iftar" · <a className="underline" href="https://sunnah.com/bukhari:1957" target="_blank" rel="noreferrer">Bukhārī 1957</a></p>
                 </div>
@@ -295,7 +295,7 @@ export default function RamadanTracker() {
               const isPast = d.date < today;
               const isToday = d.date === today;
               let face = String(d.dayNumber);
-              let cls = 'bg-white/[0.04] text-white/35';
+              let cls = 'bg-white/[0.04] text-white/30';
               if (excused && d.date <= today) { face = '🌸'; cls = 'bg-pink-500/20 text-pink-100'; }
               else if (log?.status === 'completed') { face = '✓'; cls = 'bg-emerald-500/30 text-emerald-100'; }
               else if (log?.status === 'intended') { face = '🌅'; cls = 'bg-cyan-500/20 text-cyan-100'; }
@@ -319,7 +319,7 @@ export default function RamadanTracker() {
               );
             })}
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[10px] text-white/35">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[10px] text-white/30">
             <span>✓ fasted</span><span>🌅 intending</span><span>💔 broken</span><span>🌸 excused → qaḍā</span>
             <span>🕌 tarawih</span><span className="text-purple-300/60">bordered = odd night of last ten</span>
           </div>

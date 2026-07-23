@@ -201,7 +201,7 @@ export default function QuranAudioPlayer() {
             </div>
 
             {/* progress */}
-            <div className="flex items-center gap-2 text-[10px] text-white/35">
+            <div className="flex items-center gap-2 text-[10px] text-white/30">
               <span className="w-9 text-right">{fmtClock(progress)}</span>
               <input
                 type="range" min={0} max={100} step={0.1}

@@ -54,7 +54,7 @@ export default function QuranKhatam() {
                 {pos && posMeta ? <>{posMeta.englishName} <span className="text-white/40 text-base">· āyah {pos.ayah} of {posMeta.numberOfAyahs} · Juz {juzOf(pos.surah, pos.ayah)}</span></> : 'Bismillah — begin your journey'}
               </h2>
 
-              <div className="mt-4 h-3 rounded-full bg-white/8 overflow-hidden">
+              <div className="mt-4 h-3 rounded-full bg-white/10 overflow-hidden">
                 <motion.div
                   className="h-full rounded-full bg-gradient-to-r from-brand-emerald to-teal-400"
                   initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8 }}
@@ -100,17 +100,17 @@ export default function QuranKhatam() {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                 <p className="text-2xl font-black text-brand-gold">⭐ {summary.profile.khatmCount}</p>
-                <p className="text-white/35 text-[10px] font-bold uppercase mt-1">khatm completed</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">khatm completed</p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                 <p className="text-2xl font-black text-brand-emerald">{summary.pace ?? '—'}</p>
-                <p className="text-white/35 text-[10px] font-bold uppercase mt-1">āyāt / day (7-day avg)</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">āyāt / day (7-day avg)</p>
               </div>
             </div>
 
             <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
               <h3 className="text-white font-black text-sm mb-2">Why read in order?</h3>
-              <p className="text-white/45 text-xs leading-relaxed">
+              <p className="text-white/40 text-xs leading-relaxed">
                 A khatam moves through the Book the way it was compiled — every surah in its place, nothing
                 skipped, nothing forgotten. Keep this journey serial, and use the <b className="text-white/70">Read</b> tab
                 whenever your heart needs a specific surah — both count toward your daily goal and streak.

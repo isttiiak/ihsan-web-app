@@ -11,32 +11,32 @@ import FeedbackForm, { type FormType } from '../components/FeedbackForm.js';
 const TYPES: FormType[] = [
   {
     id: 'bug', label: 'Something is broken', emoji: '🐛',
-    active: 'bg-red-500/15 border-red-400/45 text-red-100',
+    active: 'bg-red-500/15 border-red-400/40 text-red-100',
     hint: 'A bug, wrong number, or a screen that misbehaves',
   },
   {
     id: 'idea', label: 'I have an idea', emoji: '💡',
-    active: 'bg-brand-gold/15 border-brand-gold/45 text-amber-100',
+    active: 'bg-brand-gold/15 border-brand-gold/40 text-amber-100',
     hint: 'A feature that would help your worship',
   },
   {
     id: 'design', label: 'Design & usability', emoji: '🎨',
-    active: 'bg-fuchsia-500/15 border-fuchsia-400/45 text-fuchsia-100',
+    active: 'bg-fuchsia-500/15 border-fuchsia-400/40 text-fuchsia-100',
     hint: 'Hard to read, hard to reach, confusing flow',
   },
   {
     id: 'reference', label: 'A reference needs fixing', emoji: '📖',
-    active: 'bg-brand-emerald/15 border-brand-emerald/45 text-emerald-100',
+    active: 'bg-brand-emerald/15 border-brand-emerald/40 text-emerald-100',
     hint: 'A verse, hadith or grading you believe is inaccurate',
   },
   {
     id: 'appreciation', label: 'Just to say salām', emoji: '💚',
-    active: 'bg-teal-500/15 border-teal-400/45 text-teal-100',
+    active: 'bg-teal-500/15 border-teal-400/40 text-teal-100',
     hint: 'Encouragement, du\'ā, or what you love',
   },
   {
     id: 'other', label: 'Something else', emoji: '✨',
-    active: 'bg-indigo-500/15 border-indigo-400/45 text-indigo-100',
+    active: 'bg-indigo-500/15 border-indigo-400/40 text-indigo-100',
     hint: "Anything that doesn't fit above",
   },
 ];
@@ -49,7 +49,7 @@ export default function Feedback() {
         {/* hero */}
         <motion.div
           initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }}
-          className="relative rounded-3xl border border-brand-emerald/25 bg-gradient-to-br from-brand-emerald/12 via-teal-500/8 to-brand-deep p-6 sm:p-8 overflow-hidden"
+          className="relative rounded-3xl border border-brand-emerald/25 bg-gradient-to-br from-brand-emerald/10 via-teal-500/10 to-brand-deep p-6 sm:p-8 overflow-hidden"
         >
           <motion.div
             aria-hidden
@@ -64,7 +64,7 @@ export default function Feedback() {
               transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
             >💬</motion.div>
             <h1 className="text-2xl sm:text-3xl font-black text-white">Your voice shapes Ihsan</h1>
-            <p className="text-white/55 text-sm sm:text-base mt-2.5 leading-relaxed">
+            <p className="text-white/50 text-sm sm:text-base mt-2.5 leading-relaxed">
               Ihsan is built quietly by one developer for the sake of Allah — which means there's no big team
               testing every screen. <b className="text-white/80">You are the testers.</b> If something broke,
               felt confusing, or you wished a feature existed — tell us. It genuinely gets read, and it
