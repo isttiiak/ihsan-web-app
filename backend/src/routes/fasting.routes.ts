@@ -39,4 +39,8 @@ router.delete('/vows/:vowId', requireAuth, fastingController.deleteVow);
 // DELETE /api/fasting/all — wipe all fasting data for the user
 router.delete('/all', requireAuth, fastingController.deleteAll);
 
+// DELETE /api/fasting/category/:category — one obligation's logs + its
+// profile bookkeeping (qada owed / kaffarah settings / vows), rest untouched
+router.delete('/category/:category', requireAuth, fastingController.deleteCategory);
+
 export default router;

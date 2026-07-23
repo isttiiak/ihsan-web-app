@@ -23,14 +23,66 @@ import {
 } from '@heroicons/react/24/outline';
 
 
-// ── Per-feature data deletion targets ─────────────────────────────────────────
-const DATA_TARGETS = [
-  { id: 'zikr',    label: 'Zikr data',    emoji: '📿', endpoint: '/api/zikr/all',    detail: 'All counts, daily history, goal & streak' },
-  { id: 'salat',   label: 'Salat logs',   emoji: '🕌', endpoint: '/api/salat/all',   detail: 'Every prayer log and its analytics' },
-  { id: 'fasting', label: 'Fasting data', emoji: '🌙', endpoint: '/api/fasting/all', detail: 'All fasts, qaḍā/kaffārah progress & vows' },
-  { id: 'quran',   label: 'Quran data',   emoji: '📖', endpoint: '/api/quran/all',   detail: 'Reading logs, streak & khatm bookmark' },
-  { id: 'cycle',   label: 'Rayhanah Cycle data', emoji: '🌸', endpoint: '/api/cycle/all', detail: 'All cycle history and settings — visible only to you' },
-] as const;
+// ── Unified danger zone (Istiak's spec): EVERY data-erase control lives here,
+// grouped per feature, with full AND partial options. ─────────────────────────
+interface DangerRow {
+  id: string;
+  label: string;
+  detail: string;
+  method: 'delete' | 'post' | 'patch';
+  endpoint: string;
+  body?: Record<string, unknown>;
+  /** partial action (indented under the group's "everything" row) */
+  sub?: boolean;
+}
+interface DangerGroup {
+  id: string;
+  emoji: string;
+  title: string;
+  /** colored-card classes so groups are recognizable at a glance */
+  card: string;
+  rows: DangerRow[];
+}
+
+const DANGER_GROUPS: DangerGroup[] = [
+  {
+    id: 'zikr', emoji: '📿', title: 'Zikr', card: 'border-emerald-500/20 bg-emerald-500/[0.04]',
+    rows: [
+      { id: 'zikr-all', label: 'All zikr data', detail: 'Counts, daily history, goal & streak', method: 'delete', endpoint: '/api/zikr/all' },
+    ],
+  },
+  {
+    id: 'salat', emoji: '🕌', title: 'Salat', card: 'border-indigo-500/20 bg-indigo-500/[0.04]',
+    rows: [
+      { id: 'salat-all', label: 'All salat logs', detail: 'Every prayer log and its analytics', method: 'delete', endpoint: '/api/salat/all' },
+    ],
+  },
+  {
+    id: 'fasting', emoji: '🌙', title: 'Fasting', card: 'border-amber-500/20 bg-amber-500/[0.04]',
+    rows: [
+      { id: 'fasting-all', label: 'All fasting data', detail: 'Every fast, qaḍā/kaffārah progress & vows', method: 'delete', endpoint: '/api/fasting/all' },
+      { id: 'fasting-qada', label: 'Qaḍā only', detail: 'Make-up fast logs + the owed counter', method: 'delete', endpoint: '/api/fasting/category/qada', sub: true },
+      { id: 'fasting-kaffarah', label: 'Kaffārah only', detail: 'Expiation logs + its settings', method: 'delete', endpoint: '/api/fasting/category/kaffarah', sub: true },
+      { id: 'fasting-voluntary', label: 'Voluntary only', detail: 'Mon/Thu, white days, Arafah… logs', method: 'delete', endpoint: '/api/fasting/category/voluntary', sub: true },
+      { id: 'fasting-ramadan', label: 'Ramadan only', detail: 'Ramadan tracker logs (incl. tarawih)', method: 'delete', endpoint: '/api/fasting/category/ramadan', sub: true },
+      { id: 'fasting-vows', label: 'Vows (nadhr) only', detail: 'Vow fasts + the vow list itself', method: 'delete', endpoint: '/api/fasting/category/nadhr', sub: true },
+    ],
+  },
+  {
+    id: 'quran', emoji: '📖', title: 'Quran', card: 'border-cyan-500/20 bg-cyan-500/[0.04]',
+    rows: [
+      { id: 'quran-all', label: 'All Quran data', detail: 'Reading logs, streak, bookmarks & khatm', method: 'delete', endpoint: '/api/quran/all' },
+      { id: 'quran-khatam', label: 'Reset khatam journey', detail: 'Bookmark → 1:1, journey un-starts; completed count stays', method: 'post', endpoint: '/api/quran/khatam/reset', sub: true },
+      { id: 'quran-goal', label: 'Remove reading goal', detail: 'Back to no daily target; history stays', method: 'patch', endpoint: '/api/quran/profile', body: { dailyGoalAyat: 0 }, sub: true },
+    ],
+  },
+  {
+    id: 'cycle', emoji: '🌸', title: 'Rayhanah Cycle', card: 'border-rose-500/20 bg-rose-500/[0.04]',
+    rows: [
+      { id: 'cycle-all', label: 'All cycle data', detail: 'History, wellness notes & settings — visible only to you', method: 'delete', endpoint: '/api/cycle/all' },
+    ],
+  },
+];
 
 function SectionCard({ icon, title, subtitle, delay, children }: {
   icon: React.ReactNode;
@@ -84,9 +136,9 @@ function Toggle({ checked, onChange, title, detail, accent = 'toggle-success' }:
 
 export default function Settings() {
   const { aiEnabled, setAiEnabled, user } = useAuthStore();
-  // Rayhanah is a sisters-only feature — its delete row must not appear for
+  // Rayhanah is a sisters-only feature — its delete group must not appear for
   // anyone else (a brother seeing a 🌸 cycle-data row was a bug).
-  const dataTargets = DATA_TARGETS.filter((t) => t.id !== 'cycle' || user?.gender === 'female');
+  const dangerGroups = DANGER_GROUPS.filter((g) => g.id !== 'cycle' || user?.gender === 'female');
   const {
     reduceMotion, highContrast, showNoorAllTime, showNoorToday,
     setReduceMotion, setHighContrast, setShowNoorAllTime, setShowNoorToday,
@@ -244,15 +296,17 @@ export default function Settings() {
     }
   };
 
-  // ── Per-feature deletion (double confirm) ───────────────────────────────────
-  const deleteData = async (target: (typeof DATA_TARGETS)[number]) => {
-    setDeleting(target.id);
+  // ── Danger-zone executor (full + partial actions, double confirm) ──────────
+  const runDanger = async (row: DangerRow) => {
+    setDeleting(row.id);
     try {
-      await api.delete(target.endpoint);
+      if (row.method === 'delete') await api.delete(row.endpoint);
+      else if (row.method === 'post') await api.post(row.endpoint, row.body ?? {});
+      else await api.patch(row.endpoint, row.body ?? {});
       await queryClient.invalidateQueries();
-      toast.success(`${target.label} deleted.`, { icon: '🗑️' });
+      toast.success(`${row.label} — done.`, { icon: '🗑️' });
     } catch {
-      toast.error(`Could not delete ${target.label.toLowerCase()} — try again.`);
+      toast.error(`Could not complete "${row.label}" — try again.`);
     } finally {
       setDeleting(null);
       setConfirmTarget(null);
@@ -480,36 +534,40 @@ export default function Settings() {
             </div>
 
             <p className="text-red-400/70 text-[11px] uppercase tracking-widest font-bold mb-2">Danger zone — cannot be undone</p>
-            <div className="space-y-2">
-              {dataTargets.map((t) => (
-                <div key={t.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-red-500/15 bg-red-500/[0.04]">
-                  <span className="text-lg shrink-0">{t.emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white/70 text-sm font-semibold">{t.label}</p>
-                    <p className="text-white/30 text-[11px]">{t.detail}</p>
-                  </div>
-                  {confirmTarget === t.id ? (
-                    <div className="flex gap-1.5 shrink-0">
-                      <button
-                        onClick={() => void deleteData(t)}
-                        disabled={deleting === t.id}
-                        className="btn btn-xs bg-red-500 hover:bg-red-600 text-white border-0"
-                      >
-                        {deleting === t.id ? <span className="loading loading-spinner loading-xs" /> : 'Yes, delete'}
-                      </button>
-                      <button onClick={() => setConfirmTarget(null)} className="btn btn-xs btn-ghost text-white/50">
-                        Cancel
-                      </button>
+            <div className="space-y-3">
+              {dangerGroups.map((g) => (
+                <div key={g.id} className={`rounded-2xl border ${g.card} p-3 space-y-1.5`}>
+                  <p className="text-white/70 text-xs font-black">{g.emoji} {g.title}</p>
+                  {g.rows.map((row) => (
+                    <div key={row.id} className={`flex items-center gap-3 py-1.5 ${row.sub ? 'pl-4 border-l-2 border-white/5 ml-1' : ''}`}>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm ${row.sub ? 'text-white/55' : 'text-white/75 font-semibold'}`}>{row.label}</p>
+                        <p className="text-white/30 text-[11px]">{row.detail}</p>
+                      </div>
+                      {confirmTarget === row.id ? (
+                        <div className="flex gap-1.5 shrink-0">
+                          <button
+                            onClick={() => void runDanger(row)}
+                            disabled={deleting === row.id}
+                            className="btn btn-xs bg-red-500 hover:bg-red-600 text-white border-0"
+                          >
+                            {deleting === row.id ? <span className="loading loading-spinner loading-xs" /> : 'Yes, do it'}
+                          </button>
+                          <button onClick={() => setConfirmTarget(null)} className="btn btn-xs btn-ghost text-white/50">
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmTarget(row.id)}
+                          aria-label={row.label}
+                          className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10 gap-1 shrink-0"
+                        >
+                          <TrashIcon className="w-3.5 h-3.5" /> {row.method === 'delete' ? 'Delete' : row.id === 'quran-khatam' ? 'Reset' : 'Remove'}
+                        </button>
+                      )}
                     </div>
-                  ) : (
-                    <button
-                      onClick={() => setConfirmTarget(t.id)}
-                      aria-label={`Delete ${t.label}`}
-                      className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10 gap-1 shrink-0"
-                    >
-                      <TrashIcon className="w-3.5 h-3.5" /> Delete
-                    </button>
-                  )}
+                  ))}
                 </div>
               ))}
             </div>

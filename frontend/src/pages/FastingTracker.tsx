@@ -1015,23 +1015,26 @@ export default function FastingTracker() {
         )}
       </AnimatePresence>
 
-      {/* ── Manage sheet (qada / kaffarah / vows) ── */}
+      {/* ── Fasting settings — a full right-side DRAWER like the Quran
+             settings (Istiak: no more cramped modal) ── */}
       <AnimatePresence>
         {showManage && (
+          <>
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
-            onClick={(e) => { if (e.target === e.currentTarget) setShowManage(false); }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowManage(false)}
+          />
+          <motion.aside
+            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 260 }}
+            className="fixed right-0 top-0 bottom-0 z-[55] w-full max-w-sm bg-brand-deep border-l border-brand-border overflow-y-auto"
+            role="dialog" aria-label="Fasting settings"
           >
-            <motion.div
-              initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
-              transition={{ type: 'spring', damping: 26 }}
-              className="bg-brand-surface rounded-3xl w-full max-w-md shadow-2xl border border-brand-border max-h-[88vh] overflow-y-auto"
-            >
-              <div className="sticky top-0 bg-brand-surface/95 backdrop-blur-sm px-5 pt-5 pb-3 flex items-center justify-between border-b border-slate-400/5 z-10">
+              <div className="sticky top-0 bg-brand-deep/95 backdrop-blur px-5 py-4 flex items-center justify-between border-b border-slate-400/5 z-10">
                 <div>
-                  <h3 className="text-base font-black text-white">Obligations & vows</h3>
-                  <p className="text-white/30 text-[11px]">Activate what applies to you — a countdown capsule appears on the main card</p>
+                  <h3 className="text-lg font-black text-white">⚙️ Fasting settings</h3>
+                  <p className="text-white/30 text-[11px]">Obligations & vows — a countdown capsule appears on the main card</p>
                 </div>
                 <button onClick={() => setShowManage(false)} aria-label="Close" className="text-white/30 hover:text-white p-1">
                   <XMarkIcon className="w-5 h-5" />
@@ -1175,8 +1178,8 @@ export default function FastingTracker() {
                   </div>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
+          </motion.aside>
+          </>
         )}
       </AnimatePresence>
 

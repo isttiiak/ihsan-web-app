@@ -74,3 +74,17 @@ export const deleteAll = async (req: Request, res: Response, next: NextFunction)
     res.json({ ok: true, ...result });
   } catch (err) { next(err); }
 };
+
+const FASTING_CATEGORIES = ['qada', 'kaffarah', 'nadhr', 'voluntary', 'ramadan'] as const;
+
+export const deleteCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const raw = String(req.params.category ?? '');
+    if (!(FASTING_CATEGORIES as readonly string[]).includes(raw)) {
+      res.status(400).json({ ok: false, error: 'Unknown fasting category' });
+      return;
+    }
+    const result = await fastingService.deleteFastingCategory(req.user.uid, raw as fastingService.FastingCategory);
+    res.json({ ok: true, ...result });
+  } catch (err) { next(err); }
+};

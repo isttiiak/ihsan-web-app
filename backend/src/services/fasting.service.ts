@@ -240,3 +240,22 @@ export async function deleteAllUserFastingData(userId: string): Promise<{ delete
   await FastingProfile.deleteOne({ userId });
   return { deletedCount: result.deletedCount ?? 0 };
 }
+
+export type { FastingCategory };
+
+/** Partial deletion (Istiak's unified danger zone): remove one obligation's
+ * logs AND its related profile bookkeeping, leaving everything else intact. */
+export async function deleteFastingCategory(userId: string, category: FastingCategory): Promise<{ deletedCount: number }> {
+  const result = await FastingLog.deleteMany({ userId, category });
+  if (category === 'qada') {
+    await FastingProfile.updateOne({ userId }, { $set: { qadaOwed: 0 } });
+  } else if (category === 'kaffarah') {
+    await FastingProfile.updateOne(
+      { userId },
+      { $set: { kaffarah: { active: false, targetDays: 60, startDate: null } } }
+    );
+  } else if (category === 'nadhr') {
+    await FastingProfile.updateOne({ userId }, { $set: { vows: [] } });
+  }
+  return { deletedCount: result.deletedCount ?? 0 };
+}
