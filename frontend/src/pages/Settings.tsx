@@ -156,6 +156,7 @@ export default function Settings() {
   const aiWeekly = useAiWeekly();
   const [exporting, setExporting] = useState(false);
   const [exportingXlsx, setExportingXlsx] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -192,29 +193,19 @@ export default function Settings() {
   };
 
   // ── Data export / import ────────────────────────────────────────────────────
+  // ── Full-account backup: EVERYTHING in one file (v4.9 rebuild) ──────────────
   const exportProfile = async () => {
     setExporting(true);
-    const idToken = await getIdToken();
     try {
-      const headers: Record<string, string> = idToken ? { Authorization: `Bearer ${idToken}` } : {};
-      const [profileRes, zikrRes] = await Promise.allSettled([
-        fetch(`${API_BASE}/api/user/me`, { headers }),
-        fetch(`${API_BASE}/api/zikr/summary`, { headers }),
-      ]);
-      const profile = profileRes.status === 'fulfilled' && profileRes.value.ok
-        ? await profileRes.value.json() as unknown : null;
-      const zikr = zikrRes.status === 'fulfilled' && zikrRes.value.ok
-        ? await zikrRes.value.json() as unknown : null;
-      const blob = new Blob(
-        [JSON.stringify({ exportedAt: new Date().toISOString(), profile, zikr }, null, 2)],
-        { type: 'application/json' }
-      );
+      const { data } = await api.get<{ ok: boolean; backup: unknown }>('/api/user/export');
+      const blob = new Blob([JSON.stringify(data.backup, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `ihsan-export-${new Date().toISOString().substring(0, 10)}.json`;
+      a.download = `ihsan-backup-${new Date().toISOString().substring(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
+      toast.success('Backup downloaded — keep it somewhere safe 📦');
     } catch {
       toast.error('Export failed. Check your connection and try again.');
     } finally {
@@ -284,15 +275,29 @@ export default function Settings() {
     }
   };
 
+  // ── Restore from an Ihsan backup .json — merge, imported days win ───────────
   const importProfile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file
     if (!file) return;
+    setImporting(true);
     try {
-      const data = JSON.parse(await file.text()) as unknown;
-      localStorage.setItem('ihsan_user', JSON.stringify(data));
-      toast.success('Imported local profile cache — refresh to apply.');
+      const parsed = JSON.parse(await file.text()) as { app?: string; version?: number };
+      if (parsed?.app !== 'ihsan' || parsed?.version !== 1) {
+        toast.error('That is not an Ihsan backup file — export one from this page first.');
+        return;
+      }
+      const { data } = await api.post<{ ok: boolean; counts: Record<string, number> }>('/api/user/import', parsed);
+      await queryClient.invalidateQueries();
+      const c = data.counts ?? {};
+      toast.success(
+        `Restored: ${c.zikrDays ?? 0} zikr · ${c.salatDays ?? 0} salat · ${c.fastingDays ?? 0} fasting · ${c.quranDays ?? 0} quran day(s) ✅`,
+        { duration: 6000 }
+      );
     } catch {
-      toast.error('Invalid file.');
+      toast.error('Import failed — the file may be damaged, or the connection dropped.');
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -495,7 +500,7 @@ export default function Settings() {
                 disabled={exporting}
               >
                 {exporting ? <span className="loading loading-spinner loading-xs" /> : <ArrowDownTrayIcon className="w-4 h-4" />}
-                Export my data (JSON)
+                Full backup (.json)
               </button>
               <button
                 className="btn btn-sm bg-brand-deep border border-brand-border text-white/70 hover:text-white gap-2"
@@ -505,12 +510,17 @@ export default function Settings() {
                 {exportingXlsx ? <span className="loading loading-spinner loading-xs" /> : <ArrowDownTrayIcon className="w-4 h-4" />}
                 Export as Excel (.xlsx)
               </button>
-              <label className="btn btn-sm bg-brand-deep border border-brand-border text-white/70 hover:text-white gap-2 cursor-pointer">
-                <ArrowUpTrayIcon className="w-4 h-4" />
-                Import
-                <input type="file" accept="application/json" className="hidden" onChange={(e) => void importProfile(e)} />
+              <label className={`btn btn-sm bg-brand-deep border border-brand-border text-white/70 hover:text-white gap-2 cursor-pointer ${importing ? 'pointer-events-none opacity-60' : ''}`}>
+                {importing ? <span className="loading loading-spinner loading-xs" /> : <ArrowUpTrayIcon className="w-4 h-4" />}
+                Restore backup
+                <input type="file" accept="application/json,.json" className="hidden" onChange={(e) => void importProfile(e)} />
               </label>
             </div>
+            <p className="text-white/30 text-[11px] mb-4 leading-relaxed">
+              The .json backup contains <b className="text-white/50">everything</b> — zikr history, salat, fasting,
+              Quran progress{user?.gender === 'female' ? ', Rayhanah cycle data' : ''} and your profile. Restoring
+              merges it back: days in the file overwrite the same days here, everything else stays.
+            </p>
 
             {/* Saved prayer location (stored only in this browser) */}
             <div className="flex items-center gap-3 p-2.5 rounded-xl border border-brand-border bg-brand-deep/40 mb-5">

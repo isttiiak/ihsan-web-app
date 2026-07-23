@@ -79,4 +79,44 @@ describe("User profile API", () => {
     expect(res.status).toBe(400);
     expect(res.body.ok).toBe(false);
   });
+
+  test("v4.9: export → import round-trips every domain (merge, imported wins)", async () => {
+    const token = fakeJwt({ uid: "bkp1", email: "bkp1@test.dev", name: "Backup" });
+    const auth = (r) => r.set("Authorization", `Bearer ${token}`);
+    await request(app).post("/api/auth/verify").send({ idToken: token });
+
+    // Seed data across domains
+    await auth(request(app).post("/api/zikr/increment/batch")).send({
+      increments: [{ zikrType: "SubhanAllah", amount: 33 }],
+      timezoneOffset: 0,
+      today: "2026-07-20",
+    });
+    await auth(request(app).post("/api/quran/read-ayat")).send({ date: "2026-07-20", count: 5 });
+    await auth(request(app).put("/api/fasting/log")).send({
+      date: "2026-07-20", category: "voluntary", voluntaryKind: "mon_thu", status: "completed",
+    });
+
+    const exp = await auth(request(app).get("/api/user/export"));
+    expect(exp.status).toBe(200);
+    const backup = exp.body.backup;
+    expect(backup.app).toBe("ihsan");
+    expect(backup.version).toBe(1);
+    expect(backup.zikr.zikrTotals.SubhanAllah).toBe(33);
+    expect(backup.quran.logs.length).toBe(1);
+    expect(backup.fasting.logs.length).toBe(1);
+
+    // Wipe zikr, then restore from the backup
+    await auth(request(app).delete("/api/zikr/all"));
+    const imp = await auth(request(app).post("/api/user/import")).send(backup);
+    expect(imp.status).toBe(200);
+    expect(imp.body.counts.zikrDays).toBe(1);
+
+    const summary = await auth(request(app).get("/api/zikr/summary?timezoneOffset=0"));
+    const perType = Object.fromEntries(summary.body.perType.map((p) => [p.zikrType, p.total]));
+    expect(perType.SubhanAllah).toBe(33);
+
+    // Garbage files are rejected
+    const bad = await auth(request(app).post("/api/user/import")).send({ hello: "world" });
+    expect(bad.status).toBe(400);
+  });
 });

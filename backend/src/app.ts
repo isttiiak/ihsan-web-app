@@ -23,8 +23,10 @@ app.set('trust proxy', 1);
 
 // Core middleware
 app.use(helmet());
-// Profile photos are sent as base64 data URLs — the 100kb default rejects them
-app.use(express.json({ limit: '1mb' }));
+// Profile photos are base64 data URLs (~200KB) and the v4.9 backup IMPORT
+// posts a whole account's history in one JSON — 4mb covers heavy users while
+// staying under Vercel's request body ceiling.
+app.use(express.json({ limit: '4mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 const isProd = process.env.NODE_ENV === 'production';

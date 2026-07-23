@@ -72,3 +72,33 @@ export const setPrimaryEmailHandler = async (req: Request, res: Response, next: 
     next(err);
   }
 };
+
+// ── Full-account backup & restore (Istiak's spec, v4.9) ─────────────────────
+
+export const exportAllHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const backupService = await import('../services/backup.service.js');
+    const data = await backupService.exportAll(req.user.uid);
+    res.json({ ok: true, backup: data });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const importAllHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const body = req.body as { app?: string; version?: number } & Record<string, unknown>;
+    if (body?.app !== 'ihsan' || body?.version !== 1) {
+      res.status(400).json({ ok: false, error: 'Not an Ihsan backup file (expected app "ihsan", version 1).' });
+      return;
+    }
+    const backupService = await import('../services/backup.service.js');
+    const counts = await backupService.importAll(
+      req.user.uid,
+      body as unknown as import('../services/backup.service.js').BackupFile
+    );
+    res.json({ ok: true, counts });
+  } catch (err) {
+    next(err);
+  }
+};

@@ -19,4 +19,8 @@ router.post('/link-google', requireAuth, validate(linkGoogleSchema), userControl
 router.post('/unlink-google', requireAuth, validate(unlinkGoogleSchema), userController.unlinkGoogleHandler);
 router.patch('/primary-email', requireAuth, validate(setPrimaryEmailSchema), userController.setPrimaryEmailHandler);
 
+// Full-account backup (one JSON of every domain) + merge-restore of that file
+router.get('/export', requireAuth, userController.exportAllHandler);
+router.post('/import', requireAuth, userController.importAllHandler);
+
 export default router;
