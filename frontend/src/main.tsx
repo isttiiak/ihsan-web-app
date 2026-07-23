@@ -6,6 +6,7 @@ import { PersistQueryClientProvider, removeOldestQuery } from '@tanstack/react-q
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from './App.js';
+import './i18n.js';
 import './styles.css';
 import './styles/global.css';
 import ThemeInit from './components/ThemeInit.js';

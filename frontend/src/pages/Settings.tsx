@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
+import i18n, { LANGUAGES } from '../i18n.js';
 import { useQueryClient } from '@tanstack/react-query';
 import api, { API_BASE, getIdToken } from '../lib/api.js';
 import { getHijriAdjustment, setHijriAdjustment, getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
@@ -20,6 +22,7 @@ import {
   LightBulbIcon,
   TrashIcon,
   ShieldCheckIcon,
+  LanguageIcon,
 } from '@heroicons/react/24/outline';
 
 
@@ -135,6 +138,7 @@ function Toggle({ checked, onChange, title, detail, accent = 'toggle-success' }:
 }
 
 export default function Settings() {
+  const { t } = useTranslation();
   const { aiEnabled, setAiEnabled, user } = useAuthStore();
   // Rayhanah is a sisters-only feature — its delete group must not appear for
   // anyone else (a brother seeing a 🌸 cycle-data row was a bug).
@@ -326,10 +330,39 @@ export default function Settings() {
           <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
             <div className="flex items-center justify-center gap-2.5 mb-1">
               <Cog6ToothIcon className="w-7 h-7 text-brand-emerald" />
-              <h1 className="text-2xl sm:text-3xl font-black text-brand-emerald">Settings</h1>
+              <h1 className="text-2xl sm:text-3xl font-black text-brand-emerald">{t('settings.title')}</h1>
             </div>
-            <p className="text-sm text-white/40">Everything under your control</p>
+            <p className="text-sm text-white/40">{t('settings.subtitle')}</p>
           </motion.div>
+
+          {/* ── Language — kept at the very top so it's the first thing found ── */}
+          <SectionCard
+            icon={<LanguageIcon className="w-5 h-5 text-brand-emerald" />}
+            title={`🌐 ${t('settings.language')}`}
+            subtitle={t('settings.languageSubtitle')}
+            delay={0.03}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              {LANGUAGES.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => { void i18n.changeLanguage(l.id); }}
+                  className={`p-3 rounded-xl border text-sm font-bold transition-all ${
+                    i18n.resolvedLanguage === l.id
+                      ? 'bg-brand-emerald/20 border-brand-emerald/50 text-brand-emerald'
+                      : 'bg-brand-deep/50 border-brand-border text-white/60 hover:border-brand-emerald/30'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-white/25 text-[10px] mt-3 leading-relaxed">
+              বাংলা covers the main screens today — the rest is arriving screen by screen, and every
+              untranslated text safely falls back to English. Quran &amp; hadith references are never
+              machine-translated.
+            </p>
+          </SectionCard>
 
           {/* ── Noor display ── */}
           <SectionCard

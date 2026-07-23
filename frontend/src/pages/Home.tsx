@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { MapPinIcon } from '@heroicons/react/24/outline';
 import { useZikrStore } from '../store/useZikrStore.js';
@@ -39,6 +40,7 @@ interface ActivityItem {
 }
 
 export default function Home() {
+  const { t } = useTranslation();
   const { counts = {}, hydrate } = useZikrStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -150,12 +152,12 @@ export default function Home() {
     {
       id: 'zikr',
       icon: '📿',
-      title: 'Zikr Counter',
-      description: 'Continue your remembrance of Allah',
+      title: t('home.zikrTitle'),
+      description: t('home.zikrSubtitle'),
       // effectiveToday = max(local taps, server total) — DB-backed so every
       // browser shows the same number for signed-in users
       stats: { label: 'Today', value: effectiveToday },
-      action: 'Start Counting',
+      action: t('home.startCounting'),
       link: '/zikr',
       accentColor: 'var(--brand-emerald, #10b981)',
       iconBg: 'bg-gradient-to-br from-brand-emerald/20 to-emerald-400/30',
@@ -165,12 +167,12 @@ export default function Home() {
     {
       id: 'salat',
       icon: '🕌',
-      title: 'Salat Tracker',
-      description: 'Track your daily prayers',
+      title: t('home.salatTitle'),
+      description: t('home.salatSubtitle'),
       stats: cycleActive
         ? { label: 'Rayhanah', value: '🌸 Excused' }
         : { label: 'Today', value: salatCompletedToday !== null ? `${salatCompletedToday}/5` : '—/5' },
-      action: 'Track Prayer',
+      action: t('home.trackPrayer'),
       link: '/salat',
       accentColor: 'var(--brand-emerald, #10b981)',
       iconBg: 'bg-gradient-to-br from-indigo-500/20 to-purple-500/30',

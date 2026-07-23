@@ -1,6 +1,6 @@
 {
   "name": "ihsan-frontend",
-  "version": "4.10.0",
+  "version": "4.11.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -20,9 +20,12 @@
     "daisyui": "^4.12.10",
     "firebase": "^10.13.1",
     "framer-motion": "^11.3.27",
+    "i18next": "^26.3.6",
+    "i18next-browser-languagedetector": "^8.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.6.0",
+    "react-i18next": "^17.0.11",
     "react-router-dom": "^6.26.2",
     "recharts": "^2.15.4",
     "sweetalert2": "^11.26.24",

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { auth } from '../firebase.js';
 import { signOut } from 'firebase/auth';
 import logo from '../assets/logo.svg';
@@ -24,6 +25,20 @@ import {
 } from '@heroicons/react/24/outline';
 
 // ── Page metadata ─────────────────────────────────────────────────────────────
+// i18n keys for the translatable page titles (fallback = the English title)
+const PAGE_KEYS: Record<string, string> = {
+  '/zikr': 'nav.zikrCounter',
+  '/zikr/analytics': 'nav.zikrAnalytics',
+  '/salat': 'nav.salatTracker',
+  '/salat/analytics': 'nav.salatAnalytics',
+  '/fasting': 'nav.fasting',
+  '/fasting/analytics': 'nav.fastingAnalytics',
+  '/prayer-times': 'nav.prayerTimes',
+  '/quran': 'nav.quranHabit',
+  '/friends': 'nav.friends',
+  '/settings': 'nav.settings',
+  '/profile': 'nav.myProfile',
+};
 const PAGE_META: Record<string, { title: string; emoji: string }> = {
   '/zikr':            { title: 'Zikr Counter',   emoji: '📿' },
   '/zikr/analytics':  { title: 'Zikr Analytics', emoji: '📊' },
@@ -95,6 +110,10 @@ function TextType({ text, speed = 55 }: { text: string; speed?: number }) {
 export default function Navbar() {
   const location  = useLocation();
   const navigate  = useNavigate();
+  const { t } = useTranslation();
+  /** translated page title with English fallback */
+  const pageTitle = (path: string, fallback: string) =>
+    PAGE_KEYS[path] ? t(PAGE_KEYS[path]!, { defaultValue: fallback }) : fallback;
   const { user, setUser } = useAuthStore();
   const reset = useZikrStore((s) => s.reset);
   const localTotal = useZikrStore((s) => Object.values(s.counts).reduce((a, b) => a + b, 0));
@@ -145,7 +164,7 @@ export default function Navbar() {
   }).length;
 
   const firstName = user?.displayName?.split(' ')[0] ?? '';
-  const greeting  = `Assalamu 'alaikum${firstName ? ', ' + firstName : ''}`;
+  const greeting  = `${t('home.greeting')}${firstName ? ', ' + firstName : ''}`;
 
   // ── Center content by route ───────────────────────────────────────────────
   const hijriToday = (() => { const h = getHijriDate(); return h ? formatHijriDate(h) : null; })();
@@ -206,7 +225,7 @@ export default function Navbar() {
                   className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all text-xs font-medium flex-shrink-0"
                 >
                   <ArrowLeftIcon className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{parentMeta.emoji} {parentMeta.title}</span>
+                  <span className="hidden sm:inline">{parentMeta.emoji} {parentPath === '/' ? t('nav.home') : pageTitle(parentPath, parentMeta.title)}</span>
                 </button>
 
                 {pageMeta && (
@@ -214,7 +233,7 @@ export default function Navbar() {
                     <span className="text-white/15 text-sm hidden sm:inline">|</span>
                     <span className="text-sm shrink-0" aria-hidden>{pageMeta.emoji}</span>
                     <span className="font-semibold text-white/70 text-xs sm:text-sm truncate max-w-[70px] sm:max-w-[130px]">
-                      {pageMeta.title}
+                      {pageTitle(location.pathname, pageMeta.title)}
                     </span>
                   </div>
                 )}
@@ -319,7 +338,7 @@ export default function Navbar() {
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
                       >
                         <UserCircleIcon className="w-4 h-4 text-brand-emerald/70" />
-                        Edit Profile
+                        {t('nav.editProfile')}
                       </Link>
                       <Link
                         to="/settings"
@@ -327,7 +346,7 @@ export default function Navbar() {
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
                       >
                         <Cog6ToothIcon className="w-4 h-4 text-white/40" />
-                        Settings
+                        {t('nav.settings')}
                       </Link>
                       <Link
                         to="/about"
@@ -335,7 +354,7 @@ export default function Navbar() {
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
                       >
                         <InformationCircleIcon className="w-4 h-4 text-brand-gold/60" />
-                        About Us
+                        {t('nav.aboutUs')}
                       </Link>
                       <Link
                         to="/privacy"
@@ -343,7 +362,7 @@ export default function Navbar() {
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
                       >
                         <ShieldCheckIcon className="w-4 h-4 text-cyan-300/60" />
-                        Privacy
+                        {t('nav.privacy')}
                       </Link>
 
                       {user.gender === 'female' && (
@@ -364,7 +383,7 @@ export default function Navbar() {
                         className="flex items-center gap-2.5 px-3 py-2.5 mt-1 rounded-xl border border-emerald-500/15 text-white/70 hover:text-white hover:bg-white/5 hover:border-brand-emerald/40 text-sm transition-colors"
                       >
                         <ChatBubbleLeftRightIcon className="w-4 h-4 text-brand-emerald/70" />
-                        Share feedback
+                        {t('nav.shareFeedback')}
                       </Link>
                       <Link
                         to="/contact"
@@ -372,7 +391,7 @@ export default function Navbar() {
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
                       >
                         <EnvelopeIcon className="w-4 h-4 text-cyan-300/60" />
-                        Contact us
+                        {t('nav.contactUs')}
                       </Link>
 
                       <div className="border-t border-brand-border/60 mt-1 pt-1">
@@ -381,7 +400,7 @@ export default function Navbar() {
                           onClick={() => { setDropdownOpen(false); setConfirmLogout(true); }}
                         >
                           <ArrowRightOnRectangleIcon className="w-4 h-4" />
-                          Sign Out
+                          {t('nav.signOut')}
                         </button>
                       </div>
                     </div>
@@ -394,7 +413,7 @@ export default function Navbar() {
                 className="ml-1 px-3 py-1.5 rounded-xl bg-brand-emerald hover:bg-brand-emerald-dim text-white text-xs font-semibold transition-all shadow-md"
                 onClick={() => sessionStorage.setItem('ihsan_redirect', location.pathname)}
               >
-                Sign In
+                {t('nav.signIn')}
               </Link>
             )}
           </div>
