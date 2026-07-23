@@ -8,9 +8,6 @@ import type { ReactNode } from 'react';
  * Every AI output carries <AiDisclaimer/> — never a source of evidence.
  */
 
-const AI_GRADIENT =
-  'conic-gradient(from 0deg, #10b981, #06b6d4, #6366f1, #a855f7, #ec4899, #f59e0b, #10b981)';
-
 /** A colorful pill/badge that marks a surface as AI. */
 export function AiBadge({ label = 'Naseeh · AI companion' }: { label?: string }) {
   return (
@@ -56,18 +53,22 @@ export function AiThinking({ label = 'Naseeh is reflecting…' }: { label?: stri
   );
 }
 
-/** A card wrapped in a slowly rotating colorful AI gradient BORDER only. The
- * interior is fully opaque so the moving gradient never sits behind the text
- * (Istiak: the moving background hurt readability). Rotation is slow + calm. */
+/** A card with a FULL gradient border whose colors slowly traverse the whole
+ * perimeter (Istiak: no partial "running" segment — the complete border stays
+ * visible at all times and the gradient drifts along it, calm and slow). The
+ * interior is fully opaque so nothing moves behind the text. */
 export function AiPanel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <div className={`relative rounded-3xl p-[2px] overflow-hidden ${className}`}>
       <motion.div
         aria-hidden
-        className="absolute left-1/2 top-1/2 w-[200%] aspect-square -translate-x-1/2 -translate-y-1/2"
-        style={{ background: AI_GRADIENT }}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+        className="absolute inset-0 rounded-3xl"
+        style={{
+          background: 'linear-gradient(100deg,#0f766e,#0e7490,#4f46e5,#7e22ce,#be185d,#b45309,#0f766e)',
+          backgroundSize: '300% 100%',
+        }}
+        animate={{ backgroundPosition: ['0% 50%', '300% 50%'] }}
+        transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
       />
       <div className="relative rounded-[calc(1.5rem-2px)] bg-brand-deep">
         {children}
