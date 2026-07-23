@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -7,12 +7,9 @@ import {
   BookmarkIcon as BookmarkOutline, SpeakerWaveIcon, SpeakerXMarkIcon, BookOpenIcon,
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolid, PlayIcon, PauseIcon } from '@heroicons/react/24/solid';
-import { SparklesIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useQuranSummary, useReadAyat, useToggleBookmark } from '../hooks/useQuran.js';
-import { useAiReflect } from '../hooks/useAi.js';
 import { useTafsir } from '../hooks/useQuran.js';
-import { AiPanel, AiThinking, AiDisclaimer, AiBadge } from '../components/ai/AiFlair.js';
 import { TAFSIRS, getPreferredTafsir, setPreferredTafsir } from '../utils/tafsir.js';
 import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, selectedTranslations, TRANSLATIONS, type SurahMeta, type AyahText } from '../utils/quranData.js';
 import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrate.js';
@@ -77,11 +74,16 @@ export default function QuranReader() {
   const { data: summary } = useQuranSummary();
   const readAyat = useReadAyat();
   const toggleBookmark = useToggleBookmark();
-  const reflect = useAiReflect();
-  const [reflectOpen, setReflectOpen] = useState(false);
   const [tafsirOpen, setTafsirOpen] = useState(false);
   const [tafsirEdition, setTafsirEdition] = useState<number>(getPreferredTafsir);
   const [splitTafsir, setSplitTafsir] = useState(false); // fullscreen 2-pane reading
+  // Draggable split (Istiak: a short āyah can pair with a LONG tafsir — the
+  // reader decides how much room each side gets). Left-pane %, persisted.
+  const [splitPct, setSplitPct] = useState<number>(() => {
+    const v = Number(localStorage.getItem('ihsan_split_pct'));
+    return Number.isFinite(v) && v >= 25 && v <= 75 ? v : 50;
+  });
+  const draggingRef = useRef(false);
 
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [ayat, setAyat] = useState<AyahText[]>([]);
@@ -262,45 +264,84 @@ export default function QuranReader() {
     if (idx > firstIdx) goToIdx(idx - 1);
   }, [idx, firstIdx, goToIdx]);
 
-  // ── AI reflection (encouragement only) ──
-  const onReflect = useCallback(() => {
-    if (!current) return;
-    setReflectOpen(true);
-    reflect.mutate({ surah: surahNo, ayah: current.numberInSurah, text: current.translations[0] || current.arabic });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, surahNo]);
-
-  // ── Tafsir (authentic, from quran.com) + optional AI simplification ──
+  // ── Tafsir (authentic, from quran.com — NO AI anywhere in the Quran rooms) ──
   const ayahNo = current?.numberInSurah ?? 0;
   const tafsir = useTafsir(surahNo, ayahNo, tafsirEdition, (tafsirOpen || splitTafsir) && ayahNo > 0);
+  const tafsirIsBn = TAFSIRS.find((t) => t.id === tafsirEdition)?.language === 'bn';
+  // Calm long-form reading: warm ink (never pure white), generous line-height,
+  // and a Bengali-friendly font stack when a বাংলা edition is selected.
+  const tafsirTextStyle = {
+    color: '#d6d0bf',
+    lineHeight: tafsirIsBn ? 2.15 : 1.95,
+    ...(tafsirIsBn ? { fontFamily: "'Noto Sans Bengali', 'Hind Siliguri', 'Bangla Sangam MN', 'Vrinda', sans-serif" } : {}),
+  } as const;
   const changeTafsirEdition = (id: number) => {
     setTafsirEdition(id);
     setPreferredTafsir(id);
   };
 
-  // Close the reflection when the ayah changes — it belongs to one āyah.
-  useEffect(() => { setReflectOpen(false); }, [current?.number]);
-
   // ── fullscreen + keyboard ──
+  // Native requestFullscreen where available; iOS Safari has none, so the
+  // `fullscreen` state ALWAYS drives a CSS fixed-inset fallback (the old
+  // `.then()` on an undefined return value silently broke mobile).
   const toggleFullscreen = useCallback(() => {
     const el = cardRef.current;
-    if (!el) return;
-    if (!document.fullscreenElement) {
-      void el.requestFullscreen?.().then(() => setFullscreen(true)).catch(() => setFullscreen(true));
-    } else {
-      void document.exitFullscreen?.();
+    if (fullscreen) {
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
       setFullscreen(false);
+      return;
     }
-  }, []);
+    try {
+      const p = el?.requestFullscreen?.();
+      if (p) p.catch(() => {});
+    } catch { /* no native fullscreen — CSS fallback still applies */ }
+    setFullscreen(true);
+  }, [fullscreen]);
 
   useEffect(() => {
     const onFsChange = () => {
-      const fs = !!document.fullscreenElement;
-      setFullscreen(fs);
-      if (!fs) setSplitTafsir(false); // split is a fullscreen-only mode
+      // Only native EXITS matter here (Esc / swipe) — entry is handled above.
+      if (!document.fullscreenElement) setFullscreen(false);
     };
     document.addEventListener('fullscreenchange', onFsChange);
     return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  // Split is a fullscreen-only mode; lock page scroll + drop the navbar under
+  // the CSS-fallback overlay while fullscreen.
+  useEffect(() => {
+    if (!fullscreen) setSplitTafsir(false);
+    const navbar = document.querySelector<HTMLElement>('nav');
+    if (fullscreen) {
+      if (navbar) navbar.style.zIndex = '0';
+      document.body.style.overflow = 'hidden';
+    } else {
+      if (navbar) navbar.style.zIndex = '';
+      document.body.style.overflow = '';
+    }
+    return () => {
+      if (navbar) navbar.style.zIndex = '';
+      document.body.style.overflow = '';
+    };
+  }, [fullscreen]);
+
+  // Drag-to-resize the fullscreen split (desktop pointer or touch).
+  const onDragStart = useCallback((e: ReactPointerEvent) => {
+    e.preventDefault();
+    draggingRef.current = true;
+    const onMove = (ev: PointerEvent) => {
+      if (!draggingRef.current) return;
+      const pct = Math.min(75, Math.max(25, (ev.clientX / window.innerWidth) * 100));
+      setSplitPct(pct);
+    };
+    const onUp = () => {
+      draggingRef.current = false;
+      setSplitPct((v) => { localStorage.setItem('ihsan_split_pct', String(Math.round(v))); return v; });
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   }, []);
 
   useEffect(() => {
@@ -370,18 +411,22 @@ export default function QuranReader() {
           )}
         </div>
 
-        {/* ── THE CARD ── */}
+        {/* ── THE CARD ──
+            Fullscreen uses the `fullscreen` STATE (CSS fixed-inset) so it works
+            on iOS too; native Fullscreen API is a progressive bonus. On mobile
+            the split becomes a vertical stack — āyah first, tafsir below. */}
         <div
           ref={cardRef}
-          className={`relative rounded-3xl border border-slate-400/10 bg-gradient-to-br from-[#0d1b17] via-[#0a1412] to-[#0d1420] overflow-hidden ${fullscreen ? 'fixed inset-0 z-50 rounded-none flex' : 'p-6 sm:p-10'}`}
+          className={`relative rounded-3xl border border-slate-400/10 bg-gradient-to-br from-[#0d1b17] via-[#0a1412] to-[#0d1420] ${fullscreen ? 'fixed inset-0 z-50 rounded-none flex flex-col md:flex-row overflow-y-auto md:overflow-hidden' : 'overflow-hidden p-4 sm:p-10'}`}
         >
-          {/* top-right controls */}
-          <div className={`absolute top-4 right-4 flex items-center gap-2 z-20`}>
+          {/* controls — in-flow row on phones (they overlapped the āyah header),
+              floating top-right from sm up */}
+          <div className={`flex items-center justify-end gap-2 z-20 ${fullscreen ? 'absolute top-3 right-3 sm:top-4 sm:right-4' : 'sm:absolute sm:top-4 sm:right-4 mb-2 sm:mb-0'}`}>
             <button
               aria-label={playing ? 'Stop recitation' : 'Recite this ayah'}
               title="Recite only this ayah"
               onClick={playAyah}
-              className={`w-10 h-10 rounded-full grid place-items-center border transition-all ${playing ? 'bg-brand-emerald text-white border-brand-emerald' : 'bg-white/5 text-brand-emerald border-slate-400/10 hover:border-brand-emerald/50'}`}
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border transition-all ${playing ? 'bg-brand-emerald text-white border-brand-emerald' : 'bg-white/5 text-brand-emerald border-slate-400/10 hover:border-brand-emerald/50'}`}
             >
               {playing ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4 ml-0.5" />}
             </button>
@@ -389,18 +434,18 @@ export default function QuranReader() {
               <button
                 aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this ayah'}
                 onClick={() => current && toggleBookmark.mutate({ surah: surahNo, ayah: current.numberInSurah })}
-                className="w-10 h-10 rounded-full grid place-items-center border bg-white/5 border-slate-400/10 text-brand-gold hover:border-brand-gold/50"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border bg-white/5 border-slate-400/10 text-brand-gold hover:border-brand-gold/50"
               >
                 {isBookmarked ? <BookmarkSolid className="w-4 h-4" /> : <BookmarkOutline className="w-4 h-4" />}
               </button>
             )}
-            {/* fullscreen-only: split the screen with the tafsir */}
+            {/* fullscreen-only: open the tafsir (split on desktop, stacked below on mobile) */}
             {fullscreen && (
               <button
-                aria-label={splitTafsir ? 'Hide tafsir pane' : 'Read tafsir side-by-side'}
-                title="Tafsir side-by-side"
+                aria-label={splitTafsir ? 'Hide tafsir' : 'Read tafsir'}
+                title="Tafsir"
                 onClick={() => setSplitTafsir((v) => !v)}
-                className={`w-10 h-10 rounded-full grid place-items-center border transition-all ${splitTafsir ? 'bg-brand-emerald/20 text-brand-emerald border-brand-emerald/50' : 'bg-white/5 text-white/60 border-slate-400/10 hover:text-white'}`}
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border transition-all ${splitTafsir ? 'bg-brand-emerald/20 text-brand-emerald border-brand-emerald/50' : 'bg-white/5 text-white/60 border-slate-400/10 hover:text-white'}`}
               >
                 <BookOpenIcon className="w-4 h-4" />
               </button>
@@ -408,14 +453,19 @@ export default function QuranReader() {
             <button
               aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
               onClick={toggleFullscreen}
-              className="w-10 h-10 rounded-full grid place-items-center border bg-white/5 border-slate-400/10 text-white/50 hover:text-white"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border bg-white/5 border-slate-400/10 text-white/50 hover:text-white"
             >
               {fullscreen ? <ArrowsPointingInIcon className="w-4 h-4" /> : <ArrowsPointingOutIcon className="w-4 h-4" />}
             </button>
           </div>
 
-          {/* LEFT pane (the āyah + meaning). In fullscreen it centers; when split, it takes ~55%. */}
-          <div className={fullscreen ? `relative h-full grid place-items-center overflow-y-auto p-6 sm:p-12 ${splitTafsir ? 'w-[55%] border-r border-slate-400/15' : 'w-full'}` : 'contents'}>
+          {/* LEFT pane (the āyah + meaning). Fullscreen desktop: resizable width; mobile: full-width block. */}
+          <div
+            className={fullscreen
+              ? `relative md:h-full grid place-items-center md:overflow-y-auto p-6 pt-16 sm:p-12 w-full shrink-0 md:shrink ${splitTafsir ? 'md:border-r md:border-slate-400/15 min-h-[70vh] md:min-h-0 md:w-[var(--split)]' : ''}`
+              : 'contents'}
+            style={fullscreen && splitTafsir ? ({ '--split': `${splitPct}%` } as CSSProperties) : undefined}
+          >
           {loading || !current ? (
             <div className="min-h-[40vh] grid place-items-center">
               <span className="loading loading-spinner loading-lg text-brand-emerald" />
@@ -426,11 +476,18 @@ export default function QuranReader() {
                 key={current.number}
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.18 }}
-                className={`${fullscreen ? 'max-w-4xl' : ''} w-full text-center space-y-6 sm:space-y-8 pt-8`}
+                className={`${fullscreen ? 'max-w-4xl' : ''} w-full text-center space-y-6 sm:space-y-8 pt-2 sm:pt-8`}
               >
-                <p className="text-white/25 text-xs font-bold tracking-widest">
-                  {surahMeta?.name} · {current.numberInSurah}/{surahMeta?.numberOfAyahs}
-                </p>
+                <div className="space-y-0.5">
+                  <p className="text-white/25 text-xs font-bold tracking-widest">
+                    {surahMeta?.name} · {current.numberInSurah}/{surahMeta?.numberOfAyahs}
+                  </p>
+                  {surahMeta?.englishNameTranslation && (
+                    <p className="text-white/30 text-[11px]">
+                      {surahMeta.englishName} — “{surahMeta.englishNameTranslation}”
+                    </p>
+                  )}
+                </div>
 
                 {/* Arabic — word hover highlight; timed highlight while reciting */}
                 <p dir="rtl" lang="ar" className={`${fontSize} leading-[2.2] font-serif text-[#e8e2d0]`}>
@@ -459,9 +516,10 @@ export default function QuranReader() {
             </AnimatePresence>
           )}
 
-          {/* prev / next */}
+          {/* prev / next — absolute at the bottom only on desktop fullscreen;
+              in the mobile stack they stay in flow under the āyah */}
           {!loading && current && (
-            <div className={`flex items-center justify-between ${fullscreen ? 'absolute bottom-8 left-8 right-8' : 'mt-8'}`}>
+            <div className={`flex items-center justify-between ${fullscreen ? 'mt-8 w-full max-w-4xl md:mt-0 md:max-w-none md:absolute md:bottom-8 md:left-8 md:right-8' : 'mt-8'}`}>
               <button
                 aria-label="Previous ayah"
                 onClick={goPrev}
@@ -484,39 +542,54 @@ export default function QuranReader() {
           )}
           </div>{/* end left pane */}
 
-          {/* RIGHT pane — tafsir side-by-side (fullscreen only) */}
+          {/* drag handle — desktop fullscreen split only */}
           {fullscreen && splitTafsir && (
-            <div className="w-[45%] h-full overflow-y-auto bg-brand-void/40 px-6 sm:px-8 pb-6 pt-16">
-              {/* pr-52 reserves room for the floating play/bookmark/tafsir/fullscreen buttons */}
-              <div className="flex items-center gap-2 mb-3 sticky top-0 bg-brand-void/95 backdrop-blur -mt-2 pt-2 pb-2 pr-52 z-10">
-                <BookOpenIcon className="w-4 h-4 text-brand-emerald shrink-0" />
-                <select
-                  aria-label="Tafsir edition"
-                  className="select select-xs flex-1 bg-white/5 border-slate-400/15 text-white/80 rounded-lg"
-                  value={tafsirEdition}
-                  onChange={(e) => changeTafsirEdition(Number(e.target.value))}
-                >
-                  <optgroup label="English">
-                    {TAFSIRS.filter((t) => t.language === 'en').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </optgroup>
-                  <optgroup label="বাংলা (Bengali)">
-                    {TAFSIRS.filter((t) => t.language === 'bn').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </optgroup>
-                </select>
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize the tafsir pane"
+              onPointerDown={onDragStart}
+              className="hidden md:flex items-center justify-center w-3 -mx-1.5 h-full cursor-col-resize z-30 group shrink-0"
+            >
+              <div className="w-1 h-16 rounded-full bg-white/15 group-hover:bg-brand-emerald/60 transition-colors" />
+            </div>
+          )}
+
+          {/* TAFSIR pane — beside the āyah on desktop, stacked below on mobile.
+              Calm long-form reading: warm surface, warm ink, roomy line-height. */}
+          {fullscreen && splitTafsir && (
+            <div className="w-full md:flex-1 md:h-full md:overflow-y-auto bg-[#12100c] px-5 sm:px-8 pb-10 pt-4 md:pt-6 border-t border-amber-100/5 md:border-t-0">
+              <div className="max-w-2xl mx-auto">
+                <div className="flex items-center gap-2 mb-3 md:sticky md:top-0 bg-[#12100c]/95 backdrop-blur md:-mt-2 md:pt-2 pb-2 z-10">
+                  <BookOpenIcon className="w-4 h-4 text-amber-200/60 shrink-0" />
+                  <select
+                    aria-label="Tafsir edition"
+                    className="select select-xs flex-1 max-w-xs bg-white/5 border-amber-100/10 text-white/80 rounded-lg"
+                    value={tafsirEdition}
+                    onChange={(e) => changeTafsirEdition(Number(e.target.value))}
+                  >
+                    <optgroup label="English">
+                      {TAFSIRS.filter((t) => t.language === 'en').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </optgroup>
+                    <optgroup label="বাংলা (Bengali)">
+                      {TAFSIRS.filter((t) => t.language === 'bn').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </optgroup>
+                  </select>
+                </div>
+                {tafsir.isLoading ? (
+                  <div className="py-10 grid place-items-center"><span className="loading loading-spinner text-brand-emerald" /></div>
+                ) : tafsir.isError ? (
+                  <p className="text-white/50 text-sm">Couldn't load this tafsir — try another edition.</p>
+                ) : (
+                  <>
+                    <p className="text-amber-200/50 text-xs font-bold mb-3">{surahNo}:{ayahNo} · {tafsir.data?.resourceName}</p>
+                    <div className={`${tafsirFontSize} whitespace-pre-line`} style={tafsirTextStyle}>{tafsir.data?.text}</div>
+                    <p className="text-white/25 text-[10px] mt-4">
+                      Sourced from <a className="underline" href={tafsir.data?.url} target="_blank" rel="noreferrer">quran.com</a> — authentic, unedited.
+                    </p>
+                  </>
+                )}
               </div>
-              {tafsir.isLoading ? (
-                <div className="py-10 grid place-items-center"><span className="loading loading-spinner text-brand-emerald" /></div>
-              ) : tafsir.isError ? (
-                <p className="text-white/50 text-sm">Couldn't load this tafsir — try another edition.</p>
-              ) : (
-                <>
-                  <p className="text-brand-emerald/70 text-xs font-bold mb-2">{surahNo}:{ayahNo} · {tafsir.data?.resourceName}</p>
-                  <div className={`text-white/85 ${tafsirFontSize} leading-8 whitespace-pre-line`}>{tafsir.data?.text}</div>
-                  <p className="text-white/25 text-[10px] mt-3">
-                    Sourced from <a className="underline" href={tafsir.data?.url} target="_blank" rel="noreferrer">quran.com</a> — authentic, unedited.
-                  </p>
-                </>
-              )}
             </div>
           )}
         </div>
@@ -557,39 +630,23 @@ export default function QuranReader() {
           </div>
         )}
 
-        {/* ── Tafsir (authentic) + Reflect (AI) ── */}
+        {/* ── Tafsir (authentic, sourced — the Quran rooms carry NO AI) ── */}
         {!loading && current && user && (
           <div className="space-y-3">
-            {/* trigger row */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setTafsirOpen((o) => !o)}
-                className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${tafsirOpen ? 'bg-brand-emerald/15 border-brand-emerald/30 text-brand-emerald' : 'bg-white/5 border-slate-400/12 text-white/70 hover:text-white'}`}
-              >
-                <BookOpenIcon className="w-4 h-4" /> Tafsir
-              </button>
-              {!reflectOpen && (
-                <button onClick={onReflect} className="group relative flex-1 rounded-2xl p-[1.5px] overflow-hidden">
-                  <motion.span
-                    aria-hidden className="absolute inset-0"
-                    style={{ background: 'linear-gradient(90deg,#10b981,#06b6d4,#a855f7,#ec4899,#f59e0b,#10b981)', backgroundSize: '300% 100%', opacity: 0.55 }}
-                    animate={{ backgroundPosition: ['0% 50%', '300% 50%'] }}
-                    transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
-                  />
-                  <span className="relative flex items-center justify-center gap-2 rounded-[calc(1rem-1.5px)] bg-brand-deep px-4 py-2.5 text-sm font-bold text-white/80 group-hover:text-white">
-                    <SparklesIcon className="w-4 h-4 text-fuchsia-300" /> Reflect
-                  </span>
-                </button>
-              )}
-            </div>
+            <button
+              onClick={() => setTafsirOpen((o) => !o)}
+              className={`w-full flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${tafsirOpen ? 'bg-brand-emerald/15 border-brand-emerald/30 text-brand-emerald' : 'bg-white/5 border-slate-400/12 text-white/70 hover:text-white'}`}
+            >
+              <BookOpenIcon className="w-4 h-4" /> Tafsir
+            </button>
 
-            {/* Tafsir panel — REAL scholarly tafsir (sourced, not AI) */}
+            {/* Calm reading surface: warm dark ground + warm ink, never pure white */}
             {tafsirOpen && (
-              <div className="rounded-2xl border border-slate-400/12 bg-brand-deep/70 p-4 space-y-3">
+              <div className="rounded-2xl border border-amber-100/8 bg-[#12100c] p-4 sm:p-5 space-y-3">
                 <div className="flex items-center gap-2">
                   <select
                     aria-label="Tafsir edition"
-                    className="select select-xs flex-1 bg-white/5 border-slate-400/15 text-white/80 rounded-lg"
+                    className="select select-xs flex-1 bg-white/5 border-amber-100/10 text-white/80 rounded-lg"
                     value={tafsirEdition}
                     onChange={(e) => changeTafsirEdition(Number(e.target.value))}
                   >
@@ -609,47 +666,16 @@ export default function QuranReader() {
                   <p className="text-white/50 text-sm py-2">Couldn't load this tafsir — check your connection or try another edition.</p>
                 ) : (
                   <>
-                    <div className={`max-h-80 overflow-y-auto pr-2 text-white/80 ${tafsirFontSize} leading-8 whitespace-pre-line`}>
+                    <div className={`max-h-96 overflow-y-auto pr-2 ${tafsirFontSize} whitespace-pre-line`} style={tafsirTextStyle}>
                       {tafsir.data?.text}
                     </div>
                     <p className="text-white/30 text-[10px]">
                       📖 {tafsir.data?.resourceName} · sourced from{' '}
                       <a className="underline" href={tafsir.data?.url} target="_blank" rel="noreferrer">quran.com</a> — authentic, unedited.
                     </p>
-
-                    {/* Tafsir is presented as the scholars wrote it — no AI rewording. */}
                   </>
                 )}
               </div>
-            )}
-
-            {/* Reflect panel (AI — encouragement only) */}
-            {reflectOpen && (
-              <AiPanel>
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <AiBadge />
-                    <button className="text-white/40 hover:text-white text-xs" onClick={() => setReflectOpen(false)}>Close</button>
-                  </div>
-                  {reflect.isPending ? (
-                    <AiThinking />
-                  ) : reflect.isError ? (
-                    <div className="py-3 text-center">
-                      <p className="text-white/50 text-sm">Naseeh is resting right now — please try again in a moment.</p>
-                      <button className="mt-2 btn btn-xs bg-white/10 border-slate-400/15 text-white/70" onClick={onReflect}>Retry</button>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-white/80 text-sm leading-relaxed">{reflect.data?.reflection}</p>
-                      <div className="flex items-center justify-between mt-2">
-                        <button className="text-fuchsia-300/70 hover:text-fuchsia-200 text-xs font-bold" onClick={onReflect}>↻ Another reflection</button>
-                        {reflect.data?.provider && <span className="text-white/20 text-[9px]">via {reflect.data.provider}</span>}
-                      </div>
-                    </>
-                  )}
-                  <AiDisclaimer />
-                </div>
-              </AiPanel>
             )}
           </div>
         )}
