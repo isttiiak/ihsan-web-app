@@ -1,8 +1,10 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { onAuthStateChanged, sendEmailVerification } from 'firebase/auth';
 import { auth } from './firebase.js';
+import { API_BASE } from './lib/api.js';
 import { useAuthStore } from './store/useAuthStore.js';
 import { useZikrStore } from './store/useZikrStore.js';
 import Navbar from './components/Navbar.js';
@@ -157,6 +159,7 @@ const Protected = ({ children }: ProtectedProps) => {
 export default function App() {
   const { setUser, init, setAuthLoading } = useAuthStore();
   const { hydrate, resetAll, checkAndResetIfNewDay } = useZikrStore();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -170,22 +173,29 @@ export default function App() {
     pathnameRef.current = location.pathname;
   });
 
-  // Warm up the Render free-tier backend — fire once on mount. If it hasn't
-  // answered within 2.5s the server is cold-starting: show an honest banner so
-  // loading cards aren't mistaken for a broken app.
-  const [serverWaking, setServerWaking] = useState(false);
+  // The backend now runs as a Vercel function on the SAME deployment — there
+  // is no Render cold start to warm up, so the old health-ping + amber
+  // "waking up the server" banner are gone.
+
+  // Prefetch the most-visited lazy chunks while the browser is idle, so
+  // tapping Salat/Quran/Fasting/Prayer-times never shows the route spinner.
   useEffect(() => {
-    let settled = false;
-    const timer = setTimeout(() => { if (!settled) setServerWaking(true); }, 2500);
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/health`)
-      .catch(() => {})
-      .finally(() => {
-        settled = true;
-        clearTimeout(timer);
-        setServerWaking(false);
-      });
-    return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const prefetch = () => {
+      void import('./pages/SalatTracker.js');
+      void import('./pages/QuranHabit.js');
+      void import('./pages/FastingTracker.js');
+      void import('./pages/PrayerTimes.js');
+    };
+    const w = window as unknown as {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(prefetch, { timeout: 4000 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(prefetch, 2500); // Safari has no requestIdleCallback
+    return () => clearTimeout(t);
   }, []);
 
   // Daily-reset listeners registered once; route changes also trigger a check below.
@@ -226,6 +236,10 @@ export default function App() {
         resetAll();
         localStorage.removeItem('ihsan_user');
         localStorage.removeItem('ihsan_idToken');
+        // The persisted React Query cache holds personal stats (incl. cycle
+        // data) — never leave it behind after sign-out on a shared device.
+        queryClient.clear();
+        localStorage.removeItem('ihsan_rq_cache');
         setAuthLoading(false);
         return;
       }
@@ -263,7 +277,7 @@ export default function App() {
         try {
           const idToken = await u.getIdToken();
           localStorage.setItem('ihsan_idToken', idToken);
-          const verifyRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify`, {
+          const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
             body: JSON.stringify({ idToken }),
@@ -327,11 +341,6 @@ export default function App() {
       ) : (
         <>
           {!isAuthPage && <Navbar />}
-          {serverWaking && (
-            <div className="bg-amber-500/15 border-b border-amber-500/25 px-4 py-2 text-center text-xs text-amber-200/90">
-              ☕ Waking up the server — free hosting naps when idle. Your data will appear in under a minute, in shāʾ Allāh.
-            </div>
-          )}
           {!isAuthPage && <UnsavedWarning />}
           <div className="flex-1">
             <Suspense fallback={<RouteFallback />}>
