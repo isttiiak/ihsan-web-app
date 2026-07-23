@@ -37,7 +37,7 @@ export default function ExcusedCard({ feature }: { feature: 'salat' | 'fasting' 
           <Link to="/cycle" className="btn btn-sm rounded-xl border border-pink-400/30 bg-pink-500/15 hover:bg-pink-500/25 text-pink-100 font-bold">
             🪻 Open your Garden of Light
           </Link>
-          <Link to="/zikr" className="btn btn-sm rounded-xl border border-slate-400/10 bg-white/5 hover:bg-white/10 text-white/70 font-bold">
+          <Link to="/zikr" className="btn btn-sm rounded-xl border border-emerald-500/10 bg-white/5 hover:bg-white/10 text-white/70 font-bold">
             📿 Do dhikr instead
           </Link>
         </div>

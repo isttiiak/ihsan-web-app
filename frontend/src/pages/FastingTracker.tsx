@@ -368,7 +368,7 @@ export default function FastingTracker() {
               className={`p-2 rounded-xl border transition-all ${
                 calendarOpen
                   ? 'bg-brand-emerald/20 border-brand-emerald/50 text-brand-emerald'
-                  : 'bg-white/[0.04] border-slate-400/10 text-white/40 hover:text-white'
+                  : 'bg-white/[0.04] border-emerald-500/10 text-white/40 hover:text-white'
               }`}
             >
               <CalendarDaysIcon className="w-4 h-4" />
@@ -382,7 +382,7 @@ export default function FastingTracker() {
                 initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.22 }} className="overflow-hidden"
               >
-                <div className="rounded-2xl border border-slate-400/10 bg-white/[0.04] p-3">
+                <div className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] p-3">
                   <div className="flex items-center justify-between mb-2">
                     <button
                       onClick={() => {
@@ -436,7 +436,7 @@ export default function FastingTracker() {
                             aria-label={`Select ${dateStr}`}
                             className={`relative h-8 rounded-lg text-xs font-semibold transition-all ${
                               isSel ? 'bg-brand-emerald/25 text-brand-emerald border border-brand-emerald/50'
-                              : isTod ? 'bg-white/10 text-white border border-slate-400/20'
+                              : isTod ? 'bg-white/10 text-white border border-emerald-500/20'
                               : disabled ? 'text-white/15 cursor-not-allowed'
                               : 'text-white/60 hover:bg-white/10'
                             }`}
@@ -478,8 +478,8 @@ export default function FastingTracker() {
                   aria-label={`Select ${friendlyDate(d)}`}
                   className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border transition-all ${
                     isSel
-                      ? 'bg-white/10 border-slate-400/30'
-                      : 'bg-white/[0.03] border-slate-400/5 hover:border-slate-400/20'
+                      ? 'bg-white/10 border-emerald-500/30'
+                      : 'bg-white/[0.03] border-emerald-500/5 hover:border-emerald-500/20'
                   }`}
                 >
                   <span className={`text-[9px] uppercase font-bold ${isTod ? 'text-brand-emerald' : 'text-white/30'}`}>
@@ -506,7 +506,7 @@ export default function FastingTracker() {
           {/* ── HERO card ── */}
           <motion.div
             layout
-            className={`relative rounded-3xl border border-slate-400/15 bg-gradient-to-br ${heroGradient} overflow-hidden shadow-2xl`}
+            className={`relative rounded-3xl border border-emerald-500/15 bg-gradient-to-br ${heroGradient} overflow-hidden shadow-2xl`}
           >
             {/* soft animated orb */}
             <motion.div
@@ -634,7 +634,7 @@ export default function FastingTracker() {
                       {STATUS_META[log.status].label}
                       {log.status === 'completed' && <span className="text-white/50 font-semibold text-sm"> — may Allah accept it! 🤲</span>}
                     </p>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-slate-400/15 text-white/60 text-xs font-semibold">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-emerald-500/15 text-white/60 text-xs font-semibold">
                       {CATEGORY_LABEL[log.category as FastingCategory]?.emoji}{' '}
                       {log.category === 'voluntary' && log.voluntaryKind
                         ? VOLUNTARY_BY_ID[log.voluntaryKind]?.label ?? 'Voluntary'
@@ -677,7 +677,7 @@ export default function FastingTracker() {
                   {/* Fasting-as chip → opens type sheet */}
                   <button
                     onClick={() => setShowTypeSheet(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-slate-400/20 text-white/70 text-xs font-semibold transition-all"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-emerald-500/20 text-white/70 text-xs font-semibold transition-all"
                   >
                     {currentTypeChip}
                     <ChevronDownIcon className="w-3 h-3 text-white/40" />
@@ -710,7 +710,7 @@ export default function FastingTracker() {
 
               {/* Suhoor / iftar strip */}
               {dayTimes && ruling.level !== 'haram' && (
-                <div className="flex items-center justify-center gap-4 pt-2 border-t border-slate-400/10 text-xs">
+                <div className="flex items-center justify-center gap-4 pt-2 border-t border-emerald-500/10 text-xs">
                   <span className="text-white/40">🌌 Suḥūr ends <span className="text-white/80 font-bold tabular-nums">{formatTime(dayTimes.fajr)}</span></span>
                   <span className="text-white/40">🌇 Ifṭār <span className="text-brand-gold font-bold tabular-nums">{formatTime(dayTimes.maghrib)}</span></span>
                 </div>
@@ -778,7 +778,7 @@ export default function FastingTracker() {
                   ? [{ label: 'Kaffārah run', value: summary?.kaffarah.currentRun ?? 0, color: '#a855f7' }]
                   : [{ label: 'All time', value: summary?.stats.total ?? 0, color: '#6366f1' }]),
               ].map((s) => (
-                <div key={s.label} className="rounded-xl border border-slate-400/10 bg-white/[0.04] px-2 py-2 text-center">
+                <div key={s.label} className="rounded-xl border border-emerald-500/10 bg-white/[0.04] px-2 py-2 text-center">
                   <p className="font-black text-lg tabular-nums leading-none" style={{ color: s.color }}>{s.value}</p>
                   <p className="text-white/30 text-[9px] uppercase tracking-wide mt-1">{s.label}</p>
                 </div>
@@ -794,7 +794,7 @@ export default function FastingTracker() {
               }}
               aria-label="Manage make-up fasts and vows"
               title="Make-up fasts, kaffārah & vows"
-              className="rounded-xl border border-slate-400/10 bg-white/[0.04] hover:bg-white/10 px-3 flex flex-col items-center justify-center gap-1 text-white/40 hover:text-white transition-all"
+              className="rounded-xl border border-emerald-500/10 bg-white/[0.04] hover:bg-white/10 px-3 flex flex-col items-center justify-center gap-1 text-white/40 hover:text-white transition-all"
             >
               <Cog6ToothIcon className="w-4 h-4" />
               <span className="text-[9px] font-bold uppercase">Manage</span>
@@ -803,7 +803,7 @@ export default function FastingTracker() {
 
           {/* Vow progress bars (only when vows exist) */}
           {vows.length > 0 && (
-            <div className="rounded-2xl border border-slate-400/10 bg-white/[0.04] p-3 space-y-2">
+            <div className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] p-3 space-y-2">
               {vows.map((v) => (
                 <div key={v.id}>
                   <div className="flex justify-between text-[11px] mb-1">
@@ -833,7 +833,7 @@ export default function FastingTracker() {
           )}
 
           {/* ── Learn (single collapsible) ── */}
-          <div className="rounded-2xl border border-slate-400/10 bg-white/[0.04] overflow-hidden">
+          <div className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] overflow-hidden">
             <button
               onClick={() => setLearnOpen(!learnOpen)}
               className="w-full px-4 py-3 flex items-center justify-between text-left"
@@ -850,7 +850,7 @@ export default function FastingTracker() {
                   initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25 }} className="overflow-hidden"
                 >
-                  <div className="px-4 pb-4 space-y-5 border-t border-slate-400/5 pt-4">
+                  <div className="px-4 pb-4 space-y-5 border-t border-emerald-500/5 pt-4">
 
                     {/* The basics */}
                     <div className="space-y-1.5">
@@ -953,8 +953,8 @@ export default function FastingTracker() {
                     onClick={() => { setCategory('voluntary'); setKind(m.id); setShowTypeSheet(false); }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left transition-all ${
                       category === 'voluntary' && effectiveKind === m.id
-                        ? 'border-slate-400/40 bg-white/10'
-                        : 'border-slate-400/8 bg-white/[0.03] hover:bg-white/[0.07]'
+                        ? 'border-emerald-500/40 bg-white/10'
+                        : 'border-emerald-500/8 bg-white/[0.03] hover:bg-white/[0.07]'
                     }`}
                   >
                     <span className="text-xl shrink-0">{m.emoji}</span>
@@ -974,7 +974,7 @@ export default function FastingTracker() {
                 <p className="text-white/30 text-[10px] uppercase tracking-widest font-bold pt-2">Obligatory make-ups</p>
                 <button
                   onClick={() => { setCategory('qada'); setShowTypeSheet(false); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'qada' ? 'border-slate-400/40 bg-white/10' : 'border-slate-400/8 bg-white/[0.03] hover:bg-white/[0.07]'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'qada' ? 'border-emerald-500/40 bg-white/10' : 'border-emerald-500/8 bg-white/[0.03] hover:bg-white/[0.07]'}`}
                 >
                   <span className="text-xl">🔄</span>
                   <div>
@@ -987,7 +987,7 @@ export default function FastingTracker() {
                 {kaffarahActive && (
                   <button
                     onClick={() => { setCategory('kaffarah'); setShowTypeSheet(false); }}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'kaffarah' ? 'border-slate-400/40 bg-white/10' : 'border-slate-400/8 bg-white/[0.03] hover:bg-white/[0.07]'}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'kaffarah' ? 'border-emerald-500/40 bg-white/10' : 'border-emerald-500/8 bg-white/[0.03] hover:bg-white/[0.07]'}`}
                   >
                     <span className="text-xl">⚖️</span>
                     <div>
@@ -1000,7 +1000,7 @@ export default function FastingTracker() {
                   <button
                     key={v.id}
                     onClick={() => { setCategory('nadhr'); setVowId(v.id); setShowTypeSheet(false); }}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'nadhr' && vowId === v.id ? 'border-slate-400/40 bg-white/10' : 'border-slate-400/8 bg-white/[0.03] hover:bg-white/[0.07]'}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'nadhr' && vowId === v.id ? 'border-emerald-500/40 bg-white/10' : 'border-emerald-500/8 bg-white/[0.03] hover:bg-white/[0.07]'}`}
                   >
                     <span className="text-xl">🤝</span>
                     <div>
@@ -1031,7 +1031,7 @@ export default function FastingTracker() {
             className="fixed right-0 top-0 bottom-0 z-[55] w-full max-w-sm bg-brand-deep border-l border-brand-border overflow-y-auto"
             role="dialog" aria-label="Fasting settings"
           >
-              <div className="sticky top-0 bg-brand-deep/95 backdrop-blur px-5 py-4 flex items-center justify-between border-b border-slate-400/5 z-10">
+              <div className="sticky top-0 bg-brand-deep/95 backdrop-blur px-5 py-4 flex items-center justify-between border-b border-emerald-500/5 z-10">
                 <div>
                   <h3 className="text-lg font-black text-white">⚙️ Fasting settings</h3>
                   <p className="text-white/30 text-[11px]">Obligations & vows — a countdown capsule appears on the main card</p>
@@ -1142,7 +1142,7 @@ export default function FastingTracker() {
                     <p className="text-white/30 text-[11px]">No vows yet. Add one below and it gets its own countdown.</p>
                   )}
                   {vows.map((v) => (
-                    <div key={v.id} className="rounded-xl bg-white/[0.04] border border-slate-400/10 p-2.5 space-y-1.5">
+                    <div key={v.id} className="rounded-xl bg-white/[0.04] border border-emerald-500/10 p-2.5 space-y-1.5">
                       <div className="flex items-center gap-2">
                         <p className="text-white/70 text-xs font-bold flex-1 truncate">{v.title}</p>
                         <button onClick={() => setConfirmVowDelete({ id: v.id, title: v.title })} aria-label={`Delete vow ${v.title}`}

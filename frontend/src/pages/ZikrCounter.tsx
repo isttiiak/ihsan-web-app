@@ -431,7 +431,7 @@ export default function ZikrCounter() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="flex items-center gap-2 bg-white/8 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-slate-400/15"
+          className="flex items-center gap-2 bg-white/8 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-emerald-500/15"
           style={{ background: 'rgba(255,255,255,0.07)' }}
         >
           {/* Selected name — glowing accent */}
@@ -464,7 +464,7 @@ export default function ZikrCounter() {
           {/* Manage my list (delete) */}
           <button
             onClick={() => setShowManage(true)}
-            className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-slate-400/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
+            className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-emerald-500/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
             title="Manage my zikr list"
             aria-label="Manage my zikr list"
           >
@@ -474,7 +474,7 @@ export default function ZikrCounter() {
           {/* Add custom */}
           <button
             onClick={() => setShowAddCustom(true)}
-            className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-slate-400/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
+            className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-emerald-500/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
             title="Add custom dhikr"
             aria-label="Add custom dhikr"
           >
@@ -487,7 +487,7 @@ export default function ZikrCounter() {
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.08 }}
-          className="relative rounded-3xl border border-slate-400/20 bg-white/8 backdrop-blur-lg shadow-2xl overflow-hidden"
+          className="relative rounded-3xl border border-emerald-500/20 bg-white/8 backdrop-blur-lg shadow-2xl overflow-hidden"
           style={{ background: 'rgba(255,255,255,0.07)' }}
         >
           {/* Focus mode button */}
@@ -606,7 +606,7 @@ export default function ZikrCounter() {
             onClick={onDecrement}
             disabled={currentCount === 0}
             aria-label="Decrease count by one"
-            className="btn btn-circle bg-white/15 hover:bg-white/25 border-slate-400/20 text-white backdrop-blur-sm disabled:opacity-25"
+            className="btn btn-circle bg-white/15 hover:bg-white/25 border-emerald-500/20 text-white backdrop-blur-sm disabled:opacity-25"
           >
             <MinusIcon className="w-6 h-6" />
           </motion.button>
@@ -628,7 +628,7 @@ export default function ZikrCounter() {
             onClick={onReset}
             disabled={currentCount === 0}
             aria-label="Reset counter"
-            className="btn btn-circle bg-white/15 hover:bg-red-500/70 border-slate-400/20 text-white backdrop-blur-sm disabled:opacity-25 transition-colors"
+            className="btn btn-circle bg-white/15 hover:bg-red-500/70 border-emerald-500/20 text-white backdrop-blur-sm disabled:opacity-25 transition-colors"
           >
             <ArrowPathIcon className="w-6 h-6" />
           </motion.button>
@@ -636,7 +636,7 @@ export default function ZikrCounter() {
 
         {/* Keyboard hint */}
         <p className="text-center text-white/35 text-xs">
-          Press <kbd className="kbd kbd-xs bg-white/15 text-white border-slate-400/20">Space</kbd> to count
+          Press <kbd className="kbd kbd-xs bg-white/15 text-white border-emerald-500/20">Space</kbd> to count
         </p>
 
         {/* ── Expandable full text & reference for the selected dhikr ──
@@ -925,7 +925,7 @@ export default function ZikrCounter() {
               </p>
               <button
                 onClick={() => setFullScreen(false)}
-                className="sm:hidden flex items-center gap-2 px-8 py-3 rounded-2xl bg-white/10 border border-slate-400/15 text-white/50 text-sm font-semibold active:scale-95 transition-transform"
+                className="sm:hidden flex items-center gap-2 px-8 py-3 rounded-2xl bg-white/10 border border-emerald-500/15 text-white/50 text-sm font-semibold active:scale-95 transition-transform"
               >
                 ✕ Close
               </button>

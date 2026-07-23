@@ -428,11 +428,11 @@ export default function Home() {
                   <motion.div
                     whileHover={{ scale: 1.02, y: -8 }}
                     whileTap={{ scale: 0.98 }}
-                    className="relative h-full rounded-3xl overflow-hidden backdrop-blur-2xl border border-slate-400/10 bg-white/5"
+                    className="relative h-full rounded-3xl overflow-hidden backdrop-blur-2xl border border-emerald-500/10 bg-white/5"
                   >
                     {a.tag && (
                       <span
-                        className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md border border-slate-400/10"
+                        className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md border border-emerald-500/10"
                         style={{
                           letterSpacing: '0.04em',
                           background: 'linear-gradient(90deg, var(--brand-gold) 0%, var(--brand-magenta) 100%)',
@@ -444,7 +444,7 @@ export default function Home() {
 
                     {a.id === 'fasting' && (
                       <button
-                        className="absolute top-4 right-4 z-20 px-2.5 py-1 rounded-full text-[11px] font-black text-white shadow-lg border border-slate-400/15 hover:scale-105 transition-transform"
+                        className="absolute top-4 right-4 z-20 px-2.5 py-1 rounded-full text-[11px] font-black text-white shadow-lg border border-emerald-500/15 hover:scale-105 transition-transform"
                         style={{ background: 'linear-gradient(90deg, #b45309 0%, #7c3aed 100%)' }}
                         title={ramadan.active ? 'Open the Ramadan tracker' : 'Countdown to Ramadan — tap to prepare'}
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/ramadan'); }}
@@ -474,7 +474,7 @@ export default function Home() {
                     )}
 
                     <div className="relative z-10 p-6 sm:p-8">
-                      <div className={`w-16 h-16 sm:w-20 sm:h-20 ${a.iconBg} rounded-2xl grid place-items-center border border-slate-400/10 mb-5`}>
+                      <div className={`w-16 h-16 sm:w-20 sm:h-20 ${a.iconBg} rounded-2xl grid place-items-center border border-emerald-500/10 mb-5`}>
                         <span className="text-4xl sm:text-5xl">{a.icon}</span>
                       </div>
                       <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">{a.title}</h2>

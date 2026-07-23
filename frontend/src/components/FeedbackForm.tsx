@@ -106,7 +106,7 @@ export default function FeedbackForm({
           Ihsan becomes next — and if it needs a reply, we'll write back to <b className="text-white/75">{email}</b>.
         </p>
         <button
-          className="btn btn-sm mt-5 rounded-xl bg-white/5 border-slate-400/15 text-white/70"
+          className="btn btn-sm mt-5 rounded-xl bg-white/5 border-emerald-500/15 text-white/70"
           onClick={() => { setSent(false); setMessage(''); setTypeId(''); }}
         >
           Send another
@@ -141,7 +141,7 @@ export default function FeedbackForm({
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setTypeId(t.id)}
                 className={`rounded-2xl border p-3 text-left transition-all ${
-                  on ? t.active : 'bg-white/[0.03] border-slate-400/12 text-white/60 hover:border-slate-400/25 hover:text-white/80'
+                  on ? t.active : 'bg-white/[0.03] border-emerald-500/12 text-white/60 hover:border-emerald-500/25 hover:text-white/80'
                 }`}
               >
                 <span className="text-lg">{t.emoji}</span>
@@ -163,7 +163,7 @@ export default function FeedbackForm({
             id="fb-name" type="text" required value={name} readOnly={!!user?.displayName}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Abdullah"
-            className={`input input-bordered w-full mt-1.5 bg-white/5 border-slate-400/15 text-white ${user?.displayName ? 'opacity-70 cursor-not-allowed' : ''}`}
+            className={`input input-bordered w-full mt-1.5 bg-white/5 border-emerald-500/15 text-white ${user?.displayName ? 'opacity-70 cursor-not-allowed' : ''}`}
           />
         </div>
         <div>
@@ -174,7 +174,7 @@ export default function FeedbackForm({
             id="fb-email" type="email" required value={email} readOnly={!!user?.email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className={`input input-bordered w-full mt-1.5 bg-white/5 border-slate-400/15 text-white ${user?.email ? 'opacity-70 cursor-not-allowed' : ''}`}
+            className={`input input-bordered w-full mt-1.5 bg-white/5 border-emerald-500/15 text-white ${user?.email ? 'opacity-70 cursor-not-allowed' : ''}`}
           />
         </div>
       </div>
@@ -203,7 +203,7 @@ export default function FeedbackForm({
               ? "What happened, or what would make Ihsan better for you? Steps to reproduce a bug are gold."
               : 'How can we help?'
           }
-          className="textarea textarea-bordered w-full mt-1.5 bg-white/5 border-slate-400/15 text-white leading-relaxed"
+          className="textarea textarea-bordered w-full mt-1.5 bg-white/5 border-emerald-500/15 text-white leading-relaxed"
         />
       </div>
 

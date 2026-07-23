@@ -308,18 +308,18 @@ export default function CycleAnalytics() {
               <div>
                 <label className="text-white/50 text-xs font-bold" htmlFor="past-start">Started</label>
                 <input id="past-start" type="date" value={pastStart} max={today} onChange={(e) => setPastStart(e.target.value)}
-                  className="input input-bordered input-sm w-full mt-1 bg-white/5 border-slate-400/10 text-white" />
+                  className="input input-bordered input-sm w-full mt-1 bg-white/5 border-emerald-500/10 text-white" />
               </div>
               <div>
                 <label className="text-white/50 text-xs font-bold" htmlFor="past-end">Ended</label>
                 <input id="past-end" type="date" value={pastEnd} max={today} onChange={(e) => setPastEnd(e.target.value)}
-                  className="input input-bordered input-sm w-full mt-1 bg-white/5 border-slate-400/10 text-white" />
+                  className="input input-bordered input-sm w-full mt-1 bg-white/5 border-emerald-500/10 text-white" />
               </div>
             </div>
             <div className="flex gap-2">
               {(['hayd', 'nifas'] as const).map((t) => (
                 <button key={t}
-                  className={`flex-1 btn btn-xs rounded-xl ${pastType === t ? 'bg-pink-500/30 border-pink-400/40 text-pink-100' : 'bg-white/5 border-slate-400/10 text-white/50'}`}
+                  className={`flex-1 btn btn-xs rounded-xl ${pastType === t ? 'bg-pink-500/30 border-pink-400/40 text-pink-100' : 'bg-white/5 border-emerald-500/10 text-white/50'}`}
                   onClick={() => setPastType(t)}
                 >{t === 'hayd' ? '🌸 Period' : '🤱 Nifās'}</button>
               ))}

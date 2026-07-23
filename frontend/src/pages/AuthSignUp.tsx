@@ -254,7 +254,7 @@ export default function AuthSignUp() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-3 px-4 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 border border-slate-400/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3 px-4 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 border border-emerald-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={google}
                 disabled={loading}
               >

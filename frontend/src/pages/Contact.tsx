@@ -82,7 +82,7 @@ export default function Contact() {
             <motion.div
               key={p.title}
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 * i }}
-              className="rounded-2xl border border-slate-400/12 bg-white/[0.03] p-4"
+              className="rounded-2xl border border-emerald-500/12 bg-white/[0.03] p-4"
             >
               <div className="text-2xl">{p.emoji}</div>
               <p className="text-white/85 text-sm font-bold mt-1.5">{p.title}</p>

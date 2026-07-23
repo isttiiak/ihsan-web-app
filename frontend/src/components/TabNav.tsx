@@ -17,7 +17,7 @@ export interface TabNavItem {
  */
 export default function TabNav({ items }: { items: TabNavItem[] }) {
   return (
-    <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-slate-400/10 max-w-xs">
+    <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-emerald-500/10 max-w-xs">
       {items.map((item) =>
         item.active ? (
           <span

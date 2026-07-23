@@ -203,7 +203,7 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
 
               {/* Today's existing count (only meaningful for today) */}
               {daysBack === 0 && (
-                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-slate-400/10">
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-emerald-500/10">
                   <span className="text-white/50 text-sm">Today's count so far</span>
                   <span className="text-white font-black text-lg tabular-nums">{existingCount.toLocaleString()}</span>
                 </div>
@@ -498,7 +498,7 @@ export default function ZikrAnalytics() {
                 animate={{ opacity: 1, y: 0 }}
                 whileHover={{ y: -8, scale: 1.03 }}
                 transition={{ delay: 0.05 }}
-                className="sm:col-span-2 lg:col-span-1 card relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-emerald via-teal-600 to-cyan-600 backdrop-blur-xl border border-slate-400/20 shadow-[0_8px_32px_rgba(16,185,129,0.4)] hover:shadow-[0_12px_48px_rgba(16,185,129,0.6)] cursor-pointer group"
+                className="sm:col-span-2 lg:col-span-1 card relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-emerald via-teal-600 to-cyan-600 backdrop-blur-xl border border-emerald-500/20 shadow-[0_8px_32px_rgba(16,185,129,0.4)] hover:shadow-[0_12px_48px_rgba(16,185,129,0.6)] cursor-pointer group"
               >
                 <div className="absolute inset-0 opacity-40">
                   <motion.div
@@ -547,7 +547,7 @@ export default function ZikrAnalytics() {
                   animate={{ opacity: 1, y: 0 }}
                   whileHover={{ y: -6, scale: 1.02 }}
                   transition={{ delay }}
-                  className="card backdrop-blur-xl bg-white/10 border border-slate-400/20 rounded-2xl shadow-lg cursor-pointer"
+                  className="card backdrop-blur-xl bg-white/10 border border-emerald-500/20 rounded-2xl shadow-lg cursor-pointer"
                 >
                   <div className="card-body p-5 sm:p-6">
                     <div className={`text-xs sm:text-sm font-bold mb-2 bg-gradient-to-r ${gradient} bg-clip-text text-transparent uppercase tracking-wide`}>{label}</div>
@@ -589,7 +589,7 @@ export default function ZikrAnalytics() {
                       animate={{ opacity: 1, y: 0 }}
                       whileHover={{ y: -8, scale: 1.03 }}
                       transition={{ delay: 0.1 + index * 0.05 }}
-                      className={`card relative overflow-hidden bg-gradient-to-br ${gradients[index % gradients.length]} backdrop-blur-xl border border-slate-400/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)] cursor-pointer rounded-2xl group`}
+                      className={`card relative overflow-hidden bg-gradient-to-br ${gradients[index % gradients.length]} backdrop-blur-xl border border-emerald-500/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)] cursor-pointer rounded-2xl group`}
                     >
                       <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent" initial={{ x: '-100%' }} whileHover={{ x: '100%' }} transition={{ duration: 0.6 }} />
                       <div className="card-body p-6 relative z-10">

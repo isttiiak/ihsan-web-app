@@ -83,7 +83,7 @@ export default function Landing() {
               onClick={() => navigate('/signup')}
             >Begin your journey — free</button>
             <button
-              className="btn h-13 px-6 rounded-2xl bg-white/5 border-slate-400/15 text-white/80 font-bold"
+              className="btn h-13 px-6 rounded-2xl bg-white/5 border-emerald-500/15 text-white/80 font-bold"
               onClick={() => navigate('/zikr')}
             >📿 Try the counter first</button>
           </motion.div>
@@ -152,7 +152,7 @@ export default function Landing() {
 
         {/* ── The day begins at Fajr ── */}
         <motion.section {...fadeUp} className="mb-12">
-          <div className="rounded-3xl border border-slate-400/10 bg-brand-deep/70 p-6 sm:p-8 text-center">
+          <div className="rounded-3xl border border-emerald-500/10 bg-brand-deep/70 p-6 sm:p-8 text-center">
             <div className="text-4xl mb-2">🌅</div>
             <h3 className="text-white font-black text-lg">Your day begins at Fajr — not midnight</h3>
             <p className="text-white/45 text-sm mt-2 max-w-xl mx-auto leading-relaxed">
@@ -175,7 +175,7 @@ export default function Landing() {
               className="btn h-13 px-10 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 shadow-xl shadow-emerald-900/40"
               onClick={() => navigate('/signup')}
             >Create your free account</button>
-            <Link to="/about" className="btn h-13 px-6 rounded-2xl bg-white/5 border-slate-400/15 text-white/70 font-bold">
+            <Link to="/about" className="btn h-13 px-6 rounded-2xl bg-white/5 border-emerald-500/15 text-white/70 font-bold">
               Read our story
             </Link>
           </div>

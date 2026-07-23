@@ -151,7 +151,7 @@ export default function QuranAudioPlayer() {
           <h2 className="text-white font-black">🎧 Listen to the Quran</h2>
           <select
             aria-label="Reciter"
-            className="select select-xs bg-white/5 border-slate-400/10 text-white/70 rounded-lg max-w-[45%]"
+            className="select select-xs bg-white/5 border-emerald-500/10 text-white/70 rounded-lg max-w-[45%]"
             value={reciter}
             onChange={(e) => { setReciter(e.target.value); localStorage.setItem('ihsan_reciter', e.target.value); }}
           >
@@ -165,7 +165,7 @@ export default function QuranAudioPlayer() {
           <>
             <select
               aria-label="Surah"
-              className="select select-sm w-full bg-white/5 border-slate-400/10 text-white rounded-xl"
+              className="select select-sm w-full bg-white/5 border-emerald-500/10 text-white rounded-xl"
               value={surahNo}
               onChange={(e) => changeSurah(Number(e.target.value))}
             >

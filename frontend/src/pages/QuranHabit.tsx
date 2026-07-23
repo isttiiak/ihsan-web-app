@@ -95,7 +95,7 @@ export default function QuranHabit() {
                     🕋 Begin khatam journey
                   </button>
                 )}
-                <Link to="/quran/browse" className="btn btn-sm w-full sm:w-auto rounded-xl bg-white/5 border-slate-400/10 text-white/70 font-bold">
+                <Link to="/quran/browse" className="btn btn-sm w-full sm:w-auto rounded-xl bg-white/5 border-emerald-500/10 text-white/70 font-bold">
                   Pick a surah
                 </Link>
               </div>

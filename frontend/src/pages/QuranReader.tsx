@@ -436,10 +436,10 @@ export default function QuranReader() {
 
         {/* info chips */}
         <div className="flex flex-wrap items-center gap-2 text-[11px]">
-          <span className="px-2.5 py-1 rounded-full bg-white/5 border border-slate-400/10 text-white/70 font-bold">
+          <span className="px-2.5 py-1 rounded-full bg-white/5 border border-emerald-500/10 text-white/70 font-bold">
             {surahNo}. {surahMeta?.englishName ?? '…'} <span className="text-white/30">· {surahMeta?.numberOfAyahs ?? '–'} āyāt</span>
           </span>
-          <span className="px-2.5 py-1 rounded-full bg-white/5 border border-slate-400/10 text-white/50">
+          <span className="px-2.5 py-1 rounded-full bg-white/5 border border-emerald-500/10 text-white/50">
             Juz {current ? juzOf(surahNo, current.numberInSurah) : '–'}
           </span>
           {countsGoal ? (
@@ -447,12 +447,12 @@ export default function QuranReader() {
               📖 {todayCount} āyāt today{summary ? ` / ${summary.profile.dailyGoalAyat} goal` : ''}
             </span>
           ) : (
-            <span className="px-2.5 py-1 rounded-full bg-white/5 border border-slate-400/10 text-white/40">
+            <span className="px-2.5 py-1 rounded-full bg-white/5 border border-emerald-500/10 text-white/40">
               🤲 Reflection — not counted toward the goal
             </span>
           )}
           {khatamPos && (
-            <span className="px-2.5 py-1 rounded-full bg-white/5 border border-slate-400/10 text-white/40">
+            <span className="px-2.5 py-1 rounded-full bg-white/5 border border-emerald-500/10 text-white/40">
               Khatam at {khatamPos.surah}:{khatamPos.ayah}
             </span>
           )}
@@ -464,7 +464,7 @@ export default function QuranReader() {
             the split becomes a vertical stack — āyah first, tafsir below. */}
         <div
           ref={cardRef}
-          className={`relative rounded-3xl border border-slate-400/10 bg-gradient-to-br from-[#0d1b17] via-[#0a1412] to-[#0d1420] ${fullscreen ? 'fixed inset-0 z-50 rounded-none flex flex-col md:flex-row overflow-y-auto overflow-x-hidden md:overflow-hidden' : 'overflow-hidden p-4 sm:p-10'}`}
+          className={`relative rounded-3xl border border-emerald-500/10 bg-gradient-to-br from-[#0d1b17] via-[#0a1412] to-[#0d1420] ${fullscreen ? 'fixed inset-0 z-50 rounded-none flex flex-col md:flex-row overflow-y-auto overflow-x-hidden md:overflow-hidden' : 'overflow-hidden p-4 sm:p-10'}`}
         >
           {/* controls — in-flow row on phones (they overlapped the āyah header),
               floating top-right from sm up */}
@@ -473,7 +473,7 @@ export default function QuranReader() {
               aria-label={playing ? 'Stop recitation' : 'Recite this ayah'}
               title="Recite only this ayah"
               onClick={playAyah}
-              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border transition-all ${playing ? 'bg-brand-emerald text-white border-brand-emerald' : 'bg-white/5 text-brand-emerald border-slate-400/10 hover:border-brand-emerald/50'}`}
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border transition-all ${playing ? 'bg-brand-emerald text-white border-brand-emerald' : 'bg-white/5 text-brand-emerald border-emerald-500/10 hover:border-brand-emerald/50'}`}
             >
               {playing ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4 ml-0.5" />}
             </button>
@@ -481,7 +481,7 @@ export default function QuranReader() {
               <button
                 aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this ayah'}
                 onClick={() => current && toggleBookmark.mutate({ surah: surahNo, ayah: current.numberInSurah })}
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border bg-white/5 border-slate-400/10 text-brand-gold hover:border-brand-gold/50"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border bg-white/5 border-emerald-500/10 text-brand-gold hover:border-brand-gold/50"
               >
                 {isBookmarked ? <BookmarkSolid className="w-4 h-4" /> : <BookmarkOutline className="w-4 h-4" />}
               </button>
@@ -492,7 +492,7 @@ export default function QuranReader() {
                 aria-label={splitTafsir ? 'Hide tafsir' : 'Read tafsir'}
                 title="Tafsir"
                 onClick={() => setSplitTafsir((v) => !v)}
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border transition-all ${splitTafsir ? 'bg-brand-emerald/20 text-brand-emerald border-brand-emerald/50' : 'bg-white/5 text-white/60 border-slate-400/10 hover:text-white'}`}
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border transition-all ${splitTafsir ? 'bg-brand-emerald/20 text-brand-emerald border-brand-emerald/50' : 'bg-white/5 text-white/60 border-emerald-500/10 hover:text-white'}`}
               >
                 <BookOpenIcon className="w-4 h-4" />
               </button>
@@ -500,7 +500,7 @@ export default function QuranReader() {
             <button
               aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
               onClick={toggleFullscreen}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border bg-white/5 border-slate-400/10 text-white/50 hover:text-white"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border bg-white/5 border-emerald-500/10 text-white/50 hover:text-white"
             >
               {fullscreen ? <ArrowsPointingInIcon className="w-4 h-4" /> : <ArrowsPointingOutIcon className="w-4 h-4" />}
             </button>
@@ -509,7 +509,7 @@ export default function QuranReader() {
           {/* LEFT pane (the āyah + meaning). Fullscreen desktop: resizable width; mobile: full-width block. */}
           <div
             className={fullscreen
-              ? `relative md:h-full grid place-items-center md:overflow-y-auto p-6 pt-16 sm:p-12 w-full shrink-0 md:shrink ${splitTafsir ? 'md:border-r md:border-slate-400/15 min-h-[70vh] md:min-h-0 md:w-[var(--split)]' : ''}`
+              ? `relative md:h-full grid place-items-center md:overflow-y-auto p-6 pt-16 sm:p-12 w-full shrink-0 md:shrink ${splitTafsir ? 'md:border-r md:border-emerald-500/15 min-h-[70vh] md:min-h-0 md:w-[var(--split)]' : ''}`
               : 'contents'}
             style={fullscreen && splitTafsir ? ({ '--split': `${splitPct}%` } as CSSProperties) : undefined}
           >
@@ -581,7 +581,7 @@ export default function QuranReader() {
                 aria-label="Previous ayah"
                 onClick={goPrev}
                 disabled={idx <= firstIdx}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/5 border border-slate-400/10 text-white/60 hover:text-white disabled:opacity-20 text-sm font-bold"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/5 border border-emerald-500/10 text-white/60 hover:text-white disabled:opacity-20 text-sm font-bold"
               >
                 <ChevronLeftIcon className="w-4 h-4" /> Previous
               </button>
@@ -659,7 +659,7 @@ export default function QuranReader() {
                 <label htmlFor="jump-ayah" className="font-bold">Jump to āyah</label>
                 <select
                   id="jump-ayah"
-                  className="select select-xs bg-white/5 border-slate-400/10 text-white/70 rounded-lg"
+                  className="select select-xs bg-white/5 border-emerald-500/10 text-white/70 rounded-lg"
                   value={idx + 1}
                   onChange={(e) => goToIdx(Number(e.target.value) - 1)}
                 >
@@ -693,14 +693,14 @@ export default function QuranReader() {
             <div className="flex gap-2">
               <button
                 onClick={() => setTafsirOpen((o) => !o)}
-                className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${tafsirOpen ? 'bg-brand-emerald/15 border-brand-emerald/30 text-brand-emerald' : 'bg-white/5 border-slate-400/12 text-white/70 hover:text-white'}`}
+                className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${tafsirOpen ? 'bg-brand-emerald/15 border-brand-emerald/30 text-brand-emerald' : 'bg-white/5 border-emerald-500/12 text-white/70 hover:text-white'}`}
               >
                 <BookOpenIcon className="w-4 h-4" /> Tafsir
               </button>
               {dua?.context && (
                 <button
                   onClick={() => setContextOpen((o) => !o)}
-                  className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${contextOpen ? 'bg-brand-gold/15 border-brand-gold/35 text-brand-gold' : 'bg-white/5 border-slate-400/12 text-white/70 hover:text-white'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${contextOpen ? 'bg-brand-gold/15 border-brand-gold/35 text-brand-gold' : 'bg-white/5 border-emerald-500/12 text-white/70 hover:text-white'}`}
                 >
                   📜 Why this duʿā
                 </button>
@@ -781,7 +781,7 @@ export default function QuranReader() {
               </p>
               <div className="flex gap-2 mt-4">
                 <button
-                  className="flex-1 btn btn-sm rounded-xl bg-white/5 border-slate-400/10 text-white/70"
+                  className="flex-1 btn btn-sm rounded-xl bg-white/5 border-emerald-500/10 text-white/70"
                   onClick={() => { clearResume(surahNo); syncResume(0); setIdx(0); setResumeAyah(null); }}
                 >
                   Start over

@@ -119,7 +119,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
             className="fixed right-0 top-0 bottom-0 z-[55] w-full max-w-sm bg-brand-deep border-l border-brand-border overflow-y-auto"
             role="dialog" aria-label="Quran settings"
           >
-            <div className="sticky top-0 bg-brand-deep/95 backdrop-blur border-b border-slate-400/5 px-5 py-4 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-brand-deep/95 backdrop-blur border-b border-emerald-500/5 px-5 py-4 flex items-center justify-between z-10">
               <h3 className="text-white font-black text-lg">⚙️ Quran settings</h3>
               <button aria-label="Close settings" className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10" onClick={onClose}>
                 <XMarkIcon className="w-5 h-5" />
@@ -140,7 +140,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                       goal === 0
                         ? 'bg-white/15 text-white border-slate-300/40'
-                        : 'bg-white/5 border-slate-400/15 text-white/60 hover:border-slate-300/40'
+                        : 'bg-white/5 border-emerald-500/15 text-white/60 hover:border-slate-300/40'
                     }`}
                   >No goal</button>
                   {GOAL_PRESETS.map((p) => (
@@ -149,7 +149,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                         goal === p
                           ? 'bg-brand-emerald text-white border-brand-emerald'
-                          : 'bg-white/5 border-slate-400/15 text-white/60 hover:border-brand-emerald/40'
+                          : 'bg-white/5 border-emerald-500/15 text-white/60 hover:border-brand-emerald/40'
                       }`}
                     >{p} āyah{p > 1 ? 's' : ''}</button>
                   ))}
@@ -160,7 +160,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                     id="q-goal" type="number" min={0} max={6236}
                     value={goal}
                     onChange={(e) => setGoal(Number(e.target.value))}
-                    className="input input-bordered input-sm flex-1 bg-white/5 border-slate-400/15 text-white"
+                    className="input input-bordered input-sm flex-1 bg-white/5 border-emerald-500/15 text-white"
                   />
                   <span className="text-white/30 text-[11px]">/ day</span>
                 </div>
@@ -173,13 +173,13 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                 </button>
               </div>
 
-              <div className="border-t border-slate-400/10 pt-4">
+              <div className="border-t border-emerald-500/10 pt-4">
                 <p className="text-white/40 text-[11px] font-bold uppercase tracking-wider mb-3">Reading & audio</p>
               </div>
 
               <div>
                 <label className="text-white/50 text-xs font-bold" htmlFor="q-reciter">🎙️ Default reciter</label>
-                <select id="q-reciter" className="select select-sm w-full mt-1.5 bg-white/5 border-slate-400/10 text-white rounded-xl"
+                <select id="q-reciter" className="select select-sm w-full mt-1.5 bg-white/5 border-emerald-500/10 text-white rounded-xl"
                   value={reciter} onChange={(e) => setReciter(e.target.value)}>
                   {RECITER_OPTIONS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
@@ -190,14 +190,14 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                 <p className="text-white/50 text-xs font-bold">🌐 Translations <span className="text-white/25 font-normal">(up to two shown together)</span></p>
                 <div>
                   <label className="text-white/35 text-[10px] font-bold" htmlFor="q-tr1">Primary</label>
-                  <select id="q-tr1" className="select select-sm w-full mt-1 bg-white/5 border-slate-400/10 text-white rounded-xl"
+                  <select id="q-tr1" className="select select-sm w-full mt-1 bg-white/5 border-emerald-500/10 text-white rounded-xl"
                     value={primary} onChange={(e) => setPrimary(e.target.value)}>
                     {TRANSLATIONS.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-white/35 text-[10px] font-bold" htmlFor="q-tr2">Second (optional)</label>
-                  <select id="q-tr2" className="select select-sm w-full mt-1 bg-white/5 border-slate-400/10 text-white rounded-xl"
+                  <select id="q-tr2" className="select select-sm w-full mt-1 bg-white/5 border-emerald-500/10 text-white rounded-xl"
                     value={secondary} onChange={(e) => setSecondary(e.target.value)}>
                     <option value="none">None — one translation only</option>
                     {TRANSLATIONS.filter((t) => t.id !== primary).map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}

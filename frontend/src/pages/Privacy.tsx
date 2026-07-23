@@ -87,12 +87,12 @@ export default function Privacy() {
             <motion.div
               key={s.title}
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 + i * 0.05 }}
-              className="rounded-2xl border border-slate-400/10 bg-white/[0.04] p-5"
+              className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] p-5"
             >
               <p className="text-white font-bold text-sm mb-2">{s.emoji} {s.title}</p>
               <ul className="space-y-1.5">
                 {s.body.map((line, j) => (
-                  <li key={j} className="text-white/45 text-xs leading-relaxed pl-3 border-l-2 border-slate-400/10">{line}</li>
+                  <li key={j} className="text-white/45 text-xs leading-relaxed pl-3 border-l-2 border-emerald-500/10">{line}</li>
                 ))}
               </ul>
             </motion.div>

@@ -86,7 +86,7 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
                 <div
                   key={f.uid}
                   className={`rounded-2xl border p-3 transition-colors ${
-                    confirming ? 'border-red-500/40 bg-red-500/[0.06]' : 'border-slate-400/10 bg-white/[0.04]'
+                    confirming ? 'border-red-500/40 bg-red-500/[0.06]' : 'border-emerald-500/10 bg-white/[0.04]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -113,7 +113,7 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
                         initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="mt-3 pt-3 border-t border-slate-400/10 flex items-center justify-between gap-2">
+                        <div className="mt-3 pt-3 border-t border-emerald-500/10 flex items-center justify-between gap-2">
                           <p className="text-white/60 text-xs">Remove {f.displayName} from your friends?</p>
                           <div className="flex gap-1.5 shrink-0">
                             <button onClick={cancelConfirm} className="btn btn-xs btn-ghost text-white/50">Cancel</button>
@@ -230,7 +230,7 @@ export default function Friends() {
           ) : friendsCount === 0 ? (
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-              className="rounded-2xl border border-slate-400/10 bg-white/[0.04] p-8 text-center space-y-3"
+              className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] p-8 text-center space-y-3"
             >
               <p className="text-4xl">🌱</p>
               <p className="text-white/70 font-bold text-sm">No friends connected yet</p>
@@ -277,7 +277,7 @@ export default function Friends() {
                     className={`rounded-2xl border p-3.5 ${
                       f.isMe
                         ? 'border-brand-emerald/40 bg-brand-emerald/8'
-                        : 'border-slate-400/10 bg-white/[0.04]'
+                        : 'border-emerald-500/10 bg-white/[0.04]'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -305,23 +305,23 @@ export default function Friends() {
                     </div>
                     {/* Stat chips — prayer, zikr streak, today's zikr, fasted today, quran pages */}
                     <div className="flex flex-wrap gap-1.5 mt-2.5 pl-10">
-                      <span className="px-2 py-0.5 rounded-full bg-white/8 border border-slate-400/10 text-[10px] font-bold text-white/60">
+                      <span className="px-2 py-0.5 rounded-full bg-white/8 border border-emerald-500/10 text-[10px] font-bold text-white/60">
                         🕌 {f.salatToday}/5 prayers
                       </span>
                       <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold text-white/70 ${sv.cls}`}>
                         <span className={sv.iconCls}>{sv.icon}</span> {f.zikrStreak}d zikr streak
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-white/8 border border-slate-400/10 text-[10px] font-bold text-white/60">
+                      <span className="px-2 py-0.5 rounded-full bg-white/8 border border-emerald-500/10 text-[10px] font-bold text-white/60">
                         📿 {f.zikrToday.toLocaleString()} zikr today
                       </span>
                       <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
                         f.fastedToday
                           ? 'bg-brand-gold/15 border-brand-gold/40 text-brand-gold'
-                          : 'bg-white/8 border-slate-400/10 text-white/35'
+                          : 'bg-white/8 border-emerald-500/10 text-white/35'
                       }`}>
                         🌙 {f.fastedToday ? 'fasting today' : 'not fasting'}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-white/8 border border-slate-400/10 text-[10px] font-bold text-white/60">
+                      <span className="px-2 py-0.5 rounded-full bg-white/8 border border-emerald-500/10 text-[10px] font-bold text-white/60">
                         📖 {f.quranPagesToday}/{f.quranGoal} pages
                       </span>
                     </div>
@@ -332,7 +332,7 @@ export default function Friends() {
           )}
 
           {/* ── How Noor works ── */}
-          <div className="rounded-2xl border border-slate-400/10 bg-white/[0.04] overflow-hidden">
+          <div className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] overflow-hidden">
             <button
               onClick={() => setHowOpen(!howOpen)}
               className="w-full px-4 py-3 flex items-center justify-between text-left"
@@ -349,7 +349,7 @@ export default function Friends() {
                   initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }} className="overflow-hidden"
                 >
-                  <div className="px-4 pb-4 pt-1 space-y-1.5 text-xs text-white/45 border-t border-slate-400/5">
+                  <div className="px-4 pb-4 pt-1 space-y-1.5 text-xs text-white/45 border-t border-emerald-500/5">
                     <p>
                       Noor (<span className="text-white/60">نور</span>, "light") is a gentle daily measure of
                       your worship — out of <b className="text-white/70">100</b>:
@@ -424,7 +424,7 @@ export default function Friends() {
               ) : inviteLink ? (
                 <>
                   <div className="flex gap-2">
-                    <code className="flex-1 min-w-0 truncate px-3 py-2.5 rounded-xl bg-black/30 border border-slate-400/10 text-brand-emerald/90 text-xs">
+                    <code className="flex-1 min-w-0 truncate px-3 py-2.5 rounded-xl bg-black/30 border border-emerald-500/10 text-brand-emerald/90 text-xs">
                       {inviteLink}
                     </code>
                     <motion.button

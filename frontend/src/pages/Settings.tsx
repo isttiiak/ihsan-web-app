@@ -119,7 +119,7 @@ function Toggle({ checked, onChange, title, detail, accent = 'toggle-success' }:
   accent?: string;
 }) {
   return (
-    <label className="flex items-center gap-4 p-3 rounded-xl border border-brand-border bg-brand-deep/50 cursor-pointer hover:border-slate-400/20 transition-colors">
+    <label className="flex items-center gap-4 p-3 rounded-xl border border-brand-border bg-brand-deep/50 cursor-pointer hover:border-emerald-500/20 transition-colors">
       <input
         type="checkbox"
         className={`toggle ${accent}`}

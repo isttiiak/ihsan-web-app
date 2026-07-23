@@ -41,7 +41,7 @@ export default function QuranBrowse() {
           type="search"
           placeholder="Search surah by name or number…"
           aria-label="Search surahs"
-          className="input input-bordered w-full bg-white/5 border-slate-400/10 text-white rounded-2xl"
+          className="input input-bordered w-full bg-white/5 border-emerald-500/10 text-white rounded-2xl"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
