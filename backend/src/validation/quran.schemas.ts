@@ -22,8 +22,23 @@ export const quranProfileSchema = z.object({
   body: z.object({
     dailyGoalPages: z.number().int().min(1).max(604).optional(),
     currentPage: z.number().int().min(0).max(603).optional(),
-    dailyGoalAyat: z.number().int().min(1).max(6236).optional(),
+    // 0 = no goal (opt-in habit, Istiak's spec)
+    dailyGoalAyat: z.number().int().min(0).max(6236).optional(),
     currentAyah: z.number().int().min(0).max(6235).optional(),
+  }),
+});
+
+export const quranResumeSchema = z.object({
+  body: z.object({
+    surah: z.number().int().min(1).max(114),
+    // ayah 0 clears the resume position for that surah
+    ayah: z.number().int().min(0).max(286),
+  }),
+});
+
+export const quranDuaBookmarkSchema = z.object({
+  body: z.object({
+    duaId: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/),
   }),
 });
 

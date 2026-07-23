@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { useQuranSummary, useUpdateQuranProfile } from '../hooks/useQuran.js';
+import { useQuranSummary, useUpdateQuranProfile, useResetKhatam } from '../hooks/useQuran.js';
 import { TRANSLATIONS, selectedTranslations } from '../utils/quranData.js';
+import ConfirmDialog from './ConfirmDialog.js';
 
 /**
  * Quran settings — a right-side DRAWER (Istiak's spec), available from every
@@ -46,14 +47,17 @@ const GOAL_PRESETS = [1, 3, 5, 10, 20];
 export default function QuranSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data: summary } = useQuranSummary();
   const updateProfile = useUpdateQuranProfile();
+  const resetKhatam = useResetKhatam();
 
-  const savedGoal = summary?.profile.dailyGoalAyat ?? 1;
+  const savedGoal = summary?.profile.dailyGoalAyat ?? 0;
   const [goal, setGoal] = useState<number>(savedGoal);
   const [reciter, setReciter] = useState(() => localStorage.getItem('ihsan_reciter') || 'dossari');
   const [translations, setTranslations] = useState<string[]>(selectedTranslations);
+  // danger-zone double confirm: inline tap → ConfirmDialog (app-wide rule)
+  const [confirmDanger, setConfirmDanger] = useState<null | 'khatam' | 'goal'>(null);
 
   // Keep the local goal field in sync when the drawer (re)opens with fresh data
-  useEffect(() => { if (open) setGoal(summary?.profile.dailyGoalAyat ?? 1); }, [open, summary?.profile.dailyGoalAyat]);
+  useEffect(() => { if (open) setGoal(summary?.profile.dailyGoalAyat ?? 0); }, [open, summary?.profile.dailyGoalAyat]);
 
   const primary = translations[0] ?? 'en.sahih';
   const secondary = translations[1] ?? 'none';
@@ -69,13 +73,13 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
     setTranslations((t) => (id === 'none' || id === t[0] ? [t[0] ?? 'en.sahih'] : [t[0] ?? 'en.sahih', id]));
   };
 
-  // Dedicated goal save (its own button — Istiak's spec)
+  // Dedicated goal save (its own button — Istiak's spec). 0 = no goal.
   const saveGoal = () => {
-    const g = Math.min(6236, Math.max(1, Math.round(goal) || 1));
+    const g = Math.min(6236, Math.max(0, Math.round(goal) || 0));
     setGoal(g);
     if (g === savedGoal) { toast('Goal unchanged', { id: 'quran-goal' }); return; }
     updateProfile.mutate({ dailyGoalAyat: g }, {
-      onSuccess: () => toast.success(`Daily goal set: ${g} āyah${g > 1 ? 's' : ''} 🎯`, { id: 'quran-goal' }),
+      onSuccess: () => toast.success(g > 0 ? `Daily goal set: ${g} āyah${g > 1 ? 's' : ''} 🎯` : 'Goal removed — read freely 🌿', { id: 'quran-goal' }),
       onError: () => toast.error('Could not save the goal — try again.', { id: 'quran-goal' }),
     });
   };
@@ -115,10 +119,18 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
               <div className="rounded-2xl border border-brand-emerald/25 bg-brand-emerald/[0.06] p-4">
                 <p className="text-white font-black text-sm">🎯 Daily Quran goal</p>
                 <p className="text-white/40 text-[11px] mt-0.5 leading-relaxed">
-                  How many āyāt to read each day. Start small — even <b className="text-white/60">1 āyah a day</b> keeps
-                  the habit alive. Reading anywhere counts (khatam, browsing, listening).
+                  Completely optional — set it only when YOU want a daily target. Start small: even{' '}
+                  <b className="text-white/60">1 āyah a day</b> keeps the habit alive. Reading anywhere counts.
                 </p>
                 <div className="flex flex-wrap gap-1.5 mt-3">
+                  <button
+                    onClick={() => setGoal(0)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                      goal === 0
+                        ? 'bg-white/15 text-white border-slate-300/40'
+                        : 'bg-white/5 border-slate-400/15 text-white/60 hover:border-slate-300/40'
+                    }`}
+                  >No goal</button>
                   {GOAL_PRESETS.map((p) => (
                     <button key={p}
                       onClick={() => setGoal(p)}
@@ -133,7 +145,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                 <div className="flex items-center gap-2 mt-3">
                   <label className="text-white/40 text-[11px] font-bold shrink-0" htmlFor="q-goal">Custom</label>
                   <input
-                    id="q-goal" type="number" min={1} max={6236}
+                    id="q-goal" type="number" min={0} max={6236}
                     value={goal}
                     onChange={(e) => setGoal(Number(e.target.value))}
                     className="input input-bordered input-sm flex-1 bg-white/5 border-slate-400/15 text-white"
@@ -191,20 +203,59 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                 <p className="text-white/25 text-[10px] mt-1">Larger, easier to read on big screens.</p>
               </div>
 
-              <div className="rounded-2xl bg-white/3 border border-slate-400/8 p-3">
-                <p className="text-white/45 text-xs leading-relaxed">
-                  🔖 Your saved āyāt now live in their own <b className="text-white/70">Saved</b> tab —
-                  organized by surah, one tap back into the reader.
-                </p>
-              </div>
-
               <button
                 className="w-full btn btn-sm h-11 rounded-2xl border-0 text-white font-black bg-gradient-to-r from-emerald-500 to-teal-500"
                 onClick={save}
               >
                 Save reading settings
               </button>
+
+              {/* ── Danger zone — restart options with proper double-confirm ── */}
+              <div className="rounded-2xl border border-red-500/20 bg-red-500/[0.04] p-4 space-y-2.5">
+                <p className="text-red-400/70 text-[11px] uppercase tracking-widest font-bold">Danger zone</p>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/70 text-sm font-semibold">🕋 Reset khatam journey</p>
+                    <p className="text-white/35 text-[11px]">Bookmark returns to 1:1 and the journey un-starts. Completed khatm count stays.</p>
+                  </div>
+                  <button className="btn btn-xs rounded-lg bg-red-500/10 border-red-500/30 text-red-300 hover:bg-red-500/20 shrink-0"
+                    onClick={() => setConfirmDanger('khatam')}>Reset</button>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/70 text-sm font-semibold">🎯 Remove reading goal</p>
+                    <p className="text-white/35 text-[11px]">Back to no daily target — reading still counts and history stays.</p>
+                  </div>
+                  <button className="btn btn-xs rounded-lg bg-red-500/10 border-red-500/30 text-red-300 hover:bg-red-500/20 shrink-0"
+                    disabled={savedGoal === 0}
+                    onClick={() => setConfirmDanger('goal')}>Remove</button>
+                </div>
+              </div>
             </div>
+
+            <ConfirmDialog
+              open={confirmDanger !== null}
+              title={confirmDanger === 'khatam' ? 'Reset your khatam journey?' : 'Remove your reading goal?'}
+              message={confirmDanger === 'khatam'
+                ? 'Your bookmark goes back to the very beginning (1:1) and the journey becomes un-started. Your completed khatm count and reading history are kept.'
+                : 'Your daily āyah target will be removed. Reading still counts toward your history — there will simply be no goal ring.'}
+              confirmLabel={confirmDanger === 'khatam' ? 'Yes, reset khatam' : 'Yes, remove goal'}
+              onConfirm={() => {
+                if (confirmDanger === 'khatam') {
+                  resetKhatam.mutate(undefined, {
+                    onSuccess: () => toast.success('Khatam journey reset 🕋', { id: 'khatam-reset' }),
+                    onError: () => toast.error('Could not reset — try again.', { id: 'khatam-reset' }),
+                  });
+                } else if (confirmDanger === 'goal') {
+                  updateProfile.mutate({ dailyGoalAyat: 0 }, {
+                    onSuccess: () => { setGoal(0); toast.success('Reading goal removed 🌿', { id: 'quran-goal' }); },
+                    onError: () => toast.error('Could not save — try again.', { id: 'quran-goal' }),
+                  });
+                }
+                setConfirmDanger(null);
+              }}
+              onCancel={() => setConfirmDanger(null)}
+            />
           </motion.aside>
         </>
       )}

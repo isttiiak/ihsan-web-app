@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
-import { useQuranSummary, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
+import { useQuranSummary, useStartKhatam, useToggleDuaBookmark, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
 import { loadSurahList, locateGlobalAyah, type SurahMeta } from '../utils/quranData.js';
 import { SPECIAL_SURAHS, AYAH_BUNDLES, QURANIC_DUAS } from '../utils/quranMeta.js';
 
@@ -23,10 +23,15 @@ export default function QuranHabit() {
     return () => { alive = false; };
   }, []);
 
+  const startKhatam = useStartKhatam();
+  const toggleDua = useToggleDuaBookmark();
   const nameOf = (n: number) => surahs.find((s) => s.number === n)?.englishName ?? `Surah ${n}`;
-  const goal = summary?.profile.dailyGoalAyat ?? 1;
+  // Goal is OPT-IN (0 = not set); khatam starts only when the user says so.
+  const goal = summary?.profile.dailyGoalAyat ?? 0;
   const today = summary?.todayAyat ?? 0;
-  const pct = Math.min(100, (today / goal) * 100);
+  const pct = goal > 0 ? Math.min(100, (today / goal) * 100) : 0;
+  const khatamStarted = !!summary?.profile.khatamStartedAt || (summary?.profile.currentAyah ?? 0) > 0;
+  const savedDuas = summary?.profile.savedDuas ?? [];
   const khatmPct = summary ? (summary.profile.currentAyah / QURAN_TOTAL_AYAT) * 100 : 0;
   const pos = useMemo(() => (summary && surahs.length ? locateGlobalAyah(summary.profile.currentAyah, surahs) : null), [summary, surahs]);
   const maxLast7 = Math.max(1, ...(summary?.last7 ?? []).map((d) => d.units));
@@ -57,21 +62,32 @@ export default function QuranHabit() {
               <div className="absolute inset-0 grid place-items-center text-center">
                 <div>
                   <p className="text-xl font-black text-white leading-none">{isLoading ? '…' : today}</p>
-                  <p className="text-[9px] text-white/40 font-bold">of {goal} ayat</p>
+                  <p className="text-[9px] text-white/40 font-bold">{goal > 0 ? `of ${goal} ayat` : 'āyāt today'}</p>
                 </div>
               </div>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-black">{summary?.goalMet ? 'Goal reached — ma sha Allah! 🌟' : "Today's reading"}</p>
               <p className="text-white/40 text-xs mt-1 leading-relaxed">
-                Ayat from khatam, free reading, special selections and listening all count as one.
+                {goal > 0
+                  ? 'Ayat from khatam, free reading, special selections and listening all count as one.'
+                  : 'No daily goal yet — reading still counts. Set one in ⚙️ settings whenever you’re ready.'}
               </p>
-              <div className="flex gap-2 mt-3">
-                <button className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-500"
-                  onClick={() => { if (pos) navigate(`/quran/read/${pos.surah}?start=${pos.ayah}&mode=khatam`); else navigate('/quran/khatam'); }}>
-                  ▶ Continue khatam
-                </button>
-                <Link to="/quran/browse" className="btn btn-sm rounded-xl bg-white/5 border-slate-400/10 text-white/70 font-bold">
+              {/* stacked on phones — these two buttons were overflowing the card */}
+              <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                {khatamStarted ? (
+                  <button className="btn btn-sm w-full sm:w-auto rounded-xl border-0 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-500"
+                    onClick={() => { if (pos) navigate(`/quran/read/${pos.surah}?start=${pos.ayah}&mode=khatam`); else navigate('/quran/khatam'); }}>
+                    ▶ Continue khatam
+                  </button>
+                ) : (
+                  <button className="btn btn-sm w-full sm:w-auto rounded-xl border-0 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-500"
+                    disabled={startKhatam.isPending}
+                    onClick={() => startKhatam.mutate(undefined, { onSuccess: () => navigate('/quran/khatam') })}>
+                    🕋 Begin khatam journey
+                  </button>
+                )}
+                <Link to="/quran/browse" className="btn btn-sm w-full sm:w-auto rounded-xl bg-white/5 border-slate-400/10 text-white/70 font-bold">
                   Pick a surah
                 </Link>
               </div>
@@ -103,21 +119,8 @@ export default function QuranHabit() {
           </Link>
         </div>
 
-        {/* ── top surahs ── */}
-        {(summary?.topSurahs ?? []).length > 0 && (
-          <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-            <h2 className="text-white font-black text-sm mb-0.5">💚 Your top surahs</h2>
-            <p className="text-white/30 text-[11px] mb-2">Counted each time you read a surah to its end.</p>
-            <div className="flex flex-wrap gap-1.5">
-              {(summary?.topSurahs ?? []).map((t, i) => (
-                <button key={t.surah}
-                  className="px-2.5 py-1.5 rounded-xl bg-white/5 border border-slate-400/10 text-xs text-white/70 hover:border-brand-emerald/40"
-                  onClick={() => navigate(`/quran/read/${t.surah}`)}
-                >{['🥇', '🥈', '🥉', '🏅', '🏅'][i]} {nameOf(t.surah)} <span className="text-white/30">· ×{t.completions}</span></button>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Top surahs moved to the Analytics tab (Istiak's decision) —
+            completion counts are an insight, not a homepage feature. */}
 
         {/* ── special surahs ── */}
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
@@ -158,20 +161,31 @@ export default function QuranHabit() {
           </div>
         </div>
 
-        {/* ── duas from the Quran ── */}
+        {/* ── duas from the Quran — the prophets' own words, each with its story ── */}
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-          <h2 className="text-white font-black text-sm mb-3">🤲 Duas from the Quran</h2>
+          <h2 className="text-white font-black text-sm mb-1">🤲 Duas from the Quran</h2>
+          <p className="text-white/30 text-[11px] mb-3">Supplications Allah Himself relates — open one to read it with its story and reference.</p>
           <div className="grid sm:grid-cols-2 gap-1.5">
-            {QURANIC_DUAS.map((d) => (
-              <button key={d.id}
-                className="flex items-center gap-2.5 rounded-xl bg-white/3 hover:bg-white/6 px-3 py-2 text-left transition-colors"
-                onClick={() => navigate(`/quran/read/${d.surah}?start=${d.fromAyah}&end=${d.toAyah}&mode=bundle`)}
-              >
-                <span>{d.emoji}</span>
-                <span className="flex-1 text-white/65 text-xs">{d.title}</span>
-                <span className="text-white/25 text-[10px]">{d.surah}:{d.fromAyah}</span>
-              </button>
-            ))}
+            {QURANIC_DUAS.map((d) => {
+              const saved = savedDuas.includes(d.id);
+              return (
+                <div key={d.id}
+                  className="group flex items-center gap-2.5 rounded-xl bg-white/3 border border-transparent hover:border-brand-gold/35 hover:bg-white/[0.06] px-3 py-2 transition-all cursor-pointer"
+                  onClick={() => navigate(`/quran/read/${d.surah}?start=${d.fromAyah}&end=${d.toAyah}&mode=bundle&dua=${d.id}`)}
+                  role="button" tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/quran/read/${d.surah}?start=${d.fromAyah}&end=${d.toAyah}&mode=bundle&dua=${d.id}`); }}
+                >
+                  <span className="group-hover:scale-110 transition-transform">{d.emoji}</span>
+                  <span className="flex-1 text-white/65 group-hover:text-white/85 text-xs transition-colors">{d.title}</span>
+                  <span className="text-white/25 text-[10px]">{d.surah}:{d.fromAyah}</span>
+                  <button
+                    aria-label={saved ? `Remove ${d.title} from saved duas` : `Save ${d.title}`}
+                    className={`text-sm transition-all ${saved ? 'text-brand-gold' : 'text-white/20 hover:text-brand-gold/70'}`}
+                    onClick={(e) => { e.stopPropagation(); toggleDua.mutate(d.id); }}
+                  >{saved ? '🔖' : '🏷️'}</button>
+                </div>
+              );
+            })}
           </div>
         </div>
 

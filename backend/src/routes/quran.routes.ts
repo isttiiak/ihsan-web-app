@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import * as quranController from '../controllers/quran.controller.js';
-import { quranReadSchema, quranSummarySchema, quranProfileSchema, quranReadAyatSchema, quranBookmarkSchema, quranHistorySchema, quranTafsirSchema } from '../validation/quran.schemas.js';
+import { quranReadSchema, quranSummarySchema, quranProfileSchema, quranReadAyatSchema, quranBookmarkSchema, quranHistorySchema, quranTafsirSchema, quranResumeSchema, quranDuaBookmarkSchema } from '../validation/quran.schemas.js';
 
 const router = Router();
 
@@ -26,6 +26,16 @@ router.get('/summary', requireAuth, validate(quranSummarySchema), quranControlle
 
 // PATCH /api/quran/profile — daily goal / bookmark position
 router.patch('/profile', requireAuth, validate(quranProfileSchema), quranController.updateProfile);
+
+// PUT /api/quran/resume — per-surah reader position (cross-device continue)
+router.put('/resume', requireAuth, validate(quranResumeSchema), quranController.setResume);
+
+// POST /api/quran/dua-bookmark — toggle a curated dua in the saved list
+router.post('/dua-bookmark', requireAuth, validate(quranDuaBookmarkSchema), quranController.toggleDuaBookmark);
+
+// Khatam journey is OPT-IN: explicit start + reset (Istiak's spec)
+router.post('/khatam/start', requireAuth, quranController.startKhatam);
+router.post('/khatam/reset', requireAuth, quranController.resetKhatam);
 
 // DELETE /api/quran/all — wipe all Quran data for the user
 router.delete('/all', requireAuth, quranController.deleteAll);

@@ -58,7 +58,9 @@ describe("Quran API", () => {
     const res = await auth(request(app).get(`/api/quran/summary?today=2026-07-02`));
     expect(res.status).toBe(200);
     expect(res.body.todayPages).toBe(4);
-    expect(res.body.goalMet).toBe(true); // default goal is 2
+    // Goal is OPT-IN now: default 0 means never "met" until the user sets one
+    expect(res.body.profile.dailyGoalAyat).toBe(0);
+    expect(res.body.goalMet).toBe(false);
     expect(res.body.streak).toBe(3);
     expect(res.body.stats.allTimePages).toBe(11);
     expect(res.body.pace).toBeGreaterThan(0);
@@ -77,10 +79,10 @@ describe("Quran API", () => {
   });
 
   test("profile goal updates and is reflected in summary", async () => {
-    await auth(request(app).patch(`/api/quran/profile`)).send({ dailyGoalPages: 20 });
+    await auth(request(app).patch(`/api/quran/profile`)).send({ dailyGoalPages: 20, dailyGoalAyat: 20 });
     const res = await auth(request(app).get(`/api/quran/summary?today=2026-07-02`));
     expect(res.body.profile.dailyGoalPages).toBe(20);
-    // v4: the goal unit is AYAT (1 page ≈ 10 ayat). 14 pages = 140 units ≥ default 20.
+    // v4: the goal unit is AYAT (1 page ≈ 10 ayat). 14 pages = 140 units ≥ 20.
     expect(res.body.goalMet).toBe(true);
     const strict = await auth(request(app).patch(`/api/quran/profile`)).send({ dailyGoalAyat: 200 });
     expect(strict.status).toBe(200);
@@ -146,5 +148,39 @@ describe("Quran API", () => {
     const day = res.body.history.find((h) => h.date === "2026-07-03");
     expect(day.ayat).toBe(17); // 7 + 10
     expect(day.units).toBe(17);
+  });
+
+  test("v4.8: resume position syncs server-side and clears with ayah 0", async () => {
+    const set = await auth(request(app).put(`/api/quran/resume`)).send({ surah: 2, ayah: 12 });
+    expect(set.status).toBe(200);
+    let sum = await auth(request(app).get(`/api/quran/summary?today=2026-07-03`));
+    expect(sum.body.profile.readerPos["2"]).toBe(12);
+
+    const clear = await auth(request(app).put(`/api/quran/resume`)).send({ surah: 2, ayah: 0 });
+    expect(clear.status).toBe(200);
+    sum = await auth(request(app).get(`/api/quran/summary?today=2026-07-03`));
+    expect(sum.body.profile.readerPos["2"]).toBeUndefined();
+  });
+
+  test("v4.8: dua bookmarks toggle and appear in summary", async () => {
+    const on = await auth(request(app).post(`/api/quran/dua-bookmark`)).send({ duaId: "dua-yunus" });
+    expect(on.body.savedDuas).toEqual(["dua-yunus"]);
+    const sum = await auth(request(app).get(`/api/quran/summary?today=2026-07-03`));
+    expect(sum.body.profile.savedDuas).toEqual(["dua-yunus"]);
+    const off = await auth(request(app).post(`/api/quran/dua-bookmark`)).send({ duaId: "dua-yunus" });
+    expect(off.body.savedDuas).toEqual([]);
+  });
+
+  test("v4.8: khatam is opt-in — start sets the flag, reset clears bookmark + flag", async () => {
+    const start = await auth(request(app).post(`/api/quran/khatam/start`));
+    expect(start.status).toBe(200);
+    expect(start.body.khatamStartedAt).toBeTruthy();
+
+    const reset = await auth(request(app).post(`/api/quran/khatam/reset`));
+    expect(reset.status).toBe(200);
+    const sum = await auth(request(app).get(`/api/quran/summary?today=2026-07-03`));
+    expect(sum.body.profile.khatamStartedAt).toBeNull();
+    expect(sum.body.profile.currentAyah).toBe(0);
+    expect(sum.body.profile.currentPage).toBe(0);
   });
 });

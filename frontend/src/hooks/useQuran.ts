@@ -23,6 +23,12 @@ export interface QuranSummary {
     dailyGoalAyat: number;
     currentAyah: number;
     totalAyat: number;
+    /** null = khatam journey not started (opt-in) */
+    khatamStartedAt: string | null;
+    /** Per-surah reader resume positions (cross-device) */
+    readerPos: Record<string, number>;
+    /** Saved curated dua ids */
+    savedDuas: string[];
   };
   todayPages: number;
   /** Today's ayat-equivalents (ayat + pages·10) — the v4 goal/streak unit */
@@ -155,6 +161,45 @@ export function useToggleBookmark() {
       const { data } = await api.post<{ ok: boolean; bookmarks: QuranBookmark[] }>('/api/quran/bookmark', vars);
       return data.bookmarks;
     },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['quran', 'summary'] }),
+  });
+}
+
+/** Save (ayah 0 clears) the per-surah resume position on the server. */
+export function useSetResume() {
+  return useMutation({
+    mutationFn: async (vars: { surah: number; ayah: number }) => {
+      await api.put('/api/quran/resume', vars);
+    },
+  });
+}
+
+export function useToggleDuaBookmark() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (duaId: string) => {
+      const { data } = await api.post<{ ok: boolean; savedDuas: string[] }>('/api/quran/dua-bookmark', { duaId });
+      return data.savedDuas;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['quran', 'summary'] }),
+  });
+}
+
+export function useStartKhatam() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post<{ ok: boolean; khatamStartedAt: string }>('/api/quran/khatam/start');
+      return data;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['quran', 'summary'] }),
+  });
+}
+
+export function useResetKhatam() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => { await api.post('/api/quran/khatam/reset'); },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['quran', 'summary'] }),
   });
 }

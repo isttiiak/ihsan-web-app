@@ -46,6 +46,36 @@ export const getSummary = async (req: Request, res: Response, next: NextFunction
   } catch (err) { next(err); }
 };
 
+export const setResume = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { surah, ayah } = req.body as { surah: number; ayah: number };
+    await quranService.setResume(req.user.uid, surah, ayah);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+};
+
+export const toggleDuaBookmark = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { duaId } = req.body as { duaId: string };
+    const savedDuas = await quranService.toggleDuaBookmark(req.user.uid, duaId);
+    res.json({ ok: true, savedDuas });
+  } catch (err) { next(err); }
+};
+
+export const startKhatam = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const profile = await quranService.startKhatam(req.user.uid);
+    res.json({ ok: true, khatamStartedAt: profile.khatamStartedAt });
+  } catch (err) { next(err); }
+};
+
+export const resetKhatam = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    await quranService.resetKhatam(req.user.uid);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+};
+
 export const updateProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const profile = await quranService.updateProfile(

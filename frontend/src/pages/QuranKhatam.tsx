@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
-import { useQuranSummary, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
+import { useQuranSummary, useStartKhatam, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
 import { loadSurahList, locateGlobalAyah, juzOf, type SurahMeta } from '../utils/quranData.js';
 
 /**
@@ -14,7 +14,10 @@ import { loadSurahList, locateGlobalAyah, juzOf, type SurahMeta } from '../utils
 export default function QuranKhatam() {
   const navigate = useNavigate();
   const { data: summary, isLoading } = useQuranSummary();
+  const startKhatam = useStartKhatam();
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
+  // Opt-in (Istiak's spec): the journey exists only after the user begins it.
+  const khatamStarted = !!summary?.profile.khatamStartedAt || (summary?.profile.currentAyah ?? 0) > 0;
 
   useEffect(() => {
     let alive = true;
@@ -62,16 +65,36 @@ export default function QuranKhatam() {
                 <span>{summary.estDaysToKhatm ? `≈ ${summary.estDaysToKhatm} days at your pace` : 'read a few days to see your pace'}</span>
               </div>
 
-              <button
-                className="mt-5 w-full btn h-13 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400"
-                onClick={() => { if (pos) navigate(`/quran/read/${pos.surah}?start=${pos.ayah}&mode=khatam`); }}
-                disabled={!pos}
-              >
-                ▶ Continue from {pos ? `${pos.surah}:${pos.ayah}` : '…'}
-              </button>
-              <p className="text-white/30 text-[11px] text-center mt-2">
-                Every āyah you pass moves the bookmark — read at your own calm pace.
-              </p>
+              {khatamStarted ? (
+                <>
+                  <button
+                    className="mt-5 w-full btn h-13 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400"
+                    onClick={() => { if (pos) navigate(`/quran/read/${pos.surah}?start=${pos.ayah}&mode=khatam`); }}
+                    disabled={!pos}
+                  >
+                    ▶ Continue from {pos ? `${pos.surah}:${pos.ayah}` : '…'}
+                  </button>
+                  <p className="text-white/30 text-[11px] text-center mt-2">
+                    Every āyah you pass moves the bookmark — read at your own calm pace.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="mt-5 w-full btn h-13 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400"
+                    disabled={startKhatam.isPending}
+                    onClick={() => startKhatam.mutate(undefined, {
+                      onSuccess: () => navigate('/quran/read/1?start=1&mode=khatam'),
+                    })}
+                  >
+                    🕋 Begin my khatam journey
+                  </button>
+                  <p className="text-white/30 text-[11px] text-center mt-2">
+                    Entirely your choice, at your pace — start whenever your heart is ready.
+                    You can reset it anytime from ⚙️ settings.
+                  </p>
+                </>
+              )}
             </motion.div>
 
             <div className="grid grid-cols-2 gap-3">

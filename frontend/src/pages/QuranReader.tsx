@@ -8,9 +8,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolid, PlayIcon, PauseIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
-import { useQuranSummary, useReadAyat, useToggleBookmark } from '../hooks/useQuran.js';
+import { useQuranSummary, useReadAyat, useToggleBookmark, useSetResume } from '../hooks/useQuran.js';
 import { useTafsir } from '../hooks/useQuran.js';
 import { TAFSIRS, getPreferredTafsir, setPreferredTafsir } from '../utils/tafsir.js';
+import { QURANIC_DUAS } from '../utils/quranMeta.js';
 import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, selectedTranslations, TRANSLATIONS, type SurahMeta, type AyahText } from '../utils/quranData.js';
 import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrate.js';
 
@@ -39,7 +40,10 @@ const TR_FONT_SIZES = ['text-xs sm:text-sm', 'text-sm sm:text-base', 'text-base 
 // Tafsir is dense prose — default larger + generous line-height for big screens.
 const TAFSIR_FONT_SIZES = ['text-[15px] sm:text-base', 'text-base sm:text-lg', 'text-lg sm:text-xl'];
 
-// ── Resume tracking: where the reader left off, per surah ──────────────────────
+// ── Resume tracking: where the reader left off, per surah ─────────────────────
+// localStorage is the fast cache; the SERVER copy (QuranProfile.readerPos) is
+// the source of truth so the same account resumes at the same āyah on every
+// device (Istiak: web said āyah 12, phone said 3 — critical bug).
 const RESUME_KEY = 'ihsan_reader_pos';
 function readResumeMap(): Record<string, number> {
   try { return JSON.parse(localStorage.getItem(RESUME_KEY) ?? '{}') as Record<string, number>; }
@@ -67,6 +71,12 @@ export default function QuranReader() {
 
   const surahNo = Math.min(114, Math.max(1, Number(surahParam) || 1));
   const mode = (params.get('mode') ?? 'free') as ReaderMode;
+  // When opened from "Duas from the Quran": carries the story/evidence panel
+  const dua = useMemo(() => {
+    const id = params.get('dua');
+    return id ? QURANIC_DUAS.find((d) => d.id === id) ?? null : null;
+  }, [params]);
+  const [contextOpen, setContextOpen] = useState(false);
   const hasStart = params.get('start') != null;
   const startAyah = Number(params.get('start')) || 1;
   const endAyah = Number(params.get('end')) || null; // bundle bound
@@ -74,6 +84,9 @@ export default function QuranReader() {
   const { data: summary } = useQuranSummary();
   const readAyat = useReadAyat();
   const toggleBookmark = useToggleBookmark();
+  const setResumeServer = useSetResume();
+  const resumeSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resumePromptDoneRef = useRef(false);
   const [tafsirOpen, setTafsirOpen] = useState(false);
   const [tafsirEdition, setTafsirEdition] = useState<number>(getPreferredTafsir);
   const [splitTafsir, setSplitTafsir] = useState(false); // fullscreen 2-pane reading
@@ -127,6 +140,7 @@ export default function QuranReader() {
     let alive = true;
     setLoading(true);
     setResumeAyah(null);
+    resumePromptDoneRef.current = false;
     suppressSaveRef.current = false;
     seenRef.current = new Set();
     Promise.all([loadSurahList(), loadSurahText(surahNo)])
@@ -137,16 +151,36 @@ export default function QuranReader() {
         const initialIdx = Math.min(text.length - 1, Math.max(0, startAyah - 1));
         setIdx(initialIdx);
         setLoading(false);
-        // Offer "continue where you left off?" for an unfinished free/single read.
-        if (usesResume && !hasStart) {
-          const saved = getResume(surahNo);
-          if (saved > 1 && saved <= text.length) setResumeAyah(saved);
-        }
       })
       .catch(() => { if (alive) { setLoading(false); toast.error('Could not load the surah — check your connection.', { id: 'quran-load' }); } });
     return () => { alive = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [surahNo]);
+
+  // Offer "continue where you left off?" once text (and, when signed in, the
+  // server summary) is available. Server position wins over the local cache.
+  useEffect(() => {
+    if (loading || !usesResume || hasStart || resumePromptDoneRef.current) return;
+    if (user && !summary) return; // wait for the authoritative copy
+    resumePromptDoneRef.current = true;
+    const serverPos = Number(summary?.profile.readerPos?.[String(surahNo)] ?? 0);
+    const saved = serverPos > 0 ? serverPos : getResume(surahNo);
+    if (saved > 1 && saved <= ayat.length) {
+      saveResume(surahNo, saved); // refresh the local cache from the server
+      setResumeAyah(saved);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, summary, surahNo, usesResume, hasStart, user]);
+
+  // Push the resume position to the server, debounced — cheap and idempotent.
+  const syncResume = useCallback((ayah: number) => {
+    if (!user) return;
+    if (resumeSyncTimerRef.current) clearTimeout(resumeSyncTimerRef.current);
+    resumeSyncTimerRef.current = setTimeout(() => {
+      setResumeServer.mutate({ surah: surahNo, ayah });
+    }, 1500);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, surahNo]);
 
   // ── logging: count each NEW ayah the reader moves past, flush in batches ──
   const flush = useCallback((completedSurah = false) => {
@@ -216,16 +250,20 @@ export default function QuranReader() {
   const goToIdx = useCallback((next: number) => {
     stopAudio();
     setIdx(next);
-    if (usesResume && !suppressSaveRef.current) { const a = ayat[next]; if (a) saveResume(surahNo, a.numberInSurah); }
-  }, [stopAudio, usesResume, ayat, surahNo]);
+    if (usesResume && !suppressSaveRef.current) {
+      const a = ayat[next];
+      if (a) { saveResume(surahNo, a.numberInSurah); syncResume(a.numberInSurah); }
+    }
+  }, [stopAudio, usesResume, ayat, surahNo, syncResume]);
 
   const finishAndRedirect = useCallback((msg: string) => {
     suppressSaveRef.current = true;
     clearResume(surahNo);
+    syncResume(0); // clear on the server too
     celebrateSmall();
     toast.success(msg, { id: 'reader-done', duration: 2200 });
     setTimeout(() => navigate('/quran'), 850);
-  }, [surahNo, navigate]);
+  }, [surahNo, navigate, syncResume]);
 
   const goNext = useCallback(() => {
     stopAudio();
@@ -243,6 +281,7 @@ export default function QuranReader() {
     markRead(idx);
     flush(true); // credits the surah completion
     clearResume(surahNo);
+    syncResume(0);
     if (mode === 'single') {
       finishAndRedirect(`${surahMeta?.englishName ?? 'Surah'} complete 🌿`);
       return;
@@ -258,7 +297,7 @@ export default function QuranReader() {
       finishAndRedirect('Khatm complete — Allahu akbar! 🕋');
       celebrateKhatm();
     }
-  }, [idx, lastIdx, markRead, stopAudio, flush, mode, surahNo, surahMeta, navigate, goToIdx, finishAndRedirect]);
+  }, [idx, lastIdx, markRead, stopAudio, flush, mode, surahNo, surahMeta, navigate, goToIdx, finishAndRedirect, syncResume]);
 
   const goPrev = useCallback(() => {
     if (idx > firstIdx) goToIdx(idx - 1);
@@ -633,12 +672,34 @@ export default function QuranReader() {
         {/* ── Tafsir (authentic, sourced — the Quran rooms carry NO AI) ── */}
         {!loading && current && user && (
           <div className="space-y-3">
-            <button
-              onClick={() => setTafsirOpen((o) => !o)}
-              className={`w-full flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${tafsirOpen ? 'bg-brand-emerald/15 border-brand-emerald/30 text-brand-emerald' : 'bg-white/5 border-slate-400/12 text-white/70 hover:text-white'}`}
-            >
-              <BookOpenIcon className="w-4 h-4" /> Tafsir
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setTafsirOpen((o) => !o)}
+                className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${tafsirOpen ? 'bg-brand-emerald/15 border-brand-emerald/30 text-brand-emerald' : 'bg-white/5 border-slate-400/12 text-white/70 hover:text-white'}`}
+              >
+                <BookOpenIcon className="w-4 h-4" /> Tafsir
+              </button>
+              {dua?.context && (
+                <button
+                  onClick={() => setContextOpen((o) => !o)}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold border transition-all ${contextOpen ? 'bg-brand-gold/15 border-brand-gold/35 text-brand-gold' : 'bg-white/5 border-slate-400/12 text-white/70 hover:text-white'}`}
+                >
+                  📜 Why this duʿā
+                </button>
+              )}
+            </div>
+
+            {/* The story & evidence behind this duʿā (verified reference) */}
+            {contextOpen && dua?.context && (
+              <div className="rounded-2xl border border-brand-gold/15 bg-[#141108] p-4 sm:p-5 space-y-2.5">
+                <p className="text-brand-gold/80 text-xs font-black">{dua.emoji} {dua.title}</p>
+                <p className="text-[#d8d0b8] text-sm leading-relaxed">{dua.context.text}</p>
+                <a
+                  className="inline-block text-brand-gold/60 text-[11px] underline hover:text-brand-gold"
+                  href={dua.context.ref.url} target="_blank" rel="noreferrer"
+                >{dua.context.ref.text} ↗</a>
+              </div>
+            )}
 
             {/* Calm reading surface: warm dark ground + warm ink, never pure white */}
             {tafsirOpen && (
@@ -703,7 +764,7 @@ export default function QuranReader() {
               <div className="flex gap-2 mt-4">
                 <button
                   className="flex-1 btn btn-sm rounded-xl bg-white/5 border-slate-400/10 text-white/70"
-                  onClick={() => { clearResume(surahNo); setIdx(0); setResumeAyah(null); }}
+                  onClick={() => { clearResume(surahNo); syncResume(0); setIdx(0); setResumeAyah(null); }}
                 >
                   Start over
                 </button>

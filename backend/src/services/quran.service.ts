@@ -172,6 +172,47 @@ export async function updateProfile(userId: string, input: QuranProfileUpdate): 
   return profile;
 }
 
+/** Save (or clear with ayah 0) the per-surah reader resume position —
+ * server-side so "continue where you left off" agrees across devices. */
+export async function setResume(userId: string, surah: number, ayah: number): Promise<void> {
+  const profile = await getOrCreateProfile(userId);
+  if (ayah <= 0) profile.readerPos.delete(String(surah));
+  else profile.readerPos.set(String(surah), ayah);
+  profile.markModified('readerPos');
+  await profile.save();
+}
+
+/** Toggle a curated dua in the saved list; returns the new list. */
+export async function toggleDuaBookmark(userId: string, duaId: string): Promise<string[]> {
+  const profile = await getOrCreateProfile(userId);
+  const i = profile.savedDuas.indexOf(duaId);
+  if (i >= 0) profile.savedDuas.splice(i, 1);
+  else if (profile.savedDuas.length < 100) profile.savedDuas.push(duaId);
+  await profile.save();
+  return profile.savedDuas;
+}
+
+/** Explicitly begin the khatam journey (opt-in, Istiak's spec). */
+export async function startKhatam(userId: string): Promise<IQuranProfile> {
+  const profile = await getOrCreateProfile(userId);
+  if (!profile.khatamStartedAt) {
+    profile.khatamStartedAt = new Date();
+    await profile.save();
+  }
+  return profile;
+}
+
+/** Reset the khatam journey: bookmark back to the very start, journey
+ * un-started. Completed khatm COUNT is history and stays. */
+export async function resetKhatam(userId: string): Promise<IQuranProfile> {
+  const profile = await getOrCreateProfile(userId);
+  profile.currentAyah = 0;
+  profile.currentPage = 0;
+  profile.khatamStartedAt = null;
+  await profile.save();
+  return profile;
+}
+
 export interface QuranSummary {
   profile: {
     dailyGoalPages: number;
@@ -181,6 +222,9 @@ export interface QuranSummary {
     dailyGoalAyat: number;
     currentAyah: number;
     totalAyat: number; // 6236
+    khatamStartedAt: string | null;
+    readerPos: Record<string, number>;
+    savedDuas: string[];
   };
   todayPages: number;
   /** Today's ayat-equivalents (ayat + pages·10) — the v4 goal/streak unit */
@@ -275,10 +319,14 @@ export async function getSummary(userId: string, today?: string): Promise<QuranS
       dailyGoalAyat: profile.dailyGoalAyat,
       currentAyah: profile.currentAyah,
       totalAyat: QURAN_TOTAL_AYAT,
+      khatamStartedAt: profile.khatamStartedAt ? profile.khatamStartedAt.toISOString() : null,
+      readerPos: Object.fromEntries(profile.readerPos ?? new Map()),
+      savedDuas: profile.savedDuas ?? [],
     },
     todayPages,
     todayAyat,
-    goalMet: todayAyat >= profile.dailyGoalAyat,
+    // goal 0 = no goal set — never "met"
+    goalMet: profile.dailyGoalAyat > 0 && todayAyat >= profile.dailyGoalAyat,
     streak,
     bestStreak,
     last7,
