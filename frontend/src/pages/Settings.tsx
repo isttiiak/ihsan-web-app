@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import api, { getIdToken } from '../lib/api.js';
+import api, { API_BASE, getIdToken } from '../lib/api.js';
 import { getHijriAdjustment, setHijriAdjustment, getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useUiStore } from '../store/useUiStore.js';
@@ -119,7 +119,7 @@ export default function Settings() {
   // Gather a light, privacy-safe stats snapshot for the weekly recap.
   const runWeekly = async () => {
     const idToken = await getIdToken();
-    const base = import.meta.env.VITE_BACKEND_URL as string;
+    const base = API_BASE;
     const headers: Record<string, string> = idToken ? { Authorization: `Bearer ${idToken}` } : {};
     const j = async (p: string): Promise<any | null> => {
       try { const r = await fetch(`${base}${p}`, { headers }); return r.ok ? await r.json() : null; }
@@ -143,8 +143,8 @@ export default function Settings() {
     try {
       const headers: Record<string, string> = idToken ? { Authorization: `Bearer ${idToken}` } : {};
       const [profileRes, zikrRes] = await Promise.allSettled([
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, { headers }),
-        fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/summary`, { headers }),
+        fetch(`${API_BASE}/api/user/me`, { headers }),
+        fetch(`${API_BASE}/api/zikr/summary`, { headers }),
       ]);
       const profile = profileRes.status === 'fulfilled' && profileRes.value.ok
         ? await profileRes.value.json() as unknown : null;
@@ -171,7 +171,7 @@ export default function Settings() {
   const exportExcel = async () => {
     setExportingXlsx(true);
     const idToken = await getIdToken();
-    const base = import.meta.env.VITE_BACKEND_URL as string;
+    const base = API_BASE;
     const headers: Record<string, string> = idToken ? { Authorization: `Bearer ${idToken}` } : {};
     const getJson = async (path: string): Promise<any | null> => {
       try { const r = await fetch(`${base}${path}`, { headers }); return r.ok ? await r.json() : null; }

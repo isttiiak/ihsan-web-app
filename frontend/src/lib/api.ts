@@ -2,7 +2,16 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { auth } from '../firebase.js';
 
-const api = axios.create({ baseURL: import.meta.env.VITE_BACKEND_URL });
+/**
+ * Backend origin. In production the API lives on the SAME Vercel deployment
+ * (/api/* serverless function), so this is empty — same-origin requests, no
+ * CORS, no separate cold host. VITE_BACKEND_URL still overrides it (local dev
+ * or a split deployment); in dev it falls back to the local backend port.
+ */
+export const API_BASE: string =
+  import.meta.env.VITE_BACKEND_URL ?? (import.meta.env.DEV ? 'http://localhost:5001' : '');
+
+const api = axios.create({ baseURL: API_BASE });
 
 /**
  * Returns a valid Firebase ID token, or null for guests.

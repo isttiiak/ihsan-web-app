@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
-import { getIdToken } from '../lib/api.js';
+import { API_BASE, getIdToken } from '../lib/api.js';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { auth, googleProvider } from '../firebase.js';
@@ -297,7 +297,7 @@ export default function Profile() {
     getIdToken()
       .then((idToken) => {
         if (!idToken) throw new Error('no session');
-        return fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
+        return fetch(`${API_BASE}/api/user/me`, {
           headers: { Authorization: `Bearer ${idToken}` },
         });
       })
@@ -350,7 +350,7 @@ export default function Profile() {
     const idToken = await getIdToken();
     if (!idToken) { setSaving(false); return; }
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
+      const res = await fetch(`${API_BASE}/api/user/me`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({
@@ -456,7 +456,7 @@ export default function Profile() {
 
       const idToken = await getIdToken();
       if (idToken) {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
+        const res = await fetch(`${API_BASE}/api/user/me`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
           body: JSON.stringify({ photoUrl: dataUrl }),
@@ -492,7 +492,7 @@ export default function Profile() {
       setProfile((p) => ({ ...p, photoUrl: url }));
       const idToken = await getIdToken();
       if (idToken) {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
+        const res = await fetch(`${API_BASE}/api/user/me`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
           body: JSON.stringify({ photoUrl: url }),
@@ -545,7 +545,7 @@ export default function Profile() {
       const idToken = await getIdToken();
       if (!idToken) { setLinkingGoogle(false); return; }
 
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/link-google`, {
+      const res = await fetch(`${API_BASE}/api/user/link-google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({ googleEmail: googleInfo.email ?? '', googleUid: googleInfo.uid }),
@@ -590,7 +590,7 @@ export default function Profile() {
       if (auth.currentUser) await unlink(auth.currentUser, 'google.com');
       const idToken = await getIdToken();
       if (idToken) {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/unlink-google`, {
+        const res = await fetch(`${API_BASE}/api/user/unlink-google`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
           body: JSON.stringify({ providerUid }),
@@ -607,14 +607,14 @@ export default function Profile() {
     if (!idToken || primaryEmailLoading) return;
     setPrimaryEmailLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/primary-email`, {
+      const res = await fetch(`${API_BASE}/api/user/primary-email`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({ email }),
       });
       if (!res.ok) return;
       // Re-fetch full user to get authoritative linkedProviders + primaryEmail state
-      const meRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user/me`, {
+      const meRes = await fetch(`${API_BASE}/api/user/me`, {
         headers: { Authorization: `Bearer ${idToken}` },
       });
       if (meRes.ok) {

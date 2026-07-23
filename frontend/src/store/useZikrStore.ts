@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { getUserTimezoneOffset } from '../utils/timezone.js';
 import { getTrackingDay, getTrackingDayMiddayTs } from '../utils/trackingDay.js';
-import { getIdToken } from '../lib/api.js';
+import { API_BASE, getIdToken } from '../lib/api.js';
 
 const FLUSH_DELAY = 800; // ms
 
@@ -120,7 +120,7 @@ export const useZikrStore = create<ZikrState>()(
         try {
           const tzOffset = get().timezoneOffset ?? SESSION_TZ_OFFSET;
           const res = await fetch(
-            `${import.meta.env.VITE_BACKEND_URL}/api/zikr/summary?timezoneOffset=${tzOffset}&today=${getTrackingDay()}`,
+            `${API_BASE}/api/zikr/summary?timezoneOffset=${tzOffset}&today=${getTrackingDay()}`,
             { headers: { Authorization: `Bearer ${idToken}` } }
           );
           if (!res.ok) return;
@@ -244,7 +244,7 @@ export const useZikrStore = create<ZikrState>()(
 
         set({ isFlushing: true });
         try {
-          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/zikr/increment/batch`, {
+          const res = await fetch(`${API_BASE}/api/zikr/increment/batch`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
             body: JSON.stringify({ increments: payload, timezoneOffset: resolvedOffset, today: getTrackingDay() }),
