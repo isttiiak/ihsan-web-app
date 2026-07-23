@@ -15,7 +15,9 @@ import TabNav from '../components/TabNav.js';
 import { StreakBadge, GoalBadge } from '../components/StatusBadges.js';
 import { celebrateGoal } from '../utils/celebrate.js';
 import { getHiddenZikr, hideZikr } from '../utils/hiddenZikr.js';
-import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowsPointingOutIcon, XMarkIcon, TrashIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { PREDEFINED_TYPES, findLibraryZikr } from '../utils/zikrLibrary.js';
+import EditZikrModal from '../components/EditZikrModal.js';
+import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowsPointingOutIcon, XMarkIcon, TrashIcon, PencilSquareIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 
 // Meanings for all built-in dhikr
 const DEFAULT_MEANINGS: Record<string, { arabic: string; transliteration: string; meaning: string }> = {
@@ -135,12 +137,18 @@ const DHIKR_HADITHS: Record<string, { text: string; source: string; url: string;
   },
 };
 
-const PREDEFINED_TYPES = [
-  'SubhanAllah', 'Alhamdulillah', 'Allahu Akbar', 'La ilaha illallah',
-  'Astaghfirullah', 'SubhanAllah wa bihamdihi', 'La hawla wa la quwwata illa billah',
-  'SubhanAllah wal hamdulillah wa la ilaha illAllah wa Allahu akbar',
-  'Ayatul Kursi', 'Durud Ibrahim',
-];
+// Full texts for predefined dhikr that aren't in the curated library —
+// shown in the expandable "Full text & reference" card, never truncated.
+const FULL_PREDEFINED: Record<string, { arabic: string; meaning: string; source?: string; sourceUrl?: string }> = {
+  'Ayatul Kursi': {
+    arabic:
+      'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ',
+    meaning:
+      'Allah — there is no deity except Him, the Ever-Living, the Sustainer of existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is before them and what will be after them, and they encompass not a thing of His knowledge except for what He wills. His Kursī extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great. (Quran 2:255)',
+    source: 'Quran 2:255',
+    sourceUrl: 'https://quran.com/2/255',
+  },
+};
 
 const GLOW_PALETTE = [
   { glow: 'rgba(16,185,129,0.9)',  ring: 'rgba(16,185,129,0.3)',  bar: 'bg-brand-emerald', solid: '#10b981' },
@@ -198,6 +206,11 @@ export default function ZikrCounter() {
   const [fullScreen, setFullScreen] = useState(false);
   const [showManage, setShowManage] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [editZikr, setEditZikr] = useState<string | null>(null);
+  const [refExpanded, setRefExpanded] = useState(false);
+
+  // Collapse the full-text card when switching dhikr
+  useEffect(() => { setRefExpanded(false); }, [selected]);
 
   // Real-time goal progress:
   // confirmedTotal = what the server last told us (stale until RQ refetch).
@@ -269,10 +282,14 @@ export default function ZikrCounter() {
 
   const color = GLOW_PALETTE[colorIdx % GLOW_PALETTE.length]!;
 
-  // Resolve meaning: default → custom → none
-  const meaning = DEFAULT_MEANINGS[selected] ?? (customMeanings[selected]
-    ? { arabic: customMeanings[selected].arabic ?? '', transliteration: '', meaning: customMeanings[selected].meaning }
-    : null);
+  // Resolve the COMPACT card display: built-in → library (short form) → custom
+  const libItem = findLibraryZikr(selected);
+  const meaning = DEFAULT_MEANINGS[selected]
+    ?? (libItem
+      ? { arabic: libItem.shortArabic ?? libItem.arabic, transliteration: '', meaning: libItem.shortMeaning ?? libItem.meaning }
+      : customMeanings[selected]
+        ? { arabic: customMeanings[selected].arabic ?? '', transliteration: '', meaning: customMeanings[selected].meaning }
+        : null);
 
   // Merge predefined + server types into local store
   useEffect(() => {
@@ -621,48 +638,88 @@ export default function ZikrCounter() {
           Press <kbd className="kbd kbd-xs bg-white/15 text-white border-slate-400/20">Space</kbd> to count
         </p>
 
-        {/* ── Hadith reference for selected dhikr ── */}
+        {/* ── Expandable full text & reference for the selected dhikr ──
+            Collapsed: a calm one-line header. Expanded: the COMPLETE Arabic,
+            complete meaning, then the hadith evidence with grade + link. */}
         {(() => {
           const builtin = DHIKR_HADITHS[selected];
           const custom = customMeanings[selected];
-          const hasRef = builtin || (custom?.source || custom?.sourceUrl);
-          if (!hasRef) return null;
+          const predef = FULL_PREDEFINED[selected];
+          // Full-text resolution: library → predefined extras → custom
+          const full = libItem
+            ? { arabic: libItem.arabic, meaning: libItem.meaning, virtue: libItem.virtue, source: libItem.source, sourceUrl: libItem.sourceUrl, grade: libItem.grade }
+            : predef
+              ? { arabic: predef.arabic, meaning: predef.meaning, virtue: undefined, source: predef.source, sourceUrl: predef.sourceUrl, grade: undefined }
+              : custom
+                ? { arabic: custom.fullArabic ?? custom.arabic, meaning: custom.fullMeaning ?? custom.meaning, virtue: custom.virtue, source: custom.source, sourceUrl: custom.sourceUrl, grade: custom.grade }
+                : null;
+          if (!full && !builtin) return null;
           return (
             <motion.div
               key={selected}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.25 }}
-              className="rounded-2xl border border-slate-400/10 bg-white/5 backdrop-blur-sm px-4 py-3 space-y-1.5"
+              className="rounded-2xl border border-emerald-500/10 bg-white/5 backdrop-blur-sm overflow-hidden"
             >
-              <p className="text-white/25 text-[10px] uppercase tracking-widest font-bold">📖 Hadith Reference</p>
-              {builtin ? (
-                <>
-                  <p className="text-white/60 text-xs italic leading-relaxed">{builtin.text}</p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {builtin.grade && (
-                      <span className="text-brand-emerald/60 text-[10px] font-semibold bg-brand-emerald/10 px-2 py-0.5 rounded-full">
-                        {builtin.grade}
-                      </span>
-                    )}
-                    <a href={builtin.url} target="_blank" rel="noopener noreferrer"
-                      className="text-brand-gold/60 text-[10px] underline hover:text-brand-gold/90 transition-colors">
-                      {builtin.source} ↗
-                    </a>
-                  </div>
-                </>
-              ) : custom?.source ? (
-                <div className="flex items-center gap-2 flex-wrap">
-                  {custom.sourceUrl ? (
-                    <a href={custom.sourceUrl} target="_blank" rel="noopener noreferrer"
-                      className="text-brand-gold/60 text-[10px] underline hover:text-brand-gold/90 transition-colors">
-                      {custom.source} ↗
-                    </a>
-                  ) : (
-                    <span className="text-white/40 text-xs">{custom.source}</span>
-                  )}
-                </div>
-              ) : null}
+              <button
+                onClick={() => setRefExpanded((v) => !v)}
+                aria-expanded={refExpanded}
+                className="w-full px-4 py-3 flex items-center justify-between text-left"
+              >
+                <span className="text-white/45 text-[11px] uppercase tracking-widest font-bold">📖 Full text & reference</span>
+                <ChevronDownIcon className={`w-4 h-4 text-white/30 transition-transform ${refExpanded ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {refExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 pb-4 space-y-3">
+                      {full?.arabic && (
+                        <p dir="rtl" lang="ar"
+                          className="text-xl sm:text-2xl text-white/90 leading-[2.2] text-right"
+                          style={{ fontFamily: "'Amiri', 'Scheherazade New', serif" }}>
+                          {full.arabic}
+                        </p>
+                      )}
+                      {full?.meaning && (
+                        <p className="text-sm text-white/65 leading-relaxed">{full.meaning}</p>
+                      )}
+                      {full?.virtue && (
+                        <p className="text-brand-gold/60 text-xs leading-relaxed">✨ {full.virtue}</p>
+                      )}
+                      {builtin && (
+                        <p className="text-white/50 text-xs italic leading-relaxed border-l-2 border-emerald-500/25 pl-3">{builtin.text}</p>
+                      )}
+                      {(builtin || full?.source) && (
+                        <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                          {(builtin?.grade ?? full?.grade) && (
+                            <span className="text-brand-emerald/60 text-[10px] font-semibold bg-brand-emerald/10 px-2 py-0.5 rounded-full">
+                              {builtin?.grade ?? full?.grade}
+                            </span>
+                          )}
+                          {builtin ? (
+                            <a href={builtin.url} target="_blank" rel="noopener noreferrer"
+                              className="text-brand-gold/60 text-[10px] underline hover:text-brand-gold/90 transition-colors">
+                              {builtin.source} ↗
+                            </a>
+                          ) : full?.sourceUrl ? (
+                            <a href={full.sourceUrl} target="_blank" rel="noopener noreferrer"
+                              className="text-brand-gold/60 text-[10px] underline hover:text-brand-gold/90 transition-colors">
+                              {full.source} ↗
+                            </a>
+                          ) : full?.source ? (
+                            <span className="text-white/40 text-xs">{full.source}</span>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           );
         })()}
@@ -1057,21 +1114,33 @@ export default function ZikrCounter() {
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-white/40 text-xs mb-4">Tap the trash to remove a zikr from your dropdown. Your saved counts stay in analytics — only the list entry is removed.</p>
+              <p className="text-white/40 text-xs mb-4">Custom zikr can be edited (✏️) — renaming keeps all your counts. Removing only takes it out of your dropdown; saved counts stay in analytics.</p>
               <div className="space-y-1.5 overflow-y-auto pr-1">
                 {types.length === 0 && <p className="text-white/40 text-sm text-center py-6">Your list is empty. Add one with ＋.</p>}
-                {types.map((t) => (
-                  <div key={t} className="flex items-center gap-3 p-2.5 rounded-xl border border-brand-border bg-brand-deep/50">
-                    <span className="flex-1 min-w-0 truncate text-white/80 text-sm font-semibold">{t}</span>
-                    <button
-                      onClick={() => setConfirmDelete(t)}
-                      aria-label={`Remove ${t}`}
-                      className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10 gap-1 shrink-0"
-                    >
-                      <TrashIcon className="w-3.5 h-3.5" /> Remove
-                    </button>
-                  </div>
-                ))}
+                {types.map((t) => {
+                  const isCustom = !PREDEFINED_TYPES.some((p) => p.toLowerCase() === t.toLowerCase()) && !findLibraryZikr(t);
+                  return (
+                    <div key={t} className="flex items-center gap-2 p-2.5 rounded-xl border border-brand-border bg-brand-deep/50">
+                      <span className="flex-1 min-w-0 truncate text-white/80 text-sm font-semibold">{t}</span>
+                      {isCustom && (
+                        <button
+                          onClick={() => { setShowManage(false); setEditZikr(t); }}
+                          aria-label={`Edit ${t}`}
+                          className="btn btn-xs btn-ghost text-brand-emerald/70 hover:text-brand-emerald hover:bg-brand-emerald/10 gap-1 shrink-0"
+                        >
+                          <PencilSquareIcon className="w-3.5 h-3.5" /> Edit
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setConfirmDelete(t)}
+                        aria-label={`Remove ${t}`}
+                        className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10 gap-1 shrink-0"
+                      >
+                        <TrashIcon className="w-3.5 h-3.5" /> Remove
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
               <button
                 onClick={() => { setShowManage(false); setShowAddCustom(true); }}
@@ -1092,6 +1161,8 @@ export default function ZikrCounter() {
         onConfirm={() => confirmDelete && handleDeleteType(confirmDelete)}
         onCancel={() => setConfirmDelete(null)}
       />
+
+      <EditZikrModal name={editZikr} onClose={() => setEditZikr(null)} />
     </AnimatedBackground>
   );
 }

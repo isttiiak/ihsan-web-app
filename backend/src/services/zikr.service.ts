@@ -166,6 +166,66 @@ export async function addZikrType(userId: string, name: string): Promise<unknown
   return user.zikrTypes;
 }
 
+/**
+ * Rename a zikr type, carrying its history along (Istiak's spec — full edit):
+ * the dropdown entry, the lifetime total (zikrTotals Map key) and every
+ * ZikrDaily bucket move to the new name. Rejects when the new name already
+ * exists as a separate entry (merge-by-rename would be too easy to trigger by
+ * accident). Historic buckets that somehow already use the new name are merged
+ * additively so the unique index never throws.
+ */
+export async function renameZikrType(userId: string, oldName: string, newName: string): Promise<unknown[]> {
+  const user = await User.findOne({ uid: userId }).select(ZIKR_PROJECTION);
+  if (!user) throw new Error('User not found');
+
+  const oldLower = oldName.toLowerCase();
+  const newLower = newName.toLowerCase();
+
+  const entry = user.zikrTypes.find((t: { name: string }) => t.name.toLowerCase() === oldLower);
+  if (!entry) {
+    const err = new Error('Zikr not found in your list') as Error & { status?: number };
+    err.status = 404;
+    throw err;
+  }
+  if (oldLower !== newLower && user.zikrTypes.some((t: { name: string }) => t.name.toLowerCase() === newLower)) {
+    const err = new Error('A zikr with that name already exists') as Error & { status?: number };
+    err.status = 409;
+    throw err;
+  }
+  if (entry.name === newName) return user.zikrTypes; // nothing to do
+
+  entry.name = newName;
+
+  // Move the lifetime total to the new key (merge if a stale key exists)
+  const totals = user.zikrTotals;
+  const oldTotal = totals.get(oldName) ?? 0;
+  if (oldTotal > 0 || totals.has(oldName)) {
+    totals.set(newName, (totals.get(newName) ?? 0) + oldTotal);
+    totals.delete(oldName);
+    user.markModified('zikrTotals');
+  }
+  await user.save();
+
+  // Move daily buckets. A plain updateMany would violate the unique
+  // userId+date+zikrType index if a bucket already exists under the new name,
+  // so merge additively per date instead.
+  const oldDocs = await ZikrDaily.find({ userId, zikrType: oldName }).select('date count').lean();
+  if (oldDocs.length > 0) {
+    await ZikrDaily.bulkWrite(
+      oldDocs.map((d) => ({
+        updateOne: {
+          filter: { userId, date: d.date, zikrType: newName },
+          update: { $inc: { count: d.count } },
+          upsert: true,
+        },
+      }))
+    );
+    await ZikrDaily.deleteMany({ userId, zikrType: oldName });
+  }
+
+  return user.zikrTypes;
+}
+
 /** Remove a custom zikr type from the user's list (case-insensitive). Lifetime
  * totals in the zikr Map are left untouched — only the dropdown entry is gone. */
 export async function removeZikrType(userId: string, name: string): Promise<unknown[]> {

@@ -69,3 +69,10 @@ export const addZikrTypeSchema = z.object({
     name: zikrTypeName.transform((s) => s.trim()),
   }),
 });
+
+export const renameZikrTypeSchema = z.object({
+  body: z.object({
+    oldName: zikrTypeName.transform((s) => s.trim()),
+    newName: zikrTypeName.transform((s) => s.trim()),
+  }),
+});

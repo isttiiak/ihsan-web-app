@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import * as zikrController from '../controllers/zikr.controller.js';
-import { incrementSchema, batchIncrementSchema, addZikrTypeSchema } from '../validation/zikr.schemas.js';
+import { incrementSchema, batchIncrementSchema, addZikrTypeSchema, renameZikrTypeSchema } from '../validation/zikr.schemas.js';
 
 const router = Router();
 
@@ -11,6 +11,7 @@ router.post('/increment/batch', requireAuth, validate(batchIncrementSchema), zik
 router.get('/summary', requireAuth, zikrController.getSummaryHandler);
 router.get('/types', requireAuth, zikrController.getTypesHandler);
 router.post('/types', requireAuth, validate(addZikrTypeSchema), zikrController.addTypeHandler);
+router.patch('/types/rename', requireAuth, validate(renameZikrTypeSchema), zikrController.renameTypeHandler);
 router.delete('/types/:name', requireAuth, zikrController.removeTypeHandler);
 
 // DELETE /api/zikr/all — delete all zikr data for the authenticated user

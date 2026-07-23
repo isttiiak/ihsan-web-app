@@ -26,6 +26,17 @@ export function useAddZikrType() {
   });
 }
 
+export function useRenameZikrType() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { oldName: string; newName: string }) => api.patch('/api/zikr/types/rename', v),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['zikr', 'types'] });
+      void queryClient.invalidateQueries({ queryKey: ['analytics'] });
+    },
+  });
+}
+
 export function useDeleteZikrType() {
   const queryClient = useQueryClient();
   return useMutation({

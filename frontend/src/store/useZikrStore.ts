@@ -27,10 +27,18 @@ const rawDebouncedStorage = {
 const debouncedStorage = createJSONStorage(() => rawDebouncedStorage);
 
 export interface CustomMeaning {
+  /** Compact Arabic shown on the counter card */
   arabic?: string;
+  /** Compact meaning shown on the counter card */
   meaning: string;
+  /** Complete Arabic text — the expandable reference card shows this */
+  fullArabic?: string;
+  /** Complete meaning for the expandable reference card */
+  fullMeaning?: string;
   source?: string;
   sourceUrl?: string;
+  grade?: string;
+  virtue?: string;
 }
 
 interface ZikrState {
@@ -50,6 +58,7 @@ interface ZikrState {
   setTypes: (types: string[]) => void;
   replaceTypes: (types: string[]) => void;
   removeType: (name: string) => void;
+  renameType: (oldName: string, newName: string) => void;
   selectType: (selected: string) => void;
   setCustomMeaning: (name: string, data: CustomMeaning) => void;
   resetAll: () => void;
@@ -95,6 +104,29 @@ export const useZikrStore = create<ZikrState>()(
           delete customMeanings[name];
           const selected = s.selected === name ? (types[0] ?? 'SubhanAllah') : s.selected;
           return { types, customMeanings, selected };
+        }),
+
+      // Rename in place: list entry, today's counts, pending deltas and the
+      // stored meaning all move to the new key (server migration is separate).
+      renameType: (oldName, newName) =>
+        set((s) => {
+          const types = s.types.map((t) => (t === oldName ? newName : t));
+          const move = <T,>(rec: Record<string, T>): Record<string, T> => {
+            if (!(oldName in rec)) return rec;
+            const next = { ...rec };
+            const v = next[oldName];
+            delete next[oldName];
+            if (v !== undefined) next[newName] = v;
+            return next;
+          };
+          return {
+            types,
+            counts: move(s.counts),
+            pending: move(s.pending),
+            lifetimeTotals: move(s.lifetimeTotals),
+            customMeanings: move(s.customMeanings),
+            selected: s.selected === oldName ? newName : s.selected,
+          };
         }),
 
       selectType: (selected) => set({ selected }),

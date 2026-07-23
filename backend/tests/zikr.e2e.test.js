@@ -197,6 +197,52 @@ describe("Zikr API", () => {
     );
   });
 
+  test("rename carries lifetime totals and daily buckets to the new name", async () => {
+    const token = fakeJwt({ uid: "u4", email: "u4@test.dev", name: "U4" });
+    await request(app).post(`/api/auth/verify`).send({ idToken: token });
+
+    await request(app)
+      .post(`/api/zikr/types`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Ya Muizzu" });
+
+    // Count 7 under the old name
+    await request(app)
+      .post(`/api/zikr/increment/batch`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ increments: [{ zikrType: "Ya Muizzu", amount: 7 }], timezoneOffset: 0 });
+
+    // Rename → history must follow
+    const renamed = await request(app)
+      .patch(`/api/zikr/types/rename`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ oldName: "Ya Muizzu", newName: "Ya Mu'izz" });
+    expect(renamed.status).toBe(200);
+
+    const summary = await request(app)
+      .get(`/api/zikr/summary?timezoneOffset=0`)
+      .set("Authorization", `Bearer ${token}`);
+    const perType = Object.fromEntries(summary.body.perType.map((p) => [p.zikrType, p.total]));
+    expect(perType["Ya Mu'izz"]).toBe(7);
+    expect(perType["Ya Muizzu"]).toBeUndefined();
+    // Today's bucket moved too
+    expect(summary.body.today.perType["Ya Mu'izz"] ?? 0).toBe(7);
+
+    // Renaming to an existing name is rejected
+    const clash = await request(app)
+      .patch(`/api/zikr/types/rename`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ oldName: "Ya Mu'izz", newName: "SubhanAllah" });
+    expect(clash.status).toBe(409);
+
+    // Renaming something not in the list is a 404
+    const missing = await request(app)
+      .patch(`/api/zikr/types/rename`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ oldName: "Nope", newName: "Still Nope" });
+    expect(missing.status).toBe(404);
+  });
+
 describe("Zikr streak (derived)", () => {
   const token = fakeJwt({ uid: "s1", email: "s1@test.dev", name: "S1" });
   const auth = (r) => r.set("Authorization", `Bearer ${token}`);

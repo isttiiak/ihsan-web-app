@@ -85,6 +85,21 @@ export const addTypeHandler = async (req: Request, res: Response, next: NextFunc
     next(err);
   }
 };
+export const renameTypeHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { oldName, newName } = req.body as { oldName: string; newName: string };
+    const types = await zikrService.renameZikrType(req.user.uid, oldName, newName);
+    res.json({ ok: true, types });
+  } catch (err) {
+    const status = (err as { status?: number }).status;
+    if (status === 404 || status === 409) {
+      res.status(status).json({ ok: false, error: (err as Error).message });
+      return;
+    }
+    next(err);
+  }
+};
+
 export const removeTypeHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const rawName = req.params.name;
