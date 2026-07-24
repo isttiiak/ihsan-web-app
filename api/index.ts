@@ -15,7 +15,7 @@ import { initFirebaseAdmin } from '../backend/src/config/firebaseAdmin.js';
  *
  * Local dev is untouched: backend/src/index.ts is still the dev server.
  */
-const initPromise = initFirebaseAdmin();
+initFirebaseAdmin();
 
 // An Express app IS a (req, res) handler — the cast only papers over
 // @types/express requiring `next` in the call signature.
@@ -23,7 +23,6 @@ const expressApp = app as unknown as (req: IncomingMessage, res: ServerResponse)
 
 export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   try {
-    await initPromise;
     // /api/health doesn't touch the DB, so a Mongo outage must not block it —
     // log and let mongoose buffer (and time out) any queries that do need it.
     await connectDB();
