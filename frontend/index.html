@@ -83,7 +83,15 @@
         window.dataLayer = window.dataLayer || [];
         window.gtag = function () { window.dataLayer.push(arguments); };
         window.gtag("js", new Date());
-        window.gtag("config", gaId, { send_page_view: false, anonymize_ip: true });
+        // cookie_domain is pinned to the exact host: `vercel.app` is on the
+        // Public Suffix List, so GA's default `auto` tries to write the _ga
+        // cookie to `.vercel.app` and every browser rejects it ("invalid
+        // domain"). Pinning to the full hostname stops that rejection.
+        window.gtag("config", gaId, {
+          send_page_view: false,
+          anonymize_ip: true,
+          cookie_domain: location.hostname,
+        });
         window.__IHSAN_GA_ID = gaId;
       })();
     </script>

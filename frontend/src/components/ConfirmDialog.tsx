@@ -1,9 +1,15 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 
 /**
  * Small app-wide confirmation dialog — the SECOND "are you sure?" for every
  * destructive action (Istiak's rule: deleting any data always asks twice —
  * first the inline tap, then this dialog).
+ *
+ * Portaled to <body> at z-[80] so it ALWAYS sits above the modal/drawer that
+ * opened it (those are portaled at z-[70]). Rendering it inline instead left it
+ * trapped inside the page's transform stacking context — the confirm box then
+ * appeared BEHIND the Manage-zikr form.
  */
 export default function ConfirmDialog({
   open,
@@ -20,12 +26,12 @@ export default function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm grid place-items-center p-4"
+          className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm grid place-items-center p-4"
           onClick={onCancel}
         >
           <motion.div
@@ -53,6 +59,7 @@ export default function ConfirmDialog({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
