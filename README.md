@@ -1,82 +1,92 @@
-# 🕌 Ihsan - Islamic Productivity App
+# 🌙 Ihsan — Islamic Productivity App
 
-**Live Demo:** [https://ihsan-web-app-main.vercel.app/](https://ihsan-web-app-main.vercel.app/)
+**Live:** [https://ihsan-web-app-main.vercel.app/](https://ihsan-web-app-main.vercel.app/)
 
-A modern Islamic productivity application to help Muslims track their daily Zikr (remembrance of Allah), maintain streaks, set goals, and monitor their spiritual progress.
+> *Iḥsān is to worship Allah as though you see Him.*
+
+A calm, ad-free companion for the Muslim day — salat, zikr, Quran, fasting, prayer
+times, a first-of-its-kind cycle room for sisters, and a dedicated Ramadan home.
+Free forever, private by design, and honest with **every** reference: each Quran
+verse and hadith links to quran.com or sunnah.com with its exact number and grade.
 
 ---
 
 ## ✨ Features
 
 ### 📿 Zikr Counter
-- Local-first tap counter with haptics, focus mode, and custom dhikr (with verified hadith references)
-- A curated zikr library in Settings — ṣalawāt (Durud Ibrāhīm & the short ṣalawāt), every istighfār formula, the weighty words, calls on His Names — each verified, one tap to add to your own list
-- Daily goals and a fair streak system — miss one day and you get a grace chance 🧊; backfill up to 2 days to repair a streak
-- Analytics: trends, per-type breakdown, weekly heatmap with met/grace/missed tags
+- Local-first tap counter with focus mode, goals, and custom dhikr — each with Arabic, transliteration and a verified reference
+- A curated zikr **library** in Settings: ṣalawāt (Durud Ibrāhīm & the short ṣalawāt), every istighfār formula, the weighty words, calls on His Names — one tap to add to your own list
+- Six **core adhkār** (SubḥānAllah, Alḥamdulillah, Allāhu Akbar, the tahlīl, Āyatul Kursī, Astaghfirullāh) can never be deleted — the salat wiring depends on them
+- A fair streak system: miss one day and you get a grace chance 🧊; backfill up to 2 days to repair a streak (works on mobile and web)
+- Analytics: trends, per-type breakdown, weekly heatmap with met/grace/missed tags — rendered with a hand-rolled SVG chart, no heavyweight charting library
 
-### 🕌 Salat Tracker
-- All five fard prayers with on-time / kaza / missed states, location (mosque/jamaah/home), post-salat sunnah toggles
-- Nafl prayers (Tahajjud, Duha, Ishraq…) with authentic references
-- Streaks, per-prayer analytics, and a 90-day calendar
+### 🕌 Salat Tracker — wired to zikr & Quran
+- All five fard prayers with on-time / late / missed states, location (mosque / jamaah / home), sunnah and nafl
+- **Mark the tasbīḥ after a prayer and it posts to your zikr counter itself** — no more opening the counter five times a day to log 33s by hand (un-tap subtracts the same amount)
+- **Salat settings** (⚙️): choose your tasbīḥ mode — 33/33/33 + tahlīl *(Muslim 597a, default)* or 33/33/34 *(Muslim 596a)* — and your ʿAṣr **madhab** (standard or Ḥanafī, which shifts ʿAṣr's start and Ẓuhr's end)
+- Post-salat surahs one tap away: Āyatul Kursī + the three Quls after every fard, al-Mulk after Isha, al-Kahf on Friday — with a live ʿAṣr→Maghrib duʿā-hour banner on Fridays
+- Nafl (Tahajjud, Duha, Ishraq, Awwābīn…) with a minimum of 2 rakʿah, pair-stepped
+- Streaks, per-prayer analytics, and a 90-day calendar. During Ramadan a tarawih row appears under Isha
 
 ### 🕐 Prayer Times
-- Calculated fully on-device (adhan, Moonsighting Committee) — GPS or city search, no external API
+- Calculated fully **on-device** (adhan, Moonsighting Committee) — GPS or city search, **your location never leaves your browser**
 - Live clock with current/next prayer, forbidden windows and nafl windows on an educational timeline
 
 ### 🌙 Fasting Tracker
-- Fiqh-aware: qaḍā make-up counter, kaffārah (consecutive-day tracking), vowed fasts, and every sunnah day (Mon/Thu, White Days, ʿArafah, ʿĀshūrā…)
+- Fiqh-aware: qaḍā make-up counter, kaffārah (consecutive-day tracking), vowed fasts, and every sunnah day (Mon/Thu, White Days, ʿArafah, ʿĀshūrā, Six of Shawwāl…)
 - Blocks ḥarām days (Eids, Tashrīq) and warns on disliked ones — each rule cites its exact hadith
 - Intention auto-completes after iftar; month calendar; full analytics with editable history
 
-### 📖 Quran — a complete reading & listening home
-- Āyah-by-āyah reader: one calm card with the Arabic and its meaning, single-āyah recitation with word highlighting, fullscreen mode, keyboard navigation, bookmarks
-- Five rooms: Overview · Khatam (serial journey) · Read (any surah, searchable) · Listen (7 reciters, Yasser Al-Dossari default) · Analytics
-- Beloved surahs, authentic protection selections (Āyatul Kursī, last verses of al-Baqarah…), and duʿās from the Quran — each opens straight in the reader
-- ONE unified streak: āyāt from khatam, free reading, special selections and listening all count toward your daily goal
+### 🌟 Ramadan — a self-contained room (`/ramadan`)
+- **Countdown mode** before the month: days-until, expected Gregorian date, and "prepare your heart" links (qaḍā, Shaʿbān, Quran)
+- **Live mode**: Day N hero with a live suhoor→iftar countdown pill, the salat tracker **inline** (five fard rows + nafl + a tarawih toggle — the same rows and hooks as `/salat`, no extra navigation), a three-*ashra* calendar (Raḥmah / Maghfirah / ʿItq min an-Nār) with pulsing odd nights, and a worship strip to every tracker
+- **Ramadan analytics** (`/ramadan/analytics`): fasted vs *obligated* rate (excused days are subtracted from the denominator so they never drag it down), longest run, tarawih nights, per-ashra bars, last-ten focus
+- Rayhanah-aware: excused days show 🌸 and flow into the qaḍā counter automatically
 
-### 🤝 Friends — “So compete with one another in doing good” (Quran 2:148)
+### 📖 Quran — a complete reading & listening home
+- Āyah-by-āyah reader: one calm card with the Arabic and its meaning, single-āyah recitation with word highlighting, fullscreen mode with a draggable tafsir split, keyboard navigation, bookmarks, in-app zoom
+- Six rooms: Overview · Khatam (serial journey) · Read (any surah, searchable) · Listen (7 reciters, Yasser Al-Dossari default) · Analytics · Saved
+- Authentic tafsir (Ibn Kathīr, Maʿārif and more, EN/BN) sourced from quran.com — never AI
+- Beloved surahs, authentic protection selections (Āyatul Kursī, last verses of al-Baqarah…), and duʿās from the Quran — each opens straight in the reader
+- **One unified streak**: āyāt from khatam, free reading, special selections and listening all count toward your daily goal
+
+### 🤝 Friends — "So compete with one another in doing good" *(Quran 2:148)*
 - Connect via a single invite link; see each other's streaks and today's worship
 - A calm daily measure called **Noor** (max 100: prayers 50 · zikr streak 20 · Quran goal 20 · fasting 10) — today's Noor resets at midnight, all-time Noor only ever grows
 
 ### 🌸 Rayhanah Cycle — for our sisters
-- The first Muslim productivity app with first-class menstrual & post-natal (nifās) support
-- Salat & fasting pause automatically with zero guilt — dhikr, Quran listening & ṣalawāt take over your Noor, and nothing about it is ever visible to friends
+- The **first** Muslim productivity app with first-class menstrual & post-natal (nifās) support
+- Salat & fasting pause automatically with zero guilt — dhikr, Quran listening & ṣalawāt take over your Noor, and **nothing about it is ever visible to friends**
 - Ghusl guide, cycle predictions, madhab-aware istiḥāḍa guidance, and Ramadan days auto-added to your qaḍā counter
-- Modern cycle facilities: private flow/symptom/mood notes, a cycle calendar with predicted windows, personal rhythm stats, and a pre-period heads-up
-- A dedicated analytics page: regularity score, prediction windows (mean ± variability), length history, symptom patterns — plus past-period backfill so predictions learn your rhythm from day one
-
-### 🌙 Ramadan Tracker
-- A dedicated home for the blessed month: countdown & preparation before it, a 30-day grid during it
-- Suhoor & iftar times on-device, tarawih nights, Laylat al-Qadr odd-night focus with the du'a of the night
-- Rayhanah-aware: excused days show 🌸 and flow into the qaḍā counter automatically
+- Private flow / symptom / mood notes, a cycle calendar with predicted windows, and a dedicated analytics page with a regularity score, prediction windows, and past-period backfill
 
 ### 🌍 Built right
 - Hijri dates with a ±1-day moon-sighting adjustment; every quote linked to quran.com / sunnah.com with grading
-- Fajr-to-Fajr worship day (the day flips at dawn, not midnight); celebration animations that respect reduced-motion
-- Full data ownership: export and per-feature deletion from Settings
+- Wherever a **ḍaʿīf** (weak) grade appears, a `<DaifExplainer>` card before the footer names the claim, the collection, the *specific* defect in the chain, the verdict, and how Ihsan uses it anyway — we never ship a weak label without the reasoning
+- **Fajr-to-Fajr worship day** (the day flips at dawn, not midnight); celebration animations that respect reduced-motion
+- **PWA**: installable, offline-ready, and self-updating (workbox `skipWaiting` + `clientsClaim`)
+- **i18n** (English + Bengali) on the core screens; **full backup** export / restore and per-feature deletion from Settings
 
 ---
 
 ## 🚀 Tech Stack
 
 ### Frontend
-
-- **React** - UI framework
-- **Vite** - Build tool
-- **Zustand** - State management
-- **React Router** - Navigation
-- **Framer Motion** - Animations
-- **Recharts** - Data visualization
-- **Tailwind CSS** - Styling
-- **DaisyUI** - Component library
+- **React 18 + TypeScript** · **Vite**
+- **Zustand** (local state) · **TanStack React Query** + persist-client (server state, offline cache)
+- **Tailwind CSS** + **DaisyUI** · **Framer Motion**
+- **vite-plugin-pwa** (workbox) · **react-i18next**
+- Charts are **hand-rolled SVG** (Catmull-Rom → Bézier) — no charting dependency
 
 ### Backend
+- **Node.js + Express + TypeScript** (`tsx` in dev, `tsc` in prod)
+- Ships as **one Vercel serverless function** (`api/index.ts`) — the whole Express app, region Singapore (`sin1`)
+- **MongoDB Atlas** (Mongoose, cached connection reused across warm invocations)
+- **Firebase Auth** — Bearer ID tokens, no cookies. `firebase-admin` pinned to **v12** (v14 breaks the serverless bundle)
+- **Zod** validation on every write route · **Jest** (ESM + ts-jest, mongodb-memory-server)
 
-- **Node.js** - Runtime
-- **Express** - Web framework
-- **MongoDB** - Database
-- **Firebase Auth** - Authentication
-- **Mongoose** - ODM
+> There is **no cron** and no separate long-running server. Anything time-decayed
+> (e.g. streaks) is computed lazily on read.
 
 ---
 
@@ -84,218 +94,149 @@ A modern Islamic productivity application to help Muslims track their daily Zikr
 
 ```
 ihsan/
-├── frontend/          # React frontend application
-│   ├── src/
-│   │   ├── components/   # Reusable components
-│   │   ├── pages/        # Page components
-│   │   ├── store/        # Zustand store
-│   │   └── utils/        # Utility functions
-│   └── package.json
-│
-├── backend/           # Express backend API
-│   ├── src/
-│   │   ├── models/       # MongoDB models
-│   │   ├── routes/       # API routes
-│   │   ├── middleware/   # Custom middleware
-│   │   ├── utils/        # Utility functions
-│   │   └── jobs/         # Cron jobs
-│   └── package.json
-│
-└── docs/              # Documentation
-    └── README.md
+├── api/
+│   └── index.ts          # Vercel serverless entry — wraps the whole Express app
+├── backend/
+│   └── src/
+│       ├── models/        # Mongoose models
+│       ├── routes/        # Express routes
+│       ├── controllers/   # Route handlers
+│       ├── services/      # Business logic (streak, social, backup, quran, ai…)
+│       ├── middleware/    # Auth, validation
+│       └── config/        # Mongo + Firebase Admin init
+├── frontend/
+│   └── src/
+│       ├── components/     # Reusable UI
+│       ├── pages/          # Route pages
+│       ├── hooks/          # React Query hooks
+│       ├── store/          # Zustand stores
+│       ├── utils/          # Client logic (tracking day, rules, quran data…)
+│       └── locales/        # i18n (en, bn)
+├── vercel.json            # Serverless + SPA routing (region sin1)
+└── README.md
 ```
 
 ---
 
-## 🛠️ Installation & Setup
+## 🛠️ Local Setup
 
 ### Prerequisites
+- Node.js **v18+** (repo targets Node 22 in prod)
+- A MongoDB connection string (Atlas M0 is fine)
+- A Firebase project (for authentication)
 
-- Node.js (v16 or higher)
-- MongoDB (local or Atlas)
-- Firebase project (for authentication)
-
-### 1. Clone the repository
-
+### 1. Clone
 ```bash
-git clone https://github.com/isttiiak/ihsan.git
-cd ihsan
+git clone https://github.com/isttiiak/ihsan-web-app.git
+cd ihsan-web-app
 ```
 
-### 2. Backend Setup
-
+### 2. Backend
 ```bash
 cd backend
 npm install
+# create backend/.env with:
+#   MONGODB_URI, FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL
+#   (optional AI: GROQ_API_KEY, GEMINI_API_KEY)
 
-# Create .env file
-cp .env.example .env
-
-# Add your environment variables:
-# - MONGODB_URI
-# - FIREBASE_PROJECT_ID
-# - FIREBASE_PRIVATE_KEY
-# - FIREBASE_CLIENT_EMAIL
-# - PORT
-
-# Start backend
-npm run dev
+# macOS note: port 5000 is taken by AirPlay Receiver — run on 5001
+PORT=5001 npm run dev
 ```
 
-### 3. Frontend Setup
-
+### 3. Frontend
 ```bash
 cd frontend
 npm install
+# create frontend/.env.local with:
+#   VITE_BACKEND_URL=http://localhost:5001
+#   VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID,
+#   VITE_FIREBASE_STORAGE_BUCKET, VITE_FIREBASE_MESSAGING_SENDER_ID, VITE_FIREBASE_APP_ID
+#   VITE_GA_MEASUREMENT_ID   (optional — GA4, e.g. G-XXXXXXXXXX)
+#   VITE_WEB3FORMS_ACCESS_KEY (optional — feedback/contact form delivery)
 
-# Create .env file
-cp .env.example .env
-
-# Add your environment variables:
-# - VITE_BACKEND_URL
-# - VITE_FIREBASE_API_KEY
-# - VITE_FIREBASE_AUTH_DOMAIN
-# - VITE_FIREBASE_PROJECT_ID
-# - VITE_FIREBASE_STORAGE_BUCKET
-# - VITE_FIREBASE_MESSAGING_SENDER_ID
-# - VITE_FIREBASE_APP_ID
-# - VITE_GA_MEASUREMENT_ID   (optional — Google Analytics 4, e.g. G-XXXXXXXXXX)
-
-# Start frontend
 npm run dev
 ```
 
-### 4. Access the app
-
+### 4. Open
 - Frontend: http://localhost:5173
-- Backend: http://localhost:5000
+- Backend:  http://localhost:5001
+
+> In production the frontend calls the API **same-origin** (`/api`) — no second
+> host, no CORS. `VITE_BACKEND_URL` is only for local dev.
 
 ---
 
-## 🌍 Worldwide Timezone Support
+## 🕰️ How "today" works
 
-The app automatically detects the user's timezone and provides accurate daily reset timing:
-
-- **User in New York (UTC-5):** Daily reset at 12:00 AM New York time
-- **User in Tokyo (UTC+9):** Daily reset at 12:00 AM Tokyo time
-- **User in Dhaka (UTC+6):** Daily reset at 12:00 AM Dhaka time
-
-No configuration needed - it just works! ✨
+Ihsan's tracking day flows the way a worship day does — **it flips at local Fajr,
+not midnight** (`utils/trackingDay.ts`). Isha prayed at 1 AM and suhoor before
+dawn belong to the right day. Salat and fasting use client-authoritative local
+civil date strings; the server clock is never the source of "today". Hijri dates
+go through `getHijriDate()` with a user ±1-day moon-sighting adjustment.
 
 ---
 
-## 🎯 Key Features Explained
-
-### Daily Reset Logic
-
-- Automatically resets daily counts at local midnight
-- Preserves streak and lifetime totals
-- Smart detection on page focus/visibility change
-- No wasteful polling or intervals
-
-### Analytics
-
-- View data for 7, 15, 30, 60, 90, or 180 days
-- See today's progress vs all-time statistics
-- Beautiful charts with gradient fills
-- Per-Zikr type breakdown
-
-### Authentication
-
-- Secure Firebase authentication
-- Email/password login
-- Protected routes
-- Persistent sessions
-
----
-
-## 📝 API Endpoints
-
-All routes are Bearer-token authenticated (Firebase) and zod-validated.
+## 📝 API (all Bearer-token authenticated + zod-validated)
 
 | Area | Base | Highlights |
 |---|---|---|
-| Zikr | `/api/zikr` | `POST /increment/batch`, `GET /summary`, `GET\|POST /types`, `DELETE /all` |
+| Zikr | `/api/zikr` | `POST /increment/batch` (signed deltas), `GET /summary`, `GET\|POST\|DELETE /types`, `PATCH /types/rename`, `DELETE /all` |
 | Analytics | `/api/analytics` | `GET /` (charts + derived streak), `GET\|POST /goal`, `POST /streak/pause\|resume` |
 | Salat | `/api/salat` | `GET /?date=`, `PATCH /prayer`, `PATCH /nafl`, `GET /analytics?today=`, `DELETE /all` |
-| Fasting | `/api/fasting` | `PUT /log`, `GET /summary?today=`, `GET /history`, `PATCH /profile`, vows CRUD, `DELETE /all` |
-| Quran | `/api/quran` | `POST /read`, `GET /summary?today=`, `PATCH /profile`, `DELETE /all` |
-| Cycle | `/api/cycle` | `GET /summary`, `POST /start`, `POST /end`, `PUT /day`, `PATCH /profile`, `DELETE /all` |
-| Social | `/api/social` | `GET /summary` (leaderboard), `GET /noor`, `GET /friends` (list + join date), `POST /connect`, `DELETE /friends/:uid` |
+| Fasting | `/api/fasting` | `PUT /log`, `GET /summary?today=`, `GET /history`, `PATCH /profile`, vows CRUD, `DELETE /category/:c`, `DELETE /all` |
+| Quran | `/api/quran` | `POST /read-ayat`, `POST /bookmark`, `GET /summary?today=`, `GET /tafsir`, `PUT /resume`, `PATCH /profile`, `DELETE /all` |
+| Cycle | `/api/cycle` | `GET /summary`, `POST /start\|end`, `PUT /day`, `PATCH /logs/:id`, `PATCH /profile`, `DELETE /all` |
+| Social | `/api/social` | `GET /summary` (leaderboard), `GET /noor`, `GET /friends`, `POST /connect`, `DELETE /friends/:uid` |
+| User | `/api/user` | `GET /export` (full backup .json), `POST /import` (merge restore) |
+| AI | `/api/ai` | `POST /suggest\|reflect\|weekly-summary\|simplify` — encouragement only, never a source of evidence |
 
 ---
 
 ## 🧪 Testing
 
 ```bash
-# Backend tests
-cd backend
-npm test
-
-# Frontend tests
-cd frontend
-npm test
+cd backend && npm test   # jest ESM + ts-jest, mongodb-memory-server (54 tests)
 ```
 
 ---
 
-## 🚀 Deployment
+## 🚀 Deployment (Vercel)
 
-### Backend (e.g., Render, Railway)
-
-1. Push code to GitHub
-2. Connect repository to hosting service
-3. Set environment variables
-4. Deploy!
-
-### Frontend (e.g., Vercel, Netlify)
-
-1. Push code to GitHub
-2. Connect repository to hosting service
-3. Set environment variables
-4. Deploy!
+The whole app deploys as one Vercel project:
+- **Root Directory** points at the repo root; `vercel.json` builds `frontend/dist`
+  and serves `api/index.ts` as a serverless function (region `sin1`).
+- Set the backend env vars (Mongo, Firebase Admin) **and** the `VITE_*` frontend
+  env vars in the Vercel dashboard.
+- Root `package.json` **must** keep `"type": "module"` — without it the serverless
+  bundle fails with `ERR_REQUIRE_ESM`.
+- Keep `firebase-admin` at **v12** — v14 pulls an ESM-only `jose` that breaks
+  `verifyIdToken()` in the bundled runtime.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Contributions are welcome — fork, branch (`feature/…`), and open a PR.
+For translations, add values to `frontend/src/locales/<lang>/common.json`
+(keep Arabic and references **out** of translation files). Any Quran/hadith
+addition must link to quran.com or sunnah.com with the exact number and grade —
+if it can't be verified, it doesn't ship.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License.
-
----
-
-## 🙏 Acknowledgments
-
-- Islamic design inspiration
-- Open source community
-- Allah SWT for guidance
+MIT.
 
 ---
 
 ## 📧 Contact
 
-**Istiak Islam**
+**Istiak Islam** — GitHub [@isttiiak](https://github.com/isttiiak)
 
-- GitHub: [@isttiiak](https://github.com/isttiiak)
-- Email: isttiiak@gmail.com
-
----
-
-## 🌟 Show your support
-
-Give a ⭐️ if this project helped you!
+If you spot a mis-cited or mis-graded reference anywhere in the app, there's a
+"Report it" link beside every reference — corrections are always welcome.
 
 ---
 
-**Built with ❤️ for the Muslim community**
+**Built with ❤️ for the Muslim ummah.**

@@ -18,12 +18,12 @@ const fadeUp = {
 const FEATURES = [
   {
     emoji: '🕌', title: 'Salat Tracker',
-    text: 'All five prayers with on-time, late and missed states — plus sunnah and nafl. Your worship day starts at Fajr, the way a Muslim day actually flows.',
+    text: 'All five prayers with on-time, late and missed states — plus sunnah and nafl. Mark the tasbīḥ after a prayer and it logs to your zikr count on its own; Āyatul Kursī and the post-salat surahs are one tap away.',
     grad: 'from-indigo-500/20 to-purple-500/10', border: 'border-indigo-400/25',
   },
   {
     emoji: '📿', title: 'Zikr Counter',
-    text: 'A beautiful tap counter with goals, fair streaks that give you a grace day, and a verified library of ṣalawāt, istighfār and the weighty words.',
+    text: 'A beautiful tap counter with goals, fair streaks that give you a grace day, and a verified library of ṣalawāt, istighfār and the weighty words — with Arabic, transliteration and the exact reference for each.',
     grad: 'from-emerald-500/20 to-teal-500/10', border: 'border-emerald-400/25',
   },
   {
