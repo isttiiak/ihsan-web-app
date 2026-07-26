@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -18,6 +18,20 @@ import { celebrateFast } from '../utils/celebrate.js';
  *  · fully wired with FastingLog (category 'ramadan') and Rayhanah Cycle
  *    (excused days show 🌸 and flow into qada automatically on cycle end)
  */
+
+/** The three ʿashra. Labels are deliberately factual — the familiar
+ * "mercy / forgiveness / freedom from the Fire" split comes from a narration
+ * graded ḍaʿīf (Ibn Khuzaymah 1887), so it is not asserted here. Only the last
+ * ten carries an authentic note. */
+const ASHRA = [
+  { from: 1, to: 10, label: 'First ten', note: '' },
+  { from: 11, to: 20, label: 'Middle ten', note: '' },
+  { from: 21, to: 30, label: 'Last ten', note: 'seek Laylat al-Qadr in the odd nights (Bukhārī 2017)' },
+];
+
+function weekdayShort(dateStr: string): string {
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' });
+}
 
 function formatGregorian(dateStr: string): string {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
@@ -69,6 +83,43 @@ export default function RamadanTracker() {
       return calcPrayerTimes(loc.latitude, loc.longitude, new Date());
     } catch { return null; }
   }, []);
+
+  // Ticks once a second only while the page is open — the countdown is the
+  // number a fasting person keeps glancing at, so it has to move.
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  /** Where we are in the fasting day: counting down to suhoor closing (before
+   * Fajr) or to iftar (between Fajr and Maghrib). Null after Maghrib — the
+   * fast is done, nothing left to count. */
+  const fastClock = useMemo(() => {
+    if (!prayerTimes) return null;
+    const now = nowTs;
+    const fajr = prayerTimes.fajr.getTime();
+    const maghrib = prayerTimes.maghrib.getTime();
+
+    const fmt = (ms: number) => {
+      const s = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      return h > 0
+        ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+        : `${m}:${String(sec).padStart(2, '0')}`;
+    };
+
+    if (now < fajr) {
+      return { phase: 'suhoor' as const, label: fmt(fajr - now), progressPct: 0 };
+    }
+    if (now < maghrib) {
+      const pct = Math.round(((now - fajr) / (maghrib - fajr)) * 100);
+      return { phase: 'fasting' as const, label: fmt(maghrib - now), progressPct: Math.min(100, Math.max(0, pct)) };
+    }
+    return null;
+  }, [prayerTimes, nowTs]);
 
   const logToday = (status: 'completed' | 'intended') => {
     upsert.mutate(
@@ -196,6 +247,39 @@ export default function RamadanTracker() {
             </div>
             <p className="text-white/40 text-xs mt-1.5">{fastedCount} fasted · {tarawihCount} tarawih nights{excusedCount > 0 ? ` · ${excusedCount} 🌸 excused (auto-qaḍā)` : ''}</p>
 
+            {/* Live countdown — the single number a fasting person keeps
+                checking. Before Fajr it counts down to suhoor closing; through
+                the day it counts down to iftar. */}
+            {prayerTimes && fastClock && (
+              <div className={`mt-4 rounded-2xl p-4 text-center border ${
+                fastClock.phase === 'suhoor'
+                  ? 'border-cyan-400/30 bg-cyan-500/10'
+                  : 'border-brand-gold/35 bg-gradient-to-br from-brand-gold/15 to-amber-600/5'
+              }`}>
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${
+                  fastClock.phase === 'suhoor' ? 'text-cyan-300/70' : 'text-brand-gold/70'
+                }`}>
+                  {fastClock.phase === 'suhoor' ? 'Suhoor closes in' : 'Iftar in'}
+                </p>
+                <p className="text-white font-black text-4xl tabular-nums leading-tight mt-0.5">
+                  {fastClock.label}
+                </p>
+                <p className="text-white/35 text-[11px] mt-1">
+                  {fastClock.phase === 'suhoor'
+                    ? `Fajr ${formatTime(prayerTimes.fajr)}`
+                    : `Maghrib ${formatTime(prayerTimes.maghrib)}`}
+                </p>
+                {fastClock.phase === 'fasting' && (
+                  <div className="mt-2.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-brand-gold to-amber-400 transition-[width] duration-1000"
+                      style={{ width: `${fastClock.progressPct}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* suhoor / iftar */}
             {prayerTimes ? (
               <div className="flex gap-3 mt-4">
@@ -232,19 +316,15 @@ export default function RamadanTracker() {
                 )}
               </div>
             ) : (
-              <div className="flex gap-2 mt-4">
+              // No "Intending" here: Ramadan is farḍ, so the intention is
+              // assumed — offering it as a choice framed an obligation as
+              // optional (Istiak). Voluntary fasts keep it in /fasting.
+              <div className="mt-4">
                 <button
-                  className="flex-1 btn h-12 rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-gold to-amber-500 hover:from-amber-400 hover:to-amber-500"
+                  className="w-full btn h-12 rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-gold to-amber-500 hover:from-amber-400 hover:to-amber-500"
                   disabled={upsert.isPending}
                   onClick={() => logToday('completed')}
                 >✅ I fasted today</button>
-                {todayLog?.status !== 'intended' && (
-                  <button
-                    className="btn h-12 rounded-2xl bg-white/5 border-emerald-500/15 text-white/70 font-bold"
-                    disabled={upsert.isPending}
-                    onClick={() => logToday('intended')}
-                  >🌅 Intending</button>
-                )}
               </div>
             )}
 
@@ -288,40 +368,90 @@ export default function RamadanTracker() {
         {/* 30-day grid */}
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
           <h2 className="text-white font-black mb-3">📅 Your month</h2>
-          <div className="grid grid-cols-6 gap-1.5">
-            {window_.days.map((d) => {
-              const log = logsByDate.get(d.date);
-              const excused = isExcused(d.date);
-              const isPast = d.date < today;
-              const isToday = d.date === today;
-              let face = String(d.dayNumber);
-              let cls = 'bg-white/[0.04] text-white/30';
-              if (excused && d.date <= today) { face = '🌸'; cls = 'bg-pink-500/20 text-pink-100'; }
-              else if (log?.status === 'completed') { face = '✓'; cls = 'bg-emerald-500/30 text-emerald-100'; }
-              else if (log?.status === 'intended') { face = '🌅'; cls = 'bg-cyan-500/20 text-cyan-100'; }
-              else if (log?.status === 'broken') { face = '💔'; cls = 'bg-red-500/20 text-red-200'; }
-              else if (isPast) { cls = 'bg-white/[0.03] text-white/20'; }
-              return (
-                <div
-                  key={d.date}
-                  title={`Day ${d.dayNumber} — ${formatGregorian(d.date)}${d.isLastTen && d.isOdd ? ' · odd night ⭐' : ''}`}
-                  className={[
-                    'relative aspect-square rounded-xl grid place-items-center text-xs font-black transition-all',
-                    cls,
-                    isToday ? 'ring-2 ring-brand-gold/80' : '',
-                    d.isLastTen && d.isOdd ? 'border border-purple-400/40' : '',
-                  ].join(' ')}
-                >
-                  {face}
-                  {log?.tarawih && <span className="absolute top-0.5 right-1 text-[8px]">🕌</span>}
-                  <span className="absolute bottom-0.5 left-1 text-[7px] text-white/25">{d.dayNumber}</span>
+
+          {/* Split into the three ʿashra. A ten is 10 days, which never lines
+              up with a 7-day week, so instead of a weekday-aligned grid each
+              group is its own block and every cell carries its own day name.
+              The groups are separated by a very low-opacity rule whose label
+              only appears on hover. NOTE: the popular "mercy / forgiveness /
+              freedom from the Fire" naming rests on a weak narration (Ibn
+              Khuzaymah 1887, ḍaʿīf) — so the labels stay factual. */}
+          {ASHRA.map((group) => {
+            const groupDays = window_.days.filter(
+              (d) => d.dayNumber >= group.from && d.dayNumber <= group.to,
+            );
+            if (groupDays.length === 0) return null;
+            return (
+              <div
+                key={group.from}
+                className="group/ashra border-t border-white/[0.05] first:border-t-0 pt-3 first:pt-0 mt-3 first:mt-0"
+              >
+                <p className="flex items-center gap-2 mb-1.5 h-4">
+                  <span className="text-[10px] uppercase tracking-widest text-white/20 opacity-0 group-hover/ashra:opacity-100 transition-opacity duration-300">
+                    {group.label}
+                  </span>
+                  {group.note && (
+                    <span className="text-[10px] text-purple-300/40 opacity-0 group-hover/ashra:opacity-100 transition-opacity duration-300">
+                      · {group.note}
+                    </span>
+                  )}
+                </p>
+                <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+                  {groupDays.map((d) => {
+                    const log = logsByDate.get(d.date);
+                    const excused = isExcused(d.date);
+                    const isPast = d.date < today;
+                    const isToday = d.date === today;
+                    const oddNight = d.isLastTen && d.isOdd;
+                    let face = String(d.dayNumber);
+                    let cls = 'bg-white/[0.04] text-white/30';
+                    if (excused && d.date <= today) { face = '🌸'; cls = 'bg-pink-500/20 text-pink-100'; }
+                    else if (log?.status === 'completed') { face = '✓'; cls = 'bg-emerald-500/30 text-emerald-100'; }
+                    else if (log?.status === 'intended') { face = '🌅'; cls = 'bg-cyan-500/20 text-cyan-100'; }
+                    else if (log?.status === 'broken') { face = '💔'; cls = 'bg-red-500/20 text-red-200'; }
+                    else if (isPast) { cls = 'bg-white/[0.03] text-white/20'; }
+                    return (
+                      <div
+                        key={d.date}
+                        title={`Day ${d.dayNumber} — ${formatGregorian(d.date)}${oddNight ? ' · odd night of the last ten ⭐' : ''}`}
+                        className={[
+                          'relative aspect-square rounded-xl grid place-items-center text-xs font-black',
+                          'transition-transform duration-200 hover:scale-110 hover:z-10 cursor-default',
+                          cls,
+                          isToday ? 'ring-2 ring-brand-gold/80' : '',
+                        ].join(' ')}
+                      >
+                        {/* Odd nights of the last ten get a slowly breathing
+                            ring — Laylat al-Qadr is sought in them, so they
+                            should feel different at a glance. */}
+                        {oddNight && (
+                          <motion.span
+                            aria-hidden
+                            className="absolute inset-0 rounded-xl border border-purple-400/50 pointer-events-none"
+                            animate={{ opacity: [0.35, 0.9, 0.35], boxShadow: [
+                              '0 0 0px rgba(168,85,247,0)',
+                              '0 0 10px rgba(168,85,247,0.45)',
+                              '0 0 0px rgba(168,85,247,0)',
+                            ] }}
+                            transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+                          />
+                        )}
+                        <span className="relative">{face}</span>
+                        {log?.tarawih && <span className="absolute top-0.5 right-1 text-[8px]">🕌</span>}
+                        <span className="absolute bottom-0.5 left-1 text-[7px] text-white/25 leading-none">
+                          {weekdayShort(d.date)}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
+
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[10px] text-white/30">
-            <span>✓ fasted</span><span>🌅 intending</span><span>💔 broken</span><span>🌸 excused → qaḍā</span>
-            <span>🕌 tarawih</span><span className="text-purple-300/60">bordered = odd night of last ten</span>
+            <span>✓ fasted</span><span>💔 broken</span><span>🌸 excused → qaḍā</span>
+            <span>🕌 tarawih</span><span className="text-purple-300/60">glowing = odd night of last ten</span>
           </div>
           <p className="text-white/25 text-[10px] mt-2 leading-relaxed">
             🌸 Rayhanah days are excused with zero guilt — when the cycle ends, those Ramadan days are offered
