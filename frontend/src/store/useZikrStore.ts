@@ -31,6 +31,9 @@ export interface CustomMeaning {
   arabic?: string;
   /** Compact meaning shown on the counter card */
   meaning: string;
+  /** Romanised pronunciation, shown under the Arabic on the card and in the
+   * expandable reference. Optional — older custom entries simply lack it. */
+  transliteration?: string;
   /** Complete Arabic text — the expandable reference card shows this */
   fullArabic?: string;
   /** Complete meaning for the expandable reference card */

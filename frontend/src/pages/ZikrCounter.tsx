@@ -140,7 +140,7 @@ const DHIKR_HADITHS: Record<string, { text: string; source: string; url: string;
 
 // Full texts for predefined dhikr that aren't in the curated library —
 // shown in the expandable "Full text & reference" card, never truncated.
-const FULL_PREDEFINED: Record<string, { arabic: string; meaning: string; source?: string; sourceUrl?: string }> = {
+const FULL_PREDEFINED: Record<string, { arabic: string; transliteration?: string; meaning: string; source?: string; sourceUrl?: string }> = {
   'Ayatul Kursi': {
     arabic:
       'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ',
@@ -178,6 +178,7 @@ export default function ZikrCounter() {
   const [showAddCustom, setShowAddCustom] = useState(false);
   const [customName, setCustomName] = useState('');
   const [customArabic, setCustomArabic] = useState('');
+  const [customTranslit, setCustomTranslit] = useState('');
   const [customMeaningText, setCustomMeaningText] = useState('');
   const [customSource, setCustomSource] = useState('');
   const [customSourceUrl, setCustomSourceUrl] = useState('');
@@ -265,9 +266,9 @@ export default function ZikrCounter() {
   const libItem = findLibraryZikr(selected);
   const meaning = DEFAULT_MEANINGS[selected]
     ?? (libItem
-      ? { arabic: libItem.shortArabic ?? libItem.arabic, transliteration: '', meaning: libItem.shortMeaning ?? libItem.meaning }
+      ? { arabic: libItem.shortArabic ?? libItem.arabic, transliteration: libItem.transliteration ?? '', meaning: libItem.shortMeaning ?? libItem.meaning }
       : customMeanings[selected]
-        ? { arabic: customMeanings[selected].arabic ?? '', transliteration: '', meaning: customMeanings[selected].meaning }
+        ? { arabic: customMeanings[selected].arabic ?? '', transliteration: customMeanings[selected].transliteration ?? '', meaning: customMeanings[selected].meaning }
         : null);
 
   // Merge predefined + server types into local store
@@ -346,13 +347,14 @@ export default function ZikrCounter() {
       onSuccess: () => {
         setCustomMeaning(name, {
           arabic: customArabic.trim() || undefined,
+          transliteration: customTranslit.trim() || undefined,
           meaning,
           source: customSource.trim() || undefined,
           sourceUrl: customSourceUrl.trim() || undefined,
         });
         setTypes([...types, name]);
         selectType(name);
-        setCustomName(''); setCustomArabic(''); setCustomMeaningText('');
+        setCustomName(''); setCustomArabic(''); setCustomTranslit(''); setCustomMeaningText('');
         setCustomSource(''); setCustomSourceUrl('');
         setShowAddCustom(false);
         toast.success(`${name} added!`, { icon: '✨', duration: 3000 });
@@ -635,11 +637,11 @@ export default function ZikrCounter() {
           const predef = FULL_PREDEFINED[selected];
           // Full-text resolution: library → predefined extras → custom
           const full = libItem
-            ? { arabic: libItem.arabic, meaning: libItem.meaning, virtue: libItem.virtue, source: libItem.source, sourceUrl: libItem.sourceUrl, grade: libItem.grade }
+            ? { arabic: libItem.arabic, transliteration: libItem.transliteration, meaning: libItem.meaning, virtue: libItem.virtue, source: libItem.source, sourceUrl: libItem.sourceUrl, grade: libItem.grade }
             : predef
-              ? { arabic: predef.arabic, meaning: predef.meaning, virtue: undefined, source: predef.source, sourceUrl: predef.sourceUrl, grade: undefined }
+              ? { arabic: predef.arabic, transliteration: predef.transliteration, meaning: predef.meaning, virtue: undefined, source: predef.source, sourceUrl: predef.sourceUrl, grade: undefined }
               : custom
-                ? { arabic: custom.fullArabic ?? custom.arabic, meaning: custom.fullMeaning ?? custom.meaning, virtue: custom.virtue, source: custom.source, sourceUrl: custom.sourceUrl, grade: custom.grade }
+                ? { arabic: custom.fullArabic ?? custom.arabic, transliteration: custom.transliteration, meaning: custom.fullMeaning ?? custom.meaning, virtue: custom.virtue, source: custom.source, sourceUrl: custom.sourceUrl, grade: custom.grade }
                 : null;
           if (!full && !builtin) return null;
           return (
@@ -673,6 +675,14 @@ export default function ZikrCounter() {
                           className="text-xl sm:text-2xl text-white/90 leading-[2.2] text-right"
                           style={{ fontFamily: "'Amiri', 'Scheherazade New', serif" }}>
                           {full.arabic}
+                        </p>
+                      )}
+                      {/* Pronunciation sits directly under the Arabic — the
+                          order a learner reads in: script, then how to say it,
+                          then what it means. */}
+                      {full?.transliteration && (
+                        <p className="text-sm text-brand-gold/70 italic leading-relaxed tracking-wide">
+                          {full.transliteration}
                         </p>
                       )}
                       {full?.meaning && (
@@ -948,6 +958,19 @@ export default function ZikrCounter() {
                   />
                 </div>
 
+                {/* Transliteration */}
+                <div>
+                  <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
+                    Pronunciation <span className="text-white/30">(optional)</span>
+                  </label>
+                  <input
+                    value={customTranslit}
+                    onChange={(e) => setCustomTranslit(e.target.value)}
+                    placeholder="Astaghfiru-llāh"
+                    className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-base italic"
+                  />
+                </div>
+
                 {/* Meaning */}
                 <div>
                   <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
@@ -982,7 +1005,7 @@ export default function ZikrCounter() {
 
               <div className="flex gap-3 mt-6">
                 <button
-                  onClick={() => { setShowAddCustom(false); setCustomName(''); setCustomArabic(''); setCustomMeaningText(''); }}
+                  onClick={() => { setShowAddCustom(false); setCustomName(''); setCustomArabic(''); setCustomTranslit(''); setCustomMeaningText(''); }}
                   className="btn flex-1 btn-ghost text-white/60 border-brand-border"
                 >
                   Cancel

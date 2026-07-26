@@ -17,6 +17,7 @@ export default function EditZikrModal({ name, onClose }: { name: string | null; 
   const [title, setTitle] = useState('');
   const [arabic, setArabic] = useState('');
   const [meaning, setMeaning] = useState('');
+  const [translit, setTranslit] = useState('');
   const [source, setSource] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
   const [saving, setSaving] = useState(false);
@@ -28,6 +29,7 @@ export default function EditZikrModal({ name, onClose }: { name: string | null; 
     setTitle(name);
     setArabic(m?.arabic ?? '');
     setMeaning(m?.meaning ?? '');
+    setTranslit(m?.transliteration ?? '');
     setSource(m?.source ?? '');
     setSourceUrl(m?.sourceUrl ?? '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -51,6 +53,7 @@ export default function EditZikrModal({ name, onClose }: { name: string | null; 
       setCustomMeaning(newName, {
         arabic: arabic.trim() || undefined,
         meaning: meaning.trim() || newName,
+        transliteration: translit.trim() || undefined,
         source: source.trim() || undefined,
         sourceUrl: sourceUrl.trim() || undefined,
       });
@@ -95,6 +98,12 @@ export default function EditZikrModal({ name, onClose }: { name: string | null; 
                 <input value={arabic} dir="rtl" onChange={(e) => setArabic(e.target.value)}
                   className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-base"
                   style={{ fontFamily: "'Amiri', serif" }} />
+              </div>
+              <div>
+                <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">Pronunciation</label>
+                <input value={translit} onChange={(e) => setTranslit(e.target.value)}
+                  placeholder="Astaghfiru-llāh"
+                  className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm italic" />
               </div>
               <div>
                 <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">Meaning</label>
