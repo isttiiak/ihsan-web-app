@@ -63,12 +63,22 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Split the heaviest dependencies into their own long-cacheable chunks
-        // so a small app change doesn't re-download firebase/recharts.
+        // so a small app change doesn't re-download all of them.
         manualChunks: {
+          // React changes far less often than our code — keeping it separate
+          // means an app deploy doesn't invalidate it. It landed back in the
+          // main bundle when the recharts chunk was removed, which is what
+          // pushed index past the 500 kB warning.
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           firebase: ['firebase/app', 'firebase/auth', 'firebase/storage'],
           motion: ['framer-motion'],
         },
       },
     },
+    // The only chunk near this line is `xlsx`, which is behind a dynamic
+    // import() and downloads solely when someone exports a spreadsheet — it
+    // never touches first paint. Raised so the build log stays meaningful
+    // instead of crying wolf on every deploy.
+    chunkSizeWarningLimit: 600,
   },
 });

@@ -33,6 +33,12 @@ function weekdayShort(dateStr: string): string {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' });
 }
 
+/** Civil date shown inside each cell — "2 Feb" — so the month can be planned
+ * against a normal calendar without converting hijri in your head. */
+function gregorianShort(dateStr: string): string {
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+}
+
 function formatGregorian(dateStr: string): string {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
@@ -234,7 +240,36 @@ export default function RamadanTracker() {
         >
           <div className="relative">
             <p className="text-brand-gold/80 text-xs font-bold uppercase tracking-widest">🌙 Ramadan {window_.hijriYear} AH</p>
-            <h2 className="text-3xl font-black text-white mt-1">Day {dayNo} <span className="text-white/30 text-lg">of {window_.days.length}</span></h2>
+            {/* Day number, with the live countdown as a compact pill on the
+                right — it is a glanceable number, not a headline, so it does
+                not deserve a card of its own. */}
+            <div className="flex items-center justify-between gap-3 mt-1">
+              <h2 className="text-3xl font-black text-white">
+                Day {dayNo} <span className="text-white/30 text-lg">of {window_.days.length}</span>
+              </h2>
+              {fastClock && (
+                <div
+                  title={fastClock.phase === 'suhoor'
+                    ? `Suhoor closes at ${prayerTimes ? formatTime(prayerTimes.fajr) : ''}`
+                    : `Iftar at ${prayerTimes ? formatTime(prayerTimes.maghrib) : ''}`}
+                  className={`shrink-0 flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-full border ${
+                    fastClock.phase === 'suhoor'
+                      ? 'border-cyan-400/35 bg-cyan-500/10'
+                      : 'border-brand-gold/35 bg-brand-gold/10'
+                  }`}
+                >
+                  <span className="text-sm leading-none">{fastClock.phase === 'suhoor' ? '🌅' : '🌇'}</span>
+                  <span className="leading-tight">
+                    <span className={`block text-[9px] font-bold uppercase tracking-wider ${
+                      fastClock.phase === 'suhoor' ? 'text-cyan-300/70' : 'text-brand-gold/70'
+                    }`}>
+                      {fastClock.phase === 'suhoor' ? 'Suhoor in' : 'Iftar in'}
+                    </span>
+                    <span className="block text-white font-black text-sm tabular-nums">{fastClock.label}</span>
+                  </span>
+                </div>
+              )}
+            </div>
 
             {/* progress */}
             <div className="mt-3 h-2.5 rounded-full bg-white/10 overflow-hidden">
@@ -246,39 +281,6 @@ export default function RamadanTracker() {
               />
             </div>
             <p className="text-white/40 text-xs mt-1.5">{fastedCount} fasted · {tarawihCount} tarawih nights{excusedCount > 0 ? ` · ${excusedCount} 🌸 excused (auto-qaḍā)` : ''}</p>
-
-            {/* Live countdown — the single number a fasting person keeps
-                checking. Before Fajr it counts down to suhoor closing; through
-                the day it counts down to iftar. */}
-            {prayerTimes && fastClock && (
-              <div className={`mt-4 rounded-2xl p-4 text-center border ${
-                fastClock.phase === 'suhoor'
-                  ? 'border-cyan-400/30 bg-cyan-500/10'
-                  : 'border-brand-gold/35 bg-gradient-to-br from-brand-gold/15 to-amber-600/5'
-              }`}>
-                <p className={`text-[10px] font-bold uppercase tracking-widest ${
-                  fastClock.phase === 'suhoor' ? 'text-cyan-300/70' : 'text-brand-gold/70'
-                }`}>
-                  {fastClock.phase === 'suhoor' ? 'Suhoor closes in' : 'Iftar in'}
-                </p>
-                <p className="text-white font-black text-4xl tabular-nums leading-tight mt-0.5">
-                  {fastClock.label}
-                </p>
-                <p className="text-white/35 text-[11px] mt-1">
-                  {fastClock.phase === 'suhoor'
-                    ? `Fajr ${formatTime(prayerTimes.fajr)}`
-                    : `Maghrib ${formatTime(prayerTimes.maghrib)}`}
-                </p>
-                {fastClock.phase === 'fasting' && (
-                  <div className="mt-2.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-brand-gold to-amber-400 transition-[width] duration-1000"
-                      style={{ width: `${fastClock.progressPct}%` }}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* suhoor / iftar */}
             {prayerTimes ? (
@@ -396,7 +398,7 @@ export default function RamadanTracker() {
                     </span>
                   )}
                 </p>
-                <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+                <div className="grid grid-cols-5 gap-2">
                   {groupDays.map((d) => {
                     const log = logsByDate.get(d.date);
                     const excused = isExcused(d.date);
@@ -404,44 +406,62 @@ export default function RamadanTracker() {
                     const isToday = d.date === today;
                     const oddNight = d.isLastTen && d.isOdd;
                     let face = String(d.dayNumber);
-                    let cls = 'bg-white/[0.04] text-white/30';
+                    let cls = 'bg-white/[0.04] text-white/40';
                     if (excused && d.date <= today) { face = '🌸'; cls = 'bg-pink-500/20 text-pink-100'; }
                     else if (log?.status === 'completed') { face = '✓'; cls = 'bg-emerald-500/30 text-emerald-100'; }
                     else if (log?.status === 'intended') { face = '🌅'; cls = 'bg-cyan-500/20 text-cyan-100'; }
                     else if (log?.status === 'broken') { face = '💔'; cls = 'bg-red-500/20 text-red-200'; }
                     else if (isPast) { cls = 'bg-white/[0.03] text-white/20'; }
                     return (
-                      <div
+                      <motion.div
                         key={d.date}
-                        title={`Day ${d.dayNumber} — ${formatGregorian(d.date)}${oddNight ? ' · odd night of the last ten ⭐' : ''}`}
+                        whileHover={{ scale: 1.07, y: -2 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                        title={`Ramadan ${d.dayNumber} — ${formatGregorian(d.date)}${oddNight ? ' · odd night of the last ten ⭐' : ''}`}
                         className={[
-                          'relative aspect-square rounded-xl grid place-items-center text-xs font-black',
-                          'transition-transform duration-200 hover:scale-110 hover:z-10 cursor-default',
+                          'relative aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5',
+                          'cursor-default hover:z-10',
                           cls,
                           isToday ? 'ring-2 ring-brand-gold/80' : '',
                         ].join(' ')}
                       >
-                        {/* Odd nights of the last ten get a slowly breathing
-                            ring — Laylat al-Qadr is sought in them, so they
-                            should feel different at a glance. */}
+                        {/* Odd nights of the last ten pulse clearly — Laylat
+                            al-Qadr is sought in them, so they must catch the
+                            eye rather than whisper. */}
                         {oddNight && (
                           <motion.span
                             aria-hidden
-                            className="absolute inset-0 rounded-xl border border-purple-400/50 pointer-events-none"
-                            animate={{ opacity: [0.35, 0.9, 0.35], boxShadow: [
-                              '0 0 0px rgba(168,85,247,0)',
-                              '0 0 10px rgba(168,85,247,0.45)',
-                              '0 0 0px rgba(168,85,247,0)',
-                            ] }}
-                            transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+                            className="absolute -inset-px rounded-xl border-2 pointer-events-none"
+                            animate={{
+                              borderColor: [
+                                'rgba(192,132,252,0.35)',
+                                'rgba(216,180,254,1)',
+                                'rgba(192,132,252,0.35)',
+                              ],
+                              boxShadow: [
+                                '0 0 2px rgba(168,85,247,0.25)',
+                                '0 0 16px rgba(192,132,252,0.85)',
+                                '0 0 2px rgba(168,85,247,0.25)',
+                              ],
+                            }}
+                            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
                           />
                         )}
-                        <span className="relative">{face}</span>
-                        {log?.tarawih && <span className="absolute top-0.5 right-1 text-[8px]">🕌</span>}
-                        <span className="absolute bottom-0.5 left-1 text-[7px] text-white/25 leading-none">
+                        {oddNight && (
+                          <span className="absolute top-1 left-1.5 text-[9px] leading-none text-purple-200/90">⭐</span>
+                        )}
+                        {log?.tarawih && <span className="absolute top-1 right-1.5 text-[9px] leading-none">🕌</span>}
+
+                        <span className="relative text-base sm:text-lg font-black leading-none">{face}</span>
+                        {/* Gregorian anchor — nobody plans their week in hijri
+                            alone, so each cell carries the civil date too. */}
+                        <span className="relative text-[9px] leading-none text-white/40 font-semibold">
                           {weekdayShort(d.date)}
                         </span>
-                      </div>
+                        <span className="relative text-[9px] leading-none text-white/25 tabular-nums">
+                          {gregorianShort(d.date)}
+                        </span>
+                      </motion.div>
                     );
                   })}
                 </div>
