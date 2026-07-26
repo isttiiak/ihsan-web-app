@@ -14,6 +14,11 @@ export interface SalatRecitation {
   id: string;
   /** Display name */
   label: string;
+  /** True when the virtue rests on a WEAK chain. The UI must show the caveat
+   * inline — never let a ḍaʿīf virtue read like a ṣaḥīḥ one. */
+  weak?: boolean;
+  /** Why it is still offered despite the weakness (shown with the caveat). */
+  caveat?: string;
   /** Surah number for the reader link */
   surah: number;
   /** Optional ayah bounds — used for Ayat al-Kursi (2:255) */
@@ -88,6 +93,22 @@ export const SALAT_RECITATIONS: SalatRecitation[] = [
     grade: 'Ṣaḥīḥ',
     prayers: ['fajr', 'dhuhr', 'asr'],
     fridayOnly: true,
+  },
+  {
+    id: 'waqiah',
+    label: 'Al-Wāqiʿah',
+    surah: 56,
+    emoji: '🌾',
+    // Deliberately describes the PRACTICE, not the reward — the reward claim is
+    // what the weak chain carries.
+    note: 'Ibn Masʿūd (ra) told his daughters to read it each night.',
+    source: 'al-Bayhaqī, Shuʿab al-Īmān 2269',
+    sourceUrl: 'https://quran.com/56',
+    grade: 'Ḍaʿīf — weak chain',
+    weak: true,
+    caveat:
+      'The famous wording "whoever reads al-Wāqiʿah every night will never be afflicted by poverty" has a weak chain (ḍaʿīf per al-Albānī; some routes graded fabricated). What IS established is that ʿAbdullāh ibn Masʿūd (ra) himself instructed his daughters to recite it nightly. Many scholars permit acting on a weak narration for encouragement (faḍāʾil al-aʿmāl); others do not. Read it as a good habit — not as a guarantee of wealth. Note the narration says "every night", not specifically after Maghrib.',
+    prayers: ['maghrib'],
   },
   {
     id: 'mulk',

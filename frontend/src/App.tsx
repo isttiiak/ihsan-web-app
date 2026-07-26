@@ -15,7 +15,7 @@ import NotFound from './pages/NotFound.js';
 import UnsavedWarning from './components/UnsavedWarning.js';
 import type { AuthUser } from './types/api.js';
 
-// Route-level code splitting — analytics pages pull in recharts (~130KB gz)
+// Route-level code splitting — keeps each tracker's page weight off the shell
 // and Profile/Settings are large; keep them out of the initial bundle.
 const ZikrAnalytics = lazy(() => import('./pages/ZikrAnalytics.js'));
 const Settings = lazy(() => import('./pages/Settings.js'));

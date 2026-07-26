@@ -707,7 +707,11 @@ export default function SalatTracker() {
                                         {i > 0 && <span className="text-white/15"> · </span>}
                                         <button
                                           onClick={() => navigate(recitationHref(r))}
-                                          title={`${r.note} — ${r.source} (${r.grade})`}
+                                          title={
+                                            r.weak
+                                              ? `${r.note} — ${r.source} (${r.grade}). ${r.caveat ?? ''}`
+                                              : `${r.note} — ${r.source} (${r.grade})`
+                                          }
                                           className={`underline underline-offset-2 decoration-dotted transition-colors ${
                                             r.fridayOnly
                                               ? 'text-brand-gold/60 hover:text-brand-gold'
@@ -716,6 +720,16 @@ export default function SalatTracker() {
                                         >
                                           {r.label}
                                         </button>
+                                        {/* A weak narration must never sit next
+                                            to ṣaḥīḥ ones unmarked. */}
+                                        {r.weak && (
+                                          <span
+                                            title={r.caveat}
+                                            className="ml-1 text-[9px] uppercase tracking-wide text-amber-400/50 border border-amber-400/25 rounded px-1 py-px align-middle"
+                                          >
+                                            ḍaʿīf
+                                          </span>
+                                        )}
                                       </span>
                                     ))}
                                   </p>

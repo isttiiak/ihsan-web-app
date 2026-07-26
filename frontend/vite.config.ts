@@ -66,7 +66,6 @@ export default defineConfig({
         // so a small app change doesn't re-download firebase/recharts.
         manualChunks: {
           firebase: ['firebase/app', 'firebase/auth', 'firebase/storage'],
-          recharts: ['recharts'],
           motion: ['framer-motion'],
         },
       },
