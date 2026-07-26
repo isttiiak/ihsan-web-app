@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -16,6 +17,7 @@ import {
   PrayerLocation,
   NaflType,
   NAFL_TYPE_META,
+  SELECTABLE_NAFL_TYPES,
 } from '../hooks/useSalatLog.js';
 import {
   PRAYER_META,
@@ -41,16 +43,17 @@ import { getFridayHour, FRIDAY_HOUR_REF } from '../utils/fridayHour.js';
 // Tarawih is "8 or 20", Duha is "2+", so a worshipper may legitimately pray
 // fewer than the customary number and must still be able to log it.
 function suggestedRakat(types: NaflType[]): number {
-  if (types.length === 0) return 2;
+  if (types.length === 0) return MIN_RAKAT;
   return types.reduce((sum, id) => {
     const meta = NAFL_TYPE_META.find((m) => m.id === id);
-    return sum + (meta?.defaultRakat ?? 2);
+    return sum + (meta?.defaultRakat ?? MIN_RAKAT);
   }, 0);
 }
 
-// Absolute floor. Witr can be a single rak'ah ("Witr is one rak'ah at the end
-// of the night" — Ṣaḥīḥ al-Bukhārī 998), so 1 is the only defensible minimum.
-const MIN_RAKAT = 1;
+// Nafl is prayed in pairs — two rak'ahs is the smallest unit here. (Witr, the
+// one odd-numbered prayer, is NOT tracked in this section: it belongs to Isha,
+// not to voluntary rak'ah counting — Istiak's spec.)
+const MIN_RAKAT = 2;
 
 function isRamadanNow(): boolean {
   try {
@@ -183,7 +186,8 @@ export default function SalatTracker() {
 
   // Salat → Zikr wiring (see creditDhikr) + the settings drawer
   const addCounts = useZikrStore((s) => s.addCounts);
-  const scheduleFlush = useZikrStore((s) => s.scheduleFlush);
+  const flushZikr = useZikrStore((s) => s.flush);
+  const queryClient = useQueryClient();
   const [showSettings, setShowSettings] = useState(false);
 
   // Nafl state
@@ -227,7 +231,8 @@ export default function SalatTracker() {
 
   const handleNaflRakat = (delta: number) => {
     if (!user) { setShowGuestDialog(true); return; }
-    const next = Math.max(MIN_RAKAT, (naflEntry.rakat ?? suggestedRakat(naflEntry.types ?? [])) + delta);
+    // Step in pairs — nafl rak'ahs come two at a time.
+    const next = Math.max(MIN_RAKAT, (naflEntry.rakat ?? suggestedRakat(naflEntry.types ?? [])) + delta * 2);
     updateNafl.mutate({
       completed: naflEntry.completed,
       types: naflEntry.types ?? [],
@@ -352,7 +357,16 @@ export default function SalatTracker() {
         duration: 2000,
       });
     }
-    scheduleFlush();
+
+    // Push to the server NOW rather than waiting out the debounce, then drop
+    // the cached analytics so the Zikr analytics page reflects it. Without the
+    // invalidate the page kept serving its persisted React Query snapshot
+    // (ihsan_rq_cache, 24h) and showed 0/30 with an empty "today" card while
+    // the counter — which reads live zustand state — showed the real number.
+    void (async () => {
+      await flushZikr();
+      await queryClient.invalidateQueries({ queryKey: ['analytics'] });
+    })();
   };
 
   return (
@@ -680,25 +694,31 @@ export default function SalatTracker() {
                             {(() => {
                               const recs = recitationsFor(prayerId, isFridayToday);
                               if (recs.length === 0) return null;
+                              // Deliberately understated: plain inline links, no
+                              // button chrome. These are optional sunnah, and a
+                              // row of chunky buttons read as a to-do list —
+                              // the opposite of the intent.
                               return (
-                                <div className="pt-2 border-t border-emerald-500/10">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-white/30 text-xs shrink-0">Read now:</span>
-                                    {recs.map((r) => (
-                                      <button
-                                        key={r.id}
-                                        onClick={() => navigate(recitationHref(r))}
-                                        title={`${r.note} — ${r.source} (${r.grade})`}
-                                        className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
-                                          r.fridayOnly
-                                            ? 'bg-brand-gold/10 border-brand-gold/40 text-brand-gold hover:bg-brand-gold/20'
-                                            : 'bg-brand-deep border-emerald-500/20 text-white/50 hover:text-brand-emerald hover:border-brand-emerald/40'
-                                        }`}
-                                      >
-                                        <span>{r.emoji}</span> {r.label}
-                                      </button>
+                                <div className="pt-1.5 border-t border-emerald-500/5">
+                                  <p className="text-white/25 text-[11px] leading-relaxed">
+                                    <span className="text-white/20">Optional · </span>
+                                    {recs.map((r, i) => (
+                                      <span key={r.id}>
+                                        {i > 0 && <span className="text-white/15"> · </span>}
+                                        <button
+                                          onClick={() => navigate(recitationHref(r))}
+                                          title={`${r.note} — ${r.source} (${r.grade})`}
+                                          className={`underline underline-offset-2 decoration-dotted transition-colors ${
+                                            r.fridayOnly
+                                              ? 'text-brand-gold/60 hover:text-brand-gold'
+                                              : 'text-white/35 hover:text-brand-emerald'
+                                          }`}
+                                        >
+                                          {r.label}
+                                        </button>
+                                      </span>
                                     ))}
-                                  </div>
+                                  </p>
                                 </div>
                               );
                             })()}
@@ -803,11 +823,9 @@ export default function SalatTracker() {
                       <div>
                         <p className="text-white/30 text-xs mb-2">Type of prayer <span className="text-white/20">(select all that apply)</span></p>
                         <div className="flex flex-wrap gap-1.5">
-                          {NAFL_TYPE_META.filter((t) => {
-                            if (t.id === 'witr') return false;       // shown as Isha note
-                            if (t.id === 'tarawih') return isRamadanNow(); // only in Ramadan
-                            return true;
-                          }).map((t) => {
+                          {SELECTABLE_NAFL_TYPES.filter((t) => (
+                            t.id === 'tarawih' ? isRamadanNow() : true // Tarawih only in Ramadan
+                          )).map((t) => {
                             const selected = (naflEntry.types ?? []).includes(t.id);
                             return (
                               <div key={t.id} className="flex flex-col gap-0">

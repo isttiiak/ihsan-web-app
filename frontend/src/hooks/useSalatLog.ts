@@ -6,6 +6,10 @@ export type PrayerStatus = 'completed' | 'kaza' | 'missed' | 'pending';
 export type PrayerLocation = 'home' | 'mosque' | 'jamat';
 export type PrayerId = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
 
+// NOTE: 'witr' stays in the union so existing logs that recorded it still
+// type-check and render, but it is NOT offered in the picker — Witr belongs
+// with Isha, not with voluntary rak'ah counting (Istiak's spec). See
+// SELECTABLE_NAFL_TYPES below.
 export const NAFL_TYPE_IDS = [
   'tahajjud', 'ishraq', 'duha', 'awwabin', 'witr',
   'tahiyyat_wudu', 'tahiyyat_masjid', 'hajat', 'istikharah', 'tarawih',
@@ -136,6 +140,12 @@ export const NAFL_TYPE_META: NaflTypeMeta[] = [
     defaultRakat: 8,
   },
 ];
+
+/** What the nafl picker offers. Witr is deliberately excluded: it is prayed
+ * after Isha as its own wājib/emphasised prayer, so counting its rak'ahs among
+ * the voluntary ones double-counted it and forced odd totals into a section
+ * that is otherwise all pairs. Historic logs containing it still display. */
+export const SELECTABLE_NAFL_TYPES: NaflTypeMeta[] = NAFL_TYPE_META.filter((m) => m.id !== 'witr');
 
 export interface PrayerEntry {
   status: PrayerStatus;
