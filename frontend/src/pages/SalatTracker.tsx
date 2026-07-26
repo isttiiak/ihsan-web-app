@@ -29,13 +29,21 @@ import ExcusedCard from '../components/ExcusedCard.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-function computeMinRakat(types: NaflType[]): number {
+// The SUGGESTED rak'ah count for a set of nafl types — the sum of each type's
+// customary rak'ahs. This is a starting value, NOT a floor: Awwabin is "2–6",
+// Tarawih is "8 or 20", Duha is "2+", so a worshipper may legitimately pray
+// fewer than the customary number and must still be able to log it.
+function suggestedRakat(types: NaflType[]): number {
   if (types.length === 0) return 2;
   return types.reduce((sum, id) => {
     const meta = NAFL_TYPE_META.find((m) => m.id === id);
     return sum + (meta?.defaultRakat ?? 2);
   }, 0);
 }
+
+// Absolute floor. Witr can be a single rak'ah ("Witr is one rak'ah at the end
+// of the night" — Ṣaḥīḥ al-Bukhārī 998), so 1 is the only defensible minimum.
+const MIN_RAKAT = 1;
 
 function isRamadanNow(): boolean {
   try {
@@ -167,10 +175,13 @@ export default function SalatTracker() {
   const handleNaflToggle = () => {
     if (!user) { setShowGuestDialog(true); return; }
     const newCompleted = !naflEntry.completed;
+    const keptTypes = newCompleted ? (naflEntry.types ?? []) : [];
     updateNafl.mutate({
       completed: newCompleted,
-      types: newCompleted ? naflEntry.types : [],
-      rakat: 2, // always reset to default when toggling done/undone
+      types: keptTypes,
+      // Start from the customary count for whatever types are kept — never a
+      // hardcoded 2, which could contradict the types that are still selected.
+      rakat: suggestedRakat(keptTypes),
       date: selectedDate,
     });
     if (newCompleted) setNaflExpanded(true);
@@ -184,20 +195,19 @@ export default function SalatTracker() {
     const next = adding
       ? [...currentTypes, type]
       : currentTypes.filter((t) => t !== type);
-    const minRakat = computeMinRakat(next);
     updateNafl.mutate({
       completed: naflEntry.completed,
       types: next,
-      // Adding: keep user's count if already above new min; removing: snap to new min
-      rakat: adding ? Math.max(minRakat, naflEntry.rakat ?? 2) : minRakat,
+      // Suggest the customary total for the new selection. The user stays free
+      // to adjust down to MIN_RAKAT afterwards — this is a default, not a floor.
+      rakat: suggestedRakat(next),
       date: selectedDate,
     });
   };
 
   const handleNaflRakat = (delta: number) => {
     if (!user) { setShowGuestDialog(true); return; }
-    const minRakat = computeMinRakat(naflEntry.types ?? []);
-    const next = Math.max(minRakat, (naflEntry.rakat ?? minRakat) + delta);
+    const next = Math.max(MIN_RAKAT, (naflEntry.rakat ?? suggestedRakat(naflEntry.types ?? [])) + delta);
     updateNafl.mutate({
       completed: naflEntry.completed,
       types: naflEntry.types ?? [],
@@ -245,6 +255,9 @@ export default function SalatTracker() {
         date: selectedDate,
         location: current?.location ?? 'home',
         tasbeeh: current?.tasbeeh ?? false,
+        // Was previously omitted — re-tapping an already-completed prayer wiped
+        // an existing Ayatul Kursi mark (and, now, its linked zikr count).
+        ayatulKursi: current?.ayatulKursi ?? false,
       });
       // Celebrate: small burst per prayer, big double burst when all 5 are in
       const doneAfter = trackablePrayers.filter((p) => {
@@ -688,16 +701,16 @@ export default function SalatTracker() {
 
                       {/* Rakat counter */}
                       {(() => {
-                        const minRakat = computeMinRakat(naflEntry.types ?? []);
-                        const currentRakat = naflEntry.rakat ?? minRakat;
+                        const suggested = suggestedRakat(naflEntry.types ?? []);
+                        const currentRakat = naflEntry.rakat ?? suggested;
                         return (
-                          <div className={`flex items-center gap-3 px-2 py-1.5 rounded-xl transition-colors ${minRakat > 2 ? 'bg-cyan-500/10 border border-cyan-400/20' : ''}`}>
+                          <div className={`flex items-center gap-3 px-2 py-1.5 rounded-xl transition-colors ${currentRakat !== suggested ? 'bg-cyan-500/10 border border-cyan-400/20' : ''}`}>
                             <p className="text-white/30 text-xs">Rak'ahs prayed:</p>
                             <div className="flex items-center gap-2">
                               <motion.button
                                 whileTap={{ scale: 0.85 }}
-                                onClick={() => handleNaflRakat(-2)}
-                                disabled={currentRakat <= minRakat}
+                                onClick={() => handleNaflRakat(-1)}
+                                disabled={currentRakat <= MIN_RAKAT}
                                 className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center disabled:opacity-25 hover:border-cyan-400/40 hover:text-white transition-all"
                               >−</motion.button>
                               <span className="text-white font-black text-lg tabular-nums w-8 text-center">
@@ -705,11 +718,11 @@ export default function SalatTracker() {
                               </span>
                               <motion.button
                                 whileTap={{ scale: 0.85 }}
-                                onClick={() => handleNaflRakat(2)}
+                                onClick={() => handleNaflRakat(1)}
                                 className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center hover:border-cyan-400/40 hover:text-white transition-all"
                               >+</motion.button>
                             </div>
-                            <p className="text-white/20 text-xs">min {minRakat}r</p>
+                            <p className="text-white/20 text-xs">usual {suggested}r</p>
                           </div>
                         );
                       })()}
