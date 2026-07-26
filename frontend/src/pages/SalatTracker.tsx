@@ -31,6 +31,8 @@ import { useZikrStore } from '../store/useZikrStore.js';
 import {
   getTasbihMode, tasbihModeMeta, tasbihDeltas, AYATUL_KURSI_ZIKR,
 } from '../utils/salatPrefs.js';
+import { recitationsFor, recitationHref } from '../utils/postSalatQuran.js';
+import { getFridayHour, FRIDAY_HOUR_REF } from '../utils/fridayHour.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -170,6 +172,14 @@ export default function SalatTracker() {
   const { data: log, isLoading } = useSalatLog(selectedDate);
   const updatePrayer = useUpdatePrayer();
   const updateNafl = useUpdateNafl();
+
+  // Friday specials — both derive from the same minute tick that drives the
+  // prayer clock, so no extra timer and no notification permission.
+  const isFridayToday = isFriday() && selectedDate === todayStr();
+  const fridayHour = useMemo(
+    () => getFridayHour(todayPrayerTimes?.times.asr, todayPrayerTimes?.times.maghrib, minuteNow),
+    [todayPrayerTimes, minuteNow],
+  );
 
   // Salat → Zikr wiring (see creditDhikr) + the settings drawer
   const addCounts = useZikrStore((s) => s.addCounts);
@@ -371,6 +381,70 @@ export default function SalatTracker() {
 
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-xl mx-auto space-y-5">
+
+          {/* ── Friday: the hour of response (Abū Dāwūd 1048, ṣaḥīḥ) ──
+              Shown only while it is actually running — ʿAṣr has begun and
+              Maghrib has not. No notification permission, no cron: the page
+              already ticks every minute for the prayer clock. */}
+          {fridayHour.active && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`rounded-2xl border p-4 ${
+                fridayHour.isFinalStretch
+                  ? 'border-brand-gold/50 bg-gradient-to-br from-brand-gold/15 to-amber-600/5'
+                  : 'border-brand-gold/25 bg-brand-gold/[0.06]'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-2xl shrink-0">🤲</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <h3 className="text-brand-gold font-black text-sm">
+                      {fridayHour.isFinalStretch ? 'The hour of response — now' : 'Friday: the hour of response'}
+                    </h3>
+                    <span className="text-brand-gold/70 text-xs font-bold tabular-nums">
+                      {fridayHour.countdown} to Maghrib
+                    </span>
+                  </div>
+                  <p className="text-white/60 text-xs mt-1.5 leading-relaxed">
+                    “{FRIDAY_HOUR_REF.text}” Keep asking until the sun sets — for yourself,
+                    your parents, and the ummah.
+                  </p>
+                  <div className="flex items-center gap-2 flex-wrap mt-2.5">
+                    <a
+                      href={FRIDAY_HOUR_REF.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[11px] text-white/35 hover:text-brand-gold underline underline-offset-2"
+                    >
+                      {FRIDAY_HOUR_REF.source} · {FRIDAY_HOUR_REF.grade} ↗
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Friday: Surah al-Kahf, one tap into the reader */}
+          {isFridayToday && (
+            <button
+              onClick={() => navigate('/quran/read/18?mode=single')}
+              className="w-full text-left rounded-2xl border border-brand-emerald/25 bg-brand-emerald/[0.07] p-4 hover:border-brand-emerald/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl shrink-0">🌟</span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-brand-emerald font-black text-sm">It’s Friday — read Sūrat al-Kahf</h3>
+                  <p className="text-white/50 text-xs mt-1 leading-relaxed">
+                    “A light will shine for him between the two Fridays.”
+                  </p>
+                  <p className="text-white/25 text-[11px] mt-1">Ṣaḥīḥ at-Targhīb 736 · Ṣaḥīḥ</p>
+                </div>
+                <span className="text-brand-emerald/60 text-lg shrink-0">→</span>
+              </div>
+            </button>
+          )}
 
           {/* Date navigator */}
           <div className="flex items-center justify-between gap-3">
@@ -600,6 +674,34 @@ export default function SalatTracker() {
                                 📖 Ayatul Kursi
                               </motion.button>
                             </div>
+
+                            {/* Read now — authentic recitations tied to this prayer,
+                                each opening directly in the Quran reader. */}
+                            {(() => {
+                              const recs = recitationsFor(prayerId, isFridayToday);
+                              if (recs.length === 0) return null;
+                              return (
+                                <div className="pt-2 border-t border-emerald-500/10">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-white/30 text-xs shrink-0">Read now:</span>
+                                    {recs.map((r) => (
+                                      <button
+                                        key={r.id}
+                                        onClick={() => navigate(recitationHref(r))}
+                                        title={`${r.note} — ${r.source} (${r.grade})`}
+                                        className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
+                                          r.fridayOnly
+                                            ? 'bg-brand-gold/10 border-brand-gold/40 text-brand-gold hover:bg-brand-gold/20'
+                                            : 'bg-brand-deep border-emerald-500/20 text-white/50 hover:text-brand-emerald hover:border-brand-emerald/40'
+                                        }`}
+                                      >
+                                        <span>{r.emoji}</span> {r.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </motion.div>
                       )}
@@ -827,7 +929,30 @@ export default function SalatTracker() {
                 <p>🕌 <span className="text-white/70 font-medium">Mosque</span> or 👥 <span className="text-white/70 font-medium">Jamat</span> — tap ▾ Details after marking done</p>
                 <p>🔒 Future prayers are locked until their time begins</p>
                 <p>📖 <span className="text-white/70 font-medium">Ayatul Kursi</span> — toggle after marking Done/Kaza (tap ▾ Details)</p>
-                <p>📿 <span className="text-white/70 font-medium">Nafl</span> — mark voluntary prayers and pick type + rak\'ahs</p>
+                <p>📿 <span className="text-white/70 font-medium">Nafl</span> — mark voluntary prayers and pick type + rak'ahs</p>
+
+                <div className="pt-2.5 mt-1 border-t border-emerald-500/10 space-y-1.5">
+                  <p className="text-brand-emerald/70 font-semibold">Counts itself now</p>
+                  <p>
+                    📿 Tapping <span className="text-white/70 font-medium">Tasbeeh</span> adds the full
+                    after-ṣalāh count to your dhikr automatically — no more logging 33s by hand.
+                    Ayatul Kursi adds one. Un-tap to undo.
+                  </p>
+                  <p>
+                    ⚙️ Choose <span className="text-white/70 font-medium">33·33·33 + tahlīl</span> (Muslim
+                    597a) or <span className="text-white/70 font-medium">33·33·34</span> (Muslim 596a) in
+                    salat settings — both are authentic. Your ʿAṣr school lives there too.
+                  </p>
+                  <p>
+                    📖 <span className="text-white/70 font-medium">Read now</span> under each prayer opens
+                    Ayatul Kursi and the three Quls straight in the reader (Abū Dāwūd 1523, ṣaḥīḥ).
+                  </p>
+                  <p>
+                    🌟 On <span className="text-white/70 font-medium">Friday</span> you'll see Sūrat
+                    al-Kahf, and a live reminder for the hour of response between ʿAṣr and Maghrib
+                    (Abū Dāwūd 1048, ṣaḥīḥ).
+                  </p>
+                </div>
               </div>
             </div>
           </div>
