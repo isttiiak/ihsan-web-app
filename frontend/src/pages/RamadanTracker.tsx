@@ -6,6 +6,9 @@ import ExcusedCard from '../components/ExcusedCard.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useFastingHistory, useUpsertFastingLog, useClearFastingLog } from '../hooks/useFasting.js';
 import { useCycleSummary } from '../hooks/useCycle.js';
+import { useSalatLog } from '../hooks/useSalatLog.js';
+import { useAnalytics } from '../hooks/useAnalytics.js';
+import { useQuranSummary } from '../hooks/useQuran.js';
 import { getRamadanWindow } from '../utils/ramadan.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
 import { calcPrayerTimes, formatTime } from '../utils/prayerTimes.js';
@@ -28,6 +31,19 @@ const ASHRA = [
   { from: 11, to: 20, label: 'Middle ten', note: '' },
   { from: 21, to: 30, label: 'Last ten', note: 'seek Laylat al-Qadr in the odd nights (Bukhārī 2017)' },
 ];
+
+const WORSHIP_TILES = [
+  { id: 'salat', label: 'Fard salat', emoji: '🕌', to: '/salat',
+    border: 'border-emerald-500/20', bg: 'bg-emerald-500/[0.07]', tone: 'text-emerald-200' },
+  { id: 'nafl', label: 'Nafl rakʿahs', emoji: '🌙', to: '/salat',
+    border: 'border-cyan-400/20', bg: 'bg-cyan-500/[0.07]', tone: 'text-cyan-200' },
+  { id: 'quran', label: 'Qurʾān today', emoji: '📖', to: '/quran',
+    border: 'border-purple-400/20', bg: 'bg-purple-500/[0.07]', tone: 'text-purple-200' },
+  { id: 'zikr', label: 'Dhikr today', emoji: '📿', to: '/zikr',
+    border: 'border-brand-gold/20', bg: 'bg-brand-gold/[0.07]', tone: 'text-amber-200' },
+] as const;
+
+type WorshipId = (typeof WORSHIP_TILES)[number]['id'];
 
 function weekdayShort(dateStr: string): string {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' });
@@ -126,6 +142,44 @@ export default function RamadanTracker() {
     }
     return null;
   }, [prayerTimes, nowTs]);
+
+  // Live numbers for the worship strip, pulled from the trackers the user
+  // already fills in — nothing new to log, just nothing to go hunting for.
+  const { data: salatLog } = useSalatLog(today);
+  const { data: zikrAnalytics } = useAnalytics(1);
+  const { data: quranSummary } = useQuranSummary();
+
+  const worshipToday = useMemo((): Record<WorshipId, { value: string; suffix?: string; hint: string }> => {
+    const fardDone = (['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const)
+      .filter((p) => {
+        const s = salatLog?.prayers?.[p]?.status;
+        return s === 'completed' || s === 'kaza';
+      }).length;
+
+    const naflRakat = salatLog?.nafl?.completed ? (salatLog.nafl.rakat ?? 0) : 0;
+    const naflKinds = salatLog?.nafl?.types?.length ?? 0;
+
+    const ayat = quranSummary?.todayAyat ?? 0;
+    const goalAyat = quranSummary?.profile?.dailyGoalAyat ?? 0;
+
+    const zikrTotal = zikrAnalytics?.today?.total ?? 0;
+    const zikrGoal = zikrAnalytics?.goal?.dailyTarget ?? 0;
+
+    return {
+      salat: { value: String(fardDone), suffix: '/5', hint: fardDone === 5 ? 'all five, alḥamdulillāh' : 'tap to log' },
+      nafl: {
+        value: String(naflRakat),
+        suffix: naflRakat ? ' rakʿah' : '',
+        // Don't say "none logged" when rakʿahs ARE logged — the kinds are just
+        // unspecified, which is a different (and fine) state.
+        hint: naflKinds
+          ? `${naflKinds} kind${naflKinds > 1 ? 's' : ''}`
+          : naflRakat ? 'add which kind' : 'none logged yet',
+      },
+      quran: { value: String(ayat), suffix: goalAyat ? `/${goalAyat}` : ' āyāt', hint: goalAyat && ayat >= goalAyat ? 'goal met' : 'keep reading' },
+      zikr: { value: String(zikrTotal), suffix: zikrGoal ? `/${zikrGoal}` : '', hint: zikrGoal && zikrTotal >= zikrGoal ? 'goal met' : 'tap to count' },
+    };
+  }, [salatLog, zikrAnalytics, quranSummary]);
 
   const logToday = (status: 'completed' | 'intended') => {
     upsert.mutate(
@@ -342,6 +396,42 @@ export default function RamadanTracker() {
             )}
           </div>
         </motion.div>
+
+        {/* ── Today's worship — every tracker in one strip ──────────────
+            Ramadan is the month people most want to do everything, and the
+            worst time to make them hunt through tabs for it. Live numbers from
+            the trackers they already use; each tile is a direct link. */}
+        <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
+          <h2 className="text-white font-black mb-3">🕰️ Today's worship</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {WORSHIP_TILES.map((t) => {
+              const stat = worshipToday[t.id];
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => navigate(t.to)}
+                  className={`group text-left rounded-2xl border p-3 transition-colors ${t.border} ${t.bg} hover:brightness-125`}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/35">{t.label}</p>
+                  <p className={`font-black text-xl leading-tight mt-0.5 ${t.tone}`}>
+                    {stat.value}
+                    {stat.suffix && <span className="text-white/25 text-sm font-bold">{stat.suffix}</span>}
+                  </p>
+                  <p className="text-white/30 text-[10px] mt-0.5 flex items-center gap-1">
+                    <span>{t.emoji}</span>
+                    <span className="truncate">{stat.hint}</span>
+                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-white/25 text-[10px] mt-3 leading-relaxed">
+            Nafl carries the reward of a farḍ in Ramadan, and a farḍ the reward of seventy
+            (<a className="underline hover:text-white/50" href="https://sunnah.com/ibnmajah:1887" target="_blank" rel="noreferrer">Ibn Mājah 1887</a> — ḍaʿīf chain, widely cited; the month's
+            general virtue is established in <a className="underline hover:text-white/50" href="https://sunnah.com/bukhari:1899" target="_blank" rel="noreferrer">Bukhārī 1899</a>).
+          </p>
+        </div>
 
         {/* Laylat al-Qadr focus */}
         {inLastTen && (
