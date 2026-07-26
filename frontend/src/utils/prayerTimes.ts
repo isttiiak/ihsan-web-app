@@ -1,4 +1,5 @@
 import * as adhan from 'adhan';
+import { getAsrMadhab } from './salatPrefs.js';
 
 export type PrayerKey = 'fajr' | 'sunrise' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
 
@@ -38,6 +39,10 @@ export const PRAYER_META: PrayerInfo[] = [
 export function calcPrayerTimes(lat: number, lng: number, date: Date = new Date()): PrayerTimesResult {
   const coords = new adhan.Coordinates(lat, lng);
   const params = adhan.CalculationMethod.MoonsightingCommittee(); // worldwide-friendly
+  // ʿAṣr (and therefore the end of Ẓuhr) differs by school — see
+  // utils/salatPrefs.ts. Read per call so a settings change takes effect on
+  // the next minute tick without a reload.
+  if (getAsrMadhab() === 'hanafi') params.madhab = adhan.Madhab.Hanafi;
   const times = new adhan.PrayerTimes(coords, date, params);
   // sunset: adhan exposes it; fall back to maghrib if missing
   const sunset: Date = (times as unknown as { sunset?: Date }).sunset ?? times.maghrib;

@@ -6,7 +6,7 @@ import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { celebrateSmall, celebrateAllPrayers } from '../utils/celebrate.js';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import {
   useSalatLog,
   useUpdatePrayer,
@@ -26,6 +26,11 @@ import {
 import { isFriday, getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
 import { useCycleActive } from '../hooks/useCycle.js';
 import ExcusedCard from '../components/ExcusedCard.js';
+import SalatSettings from '../components/SalatSettings.js';
+import { useZikrStore } from '../store/useZikrStore.js';
+import {
+  getTasbihMode, tasbihModeMeta, tasbihDeltas, AYATUL_KURSI_ZIKR,
+} from '../utils/salatPrefs.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -166,6 +171,11 @@ export default function SalatTracker() {
   const updatePrayer = useUpdatePrayer();
   const updateNafl = useUpdateNafl();
 
+  // Salat → Zikr wiring (see creditDhikr) + the settings drawer
+  const addCounts = useZikrStore((s) => s.addCounts);
+  const scheduleFlush = useZikrStore((s) => s.scheduleFlush);
+  const [showSettings, setShowSettings] = useState(false);
+
   // Nafl state
   const [naflExpanded, setNaflExpanded] = useState(false);
   const [naflInfoExpanded, setNaflInfoExpanded] = useState<NaflType | null>(null);
@@ -290,20 +300,74 @@ export default function SalatTracker() {
       tasbeeh: type === 'tasbeeh' ? (value as boolean) : (current?.tasbeeh ?? false),
       ayatulKursi: type === 'ayatulKursi' ? (value as boolean) : (current?.ayatulKursi ?? false),
     });
+
+    if (type === 'location') return;
+    creditDhikr(type, value as boolean, current);
+  };
+
+  /**
+   * Salat → Zikr wiring. Marking tasbīḥ or Ayatul Kursi on a prayer posts the
+   * counts straight into the dhikr counter, so nobody has to re-enter 33/33/34
+   * by hand five times a day. Un-tapping reverses exactly what was added.
+   *
+   * Only fires for TODAY: dhikr counts live in today's bucket, so crediting
+   * them from a back-dated prayer would file the counts on the wrong day.
+   */
+  const creditDhikr = (
+    type: 'tasbeeh' | 'ayatulKursi',
+    turnedOn: boolean,
+    current: { tasbeeh?: boolean; ayatulKursi?: boolean } | undefined,
+  ) => {
+    const was = type === 'tasbeeh' ? (current?.tasbeeh ?? false) : (current?.ayatulKursi ?? false);
+    if (was === turnedOn) return; // not an actual change — never double-count
+    if (selectedDate !== todayStr()) {
+      if (turnedOn) {
+        toast('Saved. Dhikr counts are only added for today.', { icon: '🗓️', duration: 2600 });
+      }
+      return;
+    }
+
+    const sign: 1 | -1 = turnedOn ? 1 : -1;
+    if (type === 'tasbeeh') {
+      const meta = tasbihModeMeta(getTasbihMode());
+      addCounts(tasbihDeltas(meta.id, sign));
+      toast.success(
+        turnedOn ? `${meta.label} added to your dhikr` : `${meta.label} removed`,
+        { icon: '📿', duration: 2200 },
+      );
+    } else {
+      addCounts({ [AYATUL_KURSI_ZIKR]: sign });
+      toast.success(turnedOn ? 'Ayatul Kursi counted' : 'Ayatul Kursi removed', {
+        icon: '📖',
+        duration: 2000,
+      });
+    }
+    scheduleFlush();
   };
 
   return (
     <AnimatedBackground variant="dark">
       {/* ── Tab navigation ── */}
       <h1 className="sr-only">Salat Tracker</h1>
-      <div className="px-4 pt-3 pb-0">
-        <TabNav
-          items={[
-            { label: '🕌 Tracker', to: '/salat', active: true },
-            { label: '📊 Analytics', to: '/salat/analytics' },
-          ]}
-        />
+      <div className="px-4 pt-3 pb-0 flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <TabNav
+            items={[
+              { label: '🕌 Tracker', to: '/salat', active: true },
+              { label: '📊 Analytics', to: '/salat/analytics' },
+            ]}
+          />
+        </div>
+        <button
+          onClick={() => setShowSettings(true)}
+          aria-label="Salat settings"
+          title="Salat settings"
+          className="shrink-0 p-2 rounded-xl border border-emerald-500/20 bg-white/5 text-white/50 hover:text-brand-emerald hover:border-brand-emerald/40 transition-colors"
+        >
+          <Cog6ToothIcon className="w-5 h-5" />
+        </button>
       </div>
+      <SalatSettings open={showSettings} onClose={() => setShowSettings(false)} />
 
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-xl mx-auto space-y-5">

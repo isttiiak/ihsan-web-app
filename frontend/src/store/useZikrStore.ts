@@ -67,6 +67,7 @@ interface ZikrState {
   decrement: () => void;
   reset: () => void;
   addConfirmedCounts: (type: string, amount: number) => void;
+  addCounts: (entries: Record<string, number>) => void;
   scheduleFlush: () => void;
   flush: () => Promise<void>;
 }
@@ -243,6 +244,32 @@ export const useZikrStore = create<ZikrState>()(
           lifetimeTotals: { ...s.lifetimeTotals, [type]: (s.lifetimeTotals[type] ?? 0) + amount },
           total: s.total + amount,
         })),
+
+      // Add (or, with negative amounts, subtract) counts across SEVERAL dhikr
+      // at once — the salat tracker's tasbīḥ wiring posts 33/33/34 in one go
+      // and reverses the exact same amounts when the tag is un-tapped.
+      // Routed through `pending` so the existing debounced batch flush syncs
+      // it; day counts clamp at 0 and only the APPLIED delta is queued, which
+      // keeps lifetime totals and the server in step.
+      addCounts: (entries) =>
+        set((s) => {
+          const counts = { ...s.counts };
+          const lifetimeTotals = { ...s.lifetimeTotals };
+          const pending = { ...s.pending };
+          let total = s.total;
+          for (const [type, amount] of Object.entries(entries)) {
+            if (!amount) continue;
+            const before = counts[type] ?? 0;
+            const after = Math.max(0, before + amount);
+            const applied = after - before;
+            if (!applied) continue;
+            counts[type] = after;
+            lifetimeTotals[type] = Math.max(0, (lifetimeTotals[type] ?? 0) + applied);
+            pending[type] = (pending[type] ?? 0) + applied;
+            total = Math.max(0, total + applied);
+          }
+          return { counts, lifetimeTotals, pending, total };
+        }),
 
       scheduleFlush: () => {
         clearTimeout(get()._flushTimer);
