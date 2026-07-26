@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import ReportReference from '../components/ReportReference.js';
 import { SPECIAL_DAYS } from '../utils/islamicCalendar.js';
 
 const TYPE_BADGE: Record<string, string> = {
@@ -173,6 +174,7 @@ export default function IslamicSpecialDay() {
           </motion.div>
 
         </div>
+        <ReportReference variant="card" what={day.name} className="mt-6" />
       </div>
     </AnimatedBackground>
   );

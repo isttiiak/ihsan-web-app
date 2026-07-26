@@ -618,27 +618,34 @@ export default function QuranReader() {
             </AnimatePresence>
           )}
 
-          {/* prev / next — absolute at the bottom only on desktop fullscreen;
-              in the mobile stack they stay in flow under the āyah */}
+          {/* Prev/Next stay IN FLOW. They used to be md:absolute with
+              left-8/right-8 in fullscreen, which is measured against the
+              nearest positioned ancestor — with the tafsir split that is not
+              the reading pane, so the row overflowed and "Next" sat off-screen
+              behind a horizontal scroll. In-flow + min-w-0 + shrink can't
+              overflow regardless of pane width. */}
           {!loading && current && (
-            <div className={`flex items-center justify-between ${fullscreen ? 'mt-8 w-full max-w-4xl md:mt-0 md:max-w-none md:absolute md:bottom-8 md:left-8 md:right-8' : 'mt-8'}`}>
+            <div className={`flex items-center justify-between gap-3 w-full max-w-4xl mx-auto mt-8 ${fullscreen ? 'md:mt-6' : ''}`}>
               <button
                 aria-label="Previous ayah"
                 onClick={goPrev}
                 disabled={idx <= firstIdx}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/5 border border-emerald-500/10 text-white/60 hover:text-white disabled:opacity-20 text-sm font-bold"
+                className="flex items-center gap-1.5 min-w-0 px-4 py-2.5 rounded-2xl bg-white/5 border border-emerald-500/10 text-white/60 hover:text-white disabled:opacity-20 text-sm font-bold"
               >
-                <ChevronLeftIcon className="w-4 h-4" /> Previous
+                <ChevronLeftIcon className="w-4 h-4 shrink-0" />
+                <span className="truncate">Previous</span>
               </button>
               <button
                 aria-label="Next ayah"
                 onClick={goNext}
-                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-brand-emerald/90 hover:bg-brand-emerald text-white text-sm font-black border-0"
+                className="flex items-center gap-1.5 min-w-0 px-5 py-2.5 rounded-2xl bg-brand-emerald/90 hover:bg-brand-emerald text-white text-sm font-black border-0"
               >
-                {idx >= lastIdx
-                  ? (mode === 'bundle' ? 'Finish 🤲' : mode === 'single' ? 'Finish 🌿' : surahNo < 114 ? 'Next surah' : 'Finish')
-                  : 'Next'}
-                <ChevronRightIcon className="w-4 h-4" />
+                <span className="truncate">
+                  {idx >= lastIdx
+                    ? (mode === 'bundle' ? 'Finish 🤲' : mode === 'single' ? 'Finish 🌿' : surahNo < 114 ? 'Next surah' : 'Finish')
+                    : 'Next'}
+                </span>
+                <ChevronRightIcon className="w-4 h-4 shrink-0" />
               </button>
             </div>
           )}

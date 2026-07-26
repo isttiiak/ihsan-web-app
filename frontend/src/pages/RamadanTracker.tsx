@@ -117,6 +117,19 @@ export default function RamadanTracker() {
     } catch { return null; }
   }, []);
 
+  // Tomorrow's Fajr, for the post-Maghrib rollover below. Recomputed rather
+  // than reusing today's, because Fajr drifts a minute or two each day.
+  const tomorrowFajr = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('ihsan_location');
+      if (!raw) return null;
+      const loc = JSON.parse(raw) as { latitude: number; longitude: number };
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      return calcPrayerTimes(loc.latitude, loc.longitude, d).fajr;
+    } catch { return null; }
+  }, []);
+
   // Ticks once a second only while the page is open — the countdown is the
   // number a fasting person keeps glancing at, so it has to move.
   const [nowTs, setNowTs] = useState(() => Date.now());
@@ -151,8 +164,14 @@ export default function RamadanTracker() {
       const pct = Math.round(((now - fajr) / (maghrib - fajr)) * 100);
       return { phase: 'fasting' as const, label: fmt(maghrib - now), progressPct: Math.min(100, Math.max(0, pct)) };
     }
+    // After Maghrib the fast is done, but the pill must NOT disappear for the
+    // rest of the night — that is the stretch when people are planning suhoor.
+    // Roll over to TOMORROW's Fajr (recomputed, since sunrise drifts daily).
+    if (tomorrowFajr) {
+      return { phase: 'suhoor' as const, label: fmt(tomorrowFajr.getTime() - now), progressPct: 0 };
+    }
     return null;
-  }, [prayerTimes, nowTs]);
+  }, [prayerTimes, tomorrowFajr, nowTs]);
 
   // Live numbers for the worship strip, pulled from the trackers the user
   // already fills in — nothing new to log, just nothing to go hunting for.

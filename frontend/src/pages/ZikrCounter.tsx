@@ -18,6 +18,7 @@ import { celebrateGoal } from '../utils/celebrate.js';
 import { getHiddenZikr, hideZikr } from '../utils/hiddenZikr.js';
 import { PREDEFINED_TYPES, findLibraryZikr, isCoreZikr } from '../utils/zikrLibrary.js';
 import EditZikrModal from '../components/EditZikrModal.js';
+import ReportReference from '../components/ReportReference.js';
 import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowsPointingOutIcon, XMarkIcon, TrashIcon, PencilSquareIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 
 // Meanings for all built-in dhikr
@@ -694,6 +695,7 @@ export default function ZikrCounter() {
                       {builtin && (
                         <p className="text-white/50 text-xs italic leading-relaxed border-l-2 border-emerald-500/25 pl-3">{builtin.text}</p>
                       )}
+                      <ReportReference what={selected} className="pt-1" />
                       {(builtin || full?.source) && (
                         <div className="flex items-center gap-2 flex-wrap pt-0.5">
                           {(builtin?.grade ?? full?.grade) && (
