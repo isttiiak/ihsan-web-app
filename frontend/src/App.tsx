@@ -38,6 +38,7 @@ const Feedback = lazy(() => import('./pages/Feedback.js'));
 const Contact = lazy(() => import('./pages/Contact.js'));
 const RayhanahCycle = lazy(() => import('./pages/RayhanahCycle.js'));
 const RamadanTracker = lazy(() => import('./pages/RamadanTracker.js'));
+const RamadanAnalytics = lazy(() => import('./pages/RamadanAnalytics.js'));
 const CycleAnalytics = lazy(() => import('./pages/CycleAnalytics.js'));
 const QuranKhatam = lazy(() => import('./pages/QuranKhatam.js'));
 const QuranBrowse = lazy(() => import('./pages/QuranBrowse.js'));
@@ -391,6 +392,7 @@ export default function App() {
               <Route path="/friends" element={<Protected><Friends /></Protected>} />
               <Route path="/cycle" element={<Protected><RayhanahCycle /></Protected>} />
               <Route path="/ramadan" element={<Protected><RamadanTracker /></Protected>} />
+              <Route path="/ramadan/analytics" element={<Protected><RamadanAnalytics /></Protected>} />
               <Route path="/cycle/analytics" element={<Protected><CycleAnalytics /></Protected>} />
               {/* Public: handles guests itself (sign-in gate that returns here) */}
               <Route path="/connect/:code" element={<ConnectFriend />} />

@@ -8,6 +8,8 @@ import { useFastingHistory, useUpsertFastingLog, useClearFastingLog } from '../h
 import { useCycleSummary } from '../hooks/useCycle.js';
 import { useSalatLog } from '../hooks/useSalatLog.js';
 import RamadanSalatCard from '../components/RamadanSalatCard.js';
+import DaifExplainer from '../components/DaifExplainer.js';
+import TabNav from '../components/TabNav.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useQuranSummary } from '../hooks/useQuran.js';
 import { getRamadanWindow } from '../utils/ramadan.js';
@@ -213,7 +215,13 @@ export default function RamadanTracker() {
     return (
       <AnimatedBackground variant="dark">
         <h1 className="sr-only">Ramadan Tracker</h1>
-        <div className="max-w-2xl mx-auto px-4 pt-6 pb-16 space-y-5">
+        <div className="max-w-2xl mx-auto px-4 pt-3">
+          <TabNav items={[
+            { label: '🌙 Tracker', to: '/ramadan', active: true },
+            { label: '📊 Analytics', to: '/ramadan/analytics' },
+          ]} />
+        </div>
+        <div className="max-w-2xl mx-auto px-4 pt-4 pb-16 space-y-5">
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className="rounded-3xl p-8 border border-brand-gold/25 bg-gradient-to-br from-brand-gold/15 via-amber-500/10 to-purple-500/10 text-center relative overflow-hidden"
@@ -393,16 +401,7 @@ export default function RamadanTracker() {
               </div>
             )}
 
-            {/* tarawih toggle — salat, so hidden on excused days */}
-            {!excusedToday && (
-              <button
-                className={`mt-3 w-full btn btn-sm rounded-xl border ${todayLog?.tarawih ? 'bg-indigo-500/25 border-indigo-400/40 text-indigo-100' : 'bg-white/5 border-emerald-500/10 text-white/50'}`}
-                disabled={upsert.isPending}
-                onClick={toggleTarawih}
-              >
-                {todayLog?.tarawih ? '🕌 Tarawih prayed tonight ✓' : '🕌 Mark tonight\'s tarawih'}
-              </button>
-            )}
+            {/* Tarawih now lives in the salat card below, directly under Isha. */}
           </div>
         </motion.div>
 
@@ -437,13 +436,18 @@ export default function RamadanTracker() {
           </div>
           <p className="text-white/25 text-[10px] mt-3 leading-relaxed">
             Nafl carries the reward of a farḍ in Ramadan, and a farḍ the reward of seventy
-            (<a className="underline hover:text-white/50" href="https://sunnah.com/ibnmajah:1887" target="_blank" rel="noreferrer">Ibn Mājah 1887</a> — ḍaʿīf chain, widely cited; the month's
+            (<a className="underline hover:text-white/50" href="https://islamqa.info/en/answers/21364" target="_blank" rel="noreferrer">Ibn Khuzaymah 1887</a> — ḍaʿīf chain, widely cited; the month's
             general virtue is established in <a className="underline hover:text-white/50" href="https://sunnah.com/bukhari:1899" target="_blank" rel="noreferrer">Bukhārī 1899</a>).
           </p>
         </div>
 
         {/* Salat + nafl, inline — no trip to /salat and back */}
-        <RamadanSalatCard date={today} excused={excusedToday} />
+        <RamadanSalatCard
+          date={today}
+          excused={excusedToday}
+          tarawih={todayLog?.tarawih ?? false}
+          onToggleTarawih={toggleTarawih}
+        />
 
         {/* Laylat al-Qadr focus */}
         {inLastTen && (
@@ -590,6 +594,10 @@ export default function RamadanTracker() {
             to your qaḍā counter automatically (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>).
           </p>
         </div>
+
+        {/* Every ḍaʿīf badge on this page is accounted for here — chain,
+            defect, and who graded it (Istiak's rule). */}
+        <DaifExplainer topics={['ramadan-ashra', 'nafl-fard-reward']} />
       </div>
     </AnimatedBackground>
   );

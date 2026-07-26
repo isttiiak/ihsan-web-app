@@ -27,6 +27,7 @@ import {
 } from '../utils/prayerTimes.js';
 import { isFriday, getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
 import { useCycleActive } from '../hooks/useCycle.js';
+import { useFastingHistory, useUpsertFastingLog } from '../hooks/useFasting.js';
 import ExcusedCard from '../components/ExcusedCard.js';
 import SalatSettings from '../components/SalatSettings.js';
 import { useZikrStore } from '../store/useZikrStore.js';
@@ -175,6 +176,25 @@ export default function SalatTracker() {
   const { data: log, isLoading } = useSalatLog(selectedDate);
   const updatePrayer = useUpdatePrayer();
   const updateNafl = useUpdateNafl();
+
+  // Tarawih during Ramadan lives on the FastingLog row (category 'ramadan'),
+  // the same record /ramadan writes — one source of truth, two places to tap.
+  const ramadanActive = isRamadanNow();
+  const { data: ramadanHistory } = useFastingHistory(3, ramadanActive);
+  const upsertFasting = useUpsertFastingLog();
+  const ramadanTodayLog = useMemo(
+    () => (ramadanHistory ?? []).find((l) => l.date === todayStr() && l.category === 'ramadan'),
+    [ramadanHistory],
+  );
+  const toggleTarawih = () => {
+    if (!user) { setShowGuestDialog(true); return; }
+    upsertFasting.mutate({
+      date: todayStr(),
+      category: 'ramadan',
+      status: (ramadanTodayLog?.status as 'completed' | 'intended' | 'broken') ?? 'intended',
+      tarawih: !ramadanTodayLog?.tarawih,
+    });
+  };
 
   // Friday specials — both derive from the same minute tick that drives the
   // prayer clock, so no extra timer and no notification permission.
@@ -753,6 +773,38 @@ export default function SalatTracker() {
                         )}
                         {entry?.tasbeeh && <span className="text-cyan-400/60">📿</span>}
                         {entry?.ayatulKursi && <span className="text-brand-gold/60">📖</span>}
+                      </button>
+                    )}
+
+                    {/* Tarawih — only during Ramadan, attached to Isha because
+                        that is when it is prayed. Writes to the SAME
+                        FastingLog.tarawih field as /ramadan, so marking it in
+                        either place shows in both. */}
+                    {prayerId === 'isha' && isRamadanNow() && isToday && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleTarawih(); }}
+                        className={`w-full px-3 py-2.5 border-t flex items-center gap-2 text-left transition-colors ${
+                          ramadanTodayLog?.tarawih
+                            ? 'border-indigo-400/30 bg-indigo-500/15'
+                            : 'border-indigo-400/15 bg-indigo-500/[0.06] hover:bg-indigo-500/10'
+                        }`}
+                      >
+                        <span className="text-base shrink-0">🕌</span>
+                        <span className="flex-1 min-w-0">
+                          <span className={`block font-bold text-xs ${ramadanTodayLog?.tarawih ? 'text-indigo-100' : 'text-indigo-200/70'}`}>
+                            Tarawih tonight
+                          </span>
+                          <span className="block text-white/30 text-[11px]">
+                            Ramadan nights — prayed after Isha
+                          </span>
+                        </span>
+                        <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 ${
+                          ramadanTodayLog?.tarawih
+                            ? 'bg-indigo-500/25 border-indigo-400/50 text-indigo-100'
+                            : 'bg-brand-deep border-brand-border text-white/40'
+                        }`}>
+                          {ramadanTodayLog?.tarawih ? '✅ Prayed' : 'Mark done'}
+                        </span>
                       </button>
                     )}
 

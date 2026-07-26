@@ -41,7 +41,20 @@ function suggestedRakat(types: NaflType[]): number {
   return types.reduce((sum, id) => sum + (NAFL_TYPE_META.find((m) => m.id === id)?.defaultRakat ?? MIN_RAKAT), 0);
 }
 
-export default function RamadanSalatCard({ date, excused }: { date: string; excused: boolean }) {
+export default function RamadanSalatCard({
+  date,
+  excused,
+  tarawih,
+  onToggleTarawih,
+}: {
+  date: string;
+  excused: boolean;
+  /** Tarawih lives on the FastingLog row, not the salat log, so the owning
+   * page passes it down rather than this card fetching it twice. Omit both
+   * props outside Ramadan and the row simply doesn't render. */
+  tarawih?: boolean;
+  onToggleTarawih?: () => void;
+}) {
   const { data: log } = useSalatLog(date);
   const updatePrayer = useUpdatePrayer();
   const updateNafl = useUpdateNafl();
@@ -225,6 +238,34 @@ export default function RamadanSalatCard({ date, excused }: { date: string; excu
               );
             })}
           </div>
+
+          {/* Tarawih — sits directly under Isha because that is when it is
+              prayed ("he prayed it, then people gathered" — Bukhārī 2010).
+              Only rendered when the owning page supplies the handler, i.e.
+              during Ramadan. */}
+          {onToggleTarawih && (
+            <button
+              onClick={onToggleTarawih}
+              className={`mt-1.5 w-full flex items-center gap-2 rounded-2xl border p-2.5 text-left transition-colors ${
+                tarawih
+                  ? 'border-indigo-400/40 bg-indigo-500/15'
+                  : 'border-emerald-500/10 bg-white/[0.03] hover:border-indigo-400/25'
+              }`}
+            >
+              <span className="text-base shrink-0">🕌</span>
+              <span className={`flex-1 min-w-0 text-sm font-bold ${tarawih ? 'text-indigo-100' : 'text-white/55'}`}>
+                Tarawih
+                <span className="block text-[10px] font-semibold text-white/25">after Isha, through the night</span>
+              </span>
+              <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 ${
+                tarawih
+                  ? 'bg-indigo-500/25 border-indigo-400/50 text-indigo-100'
+                  : 'bg-brand-deep border-brand-border text-white/40'
+              }`}>
+                {tarawih ? '✅ Prayed' : 'Mark done'}
+              </span>
+            </button>
+          )}
 
           {/* Nafl — extra weight in Ramadan, so it lives here rather than a page away */}
           <div className={`mt-2.5 rounded-2xl border p-2.5 ${
