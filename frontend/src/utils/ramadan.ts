@@ -70,8 +70,15 @@ export function getRamadanWindow(): RamadanWindow {
     d.setDate(d.getDate() + 1);
   }
 
-  const active = h.month === 9;
-  const todayNumber = active ? h.day : null;
+  // DEV/PREVIEW ONLY: `?preview=live` pretends we are inside Ramadan so the
+  // live tracker can be designed and reviewed outside the month. It never
+  // changes what is logged — the day grid still carries the real Ramadan
+  // dates, and the flag has to be typed into the URL by hand.
+  const previewLive = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('preview') === 'live';
+
+  const active = h.month === 9 || previewLive;
+  const todayNumber = h.month === 9 ? h.day : (previewLive ? 1 : null);
   const startStr = days[0]?.date ?? todayStr;
   const daysUntil = active
     ? 0
