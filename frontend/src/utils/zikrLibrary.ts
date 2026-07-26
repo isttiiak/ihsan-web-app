@@ -32,14 +32,38 @@ export interface ZikrCategory {
   items: LibraryZikr[];
 }
 
+/** The full post-ṣalāh tahlīl (Ṣaḥīḥ Muslim 597a) — the phrase that completes
+ * the hundred after 33+33+33. Exported as a constant because the salat→zikr
+ * wiring increments this exact counter key; never rename it without a
+ * migration (the key is a Map key in User.zikrTotals). */
+export const TAHLIL_NAME = 'La ilaha illallahu wahdahu la sharika lah';
+
 /** The counter's built-in dhikr — stored app-side, merged on every mount.
  * Shared so the Settings library never mistakes them for user customs. */
 export const PREDEFINED_TYPES = [
   'SubhanAllah', 'Alhamdulillah', 'Allahu Akbar', 'La ilaha illallah',
+  TAHLIL_NAME,
   'Astaghfirullah', 'SubhanAllah wa bihamdihi', 'La hawla wa la quwwata illa billah',
   'SubhanAllah wal hamdulillah wa la ilaha illAllah wa Allahu akbar',
   'Ayatul Kursi', 'Durud Ibrahim',
 ];
+
+/** Dhikr the app depends on STRUCTURALLY: the salat tracker writes tasbīḥ
+ * counts into the first four and Ayatul Kursi into the fifth, so removing any
+ * of them would break that wiring. Istighfār is included at Istiak's request
+ * (the Prophet ﷺ sought forgiveness more than seventy times a day —
+ * Ṣaḥīḥ al-Bukhārī 6307). These cannot be deleted from the counter list. */
+export const CORE_ZIKR = [
+  'SubhanAllah',
+  'Alhamdulillah',
+  'Allahu Akbar',
+  TAHLIL_NAME,
+  'Ayatul Kursi',
+  'Astaghfirullah',
+];
+
+export const isCoreZikr = (name: string): boolean =>
+  CORE_ZIKR.some((c) => c.toLowerCase() === name.trim().toLowerCase());
 
 /** Earlier names of renamed library items — still recognized as
  * library-owned so they never show up as "your custom additions". */
@@ -185,8 +209,8 @@ export const ZIKR_LIBRARY: ZikrCategory[] = [
         meaning: 'None has the right to be worshipped but Allah alone, without partner; His is the dominion and the praise, and He is able to do all things',
         shortArabic: 'لَا إِلَهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ…',
         shortMeaning: 'None has the right to be worshipped but Allah alone, without partner…',
-        virtue: '100× a day — like freeing ten slaves, a hundred good deeds, protection from Shayṭān.',
-        source: 'Bukhārī 3293', sourceUrl: 'https://sunnah.com/bukhari:3293',
+        virtue: '100× a day — like freeing ten slaves, a hundred good deeds, protection from Shayṭān (Bukhārī 3293). Said once after 33+33+33 it completes the hundred after every prayer: "his sins are forgiven even if they are like the foam of the sea."',
+        source: 'Muslim 597a', sourceUrl: 'https://sunnah.com/muslim:597',
       },
       {
         name: 'La hawla wa la quwwata illa billah',

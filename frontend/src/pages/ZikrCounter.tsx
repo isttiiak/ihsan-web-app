@@ -16,7 +16,7 @@ import TabNav from '../components/TabNav.js';
 import { StreakBadge, GoalBadge } from '../components/StatusBadges.js';
 import { celebrateGoal } from '../utils/celebrate.js';
 import { getHiddenZikr, hideZikr } from '../utils/hiddenZikr.js';
-import { PREDEFINED_TYPES, findLibraryZikr } from '../utils/zikrLibrary.js';
+import { PREDEFINED_TYPES, findLibraryZikr, isCoreZikr } from '../utils/zikrLibrary.js';
 import EditZikrModal from '../components/EditZikrModal.js';
 import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowsPointingOutIcon, XMarkIcon, TrashIcon, PencilSquareIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 
@@ -274,9 +274,12 @@ export default function ZikrCounter() {
   useEffect(() => {
     const serverNames = (fetchedTypes ?? []).map((t) => t.name).filter(Boolean);
     // Deleted names (hiddenTypes) must never re-appear even though they live in
-    // the predefined/server lists.
+    // the predefined/server lists — EXCEPT the core dhikr, which the salat
+    // tracker writes into. Anyone who hid one before it became core gets it
+    // back here, otherwise their tasbīḥ taps would post to a missing counter.
     const hidden = new Set(hiddenTypes);
-    const merged = [...new Set([...PREDEFINED_TYPES, ...serverNames, ...types])].filter((t) => !hidden.has(t));
+    const merged = [...new Set([...PREDEFINED_TYPES, ...serverNames, ...types])]
+      .filter((t) => !hidden.has(t) || isCoreZikr(t));
     if (merged.length !== types.length || merged.some((t, i) => t !== types[i])) {
       setTypes(merged);
     }
@@ -361,6 +364,13 @@ export default function ZikrCounter() {
   // Remove a zikr from MY list. Locally it's hidden immediately; if it was a
   // server-stored (custom / library-added) type we also delete it on the API.
   const handleDeleteType = (name: string) => {
+    // Core dhikr are structural — the salat tracker writes counts into them.
+    // The UI hides their Remove button; this closes every other path.
+    if (isCoreZikr(name)) {
+      toast.error('This dhikr is linked to your salat tracker and stays in your list.', { icon: '🔒' });
+      setConfirmDelete(null);
+      return;
+    }
     const isServerType = (fetchedTypes ?? []).some((t) => t.name?.toLowerCase() === name.toLowerCase());
     setHiddenTypes(hideZikr(name)); // durable (survives predefined re-merge)
     removeType(name);
@@ -1068,6 +1078,7 @@ export default function ZikrCounter() {
                 {types.length === 0 && <p className="text-white/40 text-sm text-center py-6">Your list is empty. Add one with ＋.</p>}
                 {types.map((t) => {
                   const isCustom = !PREDEFINED_TYPES.some((p) => p.toLowerCase() === t.toLowerCase()) && !findLibraryZikr(t);
+                  const locked = isCoreZikr(t);
                   return (
                     <div key={t} className="flex items-center gap-2 p-2.5 rounded-xl border border-brand-border bg-brand-deep/50">
                       <span className="flex-1 min-w-0 truncate text-white/80 text-sm font-semibold">{t}</span>
@@ -1080,13 +1091,22 @@ export default function ZikrCounter() {
                           <PencilSquareIcon className="w-3.5 h-3.5" /> Edit
                         </button>
                       )}
-                      <button
-                        onClick={() => setConfirmDelete(t)}
-                        aria-label={`Remove ${t}`}
-                        className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10 gap-1 shrink-0"
-                      >
-                        <TrashIcon className="w-3.5 h-3.5" /> Remove
-                      </button>
+                      {locked ? (
+                        <span
+                          title="Your salat tracker adds counts to this dhikr, so it stays in your list."
+                          className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold text-brand-gold/70 bg-brand-gold/10 border border-brand-gold/20"
+                        >
+                          🔒 Always on
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDelete(t)}
+                          aria-label={`Remove ${t}`}
+                          className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10 gap-1 shrink-0"
+                        >
+                          <TrashIcon className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      )}
                     </div>
                   );
                 })}
