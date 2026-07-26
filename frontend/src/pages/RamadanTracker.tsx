@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/useAuthStore.js';
 import { useFastingHistory, useUpsertFastingLog, useClearFastingLog } from '../hooks/useFasting.js';
 import { useCycleSummary } from '../hooks/useCycle.js';
 import { useSalatLog } from '../hooks/useSalatLog.js';
+import RamadanSalatCard from '../components/RamadanSalatCard.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useQuranSummary } from '../hooks/useQuran.js';
 import { getRamadanWindow } from '../utils/ramadan.js';
@@ -22,14 +23,22 @@ import { celebrateFast } from '../utils/celebrate.js';
  *    (excused days show 🌸 and flow into qada automatically on cycle end)
  */
 
-/** The three ʿashra. Labels are deliberately factual — the familiar
- * "mercy / forgiveness / freedom from the Fire" split comes from a narration
- * graded ḍaʿīf (Ibn Khuzaymah 1887), so it is not asserted here. Only the last
- * ten carries an authentic note. */
+/** The three ʿashra, named the way the ummah actually refers to them
+ * (Istiak's call) — Raḥmah, Maghfirah, ʿItq min an-Nār.
+ *
+ * HONESTY NOTE, kept deliberately: this three-way split traces to a narration
+ * in Ibn Khuzaymah (1887) whose chain is graded ḍaʿīf — Ibn Khuzaymah himself
+ * flagged it. The NAMES are how people organise the month and are used here as
+ * such, but the page never presents them as an established reward structure;
+ * the badge in the UI carries the grade. The last ten's virtue, by contrast, is
+ * firmly authentic (Bukhārī 2017), so only that one states a promise. */
 const ASHRA = [
-  { from: 1, to: 10, label: 'First ten', note: '' },
-  { from: 11, to: 20, label: 'Middle ten', note: '' },
-  { from: 21, to: 30, label: 'Last ten', note: 'seek Laylat al-Qadr in the odd nights (Bukhārī 2017)' },
+  { from: 1, to: 10, label: 'Raḥmah', sub: 'Mercy', note: '', weak: true },
+  { from: 11, to: 20, label: 'Maghfirah', sub: 'Forgiveness', note: '', weak: true },
+  {
+    from: 21, to: 30, label: 'ʿItq min an-Nār', sub: 'Freedom from the Fire',
+    note: 'Seek Laylat al-Qadr in the odd nights — Bukhārī 2017', weak: true,
+  },
 ];
 
 const WORSHIP_TILES = [
@@ -433,6 +442,9 @@ export default function RamadanTracker() {
           </p>
         </div>
 
+        {/* Salat + nafl, inline — no trip to /salat and back */}
+        <RamadanSalatCard date={today} excused={excusedToday} />
+
         {/* Laylat al-Qadr focus */}
         {inLastTen && (
           <motion.div
@@ -478,16 +490,26 @@ export default function RamadanTracker() {
                 key={group.from}
                 className="group/ashra border-t border-white/[0.05] first:border-t-0 pt-3 first:pt-0 mt-3 first:mt-0"
               >
-                <p className="flex items-center gap-2 mb-1.5 h-4">
-                  <span className="text-[10px] uppercase tracking-widest text-white/20 opacity-0 group-hover/ashra:opacity-100 transition-opacity duration-300">
-                    {group.label}
+                {/* Always visible now — the ashra names are how the month is
+                    navigated, not a hover easter egg. */}
+                <div className="flex items-baseline gap-2 flex-wrap mb-2">
+                  <span className="text-brand-gold/80 font-black text-sm">{group.label}</span>
+                  <span className="text-white/30 text-[11px]">{group.sub}</span>
+                  <span className="text-white/15 text-[10px] tabular-nums">
+                    · days {group.from}–{Math.min(group.to, window_.days.length)}
                   </span>
-                  {group.note && (
-                    <span className="text-[10px] text-purple-300/40 opacity-0 group-hover/ashra:opacity-100 transition-opacity duration-300">
-                      · {group.note}
+                  {group.weak && (
+                    <span
+                      title="The mercy / forgiveness / freedom split comes from a narration in Ibn Khuzaymah (1887) with a weak chain. The names are widely used to organise the month; treat them as a framing, not as a graded promise. The last ten's virtue is separately authentic (Bukhārī 2017)."
+                      className="text-[9px] uppercase tracking-wide text-amber-400/45 border border-amber-400/20 rounded px-1 py-px"
+                    >
+                      ḍaʿīf
                     </span>
                   )}
-                </p>
+                </div>
+                {group.note && (
+                  <p className="text-purple-300/50 text-[11px] -mt-1 mb-2">{group.note}</p>
+                )}
                 <div className="grid grid-cols-5 gap-2">
                   {groupDays.map((d) => {
                     const log = logsByDate.get(d.date);

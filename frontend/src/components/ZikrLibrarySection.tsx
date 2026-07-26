@@ -31,7 +31,9 @@ export default function ZikrLibrarySection() {
   const addZikrType = useAddZikrType();
   const deleteZikrType = useDeleteZikrType();
   const { data: fetchedTypes } = useZikrTypes();
-  const [openCat, setOpenCat] = useState<string | null>('salawat');
+  // Start fully collapsed — pre-opening 'salawat' made the section land
+  // half-scrolled with one category already sprawling.
+  const [openCat, setOpenCat] = useState<string | null>(null);
   const [adding, setAdding] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [editZikr, setEditZikr] = useState<string | null>(null);

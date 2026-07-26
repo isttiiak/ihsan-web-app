@@ -15,7 +15,7 @@ import {
  * Two genuinely personal choices live here:
  *  1. WHICH after-ṣalāh tasbīḥ you pray, so the tracker credits the right
  *     counts to your dhikr when you tap the tasbīḥ tag.
- *  2. WHICH school's ʿAṣr timing you follow, which also moves the end of Ẓuhr.
+ *  2. WHICH madhab's ʿAṣr timing you follow, which also moves the end of Ẓuhr.
  *
  * Both are stored locally (utils/salatPrefs.ts) — no server round-trip.
  */
@@ -136,9 +136,9 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
 
               {/* ── Asr madhab ─────────────────────────────────────────── */}
               <section>
-                <h3 className="text-white font-bold text-sm">🕌 ʿAṣr timing (school)</h3>
+                <h3 className="text-white font-bold text-sm">🕌 ʿAṣr timing (madhab)</h3>
                 <p className="text-white/40 text-xs mt-1 leading-relaxed">
-                  Schools differ on when ʿAṣr begins. Because Ẓuhr lasts until ʿAṣr starts,
+                  Madhabs differ on when ʿAṣr begins. Because Ẓuhr lasts until ʿAṣr starts,
                   this moves both. Follow your local mosque.
                 </p>
 

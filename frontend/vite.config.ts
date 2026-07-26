@@ -33,6 +33,17 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // Never intercept the API — worship logs must always hit the server.
         navigateFallbackDenylist: [/^\/api\//],
+        // THE MOBILE STALENESS FIX. With autoUpdate alone a new service worker
+        // installs but then WAITS for every tab to close before activating. On
+        // a phone the app is basically never fully closed, so users kept being
+        // served the previous precached bundle — features worked on desktop
+        // and silently didn't on mobile until a hard reload (this is what broke
+        // "Log missed counts" there). skipWaiting + clientsClaim let the new
+        // worker take over on the next load; cleanupOutdatedCaches drops the
+        // superseded precache instead of letting it accumulate.
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             // Quran text + surah meta (immutable content) — cache-first, 30 days
