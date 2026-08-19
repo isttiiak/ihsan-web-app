@@ -71,11 +71,19 @@ html {
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
-/* Disabled buttons: ensure text stays readable against dark backgrounds */
+/* Disabled buttons: DaisyUI sets near-zero opacity on disabled .btn text,
+   making it invisible on dark backgrounds. Override to a readable level. */
 .btn:disabled,
-button:disabled {
-  color: rgba(255, 255, 255, 0.30) !important;
-  opacity: 0.7;
+button:disabled,
+.btn[disabled] {
+  color: rgba(255, 255, 255, 0.40) !important;
+  opacity: 1 !important;
+  background-opacity: 0.3;
+  pointer-events: none;
+}
+.btn:disabled *,
+button:disabled * {
+  opacity: 1 !important;
 }
 
 /* Fix overflow on mobile */

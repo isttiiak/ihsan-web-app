@@ -773,33 +773,41 @@ export default function ZikrCounter() {
               />
             </div>
 
-            {/* ── Top bar: zikr selector + close ── */}
+            {/* ── Top bar: close (top-right) ── */}
             <div className="relative z-10 flex items-center justify-between px-5 sm:px-8 pt-5 pb-2 flex-shrink-0">
-              <div className="flex items-center gap-1.5 opacity-55 hover:opacity-90 transition-opacity cursor-pointer">
-                <span className="text-sm font-bold truncate max-w-[160px] sm:max-w-[260px] text-emerald-300/90">
+              <button
+                onClick={() => {
+                  const el = document.getElementById('fs-zikr-select');
+                  if (el instanceof HTMLSelectElement) el.showPicker?.();
+                  else el?.click();
+                }}
+                className="flex items-center gap-1.5 opacity-55 hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                <span className="text-sm font-bold truncate max-w-[200px] sm:max-w-[300px] text-emerald-300/90">
                   {selected}
                 </span>
-                <select
-                  value={selected}
-                  onChange={(e) => selectType(e.target.value)}
-                  className="bg-transparent border-none text-white/30 text-xs focus:outline-none cursor-pointer appearance-none"
-                  style={{ backgroundImage: 'none' }}
-                >
-                  {types.map((t) => (
-                    <option key={t} value={t} className="bg-[#030609] text-white">{t}</option>
-                  ))}
-                </select>
-                <svg className="w-3 h-3 text-white/25 -ml-3 pointer-events-none flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 text-white/25 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                 </svg>
-              </div>
+              </button>
+              <select
+                id="fs-zikr-select"
+                value=""
+                onChange={(e) => { if (e.target.value) selectType(e.target.value); }}
+                className="absolute left-0 top-0 w-1 h-1 opacity-0 pointer-events-none"
+              >
+                <option value="" disabled>Switch zikr…</option>
+                {types.filter((t) => t !== selected).map((t) => (
+                  <option key={t} value={t} className="bg-[#030609] text-white">{t}</option>
+                ))}
+              </select>
               <button
                 onClick={() => setFullScreen(false)}
-                className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/30 hover:text-white/80 transition-all"
+                className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/40 hover:text-white transition-all"
                 title="Exit focus mode (Esc)"
                 aria-label="Exit full-screen focus mode"
               >
-                <XMarkIcon className="w-5 h-5" />
+                <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
 
@@ -845,7 +853,14 @@ export default function ZikrCounter() {
                 </p>
               )}
 
-              {/* Count button — deep calm emerald, soft ripple, no glare */}
+              {/* Meaning — visible in fullscreen */}
+              {meaning?.meaning && (
+                <p className="text-white/30 text-xs sm:text-sm text-center max-w-md leading-relaxed -mt-2">
+                  {meaning.meaning}
+                </p>
+              )}
+
+              {/* Count button — deep calm emerald, tall for easy tap */}
               <div className="relative" style={{ width: 'min(92vw, 520px)' }}>
                 {!reduceMotion && (
                   <motion.div
@@ -862,44 +877,36 @@ export default function ZikrCounter() {
                   onClick={onIncrement}
                   className="relative flex items-center justify-center gap-3 font-black rounded-3xl w-full select-none outline-none border border-emerald-400/25 text-white"
                   style={{
-                    height: 'clamp(100px, 14vh, 140px)',
-                    fontSize: 'clamp(22px, 3.5vw, 32px)',
+                    height: 'clamp(120px, 18vh, 180px)',
+                    fontSize: 'clamp(24px, 4vw, 36px)',
                     background: 'linear-gradient(180deg, rgba(16,185,129,0.32) 0%, rgba(6,95,70,0.45) 100%)',
                     boxShadow: '0 12px 40px rgba(16,185,129,0.18)',
                     backdropFilter: 'blur(6px)',
                   }}
                 >
-                  <PlusIcon className="w-9 h-9 sm:w-10 sm:h-10" />
+                  <PlusIcon className="w-10 h-10 sm:w-11 sm:h-11" />
                   Count
                 </motion.button>
               </div>
 
-              {/* Streak + goal — very subtle */}
-              {(streakCount !== null || goalProgress !== null) && (
+              {/* Streak + goal — hidden once goal is met to keep focus */}
+              {!goalMet && (streakCount !== null || goalProgress !== null) && (
                 <div className="flex items-center gap-6 opacity-35">
                   {streakCount !== null && (
                     <span className="text-brand-gold text-xs font-bold">🔥 {streakCount} day</span>
                   )}
                   {goalProgress !== null && (
-                    <span className={`text-xs font-bold ${goalMet ? 'text-brand-emerald' : 'text-white/60'}`}>
-                      {goalMet ? '🏆 Goal!' : `🎯 ${goalProgress}%`}
-                    </span>
+                    <span className="text-white/60 text-xs font-bold">🎯 {goalProgress}%</span>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Bottom: keyboard hint on desktop, tap-to-close button on mobile */}
+            {/* Bottom: keyboard hint on desktop */}
             <div className="relative z-10 flex flex-col items-center gap-3 pb-6 flex-shrink-0">
               <p className="hidden sm:block text-white/20 text-[11px] tracking-wider">
                 SPACE to count · ESC to exit
               </p>
-              <button
-                onClick={() => setFullScreen(false)}
-                className="sm:hidden flex items-center gap-2 px-8 py-3 rounded-2xl bg-white/10 border border-emerald-500/15 text-white/50 text-sm font-semibold active:scale-95 transition-transform"
-              >
-                ✕ Close
-              </button>
             </div>
           </motion.div>
         )}

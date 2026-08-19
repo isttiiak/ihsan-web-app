@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import api from '../lib/api.js';
 import { getUserTimezoneOffset } from '../utils/timezone.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
@@ -17,8 +17,9 @@ export function useAnalytics(days = 7) {
       });
       return res.data;
     },
-    enabled: !!user, // guests have no data — don't fire 401 requests
+    enabled: !!user,
     staleTime: 2 * 60_000,
+    placeholderData: keepPreviousData,
     retry: 1,
   });
 }

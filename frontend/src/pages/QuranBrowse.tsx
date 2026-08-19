@@ -47,7 +47,7 @@ export default function QuranBrowse() {
       <div className="max-w-2xl mx-auto px-4 pt-3 pb-16 space-y-4">
         <QuranTabNav active="read" />
 
-        <div className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-[#030609]/90 backdrop-blur-md">
+        <div className="sticky top-14 z-10 -mx-4 px-4 py-2 bg-[#030609]/90 backdrop-blur-md">
           <input
             type="search"
             placeholder="Search surah by name or number…"

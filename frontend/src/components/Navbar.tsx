@@ -383,15 +383,7 @@ export default function Navbar() {
                         className="flex items-center gap-2.5 px-3 py-2.5 mt-1 rounded-xl border border-emerald-500/15 text-white/70 hover:text-white hover:bg-white/5 hover:border-brand-emerald/40 text-sm transition-colors"
                       >
                         <ChatBubbleLeftRightIcon className="w-4 h-4 text-brand-emerald/70" />
-                        {t('nav.shareFeedback')}
-                      </Link>
-                      <Link
-                        to="/feedback"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
-                      >
-                        <EnvelopeIcon className="w-4 h-4 text-cyan-300/60" />
-                        {t('nav.contactUs')}
+                        Feedback & Contact
                       </Link>
 
                       <div className="border-t border-brand-border/60 mt-1 pt-1">

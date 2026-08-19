@@ -385,9 +385,12 @@ export function getHijriToday(): HijriDate | null {
 
 /** Returns all special days active today (Maghrib-aware) */
 export function getTodaySpecialDays(date?: Date): SpecialDayInfo[] {
-  // When called with no argument, use the Maghrib-aware Islamic "today"
+  const now = date ?? new Date();
   const h = date ? getHijriDate(date) : getHijriToday();
-  const weekday = (date ?? new Date()).getDay(); // 0=Sun, 5=Fri
+  // Weekly events must also shift at Maghrib: after Maghrib on Wed → Islamic Thu
+  const postMaghrib = !date && isPostMaghrib(now);
+  const shifted = postMaghrib ? new Date(now.getTime() + 86_400_000) : now;
+  const weekday = shifted.getDay(); // 0=Sun, 5=Fri
 
   const ids: string[] = [];
 
@@ -429,7 +432,9 @@ export function getTodaySpecialDays(date?: Date): SpecialDayInfo[] {
     .filter((d): d is SpecialDayInfo => d !== undefined);
 }
 
-/** Returns true if today is Friday (Jumu'ah day) */
+/** Returns true if the current Islamic day is Friday (Jumu'ah) — Maghrib-aware */
 export function isFriday(): boolean {
-  return new Date().getDay() === 5;
+  const now = new Date();
+  const shifted = isPostMaghrib(now) ? new Date(now.getTime() + 86_400_000) : now;
+  return shifted.getDay() === 5;
 }

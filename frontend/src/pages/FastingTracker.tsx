@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -1017,8 +1018,8 @@ export default function FastingTracker() {
         )}
       </AnimatePresence>
 
-      {/* ── Fasting settings — a full right-side DRAWER like the Quran
-             settings (Istiak: no more cramped modal) ── */}
+      {/* ── Fasting settings — portaled to body so it floats above navbar ── */}
+      {createPortal(
       <AnimatePresence>
         {showManage && (
           <>
@@ -1179,11 +1180,21 @@ export default function FastingTracker() {
                     {OBLIGATORY_META[2]!.refs.map((r) => <RefLink key={r.url} r={r} />)}
                   </div>
                 </div>
+
+                <Link
+                  to="/settings"
+                  onClick={() => setShowManage(false)}
+                  className="block text-center text-white/25 hover:text-red-400 text-xs underline underline-offset-2 pt-4 pb-2 transition-colors"
+                >
+                  Delete fasting data →
+                </Link>
               </div>
           </motion.aside>
           </>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body,
+      )}
 
       {/* ── Makruh warning modal ── */}
       <AnimatePresence>

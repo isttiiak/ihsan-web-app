@@ -43,15 +43,17 @@ export default function FeedbackForm({
 
   const [name, setName] = useState(user?.displayName ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
-  const [typeId, setTypeId] = useState<string>('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [message, setMessage] = useState('');
   const [botcheck, setBotcheck] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selected = types.find((t) => t.id === typeId) ?? null;
-  const canSend = !!name.trim() && !!email.trim() && !!typeId && message.trim().length >= 10 && !sending;
+  const toggleType = (id: string) =>
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  const selectedLabels = selectedIds.map((id) => types.find((t) => t.id === id)?.label).filter(Boolean);
+  const canSend = !!name.trim() && !!email.trim() && selectedIds.length > 0 && message.trim().length >= 10 && !sending;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,11 +71,11 @@ export default function FeedbackForm({
         body: JSON.stringify({
           access_key: accessKey,
           from_name: 'Ihsan app',
-          subject: `[Ihsan ${kind}] ${selected?.label ?? 'Message'}`,
+          subject: `[Ihsan ${kind}] ${selectedLabels.join(', ') || 'Message'}`,
           name: name.trim(),
           email: email.trim(),
           message: message.trim(),
-          category: selected?.label ?? '',
+          category: selectedLabels.join(', '),
           signed_in: user ? 'yes' : 'guest',
           botcheck,
         }),
@@ -107,7 +109,7 @@ export default function FeedbackForm({
         </p>
         <button
           className="btn btn-sm mt-5 rounded-xl bg-white/5 border-emerald-500/15 text-white/70"
-          onClick={() => { setSent(false); setMessage(''); setTypeId(''); }}
+          onClick={() => { setSent(false); setMessage(''); setSelectedIds([]); }}
         >
           Send another
         </button>
@@ -123,15 +125,15 @@ export default function FeedbackForm({
         className="hidden" checked={!!botcheck} onChange={(e) => setBotcheck(e.target.checked ? 'bot' : '')}
       />
 
-      {/* ── Type (required — becomes the subject) ── */}
+      {/* ── Type (multi-select — becomes the subject) ── */}
       <div>
         <label className="text-white/70 text-sm font-bold">
           What's this about? <span className="text-red-400">*</span>
         </label>
-        <p className="text-white/30 text-xs mt-0.5 mb-2.5">Pick one — it becomes the subject.</p>
+        <p className="text-white/30 text-xs mt-0.5 mb-2.5">Select all that apply — you can pick more than one.</p>
         <div className="grid sm:grid-cols-2 gap-2">
           {types.map((t, i) => {
-            const on = typeId === t.id;
+            const on = selectedIds.includes(t.id);
             return (
               <motion.button
                 key={t.id}
@@ -139,7 +141,7 @@ export default function FeedbackForm({
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => setTypeId(t.id)}
+                onClick={() => toggleType(t.id)}
                 className={`rounded-2xl border p-3 text-left transition-all ${
                   on ? t.active : 'bg-white/[0.03] border-emerald-500/10 text-white/60 hover:border-emerald-500/25 hover:text-white/80'
                 }`}
@@ -199,9 +201,11 @@ export default function FeedbackForm({
           onChange={(e) => setMessage(e.target.value)}
           maxLength={4000}
           placeholder={
-            kind === 'feedback'
-              ? "What happened, or what would make Ihsan better for you? Steps to reproduce a bug are gold."
-              : 'How can we help?'
+            selectedIds.length > 1
+              ? "Please separate each topic in its own paragraph — one issue per paragraph makes it easier for us to track and fix."
+              : kind === 'feedback'
+                ? "What happened, or what would make Ihsan better for you? Steps to reproduce a bug are gold."
+                : 'How can we help?'
           }
           className="textarea textarea-bordered w-full mt-1.5 bg-white/5 border-emerald-500/15 text-white leading-relaxed"
         />
