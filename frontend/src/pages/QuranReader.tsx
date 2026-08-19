@@ -488,7 +488,7 @@ export default function QuranReader() {
             the split becomes a vertical stack — āyah first, tafsir below. */}
         <div
           ref={cardRef}
-          className={`relative rounded-3xl border border-emerald-500/10 bg-gradient-to-br from-[#0d1b17] via-[#0a1412] to-[#0d1420] ${fullscreen ? 'fixed inset-0 z-50 rounded-none flex flex-col md:flex-row overflow-y-auto overflow-x-hidden md:overflow-hidden' : 'overflow-hidden p-4 sm:p-10'}`}
+          className={`relative rounded-3xl border border-emerald-500/10 bg-gradient-to-br from-[#0d1b17] via-[#0a1412] to-[#0d1420] ${fullscreen ? 'fixed inset-0 z-[9999] rounded-none flex flex-col md:flex-row overflow-y-auto overflow-x-hidden md:overflow-hidden' : 'overflow-hidden p-4 sm:p-10'}`}
         >
           {/* controls — in-flow row on phones (they overlapped the āyah header),
               floating top-right from sm up */}
@@ -572,7 +572,7 @@ export default function QuranReader() {
               >
                 <div className="space-y-0.5">
                   <p className="text-white/25 text-xs font-bold tracking-widest">
-                    {surahMeta?.name} · {current.numberInSurah}/{surahMeta?.numberOfAyahs}
+                    {surahMeta?.name} · <span className="text-brand-emerald/80 text-sm">{current.numberInSurah}</span><span className="text-white/20">/{surahMeta?.numberOfAyahs}</span>
                   </p>
                   {surahMeta?.englishNameTranslation && (
                     <p className="text-white/30 text-[11px]">
@@ -803,6 +803,8 @@ export default function QuranReader() {
                     <p className="text-white/30 text-[10px]">
                       📖 {tafsir.data?.resourceName} · sourced from{' '}
                       <a className="underline" href={tafsir.data?.url} target="_blank" rel="noreferrer">quran.com</a> — authentic, unedited.
+                      <span className="mx-1.5">·</span>
+                      <a className="underline text-white/20 hover:text-brand-emerald/60" href="/feedback">Report a reference issue</a>
                     </p>
                   </>
                 )}

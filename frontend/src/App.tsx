@@ -135,6 +135,15 @@ const Protected = ({ children }: ProtectedProps) => {
   const location = useLocation();
   const nav = useNavigate();
   if (authLoading) return null;
+  const hadSession = !!localStorage.getItem('ihsan_idToken');
+  const [grace, setGrace] = useState(hadSession && !user);
+  useEffect(() => {
+    if (user) { setGrace(false); return; }
+    if (!grace) return;
+    const t = setTimeout(() => setGrace(false), 2000);
+    return () => clearTimeout(t);
+  }, [user, grace]);
+  if (grace) return null;
   if (!user) {
     const redirectTarget = location.pathname + location.search;
     return (
@@ -321,7 +330,7 @@ export default function App() {
           } else {
             // Reconcile with the DB profile (user may have edited name/photo there)
             try {
-              const verifyData = await verifyRes.json() as { user?: { displayName?: string; photoUrl?: string; gender?: AuthUser['gender'] } };
+              const verifyData = await verifyRes.json() as { user?: { displayName?: string; photoUrl?: string; gender?: AuthUser['gender']; hijriOffset?: number } };
               const authUser: AuthUser = {
                 ...optimistic,
                 displayName: verifyData?.user?.displayName || optimistic.displayName,
@@ -330,6 +339,10 @@ export default function App() {
               };
               localStorage.setItem('ihsan_user', JSON.stringify(authUser));
               setUser(authUser);
+              // Sync hijri offset from server → localStorage
+              if (verifyData?.user?.hijriOffset !== undefined) {
+                localStorage.setItem('ihsan_hijri_offset', String(verifyData.user.hijriOffset));
+              }
             } catch { /* ignore parse error — optimistic values stand */ }
           }
 
@@ -350,8 +363,8 @@ export default function App() {
 
   const { authLoading } = useAuthStore();
   const isAuthPage = ['/login', '/signup', '/auth/action'].includes(location.pathname);
-  const noFooterRoutes = ['/zikr', '/salat', '/salat/analytics', '/fasting', '/fasting/analytics', '/prayer-times', '/quran', '/friends'];
-  const showFooter = !isAuthPage && !noFooterRoutes.includes(location.pathname);
+  const noFooterPrefixes = ['/zikr', '/salat', '/fasting', '/prayer-times', '/quran', '/friends'];
+  const showFooter = !isAuthPage && !noFooterPrefixes.some((p) => location.pathname === p || location.pathname.startsWith(p + '/'));
 
   return (
     <div className="min-h-screen flex flex-col bg-base-100">

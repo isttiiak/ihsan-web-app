@@ -246,18 +246,22 @@ export default function ZikrCounter() {
   }, [fullScreen]);
 
   // Lower navbar z-index while in full-screen so the portal overlay covers it
+  // + request browser fullscreen API for truly immersive mode
   useEffect(() => {
     const navbar = document.querySelector<HTMLElement>('nav');
     if (fullScreen) {
       if (navbar) navbar.style.zIndex = '0';
       document.body.style.overflow = 'hidden';
+      document.documentElement.requestFullscreen?.().catch(() => {});
     } else {
       if (navbar) navbar.style.zIndex = '';
       document.body.style.overflow = '';
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
     }
     return () => {
       if (navbar) navbar.style.zIndex = '';
       document.body.style.overflow = '';
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
     };
   }, [fullScreen]);
 
@@ -435,14 +439,16 @@ export default function ZikrCounter() {
           {/* Separator */}
           <span className="text-white/25 select-none flex-shrink-0">|</span>
 
-          {/* Change dropdown */}
+          {/* Change dropdown — selected zikr is the bold label to the left,
+              so the native select only lists the OTHER types to switch to. */}
           <select
-            value={selected}
-            onChange={(e) => selectType(e.target.value)}
+            value=""
+            onChange={(e) => { if (e.target.value) selectType(e.target.value); }}
             className="flex-1 min-w-0 bg-transparent border-none text-white/60 text-xs focus:outline-none cursor-pointer appearance-none"
             style={{ backgroundImage: 'none' }}
           >
-            {types.map((t) => (
+            <option value="" disabled className="bg-brand-deep text-white/40">Change…</option>
+            {types.filter((t) => t !== selected).map((t) => (
               <option key={t} value={t} className="bg-brand-deep text-white">{t}</option>
             ))}
           </select>
@@ -840,7 +846,7 @@ export default function ZikrCounter() {
               )}
 
               {/* Count button — deep calm emerald, soft ripple, no glare */}
-              <div className="relative" style={{ width: 'min(88vw, 520px)' }}>
+              <div className="relative" style={{ width: 'min(92vw, 520px)' }}>
                 {!reduceMotion && (
                   <motion.div
                     key={`ripple:${currentCount}`}
@@ -856,14 +862,14 @@ export default function ZikrCounter() {
                   onClick={onIncrement}
                   className="relative flex items-center justify-center gap-3 font-black rounded-3xl w-full select-none outline-none border border-emerald-400/25 text-white"
                   style={{
-                    height: '76px',
-                    fontSize: 'clamp(20px, 3vw, 28px)',
+                    height: 'clamp(100px, 14vh, 140px)',
+                    fontSize: 'clamp(22px, 3.5vw, 32px)',
                     background: 'linear-gradient(180deg, rgba(16,185,129,0.32) 0%, rgba(6,95,70,0.45) 100%)',
                     boxShadow: '0 12px 40px rgba(16,185,129,0.18)',
                     backdropFilter: 'blur(6px)',
                   }}
                 >
-                  <PlusIcon className="w-8 h-8 sm:w-9 sm:h-9" />
+                  <PlusIcon className="w-9 h-9 sm:w-10 sm:h-10" />
                   Count
                 </motion.button>
               </div>

@@ -14,11 +14,7 @@ export default function Footer() {
           </div>
           <nav className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1.5 text-xs">
             <Link to="/feedback" className="text-white/60 hover:text-brand-emerald underline underline-offset-2 transition-colors">
-              💬 Share feedback
-            </Link>
-            <span className="text-white/20">•</span>
-            <Link to="/contact" className="text-white/60 hover:text-cyan-300 underline underline-offset-2 transition-colors">
-              📨 Contact us
+              💬 Feedback & Contact
             </Link>
             <span className="text-white/20">•</span>
             <Link to="/about" className="text-white/60 hover:text-brand-gold underline underline-offset-2 transition-colors">

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import i18n, { LANGUAGES } from '../i18n.js';
 import { useQueryClient } from '@tanstack/react-query';
 import api, { API_BASE, getIdToken } from '../lib/api.js';
-import { getHijriAdjustment, setHijriAdjustment, getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
+import { getHijriAdjustment, setHijriAdjustment, getHijriToday, formatHijriDate } from '../utils/islamicCalendar.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useUiStore } from '../store/useUiStore.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -167,6 +167,7 @@ export default function Settings() {
   const applyHijriAdj = (days: number) => {
     setHijriAdjustment(days);
     setHijriAdjState(days);
+    if (user) api.patch('/api/user/me', { hijriOffset: days }).catch(() => {});
   };
 
   // ── AI companion (encouragement only) ────────────────────────────────────────
@@ -412,7 +413,7 @@ export default function Settings() {
               ))}
             </div>
             <p className="text-brand-gold/60 text-xs mt-3">
-              Today: {(() => { const h = getHijriDate(); return h ? formatHijriDate(h) : '—'; })()}
+              Today: {(() => { const h = getHijriToday(); return h ? formatHijriDate(h) : '—'; })()}
               <span className="text-white/30"> · Bangladesh, India &amp; Pakistan are often −1 day from the default (Umm al-Qura) calendar</span>
             </p>
           </SectionCard>

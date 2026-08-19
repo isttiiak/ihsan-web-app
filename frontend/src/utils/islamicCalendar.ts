@@ -1,5 +1,8 @@
 // Islamic calendar utilities — Hijri date detection and special day definitions.
 // Uses Intl.DateTimeFormat with the islamic-umalqura calendar.
+// The Islamic day starts at Maghrib: getHijriToday() accounts for this.
+
+import { calcPrayerTimes } from './prayerTimes.js';
 
 export interface SpecialDayTodo {
   icon: string;
@@ -353,10 +356,38 @@ export function formatHijriDate(h: HijriDate): string {
   return `${h.day} ${h.monthName} ${h.year} AH`;
 }
 
-/** Returns all special days active today */
-export function getTodaySpecialDays(date: Date = new Date()): SpecialDayInfo[] {
-  const h = getHijriDate(date);
-  const weekday = date.getDay(); // 0=Sun, 5=Fri
+/**
+ * Whether the current time is past Maghrib (Islamic day has advanced).
+ * Returns false when no saved location is available.
+ */
+export function isPostMaghrib(now: Date = new Date()): boolean {
+  try {
+    const stored = localStorage.getItem('ihsan_location');
+    if (!stored) return false;
+    const loc = JSON.parse(stored) as { latitude: number; longitude: number };
+    const times = calcPrayerTimes(loc.latitude, loc.longitude, now);
+    return now >= times.maghrib;
+  } catch { return false; }
+}
+
+/**
+ * Hijri date for the current ISLAMIC day — advances at Maghrib, not midnight.
+ * Use this for display ("today's Hijri date") and special-day detection.
+ * For calendar/historical conversions, use getHijriDate(specificDate) instead.
+ */
+export function getHijriToday(): HijriDate | null {
+  const now = new Date();
+  if (isPostMaghrib(now)) {
+    return getHijriDate(new Date(now.getTime() + 86_400_000));
+  }
+  return getHijriDate(now);
+}
+
+/** Returns all special days active today (Maghrib-aware) */
+export function getTodaySpecialDays(date?: Date): SpecialDayInfo[] {
+  // When called with no argument, use the Maghrib-aware Islamic "today"
+  const h = date ? getHijriDate(date) : getHijriToday();
+  const weekday = (date ?? new Date()).getDay(); // 0=Sun, 5=Fri
 
   const ids: string[] = [];
 

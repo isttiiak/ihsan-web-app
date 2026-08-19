@@ -11,7 +11,7 @@ import {
   PrayerTimesResult,
   PrayerKey,
 } from '../utils/prayerTimes.js';
-import { getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
+import { getHijriToday, formatHijriDate } from '../utils/islamicCalendar.js';
 
 // ─── Timeline types ───────────────────────────────────────────────────────────
 
@@ -222,11 +222,10 @@ function LiveClockCard({ times, timeline, hasLocation }: {
   const currentMeta = PRAYER_META.find((p) => p.id === info?.current);
   const nextMeta = PRAYER_META.find((p) => p.id === info?.next);
 
-  // The current prayer's own end time (Asr ends before the sunset forbidden
-  // window, Isha at Islamic midnight) — NOT the next prayer's start, which is
-  // what the old countdown showed.
+  // The current prayer's own end time. Before Fajr we are in last night's Isha
+  // whose end is today's Fajr — not tonight's Islamic midnight.
   const currentEnd = times && info && currentMeta?.isTrackable
-    ? getPrayerEndTime(info.current, times)
+    ? (info.current === 'isha' && now < times.fajr ? times.fajr : getPrayerEndTime(info.current, times))
     : null;
   const endMs = currentEnd ? currentEnd.getTime() - now.getTime() : null;
 
@@ -353,6 +352,7 @@ export default function PrayerTimes() {
   const [citySearching, setCitySearching] = useState(false);
   const [cityError, setCityError] = useState('');
   const [showCitySearch, setShowCitySearch] = useState(false);
+  const [citySuggestions, setCitySuggestions] = useState<Array<{ lat: string; lon: string; display_name: string }>>([]);
 
   // 60-second tick for timeline active/past states — the live clock has its
   // own 1-second tick inside LiveClockCard so the whole page isn't re-rendered
@@ -414,9 +414,10 @@ export default function PrayerTimes() {
     if (!cityInput.trim()) return;
     setCitySearching(true);
     setCityError('');
+    setCitySuggestions([]);
     try {
       const r = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityInput)}&format=json&limit=1`
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityInput)}&format=json&limit=5`
       );
       const results = await r.json() as Array<{ lat: string; lon: string; display_name: string }>;
       if (!results.length) {
@@ -424,15 +425,24 @@ export default function PrayerTimes() {
         setCitySearching(false);
         return;
       }
-      const { lat, lon, display_name } = results[0];
-      // Shorten display name to first two parts
-      const shortName = display_name.split(',').slice(0, 2).join(',').trim();
-      saveLocation({ latitude: parseFloat(lat), longitude: parseFloat(lon), name: shortName });
+      if (results.length === 1) {
+        const { lat, lon, display_name } = results[0];
+        const shortName = display_name.split(',').slice(0, 2).join(',').trim();
+        saveLocation({ latitude: parseFloat(lat), longitude: parseFloat(lon), name: shortName });
+      } else {
+        setCitySuggestions(results);
+      }
     } catch {
       setCityError('Search failed. Check your internet connection.');
     }
     setCitySearching(false);
   }, [cityInput, saveLocation]);
+
+  const pickSuggestion = useCallback((s: { lat: string; lon: string; display_name: string }) => {
+    const shortName = s.display_name.split(',').slice(0, 2).join(',').trim();
+    saveLocation({ latitude: parseFloat(s.lat), longitude: parseFloat(s.lon), name: shortName });
+    setCitySuggestions([]);
+  }, [saveLocation]);
 
   const info = times ? getCurrentAndNextPrayer(times, now) : null;
 
@@ -524,6 +534,20 @@ export default function PrayerTimes() {
                         </button>
                       </div>
                       {cityError && <p className="text-red-400 text-xs mt-1">{cityError}</p>}
+                      {citySuggestions.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          <p className="text-white/40 text-[11px]">Pick your city:</p>
+                          {citySuggestions.map((s, i) => (
+                            <button
+                              key={i}
+                              onClick={() => pickSuggestion(s)}
+                              className="w-full text-left px-3 py-2 rounded-lg bg-white/5 border border-brand-border hover:border-brand-emerald/40 text-white/70 hover:text-white text-xs transition-all"
+                            >
+                              {s.display_name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <p className="text-white/15 text-xs">
@@ -541,7 +565,7 @@ export default function PrayerTimes() {
             <p className="text-white/50 text-sm">
               {now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
-            {(() => { const h = getHijriDate(now); return h ? (
+            {(() => { const h = getHijriToday(); return h ? (
               <p className="text-brand-gold/50 text-xs mt-0.5">{formatHijriDate(h)}</p>
             ) : null; })()}
           </motion.div>

@@ -15,6 +15,7 @@ export interface UserUpdateFields {
   bio?: string;
   city?: string;
   country?: string;
+  hijriOffset?: number;
 }
 
 export async function linkGoogleProvider(
@@ -67,6 +68,7 @@ export async function updateUser(uid: string, fields: UserUpdateFields): Promise
   if (fields.bio !== undefined) updates.bio = fields.bio;
   if (fields.city !== undefined) updates.city = fields.city;
   if (fields.country !== undefined) updates.country = fields.country;
+  if (fields.hijriOffset !== undefined) (updates as Record<string, unknown>).hijriOffset = fields.hijriOffset;
 
   return User.findOneAndUpdate({ uid }, updates, { new: true, runValidators: true });
 }

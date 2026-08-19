@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
 import { loadSurahList, type SurahMeta } from '../utils/quranData.js';
+import { ArrowUpIcon } from '@heroicons/react/24/solid';
 
 /**
  * Free reading — pick ANY surah, any time (the flexibility Istiak asked for:
@@ -14,6 +15,15 @@ export default function QuranBrowse() {
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [q, setQ] = useState('');
   const [error, setError] = useState(false);
+  const [showTop, setShowTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 400);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const scrollToTop = useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), []);
 
   useEffect(() => {
     let alive = true;
@@ -37,14 +47,16 @@ export default function QuranBrowse() {
       <div className="max-w-2xl mx-auto px-4 pt-3 pb-16 space-y-4">
         <QuranTabNav active="read" />
 
-        <input
-          type="search"
-          placeholder="Search surah by name or number…"
-          aria-label="Search surahs"
-          className="input input-bordered w-full bg-white/5 border-emerald-500/10 text-white rounded-2xl"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
+        <div className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-[#030609]/90 backdrop-blur-md">
+          <input
+            type="search"
+            placeholder="Search surah by name or number…"
+            aria-label="Search surahs"
+            className="input input-bordered w-full bg-white/5 border-emerald-500/10 text-white rounded-2xl"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
 
         {error ? (
           <p className="text-white/40 text-sm text-center py-8">Couldn't load the surah list — check your connection.</p>
@@ -72,6 +84,16 @@ export default function QuranBrowse() {
           </div>
         )}
       </div>
+
+      {showTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-20 right-4 z-30 w-10 h-10 rounded-full bg-brand-emerald/80 text-white shadow-lg grid place-items-center hover:bg-brand-emerald transition-colors"
+          aria-label="Scroll to top"
+        >
+          <ArrowUpIcon className="w-5 h-5" />
+        </button>
+      )}
     </AnimatedBackground>
   );
 }

@@ -40,6 +40,7 @@ import {
   FastingRef,
 } from '../utils/fastingRules.js';
 import { calcPrayerTimes, formatTime } from '../utils/prayerTimes.js';
+import { isPostMaghrib } from '../utils/islamicCalendar.js';
 
 // ─── date helpers ─────────────────────────────────────────────────────────────
 
@@ -142,7 +143,8 @@ export default function FastingTracker() {
 
   const today = localTodayStr();
   const tomorrow = offsetDate(today, 1);
-  const [selectedDate, setSelectedDate] = useState(today);
+  // After Maghrib the Islamic day has advanced — default to tomorrow's intent
+  const [selectedDate, setSelectedDate] = useState(() => isPostMaghrib() ? tomorrow : today);
   const isFuture = selectedDate > today;
 
   const dateObj = useMemo(() => new Date(selectedDate + 'T12:00:00'), [selectedDate]);
@@ -644,7 +646,7 @@ export default function FastingTracker() {
                     </div>
 
                     <div className="flex justify-center gap-2 pt-1">
-                      {!isFuture && log.status === 'intended' && (
+                      {!isFuture && log.status === 'intended' && (selectedDate !== today || !dayTimes || new Date() >= dayTimes.maghrib) && (
                         <motion.button
                           whileTap={{ scale: 0.94 }}
                           onClick={() => submitLog({ date: selectedDate, category: log.category as FastingCategory, voluntaryKind: log.voluntaryKind, vowId: log.vowId, status: 'completed', hijri: log.hijri })}
@@ -1022,13 +1024,13 @@ export default function FastingTracker() {
           <>
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
             onClick={() => setShowManage(false)}
           />
           <motion.aside
             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 260 }}
-            className="fixed right-0 top-0 bottom-0 z-[55] w-full max-w-sm bg-brand-deep border-l border-brand-border overflow-y-auto"
+            className="fixed right-0 top-0 bottom-0 z-[65] w-full max-w-sm bg-brand-deep border-l border-brand-border overflow-y-auto"
             role="dialog" aria-label="Fasting settings"
           >
               <div className="sticky top-0 bg-brand-deep/95 backdrop-blur px-5 py-4 flex items-center justify-between border-b border-emerald-500/5 z-10">

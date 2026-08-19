@@ -18,7 +18,7 @@ export const updateUserHandler = async (req: Request, res: Response, next: NextF
   try {
     const {
       displayName, photoUrl, gender, birthDate,
-      firstName, lastName, occupation, bio, city, country,
+      firstName, lastName, occupation, bio, city, country, hijriOffset,
     } = req.body as {
       displayName?: string;
       photoUrl?: string;
@@ -30,11 +30,12 @@ export const updateUserHandler = async (req: Request, res: Response, next: NextF
       bio?: string;
       city?: string;
       country?: string;
+      hijriOffset?: number;
     };
 
     const user = await userService.updateUser(req.user.uid, {
       displayName, photoUrl, gender, birthDate,
-      firstName, lastName, occupation, bio, city, country,
+      firstName, lastName, occupation, bio, city, country, hijriOffset,
     });
 
     res.json({ ok: true, user });

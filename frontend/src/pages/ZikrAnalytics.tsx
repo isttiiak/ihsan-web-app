@@ -628,19 +628,23 @@ export default function ZikrAnalytics() {
               <h2 className="text-3xl sm:text-4xl font-black text-brand-emerald flex items-center gap-3">
                 <ChartBarIcon className="w-8 h-8" /> Trends & Insights
               </h2>
-              <div className="tabs tabs-boxed bg-brand-deep border border-brand-border shadow-lg">
-                {periods.map((period) => (
-                  <button
-                    key={period.value}
-                    className={`tab ${selectedPeriod === period.value ? 'tab-active bg-brand-emerald text-white font-bold' : 'text-white/60 hover:text-white'}`}
-                    onClick={() => setSelectedPeriod(period.value)}
-                  >
-                    {period.label}
-                  </button>
-                ))}
+              <div className="overflow-x-auto max-w-full -mx-1 px-1">
+                <div className="tabs tabs-boxed bg-brand-deep border border-brand-border shadow-lg whitespace-nowrap">
+                  {periods.map((period) => (
+                    <button
+                      key={period.value}
+                      className={`tab text-xs sm:text-sm ${selectedPeriod === period.value ? 'tab-active bg-brand-emerald text-white font-bold' : 'text-white/60 hover:text-white'}`}
+                      onClick={() => setSelectedPeriod(period.value)}
+                    >
+                      {period.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-            <TrendChart data={chartData} period={selectedPeriod} />
+            <div className="min-h-[320px]">
+              <TrendChart data={chartData} period={selectedPeriod} />
+            </div>
           </div>
         </div>
 

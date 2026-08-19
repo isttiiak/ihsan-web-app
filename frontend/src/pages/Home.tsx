@@ -17,10 +17,11 @@ import {
   getMandatoryWidget,
   PRAYER_META,
 } from '../utils/prayerTimes.js';
-import { getTodaySpecialDays } from '../utils/islamicCalendar.js';
+import { isFriday, getTodaySpecialDays } from '../utils/islamicCalendar.js';
 import { useCycleActive, useCycleSummary } from '../hooks/useCycle.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
 import { getRamadanWindow } from '../utils/ramadan.js';
+import { getFridayHour, FRIDAY_HOUR_REF } from '../utils/fridayHour.js';
 
 function localTodayForCycle(): string { return getTrackingDay(); }
 
@@ -140,6 +141,14 @@ export default function Home() {
   const { data: cycleSummary } = useCycleSummary();
   // The whole ummah counts down to Ramadan — a small pill on the fasting card
   const ramadan = useMemo(() => getRamadanWindow(), []);
+  // Friday specials — reuse the same minute tick that drives the prayer widget
+  const isFridayToday = useMemo(() => isFriday(), []);
+  const fridayHour = useMemo(
+    () => getFridayHour(prayerWidgetData?.times.asr, prayerWidgetData?.times.maghrib, prayerNow),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [prayerNow.getMinutes()],
+  );
+
   // Gentle heads-up when the predicted period is ≤3 days away (female only)
   const upcomingCycleDays = (() => {
     const ns = cycleSummary?.prediction?.nextStart;
@@ -413,6 +422,65 @@ export default function Home() {
                 </motion.div>
               </Link>
             ))}
+          </motion.div>
+        )}
+
+        {/* Friday: hour of response (Abū Dāwūd 1048, ṣaḥīḥ) */}
+        {fridayHour.active && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <div className={`rounded-2xl border p-4 ${
+              fridayHour.isFinalStretch
+                ? 'border-brand-gold/50 bg-gradient-to-br from-brand-gold/15 to-amber-600/5'
+                : 'border-brand-gold/25 bg-brand-gold/[0.06]'
+            }`}>
+              <div className="flex items-start gap-3">
+                <span className="text-2xl shrink-0">🤲</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <h3 className="text-brand-gold font-black text-sm">
+                      {fridayHour.isFinalStretch ? 'The hour of response — now' : 'Friday: the hour of response'}
+                    </h3>
+                    <span className="text-brand-gold/70 text-xs font-bold tabular-nums">
+                      {fridayHour.countdown} to Maghrib
+                    </span>
+                  </div>
+                  <p className="text-white/60 text-xs mt-1.5 leading-relaxed">
+                    "{FRIDAY_HOUR_REF.text}" Keep asking until the sun sets — for yourself,
+                    your parents, and the ummah.
+                  </p>
+                  <a
+                    href={FRIDAY_HOUR_REF.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] text-white/35 hover:text-brand-gold underline underline-offset-2 mt-2 inline-block"
+                  >
+                    {FRIDAY_HOUR_REF.source} · {FRIDAY_HOUR_REF.grade} ↗
+                  </a>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Friday: Surah al-Kahf — one tap into the reader */}
+        {isFridayToday && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <button
+              onClick={() => navigate('/quran/read/18?mode=single')}
+              className="w-full text-left rounded-2xl border border-brand-emerald/25 bg-brand-emerald/[0.07] p-4 hover:border-brand-emerald/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl shrink-0">🌟</span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-brand-emerald font-black text-sm">It's Friday — read Sūrat al-Kahf</h3>
+                  <p className="text-white/50 text-xs mt-1 leading-relaxed">
+                    "A light will shine for him between the two Fridays."
+                  </p>
+                  <p className="text-white/25 text-[11px] mt-1">Ṣaḥīḥ at-Targhīb 736 · Ṣaḥīḥ</p>
+                </div>
+                <span className="text-brand-emerald/60 text-lg shrink-0">→</span>
+              </div>
+            </button>
           </motion.div>
         )}
 

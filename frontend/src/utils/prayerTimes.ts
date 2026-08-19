@@ -104,7 +104,7 @@ export interface NaflWindow {
 /**
  * Returns the currently active nafl (voluntary) prayer window, if any.
  * Windows (non-overlapping, in daily order):
- *  1. Tahajjud — last third of night until 30 min before Fajr
+ *  1. Tahajjud — last third of night until Fajr
  *  2. Ishraq   — 20–45 min after sunrise
  *  3. Dhuha    — 45 min after sunrise until 15 min before Dhuhr
  *  4. Awabeen  — after Maghrib until Isha
@@ -113,25 +113,23 @@ export function getCurrentNaflWindow(times: PrayerTimesResult, now: Date = new D
   const MIN = 60_000;
   const { fajr, sunrise, dhuhr, maghrib, isha } = times;
 
-  // ── Tahajjud: last third of night → 30 min before Fajr ─────────────────────
-  const tahajjudEnd = new Date(fajr.getTime() - 30 * MIN);
+  // ── Tahajjud: last third of night → Fajr ───────────────────────────────────
   if (now < fajr) {
     // Early morning (after midnight, before Fajr): use last night's Tahajjud window.
     // Approximate yesterday's Isha as today's Isha −24 h (shifts <2 min/day — acceptable).
     const prevIsha = new Date(isha.getTime() - 86_400_000);
     const nightDuration = fajr.getTime() - prevIsha.getTime();
     const tahajjudStart = new Date(prevIsha.getTime() + (2 / 3) * nightDuration);
-    if (now >= tahajjudStart && now < tahajjudEnd) {
-      return { name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: tahajjudEnd };
+    if (now >= tahajjudStart) {
+      return { name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: fajr };
     }
   } else {
     // After Fajr: check tonight's upcoming Tahajjud (starts after tonight's Isha)
     const nextDayFajr = new Date(fajr.getTime() + 86_400_000);
     const nightDuration = nextDayFajr.getTime() - isha.getTime();
     const tahajjudStart = new Date(isha.getTime() + (2 / 3) * nightDuration);
-    const nextTahajjudEnd = new Date(nextDayFajr.getTime() - 30 * MIN);
-    if (now >= tahajjudStart && now < nextTahajjudEnd) {
-      return { name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: nextTahajjudEnd };
+    if (now >= tahajjudStart) {
+      return { name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: nextDayFajr };
     }
   }
 
@@ -179,6 +177,8 @@ export function getPrayerEndTime(prayer: PrayerKey, times: PrayerTimesResult): D
 
 /** Current mandatory prayer period (null if between periods or in a forbidden window) */
 function getCurrentMandatoryPeriod(times: PrayerTimesResult, now: Date): PrayerKey | null {
+  // Before today's Fajr → we are in last night's Isha period (valid until Fajr)
+  if (now < times.fajr) return 'isha';
   const asrEnd = getPrayerEndTime('asr', times);
   if (now >= times.fajr    && now < times.sunrise) return 'fajr';
   if (now >= times.dhuhr   && now < times.asr)     return 'dhuhr';
@@ -219,7 +219,11 @@ export function getMandatoryWidget(times: PrayerTimesResult, now: Date = new Dat
   const forbiddenWindow = forbidden.find((w) => now >= w.start && now < w.end) ?? null;
 
   const currentMandatory    = getCurrentMandatoryPeriod(times, now);
-  const currentMandatoryEnd = currentMandatory ? getPrayerEndTime(currentMandatory, times) : null;
+  // Before Fajr we are in last night's Isha — it ends at today's Fajr, not at
+  // tonight's Islamic midnight (which getPrayerEndTime would compute).
+  const currentMandatoryEnd = currentMandatory
+    ? (currentMandatory === 'isha' && now < times.fajr ? times.fajr : getPrayerEndTime(currentMandatory, times))
+    : null;
   const naflWindow          = getCurrentNaflWindow(times, now);
 
   const next     = getNextMandatoryPrayer(times, now);

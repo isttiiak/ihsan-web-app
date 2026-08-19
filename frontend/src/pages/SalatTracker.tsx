@@ -239,12 +239,18 @@ export default function SalatTracker() {
     const next = adding
       ? [...currentTypes, type]
       : currentTypes.filter((t) => t !== type);
+    // Add/subtract the toggled type's default rakat instead of recalculating
+    // from scratch, so manual adjustments on other types are preserved.
+    const typeMeta = NAFL_TYPE_META.find((m) => m.id === type);
+    const typeRakat = typeMeta?.defaultRakat ?? MIN_RAKAT;
+    const currentRakat = naflEntry.rakat ?? suggestedRakat(currentTypes);
+    const newRakat = adding
+      ? currentRakat + typeRakat
+      : Math.max(MIN_RAKAT, currentRakat - typeRakat);
     updateNafl.mutate({
       completed: naflEntry.completed,
       types: next,
-      // Suggest the customary total for the new selection. The user stays free
-      // to adjust down to MIN_RAKAT afterwards — this is a default, not a floor.
-      rakat: suggestedRakat(next),
+      rakat: newRakat,
       date: selectedDate,
     });
   };
@@ -291,6 +297,16 @@ export default function SalatTracker() {
     const current = log?.prayers[prayer];
     // If tapping the already-active status, clear it (toggle off)
     const newStatus: PrayerStatus = normaliseStatus(current?.status) === status ? 'pending' : status;
+
+    // Moving AWAY from completed/kaza: deduct any tasbih/ayatulKursi zikr that
+    // was auto-credited. The server clears these flags on non-completed statuses,
+    // but the zikr store needs the matching subtraction.
+    const wasCompleted = normaliseStatus(current?.status) === 'completed' || normaliseStatus(current?.status) === 'kaza';
+    const willBeCompleted = newStatus === 'completed' || newStatus === 'kaza';
+    if (wasCompleted && !willBeCompleted) {
+      if (current?.tasbeeh) creditDhikr('tasbeeh', false, current);
+      if (current?.ayatulKursi) creditDhikr('ayatulKursi', false, current);
+    }
 
     // If setting to completed/kaza, open sub-tag row; keep existing location if re-selecting
     if (newStatus === 'completed' || newStatus === 'kaza') {
@@ -609,12 +625,12 @@ export default function SalatTracker() {
                           </span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           {/* Completed */}
                           <motion.button
                             whileTap={{ scale: 0.88 }}
                             onClick={() => handleStatus(prayerId, 'completed')}
-                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                            className={`px-1.5 py-1 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold border transition-all ${
                               status === 'completed'
                                 ? 'bg-brand-emerald text-white border-brand-emerald shadow-[0_0_12px_rgba(16,185,129,0.4)]'
                                 : 'bg-brand-deep border-brand-border text-white/50 hover:border-brand-emerald/50 hover:text-white/80'
@@ -626,7 +642,7 @@ export default function SalatTracker() {
                           <motion.button
                             whileTap={{ scale: 0.88 }}
                             onClick={() => handleStatus(prayerId, 'kaza')}
-                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                            className={`px-1.5 py-1 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold border transition-all ${
                               status === 'kaza'
                                 ? 'bg-brand-gold text-white border-brand-gold shadow-[0_0_12px_rgba(245,158,11,0.4)]'
                                 : 'bg-brand-deep border-brand-border text-white/50 hover:border-brand-gold/50 hover:text-white/80'
@@ -638,13 +654,13 @@ export default function SalatTracker() {
                           <motion.button
                             whileTap={{ scale: 0.88 }}
                             onClick={() => handleStatus(prayerId, 'missed')}
-                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                            className={`px-1.5 py-1 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold border transition-all ${
                               status === 'missed'
                                 ? 'bg-red-500 text-white border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.3)]'
                                 : 'bg-brand-deep border-brand-border text-white/50 hover:border-red-400/50 hover:text-white/80'
                             }`}
                           >
-                            ❌ Missed
+                            ❌ Miss
                           </motion.button>
                         </div>
                       )}
@@ -663,14 +679,14 @@ export default function SalatTracker() {
                           <div className="px-3 py-2.5 space-y-2">
                             {/* Location tags — only for completed (kaza is always prayed alone) */}
                             {status === 'completed' && (
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-white/30 text-xs">Where:</span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-white/30 text-[11px] sm:text-xs">Where:</span>
                                 {LOCATION_TAGS.map((tag) => (
                                   <motion.button
                                     key={tag.value}
                                     whileTap={{ scale: 0.9 }}
                                     onClick={() => handleSubTag(prayerId, 'location', tag.value)}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
+                                    className={`flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold border transition-all ${
                                       entry?.location === tag.value || (!entry?.location && tag.value === 'home')
                                         ? 'bg-brand-emerald/20 border-brand-emerald/60 text-brand-emerald'
                                         : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'

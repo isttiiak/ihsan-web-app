@@ -27,6 +27,7 @@ export interface IUser extends Document {
   bio?: string;
   city?: string;
   country?: string;
+  hijriOffset: number;
   aiEnabled: boolean;
   totalCount: number;
   zikrTotals: Map<string, number>;
@@ -64,6 +65,7 @@ const userSchema = new Schema(
       default: undefined,
     },
     birthDate: { type: Date },
+    hijriOffset: { type: Number, default: 0, min: -1, max: 1 },
     aiEnabled: { type: Boolean, default: false },
     totalCount: { type: Number, default: 0 },
     zikrTotals: { type: Map, of: Number, default: {} },

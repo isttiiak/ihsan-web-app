@@ -12,7 +12,7 @@ import { useNoor } from '../hooks/useSocial.js';
 import { useUiStore } from '../store/useUiStore.js';
 import { StreakBadge, GoalBadge } from './StatusBadges.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
-import { getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
+import { getHijriToday, formatHijriDate } from '../utils/islamicCalendar.js';
 import {
   Cog6ToothIcon,
   UserCircleIcon,
@@ -167,7 +167,7 @@ export default function Navbar() {
   const greeting  = `${t('home.greeting')}${firstName ? ', ' + firstName : ''}`;
 
   // ── Center content by route ───────────────────────────────────────────────
-  const hijriToday = (() => { const h = getHijriDate(); return h ? formatHijriDate(h) : null; })();
+  const hijriToday = (() => { const h = getHijriToday(); return h ? formatHijriDate(h) : null; })();
 
   const todayEnglish = (() => {
     return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -386,7 +386,7 @@ export default function Navbar() {
                         {t('nav.shareFeedback')}
                       </Link>
                       <Link
-                        to="/contact"
+                        to="/feedback"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
                       >

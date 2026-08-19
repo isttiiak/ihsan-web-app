@@ -189,7 +189,7 @@ export default function QuranHabit() {
                   <span className="text-white/25 text-[10px]">{d.surah}:{d.fromAyah}</span>
                   <button
                     aria-label={saved ? `Remove ${d.title} from saved duas` : `Save ${d.title}`}
-                    className={`text-sm transition-all ${saved ? 'text-brand-gold' : 'text-white/20 hover:text-brand-gold/70'}`}
+                    className={`text-base p-1.5 -m-1 rounded-lg hover:bg-white/10 transition-all ${saved ? 'text-brand-gold' : 'text-white/20 hover:text-brand-gold/70'}`}
                     onClick={(e) => { e.stopPropagation(); toggleDua.mutate(d.id); }}
                   >{saved ? '🔖' : '🏷️'}</button>
                 </div>
