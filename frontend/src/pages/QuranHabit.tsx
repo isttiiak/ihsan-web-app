@@ -60,7 +60,7 @@ export default function QuranHabit() {
               <svg viewBox="0 0 100 100" className="w-24 h-24 -rotate-90" aria-hidden>
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="9" />
                 <motion.circle
-                  cx="50" cy="50" r="42" fill="none" stroke="#10b981" strokeWidth="9" strokeLinecap="round"
+                  cx="50" cy="50" r="42" fill="none" stroke="#7a9e6e" strokeWidth="9" strokeLinecap="round"
                   strokeDasharray={2 * Math.PI * 42}
                   initial={{ strokeDashoffset: 2 * Math.PI * 42 }}
                   animate={{ strokeDashoffset: 2 * Math.PI * 42 * (1 - pct / 100) }}

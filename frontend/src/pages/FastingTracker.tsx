@@ -116,8 +116,8 @@ function ManageProgress({ done, target, color, doneLabel, extra }: {
 }
 
 const STATUS_META: Record<FastingStatus, { label: string; emoji: string; color: string }> = {
-  intended:  { label: 'Intending to fast', emoji: '🌅', color: '#06b6d4' },
-  completed: { label: 'Fasted',            emoji: '✨', color: '#10b981' },
+  intended:  { label: 'Intending to fast', emoji: '🌅', color: '#5a9e8e' },
+  completed: { label: 'Fasted',            emoji: '✨', color: '#7a9e6e' },
   broken:    { label: 'Fast broken',       emoji: '💔', color: '#f87171' },
 };
 
@@ -234,7 +234,7 @@ export default function FastingTracker() {
   const debtCapsules = useMemo(() => {
     const caps: Array<{ id: string; label: string; emoji: string; color: string; done: number; target: number }> = [];
     if (qadaOwed > 0) {
-      caps.push({ id: 'qada', label: 'Qaḍā', emoji: '🔄', color: '#f59e0b', done: qadaDone, target: qadaOwed });
+      caps.push({ id: 'qada', label: 'Qaḍā', emoji: '🔄', color: '#c9a96e', done: qadaDone, target: qadaOwed });
     }
     if (kaffarahActive) {
       caps.push({
@@ -245,7 +245,7 @@ export default function FastingTracker() {
     }
     for (const v of vows) {
       if (v.completed < v.targetDays) {
-        caps.push({ id: `vow-${v.id}`, label: v.title, emoji: '🤝', color: '#06b6d4', done: v.completed, target: v.targetDays });
+        caps.push({ id: `vow-${v.id}`, label: v.title, emoji: '🤝', color: '#5a9e8e', done: v.completed, target: v.targetDays });
       }
     }
     return caps;
@@ -427,8 +427,8 @@ export default function FastingTracker() {
                         const disabled = dateStr > tomorrow;
                         const isSel = dateStr === selectedDate;
                         const isTod = dateStr === today;
-                        const dot = dayLog?.status === 'completed' ? '#10b981'
-                          : dayLog?.status === 'intended' ? '#06b6d4'
+                        const dot = dayLog?.status === 'completed' ? '#7a9e6e'
+                          : dayLog?.status === 'intended' ? '#5a9e8e'
                           : dayLog?.status === 'broken' ? '#f87171'
                           : 'transparent';
                         cells.push(
@@ -469,8 +469,8 @@ export default function FastingTracker() {
               const dayLog = logsByDate[d];
               const isSel = d === selectedDate;
               const isTod = d === today;
-              const dot = dayLog?.status === 'completed' ? '#10b981'
-                : dayLog?.status === 'intended' ? '#06b6d4'
+              const dot = dayLog?.status === 'completed' ? '#7a9e6e'
+                : dayLog?.status === 'intended' ? '#5a9e8e'
                 : dayLog?.status === 'broken' ? '#f87171'
                 : 'rgba(255,255,255,0.12)';
               return (
@@ -773,13 +773,13 @@ export default function FastingTracker() {
           <div className="flex items-stretch gap-2">
             <div className="flex-1 grid grid-cols-3 gap-2">
               {[
-                { label: 'This month', value: summary?.stats.thisMonth ?? 0, color: '#10b981' },
+                { label: 'This month', value: summary?.stats.thisMonth ?? 0, color: '#7a9e6e' },
                 ...(qadaOwed > 0
-                  ? [{ label: 'Qaḍā left', value: qadaRemaining, color: '#f59e0b' }]
-                  : [{ label: 'Last 30d', value: summary?.stats.last30 ?? 0, color: '#06b6d4' }]),
+                  ? [{ label: 'Qaḍā left', value: qadaRemaining, color: '#c9a96e' }]
+                  : [{ label: 'Last 30d', value: summary?.stats.last30 ?? 0, color: '#5a9e8e' }]),
                 ...(kaffarahActive
                   ? [{ label: 'Kaffārah run', value: summary?.kaffarah.currentRun ?? 0, color: '#a855f7' }]
-                  : [{ label: 'All time', value: summary?.stats.total ?? 0, color: '#6366f1' }]),
+                  : [{ label: 'All time', value: summary?.stats.total ?? 0, color: '#5a9e8e' }]),
               ].map((s) => (
                 <div key={s.label} className="rounded-xl border border-emerald-500/10 bg-white/[0.04] px-2 py-2 text-center">
                   <p className="font-black text-lg tabular-nums leading-none" style={{ color: s.color }}>{s.value}</p>
@@ -1069,7 +1069,7 @@ export default function FastingTracker() {
                     <ManageProgress
                       done={qadaDone}
                       target={qadaOwed}
-                      color="#f59e0b"
+                      color="#c9a96e"
                       doneLabel={qadaRemaining === 0 ? "All made up — māshā'Allāh! 🎉" : `${qadaRemaining} day${qadaRemaining === 1 ? '' : 's'} remaining`}
                     />
                   )}
@@ -1156,7 +1156,7 @@ export default function FastingTracker() {
                       <ManageProgress
                         done={v.completed}
                         target={v.targetDays}
-                        color="#06b6d4"
+                        color="#5a9e8e"
                         doneLabel={v.completed >= v.targetDays ? 'Fulfilled ✓' : `${v.targetDays - v.completed} day${v.targetDays - v.completed === 1 ? '' : 's'} remaining`}
                       />
                     </div>

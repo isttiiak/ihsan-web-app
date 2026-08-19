@@ -184,7 +184,7 @@ export default function TrendChart({ data, period }: TrendChartProps) {
               />
               <circle
                 cx={pts[hover].x} cy={pts[hover].y} r={4}
-                fill="var(--brand-emerald, #10b981)" stroke="#0b1a12" strokeWidth={2}
+                fill="var(--brand-emerald, #10b981)" stroke="#14130e" strokeWidth={2}
                 vectorEffect="non-scaling-stroke"
               />
             </g>

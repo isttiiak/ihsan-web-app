@@ -23,11 +23,11 @@ interface StreakCardProps {
 
 function heatmapColor(total: number, goal: number | null | undefined): string {
   if (total === 0) return 'rgba(255,255,255,0.06)';
-  if (!goal) return 'rgba(16,185,129,0.5)';
+  if (!goal) return 'rgba(122,158,110,0.5)';
   const pct = total / goal;
-  if (pct >= 1) return 'rgba(16,185,129,0.85)';
-  if (pct >= 0.5) return 'rgba(16,185,129,0.45)';
-  if (pct > 0) return 'rgba(245,158,11,0.55)';
+  if (pct >= 1) return 'rgba(122,158,110,0.85)';
+  if (pct >= 0.5) return 'rgba(122,158,110,0.45)';
+  if (pct > 0) return 'rgba(201,169,110,0.55)';
   return 'rgba(255,255,255,0.06)';
 }
 
@@ -66,7 +66,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
         transition={{ duration: 6, repeat: Infinity }}
       />
       <motion.div
-        className="pointer-events-none absolute -bottom-24 -right-20 w-80 h-80 rounded-full blur-3xl bg-gradient-radial from-brand-magenta/30 to-transparent"
+        className="pointer-events-none absolute -bottom-24 -right-20 w-80 h-80 rounded-full blur-3xl bg-gradient-radial from-brand-warm/30 to-transparent"
         animate={prefersReducedMotion ? {} : { scale: [1.1, 1, 1.1] }}
         transition={{ duration: 8, repeat: Infinity }}
       />
@@ -82,7 +82,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
             {isPaused ? (
               <span className="relative inline-flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.8)] animate-pulse" />
-                <span className="px-2 py-0.5 rounded-full text-[11px] uppercase font-black tracking-wider bg-gradient-to-r from-brand-magenta/90 via-brand-magenta/80 to-brand-gold/80 text-white ring-1 ring-inset ring-rose-200/40">
+                <span className="px-2 py-0.5 rounded-full text-[11px] uppercase font-black tracking-wider bg-gradient-to-r from-brand-warm/90 via-brand-warm/80 to-brand-gold/80 text-white ring-1 ring-inset ring-rose-200/40">
                   Paused
                 </span>
               </span>
@@ -150,7 +150,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
             <motion.div
               animate={!prefersReducedMotion && !isPaused && (currentStreak ?? 0) > 0 ? { scale: [1, 1.03, 1] } : {}}
               transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-              className="text-8xl sm:text-5xl font-black drop-shadow-[0_6px_24px_rgba(0,0,0,0.35)] bg-gradient-to-tr from-brand-gold via-brand-gold to-brand-magenta bg-clip-text text-transparent"
+              className="text-8xl sm:text-5xl font-black drop-shadow-[0_6px_24px_rgba(0,0,0,0.35)] bg-gradient-to-tr from-brand-gold via-brand-gold to-brand-warm bg-clip-text text-transparent"
             >
               {currentStreak || 0}
             </motion.div>
@@ -244,10 +244,10 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
             {/* Legend */}
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               {[
-                { color: 'rgba(16,185,129,0.85)', label: '✓ goal met' },
-                { color: 'rgba(6,182,212,0.45)', label: '🧊 grace (chance used)' },
+                { color: 'rgba(122,158,110,0.85)', label: '✓ goal met' },
+                { color: 'rgba(90,158,142,0.45)', label: '🧊 grace (chance used)' },
                 { color: 'rgba(248,113,113,0.4)', label: '✖ missed' },
-                { color: 'rgba(245,158,11,0.55)', label: 'partial' },
+                { color: 'rgba(201,169,110,0.55)', label: 'partial' },
               ].map(({ color, label }) => (
                 <div key={label} className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: color }} />

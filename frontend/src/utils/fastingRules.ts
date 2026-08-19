@@ -121,7 +121,7 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
       url: 'https://sunnah.com/tirmidhi:747',
       grade: 'Ḥasan (Ṣaḥīḥ li-ghairihi — al-Albānī)',
     },
-    color: '#6366f1',
+    color: '#5a9e8e',
     specialDayId: 'fast_mon_thu',
   },
   {
@@ -136,7 +136,7 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
       url: 'https://sunnah.com/abudawud:2449',
       grade: 'Ṣaḥīḥ',
     },
-    color: '#f59e0b',
+    color: '#c9a96e',
     specialDayId: 'ayyam_al_bid',
   },
   {
@@ -151,7 +151,7 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
       url: 'https://sunnah.com/muslim:1162b',
       grade: 'Ṣaḥīḥ',
     },
-    color: '#f59e0b',
+    color: '#c9a96e',
     specialDayId: 'arafah',
   },
   {
@@ -166,7 +166,7 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
       url: 'https://sunnah.com/muslim:1162',
       grade: 'Ṣaḥīḥ',
     },
-    color: '#06b6d4',
+    color: '#5a9e8e',
     specialDayId: 'ashura',
   },
   {
@@ -181,7 +181,7 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
       url: 'https://sunnah.com/muslim:1164a',
       grade: 'Ṣaḥīḥ',
     },
-    color: '#10b981',
+    color: '#7a9e6e',
   },
   {
     id: 'muharram',
@@ -195,7 +195,7 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
       url: 'https://sunnah.com/muslim:1163',
       grade: 'Ṣaḥīḥ',
     },
-    color: '#10b981',
+    color: '#7a9e6e',
   },
   {
     id: 'shaban',
@@ -223,7 +223,7 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
       url: 'https://sunnah.com/bukhari:969',
       grade: 'Ṣaḥīḥ',
     },
-    color: '#f59e0b',
+    color: '#c9a96e',
     specialDayId: 'dhul_hijjah_first10',
   },
   {
@@ -238,7 +238,7 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
       url: 'https://sunnah.com/muslim:1159a',
       grade: 'Ṣaḥīḥ',
     },
-    color: '#06b6d4',
+    color: '#5a9e8e',
   },
   {
     id: 'general',
@@ -252,7 +252,7 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
       url: 'https://sunnah.com/bukhari:2840',
       grade: 'Ṣaḥīḥ',
     },
-    color: '#10b981',
+    color: '#7a9e6e',
   },
 ];
 

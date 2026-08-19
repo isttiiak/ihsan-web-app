@@ -92,7 +92,7 @@ function TextType({ text, speed = 55 }: { text: string; speed?: number }) {
   return (
     <span
       style={{
-        backgroundImage: 'linear-gradient(90deg,var(--brand-emerald,#10b981) 0%,var(--brand-gold,#f59e0b) 50%,var(--brand-magenta,#c026d3) 100%)',
+        backgroundImage: 'linear-gradient(90deg,var(--brand-emerald,#7a9e6e) 0%,var(--brand-gold,#c9a96e) 50%,var(--brand-warm,#c4825a) 100%)',
         backgroundSize: '200% 100%',
         backgroundClip: 'text',
         WebkitBackgroundClip: 'text',
@@ -205,7 +205,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-40 bg-gradient-to-r from-[#0a1a0d] via-brand-deep to-[#0d1520] border-b border-brand-emerald/20 shadow-[0_2px_16px_rgba(16,185,129,0.08)]">
+      <nav className="sticky top-0 z-40 bg-gradient-to-r from-[#14130e] via-brand-deep to-brand-deep border-b border-brand-emerald/20 shadow-[0_2px_16px_rgba(122,158,110,0.08)]">
         <div className="flex items-center h-14 px-3 sm:px-4 gap-2">
 
           {/* ── Left: logo + back + title ─────────────────── */}
@@ -249,7 +249,7 @@ export default function Navbar() {
                 <span
                   className="text-xs font-bold truncate block"
                   style={{
-                    backgroundImage: 'linear-gradient(90deg,var(--brand-emerald,#10b981) 0%,var(--brand-gold,#f59e0b) 50%,var(--brand-magenta,#c026d3) 100%)',
+                    backgroundImage: 'linear-gradient(90deg,var(--brand-emerald,#7a9e6e) 0%,var(--brand-gold,#c9a96e) 50%,var(--brand-warm,#c4825a) 100%)',
                     backgroundSize: '200% 100%',
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',

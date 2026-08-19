@@ -39,7 +39,7 @@ export const SPECIAL_DAYS: SpecialDayInfo[] = [
     name: "Friday — Jumu'ah",
     arabicName: 'يَوْمُ الجُمُعَة',
     icon: '🕌',
-    color: '#10b981',
+    color: '#7a9e6e',
     type: 'weekly',
     replaceDhuhrWithJumah: true,
     shortDesc: "The master of days. Attend Jumu'ah, read Surah Al-Kahf, send abundant ṣalawāt.",
@@ -69,7 +69,7 @@ export const SPECIAL_DAYS: SpecialDayInfo[] = [
     name: 'Sunnah Fast Day',
     arabicName: 'صيام الاثنين والخميس',
     icon: '🌙',
-    color: '#6366f1',
+    color: '#5a9e8e',
     type: 'weekly',
     shortDesc: 'Monday & Thursday — the Prophet ﷺ fasted these days. Deeds are presented to Allah.',
     significance:
@@ -92,7 +92,7 @@ export const SPECIAL_DAYS: SpecialDayInfo[] = [
     name: 'Ayyām al-Bīḍ',
     arabicName: 'أيام البيض',
     icon: '🌕',
-    color: '#f59e0b',
+    color: '#c9a96e',
     type: 'monthly',
     shortDesc: '13th, 14th, 15th of every Islamic month — fasting equivalent to fasting the whole month.',
     significance:
@@ -114,7 +114,7 @@ export const SPECIAL_DAYS: SpecialDayInfo[] = [
     name: "'Āshūrā",
     arabicName: 'عاشوراء',
     icon: '🌊',
-    color: '#06b6d4',
+    color: '#5a9e8e',
     type: 'annual',
     shortDesc: '10th Muharram — fasting expiates the previous year\'s sins. Also fast the 9th.',
     significance:
@@ -137,7 +137,7 @@ export const SPECIAL_DAYS: SpecialDayInfo[] = [
     name: 'First 10 Days of Dhul Ḥijjah',
     arabicName: 'أيام ذو الحجة',
     icon: '🌟',
-    color: '#f59e0b',
+    color: '#c9a96e',
     type: 'annual',
     shortDesc: 'The greatest days for good deeds — outweigh even jihād in virtue.',
     significance:
@@ -162,7 +162,7 @@ export const SPECIAL_DAYS: SpecialDayInfo[] = [
     name: 'Day of Arafah',
     arabicName: 'يَوْم عَرَفَة',
     icon: '⛰️',
-    color: '#f59e0b',
+    color: '#c9a96e',
     type: 'annual',
     shortDesc: '9th Dhul Ḥijjah — the best day of the year. Fasting expiates two years of sins.',
     significance:
@@ -186,7 +186,7 @@ export const SPECIAL_DAYS: SpecialDayInfo[] = [
     name: 'Eid al-Fiṭr',
     arabicName: 'عيد الفطر',
     icon: '🎉',
-    color: '#10b981',
+    color: '#7a9e6e',
     type: 'annual',
     shortDesc: '1st Shawwāl — celebrate the completion of Ramadan. Eid prayer is wājib.',
     significance:
@@ -211,7 +211,7 @@ export const SPECIAL_DAYS: SpecialDayInfo[] = [
     name: 'Eid al-Aḍḥā',
     arabicName: 'عيد الأضحى',
     icon: '🐑',
-    color: '#f59e0b',
+    color: '#c9a96e',
     type: 'annual',
     shortDesc: '10th Dhul Ḥijjah — the greater Eid. Eid prayer, Qurbānī, and celebration.',
     significance:
@@ -235,7 +235,7 @@ export const SPECIAL_DAYS: SpecialDayInfo[] = [
     name: "Laylat al-Qadr",
     arabicName: 'لَيْلَةُ القَدْر',
     icon: '✨',
-    color: '#c026d3',
+    color: '#c4825a',
     type: 'ramadan',
     shortDesc: 'Odd nights of the last 10 of Ramadan — better than 1000 months of worship.',
     significance:
@@ -261,7 +261,7 @@ export const SPECIAL_DAYS: SpecialDayInfo[] = [
     name: "Laylat al-Barā'ah",
     arabicName: 'ليلة البراءة',
     icon: '🌙',
-    color: '#6366f1',
+    color: '#5a9e8e',
     type: 'annual',
     shortDesc: "15th Sha'bān night — Allah forgives abundantly. Some scholars consider this established.",
     significance:
@@ -284,7 +284,7 @@ export const SPECIAL_DAYS: SpecialDayInfo[] = [
     name: 'Islamic New Year',
     arabicName: 'رأس السنة الهجرية',
     icon: '🌙',
-    color: '#10b981',
+    color: '#7a9e6e',
     type: 'annual',
     shortDesc: "1st Muḥarram — the Hijrī year begins. Reflect on the Prophet ﷺ's migration.",
     significance:

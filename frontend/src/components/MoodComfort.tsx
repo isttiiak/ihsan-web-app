@@ -54,7 +54,7 @@ export default function MoodComfort({
       <AiBadge label="Naseeh · for you today" />
       {comfort.isPending && !message ? (
         <div className="flex items-center gap-2 mt-2">
-          {['#a855f7', '#ec4899', '#06b6d4'].map((c, i) => (
+          {['#a855f7', '#c4825a', '#5a9e8e'].map((c, i) => (
             <motion.span
               key={c} className="w-2 h-2 rounded-full" style={{ background: c }}
               animate={{ opacity: [0.3, 1, 0.3] }}

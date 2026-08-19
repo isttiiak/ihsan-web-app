@@ -15,7 +15,7 @@ export function AiBadge({ label = 'Naseeh · AI companion' }: { label?: string }
       <motion.span
         aria-hidden
         className="absolute inset-0 opacity-90"
-        style={{ background: 'linear-gradient(90deg,#10b981,#06b6d4,#a855f7,#ec4899,#f59e0b,#10b981)', backgroundSize: '300% 100%' }}
+        style={{ background: 'linear-gradient(90deg,#7a9e6e,#06b6d4,#a855f7,#ec4899,#c9a96e,#7a9e6e)', backgroundSize: '300% 100%' }}
         animate={{ backgroundPosition: ['0% 50%', '300% 50%'] }}
         transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
       />
@@ -27,7 +27,7 @@ export function AiBadge({ label = 'Naseeh · AI companion' }: { label?: string }
 
 /** Prismatic "thinking" loader — colorful pulsing dots over a soft aurora. */
 export function AiThinking({ label = 'Naseeh is reflecting…' }: { label?: string }) {
-  const colors = ['#10b981', '#06b6d4', '#a855f7', '#ec4899', '#f59e0b'];
+  const colors = ['#7a9e6e', '#5a9e8e', '#a855f7', '#c4825a', '#c9a96e'];
   return (
     <div className="relative flex flex-col items-center justify-center gap-3 py-6">
       <motion.div

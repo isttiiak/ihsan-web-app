@@ -9,8 +9,8 @@ function reducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
 
-const EMERALD_GOLD = ['#10b981', '#f59e0b', '#34d399', '#fbbf24', '#ffffff'];
-const NIGHT_SKY = ['#f59e0b', '#06b6d4', '#ffffff', '#fde68a'];
+const EMERALD_GOLD = ['#7a9e6e', '#c9a96e', '#9aba8e', '#d4be8a', '#ffffff'];
+const NIGHT_SKY = ['#c9a96e', '#5a9e8e', '#ffffff', '#e8d9b0'];
 
 /** Small pop — a single prayer marked done, small wins */
 export function celebrateSmall(): void {

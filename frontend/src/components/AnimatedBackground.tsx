@@ -20,19 +20,19 @@ const VARIANTS: Record<BackgroundVariant, VariantColors> = {
     bg: 'from-brand-void to-brand-void via-brand-deep',
     orb1: 'from-brand-emerald/20 to-emerald-700/20',
     orb2: 'from-brand-gold/15 to-amber-600/15',
-    orb3: 'from-brand-magenta/10 to-purple-800/10',
+    orb3: 'from-brand-warm/10 to-purple-800/10',
   },
   dark: {
     bg: 'from-brand-void to-brand-void via-brand-deep',
     orb1: 'from-brand-emerald/30 to-cyan-700/30',
     orb2: 'from-brand-gold/20 to-amber-700/20',
-    orb3: 'from-brand-magenta/15 to-purple-800/10',
+    orb3: 'from-brand-warm/15 to-purple-800/10',
   },
   premium: {
     bg: 'from-brand-void to-brand-void via-brand-deep',
     orb1: 'from-brand-emerald/20 to-emerald-700/20',
     orb2: 'from-brand-gold/15 to-amber-600/15',
-    orb3: 'from-brand-magenta/10 to-purple-800/10',
+    orb3: 'from-brand-warm/10 to-purple-800/10',
   },
   ocean: {
     bg: 'from-brand-void to-brand-void via-brand-deep',
@@ -44,12 +44,12 @@ const VARIANTS: Record<BackgroundVariant, VariantColors> = {
     bg: 'from-brand-void to-brand-void via-brand-deep',
     orb1: 'from-orange-600/20 to-red-700/20',
     orb2: 'from-brand-gold/20 to-amber-600/15',
-    orb3: 'from-brand-magenta/15 to-pink-700/10',
+    orb3: 'from-brand-warm/15 to-pink-700/10',
   },
   vibrant: {
     bg: 'from-brand-void to-brand-void via-brand-deep',
     orb1: 'from-brand-emerald/30 to-brand-emerald/20',
-    orb2: 'from-brand-magenta/25 to-brand-magenta/15',
+    orb2: 'from-brand-warm/25 to-brand-warm/15',
     orb3: 'from-brand-gold/20 to-brand-gold/15',
   },
 };

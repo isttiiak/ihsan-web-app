@@ -2,17 +2,29 @@
 
 /* Brand CSS variables */
 :root {
-  --brand-void: #080c12;
-  --brand-deep: #0d1520;
-  --brand-surface: #141e2e;
-  --brand-border: #1e2d42;
-  --brand-emerald: #10b981;
-  --brand-emerald-dim: #059669;
-  --brand-gold: #f59e0b;
-  --brand-gold-dim: #d97706;
-  --brand-magenta: #c026d3;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
+  --brand-void: #0e0d0a;
+  --brand-deep: #1a1812;
+  --brand-surface: #211f16;
+  --brand-border: #3a3425;
+  --brand-emerald: #7a9e6e;
+  --brand-emerald-dim: #5a7a50;
+  --brand-gold: #c9a96e;
+  --brand-gold-dim: #a08850;
+  --brand-magenta: #c4825a;
+  --brand-warm: #c4825a;
+  --brand-warm-dim: #a06840;
+  --text-primary: #e8e2d4;
+  --text-secondary: #9e9580;
+}
+
+/* Typography: El Messiri (display) + Plus Jakarta Sans (body) */
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6,
+.font-display {
+  font-family: 'El Messiri', system-ui, sans-serif;
 }
 
 /* Smooth scrolling */
@@ -166,22 +178,22 @@ body {
 
 /* Improved card shadows for depth */
 .card-elevated {
-  box-shadow: 0 4px 6px -1px rgba(15, 76, 117, 0.1),
-    0 2px 4px -1px rgba(15, 76, 117, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(58, 52, 37, 0.3),
+    0 2px 4px -1px rgba(58, 52, 37, 0.15);
 }
 
 .card-elevated:hover {
-  box-shadow: 0 10px 15px -3px rgba(15, 76, 117, 0.2),
-    0 4px 6px -2px rgba(15, 76, 117, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(58, 52, 37, 0.4),
+    0 4px 6px -2px rgba(58, 52, 37, 0.2);
 }
 
 /* Loading skeleton */
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(15, 76, 117, 0.05) 25%,
-    rgba(27, 153, 139, 0.1) 50%,
-    rgba(15, 76, 117, 0.05) 75%
+    rgba(58, 52, 37, 0.15) 25%,
+    rgba(122, 158, 110, 0.1) 50%,
+    rgba(58, 52, 37, 0.15) 75%
   );
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;

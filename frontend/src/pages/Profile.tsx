@@ -557,14 +557,14 @@ export default function Profile() {
         const msg = res.status === 409
           ? 'This Google account is already linked to another Ihsan account.'
           : (data.error ?? 'Failed to save linked account. Please try again.');
-        await Swal.fire({ title: 'Error', text: msg, icon: 'error', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
+        await Swal.fire({ title: 'Error', text: msg, icon: 'error', background: '#1a1812', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#3a3425]' } });
       }
     } catch (err) {
       const code = (err as AuthError).code ?? '';
       if (code === 'auth/credential-already-in-use') {
-        await Swal.fire({ title: 'Already linked', text: 'This Google account is already connected to a different Ihsan account.', icon: 'warning', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#f59e0b', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
+        await Swal.fire({ title: 'Already linked', text: 'This Google account is already connected to a different Ihsan account.', icon: 'warning', background: '#1a1812', color: '#f1f5f9', confirmButtonColor: '#c9a96e', customClass: { popup: 'rounded-3xl border border-[#3a3425]' } });
       } else if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-        await Swal.fire({ title: 'Error', text: 'Could not connect Google account. Please try again.', icon: 'error', background: '#141e2e', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#1e2d42]' } });
+        await Swal.fire({ title: 'Error', text: 'Could not connect Google account. Please try again.', icon: 'error', background: '#1a1812', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#3a3425]' } });
       }
     }
     setLinkingGoogle(false);
@@ -578,11 +578,11 @@ export default function Profile() {
       showCancelButton: true,
       confirmButtonText: 'Disconnect',
       cancelButtonText: 'Cancel',
-      background: '#141e2e',
+      background: '#1a1812',
       color: '#f1f5f9',
       confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#1e2d42',
-      customClass: { popup: 'rounded-3xl border border-[#1e2d42]' },
+      cancelButtonColor: '#3a3425',
+      customClass: { popup: 'rounded-3xl border border-[#3a3425]' },
     });
     if (!confirm.isConfirmed) return;
     setUnlinkingGoogle(true);

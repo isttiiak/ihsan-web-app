@@ -42,7 +42,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
               style={{
                 left: `${(i * 53) % 100}%`,
                 top: `${(i * 37) % 100}%`,
-                background: i % 3 === 0 ? 'var(--brand-emerald)' : i % 3 === 1 ? 'var(--brand-magenta)' : 'var(--brand-gold)',
+                background: i % 3 === 0 ? 'var(--brand-emerald)' : i % 3 === 1 ? 'var(--brand-warm)' : 'var(--brand-gold)',
                 boxShadow: '0 0 8px rgba(255,255,255,0.5)',
               }}
               initial={{ scale: 0, opacity: 0 }}
@@ -58,12 +58,12 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
       )}
 
       <motion.div
-        className="pointer-events-none absolute -top-20 -right-16 w-72 h-72 rounded-full blur-3xl bg-gradient-radial from-brand-magenta/40 to-transparent"
+        className="pointer-events-none absolute -top-20 -right-16 w-72 h-72 rounded-full blur-3xl bg-gradient-radial from-brand-warm/40 to-transparent"
         animate={prefersReducedMotion ? {} : { scale: [1, 1.08, 1], opacity: [0.35, 0.55, 0.35] }}
         transition={{ duration: 6, repeat: Infinity }}
       />
       <motion.div
-        className="pointer-events-none absolute -bottom-24 -left-20 w-80 h-80 rounded-full blur-3xl bg-gradient-radial from-brand-magenta/30 to-transparent"
+        className="pointer-events-none absolute -bottom-24 -left-20 w-80 h-80 rounded-full blur-3xl bg-gradient-radial from-brand-warm/30 to-transparent"
         animate={prefersReducedMotion ? {} : { scale: [1.1, 1, 1.1] }}
         transition={{ duration: 8, repeat: Infinity }}
       />
@@ -122,7 +122,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
                 <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="var(--brand-emerald)" />
                   <stop offset="30%" stopColor="var(--brand-gold)" />
-                  <stop offset="60%" stopColor="var(--brand-magenta)" />
+                  <stop offset="60%" stopColor="var(--brand-warm)" />
                   <stop offset="100%" stopColor="#8b5cf6" />
                 </linearGradient>
               </defs>
@@ -139,7 +139,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
                 initial={{ strokeDashoffset: 2 * Math.PI * 50 }}
                 animate={{ strokeDashoffset: 2 * Math.PI * 50 * (1 - progress / 100) }}
                 transition={{ duration: 1.3, ease: 'easeOut' }}
-                style={{ filter: 'drop-shadow(0 0 10px rgba(199,87,171,0.6))' }}
+                style={{ filter: 'drop-shadow(0 0 10px rgba(196,130,90,0.6))' }}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">

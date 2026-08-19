@@ -304,7 +304,7 @@ export default function Home() {
                         {/* Nafl alongside mandatory (Awabeen during Maghrib, Tahajjud during Isha) */}
                         {prayerWidgetData.naflWindow && (
                           <div className="mt-1 pt-1 border-t border-brand-border/40">
-                            <p className="text-brand-magenta/80 text-[10px] font-semibold leading-none">
+                            <p className="text-brand-warm/80 text-[10px] font-semibold leading-none">
                               {prayerWidgetData.naflWindow.icon} {prayerWidgetData.naflWindow.name} time
                             </p>
                             <p className="text-white/25 text-[10px] leading-none mt-0.5">
@@ -505,7 +505,7 @@ export default function Home() {
                         className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md border border-emerald-500/10"
                         style={{
                           letterSpacing: '0.04em',
-                          background: 'linear-gradient(90deg, var(--brand-gold) 0%, var(--brand-magenta) 100%)',
+                          background: 'linear-gradient(90deg, var(--brand-gold) 0%, var(--brand-warm) 100%)',
                         }}
                       >
                         {a.tag}

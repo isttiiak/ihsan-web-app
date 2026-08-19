@@ -667,9 +667,9 @@ export default function QuranReader() {
           {/* TAFSIR pane — beside the āyah on desktop, stacked below on mobile.
               Calm long-form reading: warm surface, warm ink, roomy line-height. */}
           {fullscreen && splitTafsir && (
-            <div className="w-full md:flex-1 md:h-full md:overflow-y-auto bg-[#12100c] px-5 sm:px-8 pb-10 pt-4 md:pt-6 border-t border-amber-100/5 md:border-t-0">
+            <div className="w-full md:flex-1 md:h-full md:overflow-y-auto bg-[#1a1812] px-5 sm:px-8 pb-10 pt-4 md:pt-6 border-t border-amber-100/5 md:border-t-0">
               <div className="max-w-2xl mx-auto">
-                <div className="flex items-center gap-2 mb-3 md:sticky md:top-0 bg-[#12100c]/95 backdrop-blur md:-mt-2 md:pt-2 pb-2 z-10">
+                <div className="flex items-center gap-2 mb-3 md:sticky md:top-0 bg-[#1a1812]/95 backdrop-blur md:-mt-2 md:pt-2 pb-2 z-10">
                   <BookOpenIcon className="w-4 h-4 text-amber-200/60 shrink-0" />
                   <select
                     aria-label="Tafsir edition"
@@ -761,7 +761,7 @@ export default function QuranReader() {
 
             {/* The story & evidence behind this duʿā (verified reference) */}
             {contextOpen && dua?.context && (
-              <div className="rounded-2xl border border-brand-gold/15 bg-[#141108] p-4 sm:p-5 space-y-2.5">
+              <div className="rounded-2xl border border-brand-gold/15 bg-[#211f16] p-4 sm:p-5 space-y-2.5">
                 <p className="text-brand-gold/80 text-xs font-black">{dua.emoji} {dua.title}</p>
                 <p className="text-[#d8d0b8] text-sm leading-relaxed">{dua.context.text}</p>
                 <a
@@ -773,7 +773,7 @@ export default function QuranReader() {
 
             {/* Calm reading surface: warm dark ground + warm ink, never pure white */}
             {tafsirOpen && (
-              <div className="rounded-2xl border border-amber-100/10 bg-[#12100c] p-4 sm:p-5 space-y-3">
+              <div className="rounded-2xl border border-amber-100/10 bg-[#1a1812] p-4 sm:p-5 space-y-3">
                 <div className="flex items-center gap-2">
                   <select
                     aria-label="Tafsir edition"

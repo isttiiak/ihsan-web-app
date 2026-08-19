@@ -36,7 +36,7 @@ function ActionLayout({ children }: { children: React.ReactNode }) {
       <motion.div className="absolute top-0 left-0 w-96 h-96 rounded-full bg-gradient-to-br from-brand-emerald/20 to-teal-500/20 blur-3xl pointer-events-none"
         animate={{ y: [0, -30, 0], opacity: [0.4, 0.7, 0.4] }}
         transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }} />
-      <motion.div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-gradient-to-br from-brand-magenta/20 to-purple-500/20 blur-3xl pointer-events-none"
+      <motion.div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-gradient-to-br from-brand-warm/20 to-purple-500/20 blur-3xl pointer-events-none"
         animate={{ y: [0, 30, 0], opacity: [0.4, 0.7, 0.4] }}
         transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2 }} />
       <div className="relative w-full max-w-md">

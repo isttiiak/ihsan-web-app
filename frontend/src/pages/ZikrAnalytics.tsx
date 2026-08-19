@@ -539,7 +539,7 @@ export default function ZikrAnalytics() {
                     ? new Date(allTime.bestDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                     : 'N/A',
                 },
-                { label: '🎯 Types', value: allTimeTypes.filter((t) => t.total > 0).length, delay: 0.2, gradient: 'from-brand-magenta to-rose-400', textGrad: 'from-pink-300 to-rose-300' },
+                { label: '🎯 Types', value: allTimeTypes.filter((t) => t.total > 0).length, delay: 0.2, gradient: 'from-brand-warm to-rose-400', textGrad: 'from-pink-300 to-rose-300' },
               ].map(({ label, value, delay, gradient, textGrad, sub }) => (
                 <motion.div
                   key={label}

@@ -153,11 +153,11 @@ const FULL_PREDEFINED: Record<string, { arabic: string; transliteration?: string
 };
 
 const GLOW_PALETTE = [
-  { glow: 'rgba(16,185,129,0.9)',  ring: 'rgba(16,185,129,0.3)',  bar: 'bg-brand-emerald', solid: '#10b981' },
-  { glow: 'rgba(245,158,11,0.9)',  ring: 'rgba(245,158,11,0.3)',  bar: 'bg-brand-gold',    solid: '#f59e0b' },
+  { glow: 'rgba(122,158,110,0.9)', ring: 'rgba(122,158,110,0.3)', bar: 'bg-brand-emerald', solid: '#7a9e6e' },
+  { glow: 'rgba(201,169,110,0.9)', ring: 'rgba(201,169,110,0.3)', bar: 'bg-brand-gold',    solid: '#c9a96e' },
   { glow: 'rgba(99,102,241,0.9)',  ring: 'rgba(99,102,241,0.3)',  bar: 'bg-indigo-500',    solid: '#6366f1' },
-  { glow: 'rgba(236,72,153,0.9)',  ring: 'rgba(236,72,153,0.3)',  bar: 'bg-pink-500',      solid: '#ec4899' },
-  { glow: 'rgba(6,182,212,0.9)',   ring: 'rgba(6,182,212,0.3)',   bar: 'bg-cyan-500',      solid: '#06b6d4' },
+  { glow: 'rgba(196,130,90,0.9)',  ring: 'rgba(196,130,90,0.3)',  bar: 'bg-brand-warm',    solid: '#c4825a' },
+  { glow: 'rgba(90,158,142,0.9)',  ring: 'rgba(90,158,142,0.3)',  bar: 'bg-teal-500',      solid: '#5a9e8e' },
   { glow: 'rgba(168,85,247,0.9)',  ring: 'rgba(168,85,247,0.3)',  bar: 'bg-purple-500',    solid: '#a855f7' },
 ];
 
@@ -743,7 +743,7 @@ export default function ZikrCounter() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
             className="fixed inset-0 flex flex-col overflow-hidden"
-            style={{ zIndex: 99999, background: '#030609' }}
+            style={{ zIndex: 99999, background: '#0e0d0a' }}
           >
             {/* ── Calm ambiance (redesigned, Istiak's spec): ONE fixed emerald
                    tone — no per-tap rainbow cycling, no sparkle strobing.
@@ -754,7 +754,7 @@ export default function ZikrCounter() {
                 style={{
                   width: '75vw', height: '75vw',
                   left: '0%', top: '-15%',
-                  background: 'radial-gradient(circle, rgba(16,185,129,0.10) 0%, transparent 70%)',
+                  background: 'radial-gradient(circle, rgba(122,158,110,0.10) 0%, transparent 70%)',
                   filter: 'blur(70px)',
                 }}
                 animate={{ scale: [1, 1.08, 1], opacity: [0.8, 1, 0.8] }}
@@ -765,7 +765,7 @@ export default function ZikrCounter() {
                 style={{
                   width: '60vw', height: '60vw',
                   right: '-10%', bottom: '-10%',
-                  background: 'radial-gradient(circle, rgba(13,148,136,0.08) 0%, transparent 70%)',
+                  background: 'radial-gradient(circle, rgba(90,122,80,0.08) 0%, transparent 70%)',
                   filter: 'blur(60px)',
                 }}
                 animate={{ scale: [1, 1.06, 1], opacity: [0.7, 1, 0.7] }}
@@ -798,7 +798,7 @@ export default function ZikrCounter() {
               >
                 <option value="" disabled>Switch zikr…</option>
                 {types.filter((t) => t !== selected).map((t) => (
-                  <option key={t} value={t} className="bg-[#030609] text-white">{t}</option>
+                  <option key={t} value={t} className="bg-[#0e0d0a] text-white">{t}</option>
                 ))}
               </select>
               <button
@@ -840,7 +840,7 @@ export default function ZikrCounter() {
                 className="font-black text-white/95 tabular-nums leading-none block text-center"
                 style={{
                   fontSize: 'clamp(100px, 28vw, 260px)',
-                  textShadow: '0 0 60px rgba(16,185,129,0.35)',
+                  textShadow: '0 0 60px rgba(122,158,110,0.35)',
                 }}
               >
                 {currentCount}
@@ -869,7 +869,7 @@ export default function ZikrCounter() {
                     initial={{ scale: 1, opacity: 0.25 }}
                     animate={{ scale: 1.25, opacity: 0 }}
                     transition={{ duration: 0.5, ease: 'easeOut' }}
-                    style={{ background: '#10b981' }}
+                    style={{ background: '#7a9e6e' }}
                   />
                 )}
                 <motion.button
@@ -879,8 +879,8 @@ export default function ZikrCounter() {
                   style={{
                     height: 'clamp(120px, 18vh, 180px)',
                     fontSize: 'clamp(24px, 4vw, 36px)',
-                    background: 'linear-gradient(180deg, rgba(16,185,129,0.32) 0%, rgba(6,95,70,0.45) 100%)',
-                    boxShadow: '0 12px 40px rgba(16,185,129,0.18)',
+                    background: 'linear-gradient(180deg, rgba(122,158,110,0.32) 0%, rgba(90,122,80,0.45) 100%)',
+                    boxShadow: '0 12px 40px rgba(122,158,110,0.18)',
                     backdropFilter: 'blur(6px)',
                   }}
                 >
