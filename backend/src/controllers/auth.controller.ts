@@ -37,6 +37,9 @@ export const verifyHandler = async (req: Request, res: Response): Promise<void> 
     const email = decoded['email'] as string;
     const displayName = (decoded['name'] as string | undefined);
     const picture = decoded['picture'] as string | undefined;
+    const gender = (req.body as { gender?: string })?.gender;
+    const validGenders = ['male', 'female', 'other', 'prefer_not_say'];
+    const genderOnInsert = gender && validGenders.includes(gender) ? gender : undefined;
 
     // Always update email (can change in Firebase).
     // Only set displayName and photoUrl on first creation — never overwrite values
@@ -48,6 +51,7 @@ export const verifyHandler = async (req: Request, res: Response): Promise<void> 
         $setOnInsert: {
           displayName: displayName ?? '',
           ...(picture ? { photoUrl: picture } : {}),
+          ...(genderOnInsert ? { gender: genderOnInsert } : {}),
         },
       },
       {

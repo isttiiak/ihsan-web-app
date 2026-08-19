@@ -261,20 +261,38 @@ export async function getSummary(userId: string, today?: string): Promise<QuranS
   const todayPages = pagesByDate.get(end) ?? 0;
   const todayAyat = byDate.get(end) ?? 0;
 
-  // Streak: consecutive days with any reading, ending today (or yesterday if
-  // today hasn't been read yet — the day is still in progress).
+  // Streak with grace: allow a single-day gap (same rule as zikr). Missing
+  // ONE day keeps the chain alive if the surrounding days are read; missing
+  // TWO consecutive days breaks it.
   let streak = 0;
-  let cursor = (byDate.get(end) ?? 0) > 0 ? end : shiftDateStr(end, -1);
-  while ((byDate.get(cursor) ?? 0) > 0) {
-    streak++;
-    cursor = shiftDateStr(cursor, -1);
+  const hasReading = (d: string) => (byDate.get(d) ?? 0) > 0;
+  {
+    let misses = 0;
+    let cursor = hasReading(end) ? end : shiftDateStr(end, -1);
+    for (let i = 0; i < 366; i++) {
+      if (hasReading(cursor)) {
+        streak++;
+        misses = 0;
+      } else {
+        misses++;
+        if (misses >= 2) break;
+      }
+      cursor = shiftDateStr(cursor, -1);
+    }
   }
 
   let bestStreak = 0;
   let run = 0;
+  let bestMisses = 0;
   for (let i = 364; i >= 0; i--) {
     const d = shiftDateStr(end, -i);
-    run = (byDate.get(d) ?? 0) > 0 ? run + 1 : 0;
+    if (hasReading(d)) {
+      run++;
+      bestMisses = 0;
+    } else {
+      bestMisses++;
+      if (bestMisses >= 2) run = 0;
+    }
     if (run > bestStreak) bestStreak = run;
   }
 

@@ -13,6 +13,7 @@ import ZikrCounter from './pages/ZikrCounter.js';
 import Footer from './components/Footer.js';
 import NotFound from './pages/NotFound.js';
 import UnsavedWarning from './components/UnsavedWarning.js';
+import GenderGate from './components/GenderGate.js';
 import type { AuthUser } from './types/api.js';
 
 // Route-level code splitting — keeps each tracker's page weight off the shell
@@ -312,10 +313,12 @@ export default function App() {
         try {
           const idToken = await u.getIdToken();
           localStorage.setItem('ihsan_idToken', idToken);
+          const pendingGender = sessionStorage.getItem('ihsan_pending_gender');
+          if (pendingGender) sessionStorage.removeItem('ihsan_pending_gender');
           const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-            body: JSON.stringify({ idToken }),
+            body: JSON.stringify({ idToken, ...(pendingGender ? { gender: pendingGender } : {}) }),
           });
 
           if (!verifyRes.ok) {
@@ -381,6 +384,7 @@ export default function App() {
         <>
           {!isAuthPage && <Navbar />}
           {!isAuthPage && <UnsavedWarning />}
+          {!isAuthPage && <GenderGate />}
           <div className="flex-1">
             <Suspense fallback={<RouteFallback />}>
             <Routes>

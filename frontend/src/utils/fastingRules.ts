@@ -402,8 +402,8 @@ export interface DayRuling {
 
 const dislikedById = Object.fromEntries(DISLIKED_INFO.map((d) => [d.id, d]));
 
-export function getDayRuling(date: Date): DayRuling {
-  const h = getHijriDate(date); // adjusted for the user's moon-sighting setting
+export function getDayRuling(date: Date, hijriOverride?: import('./islamicCalendar.js').HijriDate | null): DayRuling {
+  const h = hijriOverride !== undefined ? hijriOverride : getHijriDate(date);
   const weekday = date.getDay(); // 0=Sun … 5=Fri, 6=Sat
   const recommended: VoluntaryMeta[] = [];
   const cautions: DayCaution[] = [];

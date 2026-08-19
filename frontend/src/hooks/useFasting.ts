@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import type { FastingCategory, FastingStatus, VoluntaryKind } from '../utils/fastingRules.js';
-import { getTrackingDay } from '../utils/trackingDay.js';
+
 
 export interface FastingLog {
   _id: string;
@@ -37,9 +37,11 @@ export interface FastingSummary {
   recentLogs: FastingLog[];
 }
 
-// Fajr-boundary tracking day (falls back to civil midnight without a location)
+// Fasting uses civil midnight, NOT the Fajr tracking day — a fast covers
+// dawn-to-sunset of a calendar date, so "today" must be the wall-clock date.
 export function localTodayStr(): string {
-  return getTrackingDay();
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 export function useFastingLog(date: string) {

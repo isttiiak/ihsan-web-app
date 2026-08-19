@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { MapPinIcon } from '@heroicons/react/24/outline';
 import { useZikrStore } from '../store/useZikrStore.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
-import { useSalatLog } from '../hooks/useSalatLog.js';
+import { useSalatLog, useSalatAnalytics } from '../hooks/useSalatLog.js';
 import { useFastingSummary } from '../hooks/useFasting.js';
 import { useQuranSummary } from '../hooks/useQuran.js';
 import { StreakBadge, GoalBadge } from '../components/StatusBadges.js';
@@ -64,6 +64,7 @@ export default function Home() {
   const { data: salatLog } = useSalatLog();
   const { data: fastingSummary } = useFastingSummary();
   const { data: quranSummary } = useQuranSummary();
+  const { data: salatAnalytics } = useSalatAnalytics(90);
 
   const totalToday = useMemo(() => Object.values(counts).reduce((a, b) => a + b, 0), [counts]);
   const analyticsGoal = analyticsData?.goal?.dailyTarget ?? null;
@@ -218,6 +219,7 @@ export default function Home() {
       accentColor: 'var(--brand-emerald, #10b981)',
       iconBg: 'bg-gradient-to-br from-teal-500/20 to-cyan-500/30',
       streakCount: quranSummary?.streak ?? null,
+      tag: salatAnalytics?.currentStreak ? `🕌 ${salatAnalytics.currentStreak}d salat` : undefined,
     },
   ];
 

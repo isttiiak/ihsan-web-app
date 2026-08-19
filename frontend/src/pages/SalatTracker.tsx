@@ -352,7 +352,15 @@ export default function SalatTracker() {
       ayatulKursi: type === 'ayatulKursi' ? (value as boolean) : (current?.ayatulKursi ?? false),
     });
 
-    if (type === 'location') return;
+    if (type === 'location') {
+      if (value === 'mosque') {
+        toast.success(
+          'Prayer in congregation is 27 times superior — Bukhari 645',
+          { icon: '🕌', duration: 3500, id: 'masjid-reward' },
+        );
+      }
+      return;
+    }
     creditDhikr(type, value as boolean, current);
   };
 

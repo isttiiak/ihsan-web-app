@@ -41,7 +41,7 @@ import {
   FastingRef,
 } from '../utils/fastingRules.js';
 import { calcPrayerTimes, formatTime } from '../utils/prayerTimes.js';
-import { isPostMaghrib } from '../utils/islamicCalendar.js';
+import { isPostMaghrib, getHijriToday } from '../utils/islamicCalendar.js';
 
 // ─── date helpers ─────────────────────────────────────────────────────────────
 
@@ -149,7 +149,11 @@ export default function FastingTracker() {
   const isFuture = selectedDate > today;
 
   const dateObj = useMemo(() => new Date(selectedDate + 'T12:00:00'), [selectedDate]);
-  const ruling = useMemo(() => getDayRuling(dateObj), [dateObj]);
+  const isToday = selectedDate === today;
+  const ruling = useMemo(
+    () => getDayRuling(dateObj, isToday ? getHijriToday() : undefined),
+    [dateObj, isToday],
+  );
 
   const { data: log } = useFastingLog(selectedDate);
   const { data: summary } = useFastingSummary();

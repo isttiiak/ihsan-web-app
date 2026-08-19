@@ -72,6 +72,7 @@ export default function AuthSignUp() {
   const [verificationEmail, setVerificationEmail] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [gender, setGender] = useState<'male' | 'female' | ''>('');
 
   // If the user navigates back to /signup while already signed in but unverified, show the verification screen
   useEffect(() => {
@@ -108,6 +109,10 @@ export default function AuthSignUp() {
     const lastName = (form.elements.namedItem('lastName') as HTMLInputElement).value.trim();
     const email = (form.elements.namedItem('email') as HTMLInputElement).value.trim();
 
+    if (!gender) {
+      setError('Please select your gender to continue.');
+      return;
+    }
     if (!isValidEmail(email)) {
       setError('Please enter a valid email address (e.g. name@domain.com).');
       return;
@@ -128,6 +133,7 @@ export default function AuthSignUp() {
       if (fullName) {
         try { await updateProfile(res.user, { displayName: fullName }); } catch { /* non-fatal */ }
       }
+      sessionStorage.setItem('ihsan_pending_gender', gender);
       // Send verification email — redirect to home after verification
       try {
         // continueUrl = home so that after Firebase verifies the email and the
@@ -308,6 +314,27 @@ export default function AuthSignUp() {
                       placeholder="Last name"
                       className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-transparent transition-all"
                     />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-white/70 text-sm font-medium">Gender <span className="text-red-400">*</span></label>
+                  <p className="text-white/30 text-xs leading-relaxed">Required for personalized content and Rayhanah (cycle tracking for sisters).</p>
+                  <div className="flex gap-3">
+                    {(['male', 'female'] as const).map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setGender(g)}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                          gender === g
+                            ? 'bg-brand-emerald/20 border-brand-emerald/60 text-brand-emerald'
+                            : 'bg-white/5 border-brand-border text-white/50 hover:border-brand-border/80'
+                        }`}
+                      >
+                        {g === 'male' ? 'Brother' : 'Sister'}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
