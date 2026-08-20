@@ -29,12 +29,10 @@ interface ActivityItem {
   id: string;
   icon: string;
   title: string;
-  description: string;
   stats: { label: string; value: string | number };
-  action: string;
   link: string;
-  accentColor: string;
-  iconBg: string;
+  accent: string;
+  border: string;
   tag?: string;
   streakCount?: number | null;
   goalCompleted?: boolean;
@@ -163,14 +161,10 @@ export default function Home() {
       id: 'zikr',
       icon: '📿',
       title: t('home.zikrTitle'),
-      description: t('home.zikrSubtitle'),
-      // effectiveToday = max(local taps, server total) — DB-backed so every
-      // browser shows the same number for signed-in users
       stats: { label: 'Today', value: effectiveToday },
-      action: t('home.startCounting'),
       link: '/zikr',
-      accentColor: 'var(--brand-emerald, #10b981)',
-      iconBg: 'bg-gradient-to-br from-brand-emerald/20 to-brand-emerald/30',
+      accent: 'brand-emerald',
+      border: 'border-brand-emerald/15',
       streakCount,
       goalCompleted,
     },
@@ -178,47 +172,41 @@ export default function Home() {
       id: 'salat',
       icon: '🕌',
       title: t('home.salatTitle'),
-      description: t('home.salatSubtitle'),
       stats: cycleActive
         ? { label: 'Rayhanah', value: '🌸 Excused' }
         : { label: 'Today', value: salatCompletedToday !== null ? `${salatCompletedToday}/5` : '—/5' },
-      action: t('home.trackPrayer'),
       link: '/salat',
-      accentColor: 'var(--brand-emerald, #10b981)',
-      iconBg: 'bg-gradient-to-br from-brand-info/20 to-brand-warm/30',
+      accent: 'brand-info',
+      border: 'border-brand-info/15',
       tag: salatAnalytics?.currentStreak ? `🔥 ${salatAnalytics.currentStreak}d · all 5` : undefined,
     },
     {
       id: 'fasting',
       icon: '🌙',
       title: 'Fasting Tracker',
-      description: 'Sunnah fasts, qaḍā, kaffārah & vows',
       stats: cycleActive
         ? { label: 'Rayhanah', value: '🌸 Excused' }
         : {
             label: 'This month',
             value: fastingSummary ? `${fastingSummary.stats.thisMonth} fasts` : '—',
           },
-      action: 'Track Fasting',
       link: '/fasting',
-      accentColor: 'var(--brand-gold, #f59e0b)',
-      iconBg: 'bg-gradient-to-br from-brand-gold/20 to-brand-gold/30',
+      accent: 'brand-gold',
+      border: 'border-brand-gold/15',
     },
     {
       id: 'quran',
       icon: '📖',
       title: 'Quran Habit',
-      description: 'Daily reading, streaks & your khatm journey',
       stats: {
         label: 'Today',
         value: quranSummary
           ? `${quranSummary.todayAyat}/${quranSummary.profile.dailyGoalAyat} āyāt`
           : '—',
       },
-      action: 'Read & Track',
       link: '/quran',
-      accentColor: 'var(--brand-emerald, #10b981)',
-      iconBg: 'bg-gradient-to-br from-brand-info/20 to-brand-info/30',
+      accent: 'brand-info',
+      border: 'border-brand-info/15',
       streakCount: quranSummary?.streak ?? null,
     },
   ];
@@ -486,96 +474,69 @@ export default function Home() {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
+        {/* ── Activity cards (compact dashboard tiles) ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
           {activities.map((a, i) => {
             const isZikr = a.id === 'zikr';
             return (
               <motion.div
                 key={a.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
+                transition={{ delay: i * 0.06 }}
               >
-                <Link to={a.link} className="block h-full group">
-                  <motion.div
-                    whileHover={{ scale: 1.02, y: -8 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="relative h-full rounded-3xl overflow-hidden backdrop-blur-2xl border border-brand-emerald/10 bg-white/5"
+                <Link to={a.link} className="block group">
+                  <div
+                    className={`relative rounded-2xl ${a.border} border bg-white/[0.04] hover:bg-white/[0.07] backdrop-blur-md p-4 transition-all`}
                   >
-                    {a.tag && (
-                      <span
-                        className="absolute top-4 right-4 z-20 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md border border-brand-emerald/10"
-                        style={{
-                          letterSpacing: '0.04em',
-                          background: 'linear-gradient(90deg, var(--brand-gold) 0%, var(--brand-warm) 100%)',
-                        }}
-                      >
-                        {a.tag}
-                      </span>
-                    )}
+                    {/* Top row: icon + title + badges */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-3xl shrink-0 leading-none">{a.icon}</span>
+                      <h2 className="text-base font-black text-white flex-1 min-w-0 truncate">{a.title}</h2>
 
-                    {a.id === 'fasting' && (
-                      <button
-                        className="absolute top-4 right-4 z-20 px-2.5 py-1 rounded-full text-[11px] font-black text-white shadow-lg border border-brand-emerald/15 hover:scale-105 transition-transform"
-                        style={{ background: 'linear-gradient(90deg, #b45309 0%, #7c3aed 100%)' }}
-                        title={ramadan.active ? 'Open the Ramadan tracker' : 'Countdown to Ramadan — tap to prepare'}
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/ramadan'); }}
-                      >
-                        {ramadan.active ? `🌙 Ramadan · Day ${ramadan.todayNumber}` : `🌙 Ramadan in ${ramadan.daysUntil}d`}
-                      </button>
-                    )}
-
-                    {isZikr && (
-                      <div className="absolute top-4 right-4 z-20 flex flex-row items-center gap-2">
-                        <StreakBadge
-                          streak={a.streakCount ?? 0}
-                          state={analyticsData?.streak?.state}
-                          size="md"
-                        />
-                        <GoalBadge pct={zikrGoalPct} met={goalCompleted} size="md" />
+                      {/* Badges cluster */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isZikr && (
+                          <>
+                            <StreakBadge streak={a.streakCount ?? 0} state={analyticsData?.streak?.state} size="sm" />
+                            <GoalBadge pct={zikrGoalPct} met={goalCompleted} size="sm" />
+                          </>
+                        )}
+                        {a.id === 'quran' && quranSummary && (
+                          <StreakBadge streak={quranSummary.streak} state={quranSummary.streak > 0 ? 'active' : 'none'} size="sm" />
+                        )}
                       </div>
-                    )}
-                    {a.id === 'quran' && quranSummary && (
-                      <div className="absolute top-4 right-4 z-20">
-                        <StreakBadge
-                          streak={quranSummary.streak}
-                          state={quranSummary.streak > 0 ? 'active' : 'none'}
-                          size="md"
-                        />
-                      </div>
-                    )}
-
-                    <div className="relative z-10 p-6 sm:p-8">
-                      <div className={`w-16 h-16 sm:w-20 sm:h-20 ${a.iconBg} rounded-2xl grid place-items-center border border-brand-emerald/10 mb-5`}>
-                        <span className="text-4xl sm:text-5xl">{a.icon}</span>
-                      </div>
-                      <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">{a.title}</h2>
-                      <p className="text-white/70 text-sm sm:text-base mb-6">{a.description}</p>
-                      <div
-                        className="rounded-2xl p-4 text-center text-white"
-                        style={{ background: `linear-gradient(135deg, ${a.accentColor}90, ${a.accentColor}70)` }}
-                      >
-                        <div className="text-3xl sm:text-4xl font-black">{a.stats.value}</div>
-                        <div className="text-xs sm:text-sm opacity-90 font-semibold mt-1 uppercase">{a.stats.label}</div>
-                      </div>
-                      {/* Styled as a button but rendered as a div — a real
-                          <button> inside the card's <Link> is invalid HTML */}
-                      <motion.div
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="mt-5 w-full py-3 rounded-xl text-white font-bold relative overflow-hidden text-center"
-                        style={{ background: `linear-gradient(135deg, ${a.accentColor}, ${a.accentColor}cc)` }}
-                      >
-                        <span className="relative z-10">{a.action}</span>
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                          initial={{ x: '-100%' }}
-                          whileHover={{ x: '100%' }}
-                          transition={{ duration: 0.6 }}
-                        />
-                      </motion.div>
                     </div>
-                  </motion.div>
+
+                    {/* Stat row */}
+                    <div className="flex items-baseline justify-between">
+                      <div>
+                        <span className="text-2xl font-black text-white tabular-nums">{a.stats.value}</span>
+                        <span className="text-white/30 text-xs font-semibold ml-2 uppercase">{a.stats.label}</span>
+                      </div>
+                      <span className="text-white/20 text-xs font-bold group-hover:text-white/40 transition-colors">→</span>
+                    </div>
+
+                    {/* Tags (salat streak, ramadan countdown) */}
+                    {a.tag && (
+                      <div className="mt-2.5 pt-2 border-t border-white/[0.06]">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black text-white bg-gradient-to-r from-brand-gold to-brand-warm">
+                          {a.tag}
+                        </span>
+                      </div>
+                    )}
+                    {a.id === 'fasting' && (
+                      <div className="mt-2.5 pt-2 border-t border-white/[0.06]">
+                        <button
+                          className="px-2.5 py-0.5 rounded-full text-[10px] font-black text-white border border-brand-gold/20 bg-gradient-to-r from-amber-700/80 to-purple-700/80 hover:scale-105 transition-transform"
+                          title={ramadan.active ? 'Open the Ramadan tracker' : 'Countdown to Ramadan'}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/ramadan'); }}
+                        >
+                          {ramadan.active ? `🌙 Ramadan · Day ${ramadan.todayNumber}` : `🌙 Ramadan in ${ramadan.daysUntil}d`}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </Link>
               </motion.div>
             );
@@ -583,38 +544,22 @@ export default function Home() {
         </div>
 
         {/* ── Friends / Share activities ── */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="mb-12">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-10">
           <Link to="/friends" className="block group">
-            <motion.div
-              whileHover={{ scale: 1.01, y: -3 }}
-              whileTap={{ scale: 0.99 }}
-              className="flex items-center gap-4 px-5 sm:px-7 py-5 rounded-3xl border border-brand-gold/25 bg-gradient-to-r from-brand-gold/10 via-white/[0.03] to-brand-emerald/10 backdrop-blur-xl overflow-hidden relative"
-            >
-              <motion.span
-                className="text-4xl shrink-0"
-                animate={{ rotate: [0, -8, 8, 0] }}
-                transition={{ duration: 3, repeat: Infinity, repeatDelay: 3 }}
-              >🤝</motion.span>
+            <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-brand-gold/20 bg-brand-gold/[0.06] hover:bg-brand-gold/10 transition-all">
+              <span className="text-2xl shrink-0">🤝</span>
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg sm:text-xl font-black text-white">Friends & Leaderboard</h2>
-                <p className="text-white/40 text-xs sm:text-sm">
-                  Connect with friends, share your streaks, and race each other to good deeds — Quran 2:148
-                </p>
+                <h2 className="text-sm font-black text-white">Friends & Leaderboard</h2>
+                <p className="text-white/30 text-xs truncate">Race each other to good deeds — Quran 2:148</p>
               </div>
-              <span className="shrink-0 px-4 py-2 rounded-xl bg-brand-gold/20 border border-brand-gold/40 text-brand-gold text-xs font-black group-hover:bg-brand-gold/30 transition-colors">
+              <span className="shrink-0 text-brand-gold/60 text-xs font-bold group-hover:text-brand-gold transition-colors">
                 Compete →
               </span>
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
-                initial={{ x: '-100%' }}
-                whileHover={{ x: '100%' }}
-                transition={{ duration: 0.7 }}
-              />
-            </motion.div>
+            </div>
           </Link>
         </motion.div>
 
-        <div className="text-center text-xs text-white/50">May your remembrance be constant.</div>
+        <div className="text-center text-xs text-white/30 pb-4">May your remembrance be constant.</div>
       </div>
     </AnimatedBackground>
   );

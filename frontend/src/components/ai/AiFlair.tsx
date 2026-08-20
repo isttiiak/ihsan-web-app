@@ -34,8 +34,8 @@ export function AiThinking({ label = 'Naseeh is reflecting…' }: { label?: stri
         aria-hidden
         className="absolute w-32 h-32 rounded-full blur-2xl opacity-40"
         style={{ background: 'radial-gradient(circle, #a855f7, #06b6d4, transparent 70%)' }}
-        animate={{ scale: [1, 1.25, 1], opacity: [0.3, 0.55, 0.3] }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        animate={{ scale: [1, 1.06, 1], opacity: [0.25, 0.35, 0.25] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
       />
       <div className="relative flex items-center gap-2">
         {colors.map((c, i) => (

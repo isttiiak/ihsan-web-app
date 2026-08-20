@@ -30,42 +30,41 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02, y: -4 }}
       className="relative overflow-hidden rounded-[1.25rem] backdrop-blur-2xl border border-brand-emerald/10 bg-brand-deep/60 text-white shadow-glass"
     >
       {goalMet && (
         <div className="pointer-events-none absolute inset-0 z-10">
-          {[...Array(18)].map((_, i) => (
+          {[...Array(6)].map((_, i) => (
             <motion.span
               key={i}
-              className="absolute block w-1.5 h-1.5 rounded-full"
+              className="absolute block w-1 h-1 rounded-full"
               style={{
                 left: `${(i * 53) % 100}%`,
                 top: `${(i * 37) % 100}%`,
                 background: i % 3 === 0 ? 'var(--brand-emerald)' : i % 3 === 1 ? 'var(--brand-warm)' : 'var(--brand-gold)',
-                boxShadow: '0 0 8px rgba(255,255,255,0.5)',
+                boxShadow: '0 0 4px rgba(255,255,255,0.3)',
               }}
               initial={{ scale: 0, opacity: 0 }}
               animate={
                 prefersReducedMotion
-                  ? { opacity: [0, 1, 0] }
-                  : { scale: [0, 1, 0], opacity: [0, 1, 0], y: [-6, -12, -18] }
+                  ? { opacity: [0, 0.6, 0] }
+                  : { scale: [0, 0.8, 0], opacity: [0, 0.6, 0], y: [-4, -8, -12] }
               }
-              transition={{ duration: 2, repeat: Infinity, delay: i * 0.08, ease: 'easeOut' }}
+              transition={{ duration: 3, repeat: Infinity, delay: i * 0.15, ease: 'easeOut' }}
             />
           ))}
         </div>
       )}
 
       <motion.div
-        className="pointer-events-none absolute -top-20 -right-16 w-72 h-72 rounded-full blur-3xl bg-gradient-radial from-brand-warm/40 to-transparent"
-        animate={prefersReducedMotion ? {} : { scale: [1, 1.08, 1], opacity: [0.35, 0.55, 0.35] }}
-        transition={{ duration: 6, repeat: Infinity }}
+        className="pointer-events-none absolute -top-20 -right-16 w-72 h-72 rounded-full blur-3xl bg-gradient-radial from-brand-warm/15 to-transparent"
+        animate={prefersReducedMotion ? {} : { scale: [1, 1.03, 1], opacity: [0.2, 0.3, 0.2] }}
+        transition={{ duration: 10, repeat: Infinity }}
       />
       <motion.div
-        className="pointer-events-none absolute -bottom-24 -left-20 w-80 h-80 rounded-full blur-3xl bg-gradient-radial from-brand-warm/30 to-transparent"
-        animate={prefersReducedMotion ? {} : { scale: [1.1, 1, 1.1] }}
-        transition={{ duration: 8, repeat: Infinity }}
+        className="pointer-events-none absolute -bottom-24 -left-20 w-80 h-80 rounded-full blur-3xl bg-gradient-radial from-brand-warm/10 to-transparent"
+        animate={prefersReducedMotion ? {} : { scale: [1.03, 1, 1.03] }}
+        transition={{ duration: 12, repeat: Infinity }}
       />
 
       <div className="relative z-10 p-4 sm:p-5">
@@ -92,26 +91,12 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
 
           <motion.button
             onClick={onEditGoal}
-            whileHover={{ scale: 1.08, rotate: 2 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative w-10 h-10 rounded-2xl overflow-hidden grid place-items-center border border-brand-pink/30 bg-white/10 text-white"
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            className="w-10 h-10 rounded-2xl grid place-items-center border border-brand-emerald/30 bg-white/10 text-white hover:bg-white/15 transition-colors"
             title="Edit Goal"
           >
-            <motion.span
-              className="absolute inset-[-1px] rounded-2xl bg-conic-brand"
-              animate={prefersReducedMotion ? {} : { rotate: 360 }}
-              transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
-            />
-            <span className="absolute inset-[2px] rounded-[0.9rem] bg-brand-deep/90" />
-            <motion.span
-              className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/25 to-transparent"
-              initial={{ x: '-120%' }}
-              animate={prefersReducedMotion ? {} : { x: ['-120%', '120%'] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: 'linear' }}
-            />
-            <span className="relative z-10">
-              <PencilIcon className="w-4 h-4" />
-            </span>
+            <PencilIcon className="w-4 h-4" />
           </motion.button>
         </div>
 
@@ -145,7 +130,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
               <motion.div
                 className="text-4xl sm:text-5xl font-black leading-none"
-                whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
+                whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
               >
                 {todayTotal}
               </motion.div>
@@ -166,16 +151,8 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="relative p-2 bg-gradient-to-r from-brand-emerald/30 via-brand-gold/30 to-brand-pink/30 rounded-lg backdrop-blur-sm border border-brand-emerald/20 flex items-center justify-center gap-2 overflow-hidden"
+            className="p-2 bg-gradient-to-r from-brand-emerald/20 via-brand-gold/20 to-brand-warm/20 rounded-lg backdrop-blur-sm border border-brand-emerald/20 flex items-center justify-center gap-2"
           >
-            {!prefersReducedMotion && (
-              <motion.span
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent"
-                initial={{ x: '-120%' }}
-                animate={{ x: ['-120%', '120%'] }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: 'linear' }}
-              />
-            )}
             <TrophyIcon className="w-5 h-5" />
             <span className="text-sm font-extrabold tracking-wide">Congratulations! Goal Achieved</span>
           </motion.div>

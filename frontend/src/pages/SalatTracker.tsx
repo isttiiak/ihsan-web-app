@@ -515,8 +515,8 @@ export default function SalatTracker() {
           {/* Date navigator */}
           <div className="flex items-center justify-between gap-3">
             <motion.button
-              whileHover={isAtStartDate ? {} : { scale: 1.08 }}
-              whileTap={isAtStartDate ? {} : { scale: 0.92 }}
+              whileHover={isAtStartDate ? {} : { scale: 1.03 }}
+              whileTap={isAtStartDate ? {} : { scale: 0.97 }}
               onClick={() => { if (!isAtStartDate) { setSelectedDate((d) => offsetDate(d, -1)); setExpandedPrayer(null); } }}
               disabled={isAtStartDate}
               title={isAtStartDate ? 'No logs before this date' : 'Previous day'}
@@ -530,7 +530,7 @@ export default function SalatTracker() {
               {(() => { const h = getHijriDate(new Date(selectedDate + 'T12:00:00')); return h ? <p className="text-brand-gold/40 text-[10px] mt-0.5">{formatHijriDate(h)}</p> : null; })()}
             </div>
             <motion.button
-              whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               onClick={() => { setSelectedDate((d) => offsetDate(d, 1)); setExpandedPrayer(null); }}
               disabled={isToday}
               className="p-2 rounded-xl bg-brand-surface border border-brand-border text-white/60 hover:text-white hover:border-brand-emerald/40 disabled:opacity-20 disabled:cursor-not-allowed"

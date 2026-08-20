@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
-import { ChartBarIcon, FireIcon, PlusCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, PlusCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import StreakCard from '../components/analytics/StreakCard.js';
 import GoalCard from '../components/analytics/GoalCard.js';
 import TrendChart from '../components/analytics/TrendChart.js';
@@ -373,12 +372,10 @@ export default function ZikrAnalytics() {
   const resumeStreak = useResumeStreak();
 
   const periods = [
-    { label: '7 Days', value: 7 },
-    { label: '15 Days', value: 15 },
-    { label: '30 Days', value: 30 },
-    { label: '60 Days', value: 60 },
-    { label: '90 Days', value: 90 },
-    { label: '180 Days', value: 180 },
+    { label: '7d', value: 7 },
+    { label: '30d', value: 30 },
+    { label: '90d', value: 90 },
+    { label: '1y', value: 365 },
   ];
 
   const handlePauseStreak = () => pauseStreak.mutate();
@@ -440,8 +437,8 @@ export default function ZikrAnalytics() {
 
   return (
     <AnimatedBackground variant="dark">
-      <div className="p-4 sm:p-6 lg:p-8 relative">
-        <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="max-w-4xl mx-auto space-y-5">
 
           {/* Tab navigation */}
           <div className="flex items-center justify-between flex-wrap gap-3">
@@ -483,168 +480,108 @@ export default function ZikrAnalytics() {
           </div>
 
           {/* Overview Statistics */}
-          <div className="space-y-6">
-            <motion.h2
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-3xl sm:text-4xl font-black text-brand-emerald flex items-center gap-3"
-            >
-              <ChartBarIcon className="w-8 h-8" /> Overview Statistics
-            </motion.h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'All-time', value: allTime?.totalCount?.toLocaleString() ?? '0', accent: 'text-brand-emerald' },
+              { label: 'Today', value: todayTotal.toLocaleString(), accent: 'text-brand-gold' },
+              {
+                label: 'Best day',
+                value: allTime?.bestDay?.count?.toLocaleString() ?? '0',
+                accent: 'text-brand-info',
+                sub: allTime?.bestDay?.date
+                  ? new Date(allTime.bestDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  : undefined,
+              },
+              { label: 'Types used', value: allTimeTypes.filter((t) => t.total > 0).length, accent: 'text-brand-warm' },
+            ].map((s, i) => (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                key={s.label}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                whileHover={{ y: -8, scale: 1.03 }}
-                transition={{ delay: 0.05 }}
-                className="sm:col-span-2 lg:col-span-1 card relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-emerald via-brand-info-dim to-brand-info-dim backdrop-blur-xl border border-brand-emerald/20 shadow-[0_8px_32px_rgba(16,185,129,0.4)] hover:shadow-[0_12px_48px_rgba(16,185,129,0.6)] cursor-pointer group"
+                transition={{ delay: i * 0.05 }}
+                className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center"
               >
-                <div className="absolute inset-0 opacity-40">
-                  <motion.div
-                    className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full blur-2xl"
-                    animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.6, 0.4] }}
-                    transition={{ duration: 4, repeat: Infinity }}
-                  />
-                </div>
-                <div className="card-body p-5 sm:p-6 relative z-10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 3, repeat: Infinity }}>
-                      <FireIcon className="w-6 h-6 text-white drop-shadow-lg" />
-                    </motion.div>
-                    <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide">Total Zikr</h3>
-                  </div>
-                  <div className="text-5xl sm:text-6xl font-black text-white mb-2 drop-shadow-2xl">
-                    {allTime?.totalCount?.toLocaleString() ?? 0}
-                  </div>
-                  <p className="text-xs text-white/80 font-medium">✨ All-time remembrance</p>
-                </div>
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-                  initial={{ x: '-100%' }}
-                  whileHover={{ x: '100%' }}
-                  transition={{ duration: 0.6 }}
-                />
+                <p className={`text-2xl font-black ${s.accent}`}>{s.value}</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{s.label}</p>
+                {s.sub && <p className="text-white/20 text-[10px] mt-0.5">{s.sub}</p>}
               </motion.div>
-
-              {[
-                { label: '📅 Today', value: todayTotal.toLocaleString(), delay: 0.1, gradient: 'from-brand-gold to-brand-gold', textGrad: 'from-brand-gold to-brand-warm' },
-                {
-                  label: '🏆 Best',
-                  value: allTime?.bestDay?.count?.toLocaleString() ?? '0',
-                  delay: 0.15,
-                  gradient: 'from-brand-emerald to-brand-emerald',
-                  textGrad: 'from-brand-emerald to-brand-emerald',
-                  sub: allTime?.bestDay?.date
-                    ? new Date(allTime.bestDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                    : 'N/A',
-                },
-                { label: '🎯 Types', value: allTimeTypes.filter((t) => t.total > 0).length, delay: 0.2, gradient: 'from-brand-warm to-brand-pink', textGrad: 'from-brand-pink to-brand-pink' },
-              ].map(({ label, value, delay, gradient, textGrad, sub }) => (
-                <motion.div
-                  key={label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ y: -6, scale: 1.02 }}
-                  transition={{ delay }}
-                  className="card backdrop-blur-xl bg-white/10 border border-brand-emerald/20 rounded-2xl shadow-lg cursor-pointer"
-                >
-                  <div className="card-body p-5 sm:p-6">
-                    <div className={`text-xs sm:text-sm font-bold mb-2 bg-gradient-to-r ${gradient} bg-clip-text text-transparent uppercase tracking-wide`}>{label}</div>
-                    <div className={`text-4xl sm:text-5xl font-black bg-gradient-to-br ${textGrad} bg-clip-text text-transparent`}>{value}</div>
-                    {sub && <div className="text-xs text-white/40 mt-2 font-medium">{sub}</div>}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            ))}
           </div>
 
           {/* Breakdown by Type */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between px-2 flex-wrap gap-4">
-              <h2 className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-brand-info via-brand-pink to-brand-pink bg-clip-text text-transparent flex items-center gap-3">
-                <ChartBarIcon className="w-8 h-8 text-brand-info" /> Breakdown by Type
+          <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <h2 className="text-white font-black text-sm flex items-center gap-2">
+                <ChartBarIcon className="w-4 h-4 text-brand-emerald" /> Breakdown by Type
               </h2>
-              <div className="tabs tabs-boxed bg-brand-deep border border-brand-border shadow-lg">
+              <div className="tabs tabs-boxed tabs-sm bg-brand-surface border border-brand-border">
                 {(['today', 'all'] as const).map((tab) => (
                   <button
                     key={tab}
-                    className={`tab ${activeTab === tab ? 'tab-active bg-brand-emerald text-white font-bold' : 'text-white/60 hover:text-white'}`}
+                    className={`tab text-xs ${activeTab === tab ? 'tab-active bg-brand-emerald text-white font-bold' : 'text-white/60'}`}
                     onClick={() => setActiveTab(tab)}
                   >
-                    {tab === 'today' ? '📅 Today' : '✨ All Time'}
+                    {tab === 'today' ? 'Today' : 'All Time'}
                   </button>
                 ))}
               </div>
             </div>
 
             {displayData?.length ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {displayData.map((t, index) => {
-                  const gradients = ['from-brand-info-dim via-brand-info-dim to-brand-info-dim', 'from-brand-info-dim via-brand-info-dim to-brand-pink-dim', 'from-brand-pink-dim via-brand-pink-dim to-red-600', 'from-brand-gold-dim via-brand-warm-dim to-red-600', 'from-brand-emerald via-brand-info-dim to-brand-info-dim', 'from-brand-info-dim via-brand-info-dim to-brand-info-dim'];
+              <div className="space-y-2">
+                {displayData.map((t, i) => {
+                  const pct = displayTotal > 0 ? (t.total / displayTotal) * 100 : 0;
                   return (
                     <motion.div
                       key={t.zikrType}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      whileHover={{ y: -8, scale: 1.03 }}
-                      transition={{ delay: 0.1 + index * 0.05 }}
-                      className={`card relative overflow-hidden bg-gradient-to-br ${gradients[index % gradients.length]} backdrop-blur-xl border border-brand-emerald/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)] cursor-pointer rounded-2xl group`}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="group"
                     >
-                      <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent" initial={{ x: '-100%' }} whileHover={{ x: '100%' }} transition={{ duration: 0.6 }} />
-                      <div className="card-body p-6 relative z-10">
-                        <h3 className="font-black text-xl sm:text-2xl truncate text-white drop-shadow-lg">{t.zikrType}</h3>
-                        <div className="text-5xl sm:text-6xl font-black text-white drop-shadow-2xl my-2">{t.total.toLocaleString()}</div>
-                        <div className="mt-4">
-                          <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${displayTotal > 0 ? (t.total / displayTotal) * 100 : 0}%` }}
-                              transition={{ delay: 0.2 + index * 0.05, duration: 0.8 }}
-                              className="h-full bg-white rounded-full shadow-lg"
-                            />
-                          </div>
-                          <p className="text-sm font-bold text-white/90 mt-2">
-                            {displayTotal > 0 ? ((t.total / displayTotal) * 100).toFixed(1) : '0.0'}% of{activeTab === 'today' ? ' today' : ' total'}
-                          </p>
-                        </div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-white/70 text-xs font-bold truncate max-w-[60%]">{t.zikrType}</span>
+                        <span className="text-white font-black text-xs tabular-nums">{t.total.toLocaleString()}</span>
                       </div>
+                      <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct > 0 ? Math.max(pct, 2) : 0}%` }}
+                          transition={{ duration: 0.6, delay: i * 0.03 }}
+                          className="h-full rounded-full bg-gradient-to-r from-brand-emerald/80 to-brand-info/80"
+                        />
+                      </div>
+                      <p className="text-white/20 text-[10px] mt-0.5">{pct.toFixed(1)}%</p>
                     </motion.div>
                   );
                 })}
               </div>
             ) : (
-              <div className="card bg-brand-surface border border-brand-border rounded-2xl">
-                <div className="card-body text-center p-12">
-                  <p className="text-white/40 text-lg">No zikr recorded yet for {activeTab === 'today' ? 'today' : 'all time'}.</p>
-                </div>
-              </div>
+              <p className="text-white/30 text-sm text-center py-8">
+                No zikr recorded yet for {activeTab === 'today' ? 'today' : 'all time'}.
+              </p>
             )}
           </div>
 
-          {/* Trends & Insights */}
-          <div className="space-y-6 mt-12 pt-8 border-t-2 border-brand-border">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <h2 className="text-3xl sm:text-4xl font-black text-brand-emerald flex items-center gap-3">
-                <ChartBarIcon className="w-8 h-8" /> Trends & Insights
+          {/* Trend chart */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <h2 className="text-white font-black text-sm flex items-center gap-2">
+                <ChartBarIcon className="w-4 h-4 text-brand-emerald" /> Trend
               </h2>
-              <div className="overflow-x-auto max-w-full -mx-1 px-1">
-                <div className="tabs tabs-boxed bg-brand-deep border border-brand-border shadow-lg whitespace-nowrap">
-                  {periods.map((period) => (
-                    <button
-                      key={period.value}
-                      className={`tab text-xs sm:text-sm ${selectedPeriod === period.value ? 'tab-active bg-brand-emerald text-white font-bold' : 'text-white/60 hover:text-white'}`}
-                      onClick={() => setSelectedPeriod(period.value)}
-                    >
-                      {period.label}
-                    </button>
-                  ))}
-                </div>
+              <div className="tabs tabs-boxed tabs-sm bg-brand-deep border border-brand-border">
+                {periods.map((p) => (
+                  <button
+                    key={p.value}
+                    className={`tab text-xs ${selectedPeriod === p.value ? 'tab-active bg-brand-emerald text-white font-bold' : 'text-white/60'}`}
+                    onClick={() => setSelectedPeriod(p.value)}
+                  >
+                    {p.label}
+                  </button>
+                ))}
               </div>
             </div>
-            <div className="min-h-[320px]">
-              <TrendChart data={chartData} period={selectedPeriod} />
-            </div>
+            <TrendChart data={chartData} period={selectedPeriod} />
           </div>
         </div>
 

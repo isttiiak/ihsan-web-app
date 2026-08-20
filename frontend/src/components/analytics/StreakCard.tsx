@@ -55,20 +55,19 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ scale: 1.02, y: -4 }}
       className={`relative overflow-hidden rounded-[1.25rem] backdrop-blur-2xl border bg-brand-deep/60 text-white shadow-glass ${
         isPaused ? 'border-brand-pink/40' : streakAtRisk ? 'border-brand-gold/50' : 'border-brand-emerald/10'
       }`}
     >
       <motion.div
-        className="pointer-events-none absolute -top-20 -left-16 w-72 h-72 rounded-full blur-3xl bg-gradient-radial from-brand-gold/40 to-transparent"
-        animate={prefersReducedMotion ? {} : { scale: [1, 1.08, 1], opacity: [0.35, 0.55, 0.35] }}
-        transition={{ duration: 6, repeat: Infinity }}
+        className="pointer-events-none absolute -top-20 -left-16 w-72 h-72 rounded-full blur-3xl bg-gradient-radial from-brand-gold/15 to-transparent"
+        animate={prefersReducedMotion ? {} : { scale: [1, 1.03, 1], opacity: [0.25, 0.35, 0.25] }}
+        transition={{ duration: 10, repeat: Infinity }}
       />
       <motion.div
-        className="pointer-events-none absolute -bottom-24 -right-20 w-80 h-80 rounded-full blur-3xl bg-gradient-radial from-brand-warm/30 to-transparent"
-        animate={prefersReducedMotion ? {} : { scale: [1.1, 1, 1.1] }}
-        transition={{ duration: 8, repeat: Infinity }}
+        className="pointer-events-none absolute -bottom-24 -right-20 w-80 h-80 rounded-full blur-3xl bg-gradient-radial from-brand-warm/10 to-transparent"
+        animate={prefersReducedMotion ? {} : { scale: [1.05, 1, 1.05] }}
+        transition={{ duration: 12, repeat: Infinity }}
       />
 
       <div className="relative z-10 p-4 sm:p-5">
@@ -76,8 +75,8 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
         <div className="flex items-center justify-between mb-3">
           <motion.h3
             className="text-base sm:text-lg font-extrabold flex items-center gap-2"
-            animate={!isPaused && !prefersReducedMotion ? { scale: [1, 1.01, 1] } : {}}
-            transition={{ duration: 2.5, repeat: Infinity }}
+            animate={{}}
+            transition={{}}
           >
             {isPaused ? (
               <span className="relative inline-flex items-center gap-2">
@@ -97,8 +96,8 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
           <motion.button
             onClick={isPaused ? onResume : onPause}
             disabled={isLoading}
-            whileHover={{ scale: 1.08, rotate: isPaused ? 0 : 2 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
             className={`w-10 h-10 rounded-2xl grid place-items-center border ${
               isPaused ? 'border-brand-emerald/40 bg-brand-emerald/15' : 'border-brand-emerald/30 bg-white/10'
             } backdrop-blur-md hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-60 disabled:cursor-not-allowed`}
@@ -148,8 +147,6 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="text-center">
             <motion.div
-              animate={!prefersReducedMotion && !isPaused && (currentStreak ?? 0) > 0 ? { scale: [1, 1.03, 1] } : {}}
-              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
               className="text-8xl sm:text-5xl font-black drop-shadow-[0_6px_24px_rgba(0,0,0,0.35)] bg-gradient-to-tr from-brand-gold via-brand-gold to-brand-warm bg-clip-text text-transparent"
             >
               {currentStreak || 0}
@@ -158,25 +155,25 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
           </div>
 
           <div className="text-center border-l border-brand-emerald/10">
-            <motion.div className="relative inline-block px-2 py-1" whileHover={!prefersReducedMotion ? { scale: 1.05 } : {}}>
+            <motion.div className="relative inline-block px-2 py-1" whileHover={!prefersReducedMotion ? { scale: 1.02 } : {}}>
               <span className="absolute -inset-3 rounded-full bg-gradient-radial from-brand-gold/25 to-transparent blur-md" />
               {!prefersReducedMotion && (
                 <>
-                  {[...Array(6)].map((_, i) => (
+                  {[...Array(3)].map((_, i) => (
                     <motion.span
                       key={i}
-                      className="absolute rounded-full blur-xl opacity-60"
+                      className="absolute rounded-full blur-xl opacity-30"
                       style={{
                         width: `${18 + (i % 3) * 8}px`, height: `${18 + (i % 3) * 8}px`,
-                        left: ['-18%', '35%', '110%', '60%', '-8%', '95%'][i],
-                        top: ['-10%', '-15%', '0%', '60%', '40%', '25%'][i],
+                        left: ['-18%', '35%', '110%'][i],
+                        top: ['-10%', '-15%', '0%'][i],
                         background: i % 2 === 0
-                          ? 'radial-gradient(circle, rgba(214,197,43,0.55) 0%, rgba(214,197,43,0) 70%)'
-                          : 'radial-gradient(circle, rgba(199,87,171,0.45) 0%, rgba(199,87,171,0) 70%)',
+                          ? 'radial-gradient(circle, rgba(214,197,43,0.3) 0%, rgba(214,197,43,0) 70%)'
+                          : 'radial-gradient(circle, rgba(199,87,171,0.25) 0%, rgba(199,87,171,0) 70%)',
                       }}
-                      initial={{ scale: 0.8, opacity: 0.5 }}
-                      animate={{ scale: [0.8, 1.15, 0.9, 1], opacity: [0.5, 0.9, 0.6, 0.8] }}
-                      transition={{ duration: 4 + i * 0.2, repeat: Infinity, ease: 'easeInOut' }}
+                      initial={{ scale: 0.9, opacity: 0.3 }}
+                      animate={{ scale: [0.9, 1.05, 0.95, 1], opacity: [0.3, 0.5, 0.35, 0.4] }}
+                      transition={{ duration: 6 + i * 0.3, repeat: Infinity, ease: 'easeInOut' }}
                     />
                   ))}
                 </>
@@ -289,7 +286,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
               <motion.button
                 onClick={onResume}
                 disabled={isLoading}
-                whileHover={{ scale: 1.05, y: -1 }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black text-white bg-brand-emerald/80 hover:bg-brand-emerald/90 border border-brand-emerald/40 disabled:opacity-60"
               >

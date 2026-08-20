@@ -597,8 +597,8 @@ export default function ZikrCounter() {
           className="flex gap-3 justify-center items-center"
         >
           <motion.button
-            whileHover={{ scale: 1.1, rotate: -5 }}
-            whileTap={{ scale: 0.93 }}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
             onClick={onDecrement}
             disabled={currentCount === 0}
             aria-label="Decrease count by one"
@@ -619,8 +619,8 @@ export default function ZikrCounter() {
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.1, rotate: 180 }}
-            whileTap={{ scale: 0.93 }}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
             onClick={onReset}
             disabled={currentCount === 0}
             aria-label="Reset counter"

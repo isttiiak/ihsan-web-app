@@ -79,8 +79,8 @@ export default function Feedback() {
           <motion.div
             aria-hidden
             className="absolute -top-16 -right-12 w-52 h-52 rounded-full bg-brand-emerald/15 blur-3xl"
-            animate={{ scale: [1, 1.25, 1], opacity: [0.4, 0.65, 0.4] }}
-            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+            animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.4, 0.3] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
           />
           <div className="relative">
             <motion.div

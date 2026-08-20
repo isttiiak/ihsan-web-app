@@ -518,9 +518,9 @@ export default function FastingTracker() {
             {/* soft animated orb */}
             <motion.div
               className="absolute -top-16 -right-16 w-56 h-56 rounded-full pointer-events-none"
-              style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.10) 0%, transparent 70%)' }}
-              animate={{ scale: [1, 1.15, 1] }}
-              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%)' }}
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
             />
 
             <div className="relative p-5 sm:p-6 text-center space-y-3">
@@ -739,8 +739,8 @@ export default function FastingTracker() {
                 >
                   <motion.span
                     className="text-2xl shrink-0"
-                    animate={{ scale: [1, 1.12, 1] }}
-                    transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.4 }}
+                    animate={{ scale: [1, 1.04, 1] }}
+                    transition={{ duration: 3, repeat: Infinity, delay: i * 0.4 }}
                   >{r.emoji}</motion.span>
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-sm leading-tight" style={{ color: r.color }}>

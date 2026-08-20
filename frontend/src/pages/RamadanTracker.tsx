@@ -246,8 +246,8 @@ export default function RamadanTracker() {
             className="rounded-3xl p-8 border border-brand-gold/25 bg-gradient-to-br from-brand-gold/15 via-brand-gold/10 to-brand-info/10 text-center relative overflow-hidden"
           >
             <motion.div
-              className="absolute -top-14 -right-14 w-48 h-48 rounded-full bg-brand-gold/15 blur-2xl"
-              animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute -top-14 -right-14 w-48 h-48 rounded-full bg-brand-gold/10 blur-2xl"
+              animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
             />
             <div className="relative">
               <div className="text-6xl mb-3">🌙</div>
@@ -550,7 +550,7 @@ export default function RamadanTracker() {
                     return (
                       <motion.div
                         key={d.date}
-                        whileHover={{ scale: 1.07, y: -2 }}
+                        whileHover={{ scale: 1.02 }}
                         transition={{ type: 'spring', stiffness: 400, damping: 22 }}
                         title={`Ramadan ${d.dayNumber} — ${formatGregorian(d.date)}${oddNight ? ' · odd night of the last ten ⭐' : ''}`}
                         className={[

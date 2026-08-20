@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
-import { ChartBarIcon, FireIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useSalatAnalytics } from '../hooks/useSalatLog.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
 
@@ -85,13 +85,12 @@ export default function SalatAnalytics() {
             ]}
           />
 
-          {/* Title + period selector on the same row */}
+          {/* Title + period selector */}
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <motion.h1 initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
-              className="text-3xl sm:text-4xl font-black text-brand-emerald flex items-center gap-3">
-              <ChartBarIcon className="w-8 h-8" /> Salat Analytics
-            </motion.h1>
-            <div className="tabs tabs-boxed bg-brand-deep border border-brand-border">
+            <h1 className="text-white font-black text-sm flex items-center gap-2">
+              <ChartBarIcon className="w-4 h-4 text-brand-emerald" /> Salat Analytics
+            </h1>
+            <div className="tabs tabs-boxed tabs-sm bg-brand-deep border border-brand-border">
               {PERIOD_OPTIONS.map((p) => (
                 <button
                   key={p.value}
@@ -129,60 +128,32 @@ export default function SalatAnalytics() {
                 </div>
               )}
 
-              {/* Stat cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {/* Stat tiles */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  {
-                    label: 'Completion',
-                    value: `${data.completionRate}%`,
-                    sub: `(Done + Kaza) ÷ (${data.totalDays} tracked days × 5) × 100`,
-                    gradient: 'from-brand-emerald to-brand-info',
-                    tooltip: true,
-                  },
-                  {
-                    label: 'Days without a gap',
-                    value: data.currentStreak,
-                    sub: 'How long you have prayed all 5, day after day',
-                    gradient: 'from-brand-gold to-brand-warm',
-                    icon: <FireIcon className="w-3 h-3 inline" />,
-                  },
-                  {
-                    label: 'Best run',
-                    value: data.bestStreak,
-                    sub: 'Your longest run of all-5-prayer days',
-                    gradient: 'from-brand-info to-brand-info',
-                  },
-                  {
-                    label: 'Nafl Days',
-                    value: data.naflDays ?? 0,
-                    sub: 'Days with at least one nafl prayer logged',
-                    gradient: 'from-brand-info to-brand-info',
-                  },
-                ].map(({ label, value, sub, gradient, icon, tooltip }) => (
+                  { label: 'Completion', value: `${data.completionRate}%`, accent: 'text-brand-emerald' },
+                  { label: 'Current streak', value: data.currentStreak, accent: 'text-brand-gold' },
+                  { label: 'Best run', value: data.bestStreak, accent: 'text-brand-info' },
+                  { label: 'Nafl days', value: data.naflDays ?? 0, accent: 'text-brand-warm' },
+                ].map((s, i) => (
                   <motion.div
-                    key={label}
-                    initial={{ opacity: 0, y: 16 }}
+                    key={s.label}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ y: -4, scale: 1.02 }}
-                    className="card bg-brand-surface border border-brand-border rounded-2xl"
+                    transition={{ delay: i * 0.05 }}
+                    className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center"
                   >
-                    <div className="card-body p-4">
-                      <p className={`text-xs font-bold uppercase tracking-wide bg-gradient-to-r ${gradient} bg-clip-text text-transparent flex items-center gap-1`}>
-                        {icon}{label}
-                        {tooltip && <InformationCircleIcon className="w-3 h-3 text-white/20" />}
-                      </p>
-                      <p className={`text-4xl font-black bg-gradient-to-br ${gradient} bg-clip-text text-transparent`}>{value}</p>
-                      <p className="text-white/25 text-xs mt-1 leading-tight">{sub}</p>
-                    </div>
+                    <p className={`text-2xl font-black ${s.accent}`}>{s.value}</p>
+                    <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{s.label}</p>
                   </motion.div>
                 ))}
               </div>
 
               {/* Breakdown strip */}
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="card bg-brand-surface border border-brand-border rounded-2xl"
+                className="rounded-2xl bg-brand-deep/80 border border-brand-border"
               >
                 <div className="card-body p-5 space-y-3">
                   <div className="flex items-center gap-2">
@@ -239,8 +210,8 @@ export default function SalatAnalytics() {
 
               {/* Per-prayer cards */}
               <div className="space-y-3">
-                <h2 className="text-lg font-black text-white flex items-center gap-2">
-                  <ChartBarIcon className="w-5 h-5 text-brand-emerald" /> Per Prayer
+                <h2 className="text-white font-black text-sm flex items-center gap-2">
+                  <ChartBarIcon className="w-4 h-4 text-brand-emerald" /> Per Prayer
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {PRAYER_META.filter((p) => p.isTrackable).map((prayer, i) => {
@@ -252,14 +223,12 @@ export default function SalatAnalytics() {
                     return (
                       <motion.div
                         key={prayer.id}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.05 * i }}
-                        whileHover={{ y: -4, scale: 1.02 }}
-                        className={`card relative overflow-hidden bg-gradient-to-br ${gradient} border border-brand-emerald/20 rounded-2xl`}
+                        transition={{ delay: 0.04 * i }}
+                        className={`card bg-gradient-to-br ${gradient} border border-brand-emerald/20 rounded-2xl`}
                       >
-                        <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent" initial={{ x: '-100%' }} whileHover={{ x: '100%' }} transition={{ duration: 0.5 }} />
-                        <div className="card-body p-4 relative z-10">
+                        <div className="card-body p-4">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-2xl">{prayer.icon}</span>
                             <h3 className="font-black text-white text-base">{prayer.name}</h3>
@@ -293,8 +262,8 @@ export default function SalatAnalytics() {
               {/* Prayer Calendar — horizontal (weeks flow left→right, days top→bottom) */}
               <div className="space-y-3">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <h2 className="text-lg font-black text-white">Prayer Calendar</h2>
-                  <span className="text-white/30 text-xs">last {data.calendarData.length} days</span>
+                  <h2 className="text-white font-black text-sm">Prayer Calendar</h2>
+                  <span className="text-white/25 text-xs">last {data.calendarData.length} days</span>
                 </div>
 
                 <motion.div

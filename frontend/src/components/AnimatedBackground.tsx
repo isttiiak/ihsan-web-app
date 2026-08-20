@@ -18,39 +18,39 @@ interface AnimatedBackgroundProps {
 const VARIANTS: Record<BackgroundVariant, VariantColors> = {
   default: {
     bg: 'from-brand-void to-brand-void via-brand-deep',
-    orb1: 'from-brand-emerald/15 to-brand-emerald-dim/10',
-    orb2: 'from-brand-gold/10 to-brand-gold/[0.07]',
-    orb3: 'from-brand-warm/[0.07] to-purple-800/5',
+    orb1: 'from-brand-emerald/[0.07] to-brand-emerald-dim/5',
+    orb2: 'from-brand-gold/5 to-brand-gold/[0.03]',
+    orb3: 'from-brand-warm/[0.04] to-purple-800/[0.02]',
   },
   dark: {
     bg: 'from-brand-void to-brand-void via-brand-deep',
-    orb1: 'from-brand-emerald/20 to-brand-info/15',
-    orb2: 'from-brand-gold/15 to-brand-gold/10',
-    orb3: 'from-brand-warm/10 to-purple-800/[0.07]',
+    orb1: 'from-brand-emerald/10 to-brand-info/[0.07]',
+    orb2: 'from-brand-gold/[0.07] to-brand-gold/5',
+    orb3: 'from-brand-warm/5 to-purple-800/[0.03]',
   },
   premium: {
     bg: 'from-brand-void to-brand-void via-brand-deep',
-    orb1: 'from-brand-emerald/15 to-brand-emerald-dim/10',
-    orb2: 'from-brand-gold/10 to-brand-gold/[0.07]',
-    orb3: 'from-brand-warm/[0.07] to-purple-800/5',
+    orb1: 'from-brand-emerald/[0.07] to-brand-emerald-dim/5',
+    orb2: 'from-brand-gold/5 to-brand-gold/[0.03]',
+    orb3: 'from-brand-warm/[0.04] to-purple-800/[0.02]',
   },
   ocean: {
     bg: 'from-brand-void to-brand-void via-brand-deep',
-    orb1: 'from-brand-emerald/15 to-brand-info/15',
-    orb2: 'from-brand-info/10 to-brand-emerald/[0.07]',
-    orb3: 'from-brand-info/10 to-brand-info/[0.07]',
+    orb1: 'from-brand-emerald/[0.07] to-brand-info/[0.07]',
+    orb2: 'from-brand-info/5 to-brand-emerald/[0.03]',
+    orb3: 'from-brand-info/5 to-brand-info/[0.03]',
   },
   sunset: {
     bg: 'from-brand-void to-brand-void via-brand-deep',
-    orb1: 'from-brand-warm/15 to-red-700/10',
-    orb2: 'from-brand-gold/15 to-brand-gold/10',
-    orb3: 'from-brand-warm/10 to-brand-pink/[0.07]',
+    orb1: 'from-brand-warm/[0.07] to-red-700/5',
+    orb2: 'from-brand-gold/[0.07] to-brand-gold/5',
+    orb3: 'from-brand-warm/5 to-brand-pink/[0.03]',
   },
   vibrant: {
     bg: 'from-brand-void to-brand-void via-brand-deep',
-    orb1: 'from-brand-emerald/20 to-brand-emerald/10',
-    orb2: 'from-brand-warm/15 to-brand-warm/[0.07]',
-    orb3: 'from-brand-gold/10 to-brand-gold/[0.07]',
+    orb1: 'from-brand-emerald/10 to-brand-emerald/5',
+    orb2: 'from-brand-warm/[0.07] to-brand-warm/[0.03]',
+    orb3: 'from-brand-gold/5 to-brand-gold/[0.03]',
   },
 };
 
@@ -65,18 +65,18 @@ export default function AnimatedBackground({ children, variant = 'default' }: An
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className={`absolute top-0 left-0 w-96 h-96 rounded-full bg-gradient-to-r ${colors.orb1} blur-3xl`}
-          animate={{ x: [0, 40, 0], y: [0, 20, 0], scale: [1, 1.04, 1] }}
-          transition={{ duration: 30, repeat: Infinity, ease: 'easeInOut' }}
+          animate={{ x: [0, 20, 0], y: [0, 10, 0], scale: [1, 1.02, 1] }}
+          transition={{ duration: 45, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
           className={`absolute bottom-0 right-0 w-96 h-96 rounded-full bg-gradient-to-r ${colors.orb2} blur-3xl`}
-          animate={{ x: [0, -40, 0], y: [0, -20, 0], scale: [1, 1.06, 1] }}
-          transition={{ duration: 36, repeat: Infinity, ease: 'easeInOut' }}
+          animate={{ x: [0, -20, 0], y: [0, -10, 0], scale: [1, 1.03, 1] }}
+          transition={{ duration: 50, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-gradient-to-r ${colors.orb3} blur-3xl`}
-          animate={{ scale: [1, 1.08, 1], rotate: [0, 180, 360] }}
-          transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-gradient-to-r ${colors.orb3} blur-3xl`}
+          animate={{ scale: [1, 1.04, 1], rotate: [0, 180, 360] }}
+          transition={{ duration: 70, repeat: Infinity, ease: 'linear' }}
         />
         {/* Subtle grid overlay */}
         <div

@@ -107,8 +107,8 @@ export default function Landing() {
         <motion.section {...fadeUp} className="mb-10">
           <div className="rounded-3xl p-6 sm:p-10 border border-brand-pink/25 bg-gradient-to-br from-brand-pink/15 via-brand-pink/10 to-brand-warm/10 relative overflow-hidden">
             <motion.div
-              className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-brand-pink/15 blur-3xl"
-              animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-brand-pink/10 blur-3xl"
+              animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
             />
             <div className="relative sm:flex items-center gap-8">
               <div className="text-6xl sm:text-7xl text-center sm:text-left mb-4 sm:mb-0">🌸</div>

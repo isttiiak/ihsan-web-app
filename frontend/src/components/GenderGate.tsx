@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore.js';
 import api from '../lib/api.js';
 import type { AuthUser } from '../types/api.js';
 
 /**
- * Full-screen blocking overlay shown when a signed-in user has no gender set.
- * Covers Google-signup users (first login) and any legacy accounts.
- * The user cannot interact with the app until they choose.
+ * Shown when a signed-in user has no gender set (Google-signup first login,
+ * legacy accounts). Skippable — the user can choose later in Settings.
  *
  * For guest/demo users (no account), a lighter floating banner asks their
  * preference once and persists it in localStorage.
@@ -17,14 +17,16 @@ export default function GenderGate() {
   const [selected, setSelected] = useState<'male' | 'female' | ''>('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [skipped, setSkipped] = useState(
+    () => !!sessionStorage.getItem('ihsan_gender_skipped'),
+  );
 
-  // Guest prompt state — only if no user AND no saved guest gender
   const [guestDismissed, setGuestDismissed] = useState(
     () => !!localStorage.getItem('ihsan_guest_gender'),
   );
 
-  // ── Authenticated user: full blocking gate ──────────────────────────────────
-  if (user && !user.gender) {
+  // ── Authenticated user: skippable gate ─────────────────────────────────────
+  if (user && !user.gender && !skipped) {
     const save = async () => {
       if (!selected) return;
       setSaving(true);
@@ -38,6 +40,11 @@ export default function GenderGate() {
         setError('Something went wrong. Please try again.');
         setSaving(false);
       }
+    };
+
+    const skip = () => {
+      sessionStorage.setItem('ihsan_gender_skipped', '1');
+      setSkipped(true);
     };
 
     return (
@@ -86,9 +93,20 @@ export default function GenderGate() {
               {saving ? <span className="loading loading-spinner loading-sm" /> : 'Continue'}
             </button>
 
-            <p className="text-white/25 text-[11px] leading-relaxed">
-              You can update this later in <a href="/settings" className="underline text-white/40 hover:text-white/60">Settings</a>.
-            </p>
+            <div className="border-t border-brand-border/40 pt-4 space-y-2">
+              <button
+                onClick={skip}
+                className="text-white/40 hover:text-white/60 text-xs font-medium transition-colors"
+              >
+                I'll decide later
+              </button>
+              <p className="text-white/25 text-[11px] leading-relaxed">
+                You can set this anytime in{' '}
+                <Link to="/settings" onClick={skip} className="underline text-white/40 hover:text-white/60">
+                  Settings
+                </Link>
+              </p>
+            </div>
           </div>
         </motion.div>
       </div>
