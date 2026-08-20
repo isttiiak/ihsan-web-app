@@ -859,7 +859,7 @@ export default function SalatTracker() {
             </div>
           )}
 
-          {/* Nafl Prayer card */}
+          {/* Nafl Prayer card — tile-grid redesign */}
           {!isLoading && (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -873,23 +873,27 @@ export default function SalatTracker() {
               }`}
             >
               {/* Header row */}
-              <div className="p-3 flex items-center gap-3">
+              <div className="p-3.5 flex items-center gap-3">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <span className="text-2xl shrink-0">📿</span>
                   <div className="min-w-0">
                     <p className={`font-bold text-sm leading-none ${naflEntry.completed ? 'text-brand-info' : 'text-white/60'}`}>
                       Nafl Prayer
                     </p>
-                    <p className="text-white/25 text-xs mt-0.5">voluntary prayers</p>
+                    <p className="text-white/25 text-xs mt-0.5">
+                      {naflEntry.completed && (naflEntry.types?.length ?? 0) > 0
+                        ? naflEntry.types.map((t) => NAFL_TYPE_META.find((m) => m.id === t)?.label).filter(Boolean).join(', ')
+                        : 'voluntary prayers'}
+                      {naflEntry.completed && naflEntry.rakat > 0 && ` · ${naflEntry.rakat} rak'ahs`}
+                    </p>
                   </div>
                 </div>
-                {/* Done / Undo button */}
                 <motion.button
                   whileTap={{ scale: 0.88 }}
                   onClick={handleNaflToggle}
                   className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                     naflEntry.completed
-                      ? 'bg-brand-info text-white border-brand-info shadow-[0_0_12px_rgba(6,182,212,0.4)]'
+                      ? 'bg-brand-info text-white border-brand-info shadow-[0_0_12px_rgba(90,158,142,0.35)]'
                       : 'bg-brand-deep border-brand-border text-white/50 hover:border-brand-info/50 hover:text-white/80'
                   }`}
                 >
@@ -897,7 +901,7 @@ export default function SalatTracker() {
                 </motion.button>
               </div>
 
-              {/* Expanded: type selector + rakat */}
+              {/* Expanded: tile grid + rak'ah counter */}
               <AnimatePresence>
                 {naflEntry.completed && naflExpanded && (
                   <motion.div
@@ -908,99 +912,108 @@ export default function SalatTracker() {
                     className="overflow-hidden border-t border-brand-emerald/10"
                   >
                     <div className="px-3 py-3 space-y-3">
+                      <p className="text-white/30 text-[11px] font-bold uppercase tracking-wider">Select what you prayed</p>
 
-                      {/* Type of prayer — multi select */}
-                      <div>
-                        <p className="text-white/30 text-xs mb-2">Type of prayer <span className="text-white/20">(select all that apply)</span></p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {SELECTABLE_NAFL_TYPES.filter((t) => (
-                            t.id === 'tarawih' ? isRamadanNow() : true // Tarawih only in Ramadan
-                          )).map((t) => {
-                            const selected = (naflEntry.types ?? []).includes(t.id);
-                            return (
-                              <div key={t.id} className="flex flex-col gap-0">
-                                <motion.button
-                                  whileTap={{ scale: 0.9 }}
-                                  onClick={() => handleNaflTypeToggle(t.id)}
-                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
-                                    selected
-                                      ? 'bg-brand-info/20 border-brand-info/60 text-brand-info'
-                                      : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
-                                  }`}
-                                >
-                                  <span>{t.emoji}</span>
-                                  <span>{t.label}</span>
-                                  {/* Info toggle — span, not a nested <button> (invalid HTML) */}
-                                  <span
-                                    role="button"
-                                    tabIndex={0}
-                                    aria-label={`About ${t.label}`}
-                                    onClick={(e) => { e.stopPropagation(); setNaflInfoExpanded(naflInfoExpanded === t.id ? null : t.id); }}
-                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setNaflInfoExpanded(naflInfoExpanded === t.id ? null : t.id); } }}
-                                    className="text-white/20 hover:text-white/50 text-xs ml-0.5 cursor-pointer"
-                                  >ⓘ</span>
-                                </motion.button>
-                                {/* Short note always visible */}
-                                <p className="text-white/20 text-xs px-1 mt-0.5">{t.shortNote}</p>
-                                {/* Full note on expand */}
-                                <AnimatePresence>
-                                  {naflInfoExpanded === t.id && (
-                                    <motion.div
-                                      initial={{ height: 0, opacity: 0 }}
-                                      animate={{ height: 'auto', opacity: 1 }}
-                                      exit={{ height: 0, opacity: 0 }}
-                                      transition={{ duration: 0.15 }}
-                                      className="overflow-hidden"
-                                    >
-                                      <div className="mx-1 mt-1 mb-1 p-2 rounded-lg bg-brand-deep border border-brand-emerald/10 space-y-1">
-                                        <p className="text-white/50 text-xs leading-relaxed">{t.fullNote}</p>
-                                        <p className="text-white/25 text-xs italic">{t.hadith}</p>
-                                        <a
-                                          href={t.hadithUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-brand-info/50 text-xs underline hover:text-brand-info/80"
-                                        >
-                                          📖 sunnah.com
-                                        </a>
-                                      </div>
-                                    </motion.div>
+                      {/* Tile grid — 2 columns on mobile, 3 on wider */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {SELECTABLE_NAFL_TYPES.filter((t) => (
+                          t.id === 'tarawih' ? isRamadanNow() : true
+                        )).map((t) => {
+                          const selected = (naflEntry.types ?? []).includes(t.id);
+                          const infoOpen = naflInfoExpanded === t.id;
+                          return (
+                            <motion.div key={t.id} layout className="flex flex-col">
+                              <motion.button
+                                whileTap={{ scale: 0.94 }}
+                                onClick={() => handleNaflTypeToggle(t.id)}
+                                className={`relative rounded-xl p-2.5 text-left border transition-all ${
+                                  selected
+                                    ? 'bg-brand-info/15 border-brand-info/50 shadow-[0_0_10px_rgba(90,158,142,0.15)]'
+                                    : 'bg-brand-deep/80 border-brand-border hover:border-white/15'
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-1">
+                                  <span className="text-lg leading-none">{t.emoji}</span>
+                                  {selected && (
+                                    <motion.span
+                                      initial={{ scale: 0 }} animate={{ scale: 1 }}
+                                      className="text-brand-info text-xs leading-none"
+                                    >✓</motion.span>
                                   )}
-                                </AnimatePresence>
-                              </div>
-                            );
-                          })}
-                        </div>
+                                </div>
+                                <p className={`text-xs font-bold mt-1.5 leading-tight ${selected ? 'text-brand-info' : 'text-white/70'}`}>
+                                  {t.label}
+                                </p>
+                                <p className="text-white/20 text-[10px] mt-0.5 leading-snug">{t.shortNote}</p>
+                              </motion.button>
+                              {/* Info toggle */}
+                              <button
+                                onClick={() => setNaflInfoExpanded(infoOpen ? null : t.id)}
+                                className="mt-0.5 text-white/15 hover:text-white/40 text-[10px] text-center transition-colors"
+                              >
+                                {infoOpen ? '▲ hide' : 'ⓘ about'}
+                              </button>
+                              <AnimatePresence>
+                                {infoOpen && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="mt-1 p-2.5 rounded-xl bg-brand-deep border border-brand-emerald/10 space-y-1">
+                                      <p className="text-white/50 text-[11px] leading-relaxed">{t.fullNote}</p>
+                                      <p className="text-white/25 text-[11px] italic">{t.hadith}</p>
+                                      <a
+                                        href={t.hadithUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-brand-info/50 text-[11px] underline hover:text-brand-info/80"
+                                      >
+                                        📖 sunnah.com
+                                      </a>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </motion.div>
+                          );
+                        })}
                       </div>
 
-                      {/* Rakat counter */}
+                      {/* Rak'ah counter — prominent */}
                       {(() => {
                         const suggested = suggestedRakat(naflEntry.types ?? []);
                         const currentRakat = naflEntry.rakat ?? suggested;
+                        const isCustom = currentRakat !== suggested;
                         return (
-                          <div className={`flex items-center gap-3 px-2 py-1.5 rounded-xl transition-colors ${currentRakat !== suggested ? 'bg-brand-info/10 border border-brand-info/20' : ''}`}>
-                            <p className="text-white/30 text-xs">Rak'ahs prayed:</p>
-                            <div className="flex items-center gap-2">
+                          <div className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors ${
+                            isCustom ? 'bg-brand-info/10 border border-brand-info/20' : 'bg-white/[0.03] border border-brand-border'
+                          }`}>
+                            <div>
+                              <p className="text-white/50 text-xs font-bold">Rak'ahs prayed</p>
+                              {isCustom && <p className="text-white/20 text-[10px]">usual {suggested}</p>}
+                            </div>
+                            <div className="flex items-center gap-2.5">
                               <motion.button
                                 whileTap={{ scale: 0.85 }}
                                 onClick={() => handleNaflRakat(-1)}
                                 disabled={currentRakat <= MIN_RAKAT}
-                                className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center disabled:opacity-25 hover:border-brand-info/40 hover:text-white transition-all"
+                                className="w-8 h-8 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-lg flex items-center justify-center disabled:opacity-25 hover:border-brand-info/40 hover:text-white transition-all"
                               >−</motion.button>
-                              <span className="text-white font-black text-lg tabular-nums w-8 text-center">
+                              <span className="text-white font-black text-xl tabular-nums w-8 text-center">
                                 {currentRakat}
                               </span>
                               <motion.button
                                 whileTap={{ scale: 0.85 }}
                                 onClick={() => handleNaflRakat(1)}
-                                className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center hover:border-brand-info/40 hover:text-white transition-all"
+                                className="w-8 h-8 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-lg flex items-center justify-center hover:border-brand-info/40 hover:text-white transition-all"
                               >+</motion.button>
                             </div>
-                            <p className="text-white/20 text-xs">usual {suggested}r</p>
                           </div>
                         );
                       })()}
-
                     </div>
                   </motion.div>
                 )}
@@ -1010,16 +1023,13 @@ export default function SalatTracker() {
               {naflEntry.completed && (
                 <button
                   onClick={() => setNaflExpanded(!naflExpanded)}
-                  className="w-full flex items-center justify-center gap-1 py-1 border-t border-brand-emerald/5 text-white/20 hover:text-white/50 text-xs transition-colors"
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 border-t border-brand-emerald/5 text-white/20 hover:text-white/50 text-xs transition-colors"
                 >
                   {naflExpanded ? '▲ Less' : '▾ Details'}
-                  {(naflEntry.types?.length ?? 0) > 0 && (
+                  {!naflExpanded && (naflEntry.types?.length ?? 0) > 0 && (
                     <span className="text-brand-info/50 text-xs">
                       {naflEntry.types.map((t) => NAFL_TYPE_META.find((m) => m.id === t)?.emoji).join(' ')}
                     </span>
-                  )}
-                  {naflEntry.rakat > 2 && (
-                    <span className="text-white/25 text-xs">{naflEntry.rakat}r</span>
                   )}
                 </button>
               )}
