@@ -6,6 +6,8 @@ import type { CycleSummary } from '../hooks/useCycle.js';
  * Month calendar for Rayhanah Cycle:
  *  · rose-filled days = logged hayd (purple = nifas)
  *  · dashed rose ring = predicted next period window
+ *  · teal fill        = predicted fertile window (ovulation day brighter)
+ *  · gold fill        = predicted PMS window
  *  · white ring       = today
  *  · small dot        = flow note intensity (light/medium/heavy)
  */
@@ -35,16 +37,27 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
     return null;
   };
 
-  // Predicted windows for the NEXT 3 cycles (Istiak: match the analytics
-  // page) — window n starts at nextStart + n·avgCycleDays, each lasting
-  // avgPeriodDays.
+  // Predicted windows for the NEXT 3 cycles
   const predictedDays = new Set<string>();
+  const fertileDays = new Set<string>();
+  const ovulationDays = new Set<string>();
+  const pmsDays = new Set<string>();
+
   if (summary.prediction.nextStart) {
     const cycleLen = Math.max(1, summary.prediction.avgCycleDays || 28);
+    const hasPrediction = summary.prediction.basedOnCycles > 0;
     for (let w = 0; w < 3; w++) {
       const windowStart = shiftStr(summary.prediction.nextStart, w * cycleLen);
       for (let i = 0; i < Math.max(1, summary.prediction.avgPeriodDays); i++) {
         predictedDays.add(shiftStr(windowStart, i));
+      }
+      if (hasPrediction) {
+        // Ovulation ~14 days before the predicted period start
+        const ovDay = shiftStr(windowStart, -14);
+        ovulationDays.add(ovDay);
+        for (let i = -2; i <= 2; i++) fertileDays.add(shiftStr(ovDay, i));
+        // PMS window: 7 days before period
+        for (let i = -7; i <= -1; i++) pmsDays.add(shiftStr(windowStart, i));
       }
     }
   }
@@ -86,15 +99,29 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
           const predicted = predictedDays.has(day);
           const isToday = day === today;
           const note = noteByDate.get(day);
+          // Fertile/ovulation/PMS only show when NOT inside a logged or predicted period
+          const isFertile = !cycleType && !predicted && fertileDays.has(day);
+          const isOvulation = !cycleType && !predicted && ovulationDays.has(day);
+          const isPms = !cycleType && !predicted && !isFertile && pmsDays.has(day);
           return (
             <div
               key={day}
-              title={cycleType ? (cycleType === 'nifas' ? 'Nifās day' : 'Period day') : predicted ? 'Expected period' : undefined}
+              title={
+                cycleType ? (cycleType === 'nifas' ? 'Nifās day' : 'Period day')
+                : predicted ? 'Expected period'
+                : isOvulation ? 'Estimated ovulation'
+                : isFertile ? 'Fertile window'
+                : isPms ? 'PMS window'
+                : undefined
+              }
               className={[
                 'relative aspect-square rounded-xl grid place-items-center text-[11px] font-bold transition-all',
                 cycleType === 'hayd' ? 'bg-brand-pink/30 text-brand-pink' :
                 cycleType === 'nifas' ? 'bg-brand-warm/30 text-brand-warm' :
                 predicted ? 'border border-dashed border-brand-pink/50 text-brand-pink/80' :
+                isOvulation ? 'bg-brand-info/30 text-brand-info ring-1 ring-brand-info/40' :
+                isFertile ? 'bg-brand-info/15 text-brand-info/80' :
+                isPms ? 'bg-brand-gold/10 text-brand-gold/80' :
                 'text-white/40 bg-white/[0.03]',
                 isToday ? 'ring-2 ring-white/70' : '',
               ].join(' ')}
@@ -114,10 +141,11 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[10px] text-white/30">
         <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-pink/50 align-middle mr-1" />period</span>
         <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-warm/50 align-middle mr-1" />nifās</span>
-        <span><span className="inline-block w-2.5 h-2.5 rounded border border-dashed border-brand-pink/60 align-middle mr-1" />expected (next 3)</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded border border-dashed border-brand-pink/60 align-middle mr-1" />expected</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-info/30 align-middle mr-1" />fertile</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-gold/15 align-middle mr-1" />PMS</span>
         <span><span className="inline-block w-2.5 h-2.5 rounded ring-2 ring-white/70 align-middle mr-1" />today</span>
       </div>
-      {/* the small dots are the flow notes from "How are you today?" */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-[10px] text-white/30">
         <span className="text-white/25">flow notes:</span>
         <span><span className="inline-block w-1.5 h-1.5 rounded-full align-middle mr-1" style={{ background: FLOW_DOT.light }} />light</span>

@@ -93,6 +93,60 @@ function formatDay(dateStr: string): string {
     month: 'short', day: 'numeric', year: 'numeric',
   });
 }
+function shiftStr(dateStr: string, delta: number): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function daysBetween(a: string, b: string): number {
+  return Math.round((new Date(b + 'T12:00:00').getTime() - new Date(a + 'T12:00:00').getTime()) / 86_400_000);
+}
+
+// ─── Curated du'a/adhkar for excused days (verified references) ──────────────
+const EXCUSED_ADHKAR = [
+  {
+    icon: '🤲', label: 'Sayyid al-Istighfār',
+    arabic: 'اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَٰهَ إِلَّا أَنْتَ خَلَقْتَنِي وَأَنَا عَبْدُكَ',
+    transliteration: 'Allāhumma anta rabbī, lā ilāha illā anta, khalaqtanī wa ana ʿabduka…',
+    note: 'The master of seeking forgiveness',
+    ref: { text: 'Bukhārī 6306', url: 'https://sunnah.com/bukhari:6306' },
+  },
+  {
+    icon: '💚', label: 'Ṣalawāt upon the Prophet ﷺ',
+    arabic: 'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ',
+    transliteration: 'Allāhumma ṣalli ʿalā Muḥammad wa ʿalā āli Muḥammad…',
+    note: 'Especially on Friday — open to you always',
+    ref: { text: 'Bukhārī 3370', url: 'https://sunnah.com/bukhari:3370' },
+  },
+  {
+    icon: '🛡️', label: 'Morning/evening protection',
+    arabic: 'بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ',
+    transliteration: 'Bismillāhilladhī lā yaḍurru maʿasmihi shayʾun fil-arḍi wa lā fis-samāʾ…',
+    note: 'Say 3× morning and evening',
+    ref: { text: 'Abū Dāwūd 5088', url: 'https://sunnah.com/abudawud:5088' },
+  },
+  {
+    icon: '🌿', label: 'When in pain or discomfort',
+    arabic: 'أَعُوذُ بِاللَّهِ وَقُدْرَتِهِ مِنْ شَرِّ مَا أَجِدُ وَأُحَاذِرُ',
+    transliteration: "Aʿūdhu billāhi wa qudratihi min sharri mā ajidu wa uḥādhiru",
+    note: "Place hand on the area of pain, say Bismillāh (3×), then this (7×)",
+    ref: { text: 'Muslim 2202', url: 'https://sunnah.com/muslim:2202a' },
+  },
+  {
+    icon: '🌧️', label: 'Istighfār — constant forgiveness',
+    arabic: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ',
+    transliteration: 'Astaghfirullāha wa atūbu ilayh',
+    note: 'The Prophet ﷺ sought forgiveness 100× daily',
+    ref: { text: 'Muslim 2702', url: 'https://sunnah.com/muslim:2702a' },
+  },
+  {
+    icon: '✨', label: 'SubḥānAllāh wa biḥamdih',
+    arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ',
+    transliteration: 'SubḥānAllāhi wa biḥamdih, SubḥānAllāhil-ʿAẓīm',
+    note: 'Two phrases heavy on the scales, light on the tongue',
+    ref: { text: 'Bukhārī 6406', url: 'https://sunnah.com/bukhari:6406' },
+  },
+];
 
 /** Count days in [start..end] that fall in (adjusted) Ramadan — for auto-qada */
 function ramadanDaysIn(start: string, end: string): number {
@@ -211,6 +265,19 @@ export default function RayhanahCycle() {
     return ns ? formatDay(ns) : null;
   }, [summary]);
 
+  // PMS heads-up: days until predicted next period
+  const daysUntilNext = useMemo(() => {
+    const ns = summary?.prediction?.nextStart;
+    if (!ns || active) return null;
+    return daysBetween(today, ns);
+  }, [summary, active, today]);
+  const pmsAlert = daysUntilNext !== null && daysUntilNext >= 0 && daysUntilNext <= 7;
+
+  // Fasting makeup summary
+  const qadaOwed = fastingSummary?.profile?.qadaOwed ?? 0;
+  const qadaCompleted = fastingSummary?.qadaCompleted ?? 0;
+  const qadaRemaining = Math.max(0, qadaOwed - qadaCompleted);
+
   if (!user) return null;
   if (!isFemale) {
     // Gentle gate — the page is reachable only from the female-only menu entry
@@ -307,6 +374,27 @@ export default function RayhanahCycle() {
                 ? <>Based on your history, your next period is expected around <span className="text-brand-pink font-semibold">{nextStartLabel}</span> (avg cycle {summary?.prediction.avgCycleDays} days).</>
                 : 'Log your first cycle and Rayhanah will learn your rhythm to predict the next one.'}
             </p>
+            {pmsAlert && (
+              <div className="mt-3 rounded-2xl bg-brand-gold/10 border border-brand-gold/20 p-3 text-xs leading-relaxed">
+                <span className="font-bold text-brand-gold/90">
+                  {daysUntilNext === 0 ? '🌸 Your period may start today'
+                    : daysUntilNext === 1 ? '🌸 Your period may start tomorrow'
+                    : `🌸 ~${daysUntilNext} days until your expected period`}
+                </span>
+                <p className="text-white/40 mt-1">
+                  You may notice PMS symptoms. Be gentle with yourself — extra dhikr and rest are your friends.
+                </p>
+              </div>
+            )}
+            {summary?.prediction?.nextStart && summary?.prediction.basedOnCycles > 0 && !pmsAlert && (
+              <div className="mt-3 rounded-2xl bg-brand-info/10 border border-brand-info/15 p-3 text-xs leading-relaxed">
+                <span className="font-bold text-brand-info/90">🌿 Fertile window estimate</span>
+                <p className="text-white/40 mt-1">
+                  ~{formatDay(shiftStr(summary.prediction.nextStart, -16))} – {formatDay(shiftStr(summary.prediction.nextStart, -12))}
+                  <span className="text-white/25"> · ovulation ~{formatDay(shiftStr(summary.prediction.nextStart, -14))}</span>
+                </p>
+              </div>
+            )}
             <button
               className="mt-5 w-full btn h-14 rounded-2xl border border-brand-pink/30 bg-brand-pink/15 hover:bg-brand-pink/25 text-brand-pink text-base font-black"
               onClick={() => { setStartDate(today); setStartType('hayd'); setStartOpen(true); }}
@@ -425,6 +513,90 @@ export default function RayhanahCycle() {
           </div>
         )}
 
+        {/* ── Du'a & adhkar for excused days ────────────────────────────── */}
+        {active && (
+          <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5 space-y-3">
+            <h2 className="text-white font-black">🤲 Your adhkār garden</h2>
+            <p className="text-white/40 text-xs leading-relaxed">
+              Curated authentic du'a you can recite right now — dhikr, istighfār and ṣalawāt
+              are fully open to you in every state (
+              <a className="underline" href="https://sunnah.com/muslim:373" target="_blank" rel="noreferrer">Muslim 373</a>).
+            </p>
+            <div className="space-y-2">
+              {EXCUSED_ADHKAR.map((dua) => (
+                <details key={dua.label} className="group rounded-2xl bg-white/[0.03] border border-brand-emerald/10 overflow-hidden">
+                  <summary className="flex items-center gap-3 px-4 py-3 cursor-pointer list-none">
+                    <span className="text-lg shrink-0">{dua.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white/80 text-sm font-bold">{dua.label}</p>
+                      <p className="text-white/30 text-[10px]">{dua.note}</p>
+                    </div>
+                    <span className="text-white/20 text-xs group-open:rotate-180 transition-transform">▾</span>
+                  </summary>
+                  <div className="px-4 pb-4 space-y-2">
+                    <p className="text-xl text-white/90 font-semibold leading-loose text-right" dir="rtl" lang="ar">
+                      {dua.arabic}
+                    </p>
+                    <p className="text-white/50 text-xs italic">{dua.transliteration}</p>
+                    <a
+                      className="text-brand-emerald/80 text-[11px] underline"
+                      href={dua.ref.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >📖 {dua.ref.text}</a>
+                  </div>
+                </details>
+              ))}
+            </div>
+            <div className="rounded-2xl bg-brand-info/10 border border-brand-info/15 p-3 space-y-1.5">
+              <p className="text-brand-info/90 text-xs font-bold">📖 Can I recite the Quran?</p>
+              <p className="text-white/50 text-[11px] leading-relaxed">
+                <span className="font-semibold text-white/60">Listening</span> is agreed upon by all scholars.{' '}
+                <span className="font-semibold text-white/60">Reciting from memory</span> is a matter of scholarly difference:
+                the majority (Ḥanafī, Shāfiʿī, Ḥanbalī) say it is not permitted during menses,
+                while the Mālikī school and Ibn Taymiyyah permit it.
+                Du'ā using Quranic phrases is permitted by consensus. Ask a scholar you trust for your situation.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Fasting makeup summary ───────────────────────────────────────── */}
+        {qadaOwed > 0 && (
+          <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-white font-black">🌙 Fasting makeup</h2>
+              <button
+                className="text-brand-info text-xs font-bold hover:underline"
+                onClick={() => navigate('/fasting')}
+              >Open tracker →</button>
+            </div>
+            <p className="text-white/30 text-xs mt-1">
+              Missed Ramadan fasts are made up after (
+              <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>).
+            </p>
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              <div className="rounded-xl bg-brand-gold/10 border border-brand-gold/15 p-3 text-center">
+                <p className="text-xl font-black text-brand-gold">{qadaOwed}</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">owed</p>
+              </div>
+              <div className="rounded-xl bg-brand-emerald/10 border border-brand-emerald/15 p-3 text-center">
+                <p className="text-xl font-black text-brand-emerald">{qadaCompleted}</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">made up</p>
+              </div>
+              <div className="rounded-xl bg-white/5 border border-brand-border p-3 text-center">
+                <p className="text-xl font-black text-white/70">{qadaRemaining}</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">remaining</p>
+              </div>
+            </div>
+            {qadaRemaining > 0 && (
+              <p className="text-white/25 text-[10px] mt-3 leading-relaxed">
+                {qadaRemaining === 1 ? 'One more day to go — you can do it!' : `${qadaRemaining} days remaining. Take your time — every made-up fast counts.`}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* ── "I'm not done yet" — ABOVE the calendar so it's the first thing
                she sees after ending too early (Istiak's spec) ── */}
         {lastEnded && (
@@ -500,6 +672,42 @@ export default function RayhanahCycle() {
             <a className="underline" href="https://sunnah.com/bukhari:305" target="_blank" rel="noreferrer">Ṣaḥīḥ al-Bukhārī 305</a>.
             Reciting Quran from memory is a matter of scholarly difference; listening is agreed upon. Ask a scholar you trust.
           </p>
+
+          {/* Istihadah guide */}
+          <details className="group rounded-2xl bg-brand-gold/[0.06] border border-brand-gold/20 p-4 cursor-pointer">
+            <summary className="list-none flex items-center justify-between">
+              <p className="font-bold text-brand-gold text-sm">🩸 What is istiḥāḍa?</p>
+              <span className="text-white/20 text-xs group-open:rotate-180 transition-transform">▾</span>
+            </summary>
+            <div className="mt-3 space-y-2 text-xs leading-relaxed text-white/60">
+              <p>
+                <span className="font-bold text-white/80">Istiḥāḍa</span> (irregular/non-menstrual bleeding) is bleeding
+                that goes beyond the maximum period length (Ḥanafī: 10 days, majority: 15 days), or that occurs outside
+                the normal menstrual pattern.
+              </p>
+              <p>
+                The Prophet ﷺ told <span className="font-semibold">Fāṭimah bint Abī Ḥubaysh</span>:{' '}
+                <span className="italic text-white/70">
+                  "That is a vein, not menstruation. When your period comes, stop praying, and when it ends,
+                  wash the blood off and pray."
+                </span>{' '}
+                (<a className="underline text-brand-gold/80" href="https://sunnah.com/bukhari:306" target="_blank" rel="noreferrer">Bukhārī 306</a>)
+              </p>
+              <div className="rounded-xl bg-white/[0.04] p-3 space-y-1.5">
+                <p className="font-bold text-brand-gold/90">During istiḥāḍa:</p>
+                <ul className="space-y-1 ml-3">
+                  <li>• <span className="font-semibold text-white/70">Ṣalāt resumes</span> — perform wuḍū for each prayer time</li>
+                  <li>• <span className="font-semibold text-white/70">Fasting is valid</span> — no makeup needed for these days</li>
+                  <li>• <span className="font-semibold text-white/70">Intimacy is permitted</span> (majority view)</li>
+                  <li>• <span className="font-semibold text-white/70">Quran recitation is permitted</span></li>
+                </ul>
+              </div>
+              <p className="text-white/30 text-[10px]">
+                Rayhanah automatically flags when your cycle exceeds the maximum for your chosen madhab.
+                If you're unsure, consult a scholar you trust.
+              </p>
+            </div>
+          </details>
         </div>
 
         {/* ── Settings + history ─────────────────────────────────────────────── */}
