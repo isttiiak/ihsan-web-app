@@ -25,7 +25,7 @@ import {
   getCurrentAndNextPrayer,
   formatTime,
 } from '../utils/prayerTimes.js';
-import { isFriday, getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
+import { getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
 import { useCycleActive } from '../hooks/useCycle.js';
 import { useFastingHistory, useUpsertFastingLog } from '../hooks/useFasting.js';
 import ExcusedCard from '../components/ExcusedCard.js';
@@ -198,7 +198,8 @@ export default function SalatTracker() {
 
   // Friday specials — both derive from the same minute tick that drives the
   // prayer clock, so no extra timer and no notification permission.
-  const isFridayToday = isFriday() && selectedDate === todayStr();
+  const isCivilFriday = new Date(selectedDate + 'T12:00:00').getDay() === 5;
+  const isFridayToday = isCivilFriday && selectedDate === todayStr();
   const fridayHour = useMemo(
     () => getFridayHour(todayPrayerTimes?.times.asr, todayPrayerTimes?.times.maghrib, minuteNow),
     [todayPrayerTimes, minuteNow],
@@ -492,25 +493,6 @@ export default function SalatTracker() {
             </motion.div>
           )}
 
-          {/* Friday: Surah al-Kahf, one tap into the reader */}
-          {isFridayToday && (
-            <button
-              onClick={() => navigate('/quran/read/18?mode=single')}
-              className="w-full text-left rounded-2xl border border-brand-emerald/25 bg-brand-emerald/[0.07] p-4 hover:border-brand-emerald/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl shrink-0">🌟</span>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-brand-emerald font-black text-sm">It’s Friday — read Sūrat al-Kahf</h3>
-                  <p className="text-white/50 text-xs mt-1 leading-relaxed">
-                    “A light will shine for him between the two Fridays.”
-                  </p>
-                  <p className="text-white/25 text-[11px] mt-1">Ṣaḥīḥ at-Targhīb 736 · Ṣaḥīḥ</p>
-                </div>
-                <span className="text-brand-emerald/60 text-lg shrink-0">→</span>
-              </div>
-            </button>
-          )}
 
           {/* Date navigator */}
           <div className="flex items-center justify-between gap-3">
@@ -618,16 +600,16 @@ export default function SalatTracker() {
                         <span className="text-2xl shrink-0">{prayer.icon}</span>
                         <div className="min-w-0">
                           <p className={`font-bold text-sm leading-none ${isCurrent ? 'text-brand-emerald' : style.text}`}>
-                            {prayerId === 'dhuhr' && isToday && isFriday() ? "Jumu'ah" : prayer.name}
+                            {prayerId === 'dhuhr' && isCivilFriday ? "Jumu'ah" : prayer.name}
                             {isCurrent && <span className="ml-2 text-xs font-normal text-brand-emerald/70">● now</span>}
-                            {prayerId === 'dhuhr' && isToday && isFriday() && (
+                            {prayerId === 'dhuhr' && isCivilFriday && (
                               <span className="ml-2 text-xs font-normal text-brand-emerald/60">🕌 congregation</span>
                             )}
                           </p>
                           {prayerStartTime && isToday && (
                             <p className="text-white/30 text-xs mt-0.5">{prayerStartTime}</p>
                           )}
-                          {prayerId === 'dhuhr' && isToday && isFriday() && (
+                          {prayerId === 'dhuhr' && isCivilFriday && (
                             <p className="text-brand-emerald/50 text-xs mt-0.5">replaces Dhuhr — attend at mosque</p>
                           )}
                         </div>
