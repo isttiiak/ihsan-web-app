@@ -1,6 +1,9 @@
 import axios from 'axios';
+import type { InternalAxiosRequestConfig, AxiosHeaders } from 'axios';
 import toast from 'react-hot-toast';
 import { auth } from '../firebase.js';
+import { useAuthStore } from '../store/useAuthStore.js';
+import { getDemoResponse } from '../utils/demoData.js';
 
 /**
  * Backend origin. In production the API lives on the SAME Vercel deployment
@@ -35,8 +38,27 @@ export async function getIdToken(): Promise<string | null> {
   return localStorage.getItem('ihsan_idToken');
 }
 
+// Demo mode: intercept all requests and return mock data
+api.interceptors.request.use((config) => {
+  if (useAuthStore.getState().isDemoMode) {
+    const method = (config.method ?? 'get').toLowerCase();
+    const url = config.url ?? '';
+    const mock = getDemoResponse(url, method);
+    config.adapter = () =>
+      Promise.resolve({
+        data: mock,
+        status: 200,
+        statusText: 'OK',
+        headers: {} as unknown as AxiosHeaders,
+        config: config as InternalAxiosRequestConfig,
+      });
+  }
+  return config;
+});
+
 // Attach a fresh Firebase token to every request
 api.interceptors.request.use(async (config) => {
+  if (useAuthStore.getState().isDemoMode) return config;
   const token = await getIdToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

@@ -49,13 +49,15 @@ export default function SalatAnalytics() {
     return weeks;
   })();
 
-  // Month labels for heatmap
+  // Month labels for heatmap (account for front-padding in calendarWeeks)
   const monthLabels = (() => {
     if (!data?.calendarData) return [];
     const labels: { label: string; weekIdx: number }[] = [];
     let lastMonth = -1;
+    const firstDay = new Date(data.calendarData[0].date + 'T12:00:00').getDay();
     data.calendarData.forEach((d, i) => {
-      const weekIdx = Math.floor(i / 7);
+      const paddedIdx = firstDay + i;
+      const weekIdx = Math.floor(paddedIdx / 7);
       const month = new Date(d.date + 'T12:00:00').getMonth();
       if (month !== lastMonth) {
         labels.push({ label: new Date(d.date + 'T12:00:00').toLocaleString('en-US', { month: 'short' }), weekIdx });
@@ -288,7 +290,7 @@ export default function SalatAnalytics() {
                 </div>
               </div>
 
-              {/* Prayer Calendar */}
+              {/* Prayer Calendar — horizontal (weeks flow left→right, days top→bottom) */}
               <div className="space-y-3">
                 <div className="flex items-center gap-3 flex-wrap">
                   <h2 className="text-lg font-black text-white">Prayer Calendar</h2>
@@ -300,31 +302,33 @@ export default function SalatAnalytics() {
                   animate={{ opacity: 1, y: 0 }}
                   className="card bg-brand-surface border border-brand-border rounded-2xl overflow-x-auto"
                 >
-                  <div className="p-5 min-w-[540px]">
-                    {/* Day headers */}
-                    <div className="flex gap-1 mb-2 pl-10">
-                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
-                        <div key={i} className={`w-7 text-center text-[11px] ${i === 5 ? 'text-brand-emerald/60 font-semibold' : 'text-white/25'}`}>{d}</div>
-                      ))}
+                  <div className="p-5">
+                    {/* Month labels across the top */}
+                    <div className="flex gap-1 mb-1.5 pl-10">
+                      {calendarWeeks.map((_, wi) => {
+                        const ml = monthLabels.find((m) => m.weekIdx === wi);
+                        return (
+                          <div key={wi} className="w-7 text-center shrink-0">
+                            {ml ? <span className="text-white/30 text-[10px] leading-none">{ml.label}</span> : null}
+                          </div>
+                        );
+                      })}
                     </div>
 
                     <div className="flex gap-1">
-                      {/* Month labels */}
+                      {/* Day-of-week labels on the left */}
                       <div className="flex flex-col gap-1 w-9 shrink-0">
-                        {calendarWeeks.map((_, wi) => {
-                          const ml = monthLabels.find((m) => m.weekIdx === wi);
-                          return (
-                            <div key={wi} className="h-7 flex items-center">
-                              {ml ? <span className="text-white/30 text-xs leading-none">{ml.label}</span> : null}
-                            </div>
-                          );
-                        })}
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
+                          <div key={i} className={`h-7 flex items-center text-[11px] ${i === 5 ? 'text-brand-emerald/60 font-semibold' : 'text-white/25'}`}>
+                            {d}
+                          </div>
+                        ))}
                       </div>
 
-                      {/* Grid */}
-                      <div className="flex flex-col gap-1">
+                      {/* Grid: each column = one week, rows = days of week */}
+                      <div className="flex gap-1">
                         {calendarWeeks.map((week, wi) => (
-                          <div key={wi} className="flex gap-1">
+                          <div key={wi} className="flex flex-col gap-1">
                             {week.map((cell, di) => {
                               if (!cell) return <div key={di} className="w-7 h-7" />;
                               const isLogged = data.calendarData.some((c) => c.date === cell.date);
@@ -335,7 +339,7 @@ export default function SalatAnalytics() {
                                   key={di}
                                   initial={{ opacity: 0, scale: 0.5 }}
                                   animate={{ opacity: 1, scale: 1 }}
-                                  transition={{ delay: (wi * 7 + di) * 0.006, duration: 0.25 }}
+                                  transition={{ delay: (wi + di * calendarWeeks.length) * 0.004, duration: 0.25 }}
                                   className="tooltip cursor-default"
                                   data-tip={`${cell.date}: ${cell.completed}/5`}
                                 >

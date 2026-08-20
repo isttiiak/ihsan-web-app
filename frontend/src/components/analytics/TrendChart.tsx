@@ -175,6 +175,17 @@ export default function TrendChart({ data, period }: TrendChartProps) {
             transition={{ duration: 0.9, ease: 'easeOut' }}
           />
 
+          {/* Permanent endpoint at last data point */}
+          <circle
+            cx={pts[pts.length - 1].x}
+            cy={pts[pts.length - 1].y}
+            r={3.5}
+            fill="var(--brand-emerald, #7a9e6e)"
+            stroke="var(--brand-surface, #211f16)"
+            strokeWidth={2}
+            vectorEffect="non-scaling-stroke"
+          />
+
           {/* hover marker */}
           {hover != null && (
             <g>

@@ -14,6 +14,7 @@ import Footer from './components/Footer.js';
 import NotFound from './pages/NotFound.js';
 import UnsavedWarning from './components/UnsavedWarning.js';
 import GenderGate from './components/GenderGate.js';
+import DemoBanner from './components/DemoBanner.js';
 import type { AuthUser } from './types/api.js';
 
 // Route-level code splitting — keeps each tracker's page weight off the shell
@@ -267,6 +268,7 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme);
 
     const unsub = onAuthStateChanged(auth, async (u) => {
+      if (useAuthStore.getState().isDemoMode) return;
       if (!u) {
         setUser(null);
         resetAll();
@@ -382,6 +384,7 @@ export default function App() {
         </div>
       ) : (
         <>
+          <DemoBanner />
           {!isAuthPage && <Navbar />}
           {!isAuthPage && <UnsavedWarning />}
           {!isAuthPage && <GenderGate />}

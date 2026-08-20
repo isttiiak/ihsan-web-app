@@ -1,12 +1,8 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
-
-/**
- * The landing page — what a guest sees at "/" before entering the app.
- * Colorful, animated, honest: what Ihsan serves, why it's different, and the
- * courage to begin. Signed-in users never see this (they get Home).
- */
+import { useAuthStore } from '../store/useAuthStore.js';
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -56,6 +52,14 @@ const FEATURES = [
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { enterDemoMode } = useAuthStore();
+  const [showPicker, setShowPicker] = useState(false);
+
+  const pickGender = (gender: string) => {
+    enterDemoMode(gender);
+    navigate('/');
+  };
+
   return (
     <AnimatedBackground variant="dark">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-20">
@@ -90,7 +94,7 @@ export default function Landing() {
             >Begin your journey — free</button>
             <button
               className="btn h-13 px-6 rounded-2xl bg-white/5 border-brand-emerald/15 text-white/80 font-bold"
-              onClick={() => navigate('/salat')}
+              onClick={() => setShowPicker(true)}
             >Explore the full app</button>
           </motion.div>
           <motion.p
@@ -192,6 +196,46 @@ export default function Landing() {
           </div>
         </motion.section>
       </div>
+
+      {/* Gender picker overlay */}
+      <AnimatePresence>
+        {showPicker && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+            onClick={() => setShowPicker(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 16 }}
+              transition={{ duration: 0.25 }}
+              className="bg-brand-deep border border-brand-border rounded-3xl p-8 max-w-sm w-full text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-4xl mb-3">🌙</div>
+              <h3 className="text-white font-black text-xl">How would you like to explore?</h3>
+              <p className="text-white/40 text-sm mt-2 mb-6">Choose a demo profile — you can explore all features freely.</p>
+              <div className="flex gap-3">
+                <button
+                  className="flex-1 py-4 rounded-2xl border border-brand-info/25 bg-brand-info/10 hover:bg-brand-info/20 transition-colors"
+                  onClick={() => pickGender('male')}
+                >
+                  <div className="text-3xl mb-1">🕌</div>
+                  <div className="text-white font-bold text-sm">Brother</div>
+                </button>
+                <button
+                  className="flex-1 py-4 rounded-2xl border border-brand-pink/25 bg-brand-pink/10 hover:bg-brand-pink/20 transition-colors"
+                  onClick={() => pickGender('female')}
+                >
+                  <div className="text-3xl mb-1">🌸</div>
+                  <div className="text-white font-bold text-sm">Sister</div>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </AnimatedBackground>
   );
 }

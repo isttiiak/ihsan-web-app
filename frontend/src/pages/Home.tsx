@@ -186,7 +186,7 @@ export default function Home() {
       link: '/salat',
       accentColor: 'var(--brand-emerald, #10b981)',
       iconBg: 'bg-gradient-to-br from-brand-info/20 to-brand-warm/30',
-      tag: salatAnalytics?.currentStreak ? `🕌 ${salatAnalytics.currentStreak}d salat` : undefined,
+      tag: salatAnalytics?.currentStreak ? `🔥 ${salatAnalytics.currentStreak}d · all 5` : undefined,
     },
     {
       id: 'fasting',
@@ -504,7 +504,7 @@ export default function Home() {
                   >
                     {a.tag && (
                       <span
-                        className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md border border-brand-emerald/10"
+                        className="absolute top-4 right-4 z-20 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md border border-brand-emerald/10"
                         style={{
                           letterSpacing: '0.04em',
                           background: 'linear-gradient(90deg, var(--brand-gold) 0%, var(--brand-warm) 100%)',
