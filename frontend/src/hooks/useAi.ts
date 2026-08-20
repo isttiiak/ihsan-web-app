@@ -8,22 +8,16 @@ import api from '../lib/api.js';
  */
 
 export interface SuggestResult { suggestions: string[]; motivation: string; ai: boolean; provider?: string }
-export interface ReflectResult { reflection: string; ai: boolean; provider?: string }
 export interface WeeklyResult { summary: string; encouragement: string; ai: boolean; provider?: string }
+export interface NudgeResult { message: string; ai: boolean; provider?: string }
+export interface CoachResult { message: string; tip: string; ai: boolean; provider?: string }
+export interface FastingCompanionResult { message: string; ai: boolean; provider?: string }
+export interface InsightResult { insights: string[]; headline: string; ai: boolean; provider?: string }
 
 export function useAiSuggest() {
   return useMutation({
     mutationFn: async (userSummary: string) => {
       const { data } = await api.post<SuggestResult & { ok: boolean }>('/api/ai/suggest', { userSummary });
-      return data;
-    },
-  });
-}
-
-export function useAiReflect() {
-  return useMutation({
-    mutationFn: async (vars: { surah: number; ayah: number; text: string }) => {
-      const { data } = await api.post<ReflectResult & { ok: boolean }>('/api/ai/reflect', vars);
       return data;
     },
   });
@@ -38,9 +32,6 @@ export function useAiWeekly() {
   });
 }
 
-export interface NudgeResult { message: string; ai: boolean; provider?: string }
-
-/** Warm welcome-back line after time away. */
 export function useAiComeback() {
   return useMutation({
     mutationFn: async (vars: { daysAway: number; bestStreak?: number }) => {
@@ -50,11 +41,37 @@ export function useAiComeback() {
   });
 }
 
-/** Gentle comfort line tuned to the moods she selected (Rayhanah). */
 export function useAiComfort() {
   return useMutation({
     mutationFn: async (vars: { moods: string[]; symptoms?: string[] }) => {
       const { data } = await api.post<NudgeResult & { ok: boolean }>('/api/ai/comfort', vars);
+      return data;
+    },
+  });
+}
+
+export function useAiStreakCoach() {
+  return useMutation({
+    mutationFn: async (vars: { event: 'milestone' | 'break'; streakDays?: number; feature: string; bestStreak?: number }) => {
+      const { data } = await api.post<CoachResult & { ok: boolean }>('/api/ai/streak-coaching', vars);
+      return data;
+    },
+  });
+}
+
+export function useAiFastingCompanion() {
+  return useMutation({
+    mutationFn: async (vars: { period: 'morning' | 'evening'; fastType: string; dayNumber?: number }) => {
+      const { data } = await api.post<FastingCompanionResult & { ok: boolean }>('/api/ai/fasting-companion', vars);
+      return data;
+    },
+  });
+}
+
+export function useAiActivityInsight() {
+  return useMutation({
+    mutationFn: async (stats: Record<string, unknown>) => {
+      const { data } = await api.post<InsightResult & { ok: boolean }>('/api/ai/activity-insight', { stats });
       return data;
     },
   });

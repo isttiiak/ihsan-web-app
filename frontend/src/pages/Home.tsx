@@ -10,6 +10,8 @@ import { useFastingSummary } from '../hooks/useFasting.js';
 import { useQuranSummary } from '../hooks/useQuran.js';
 import { StreakBadge, GoalBadge } from '../components/StatusBadges.js';
 import ComebackNudge from '../components/ComebackNudge.js';
+import NaseehInsights from '../components/ai/NaseehInsights.js';
+import StreakCoaching from '../components/ai/StreakCoaching.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import {
   calcPrayerTimes,
@@ -218,6 +220,15 @@ export default function Home() {
 
         {/* Welcome back after a quiet stretch — the gentlest possible restart */}
         <div className="mb-6 empty:mb-0"><ComebackNudge /></div>
+
+        {/* AI streak coaching — fires on milestone or break */}
+        <div className="mb-6 empty:mb-0">
+          <StreakCoaching
+            zikrStreak={streakCount}
+            quranStreak={quranSummary?.streak ?? null}
+            salatStreak={salatAnalytics?.currentStreak ?? null}
+          />
+        </div>
 
         {/* Pre-period heads-up — predicted start within 3 days */}
         {upcomingCycleDays !== null && (
@@ -542,6 +553,9 @@ export default function Home() {
             );
           })}
         </div>
+
+        {/* AI weekly reflection + monthly patterns (Naseeh) */}
+        <div className="mb-8 empty:mb-0"><NaseehInsights /></div>
 
         {/* ── Friends / Share activities ── */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-10">

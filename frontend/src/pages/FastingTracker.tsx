@@ -9,6 +9,7 @@ import { useAuthStore } from '../store/useAuthStore.js';
 import { celebrateFast } from '../utils/celebrate.js';
 import { useCycleActive } from '../hooks/useCycle.js';
 import ExcusedCard from '../components/ExcusedCard.js';
+import FastingCompanion from '../components/ai/FastingCompanion.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
 import {
   ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, TrashIcon, XMarkIcon,
@@ -724,6 +725,15 @@ export default function FastingTracker() {
               )}
             </div>
           </motion.div>
+
+          {/* ── AI fasting companion ── */}
+          {log?.status === 'completed' && selectedDate === today && (
+            <FastingCompanion
+              fastType={log.category === 'voluntary' ? (log.voluntaryKind ?? 'voluntary') : (log.category ?? 'obligatory')}
+              dayNumber={log.category === 'ramadan' ? (summary?.stats?.thisMonth ?? 1) : undefined}
+              isPostMaghrib={isPostMaghrib()}
+            />
+          )}
 
           {/* ── Recommended today chips ── */}
           {ruling.level === 'normal' && ruling.recommended.length > 0 && (

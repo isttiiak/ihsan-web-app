@@ -7,14 +7,13 @@
  * any ruling (ḥalāl/ḥarām/fatwa) or claim authenticity; and must redirect all
  * such questions to qualified scholars and the app's own verified references.
  *
- * Provider: GROQ ONLY (free tier, fast, verified). Gemini was dropped — its
- * free quota was unusable (429 on the first call). If Groq doesn't answer, a
- * warm static fallback is returned so the UI never breaks.
+ * Provider: GROQ ONLY (free tier, fast, verified). Model changed Aug 2026 from
+ * deprecated llama-3.3-70b-versatile to openai/gpt-oss-120b (with gpt-oss-20b
+ * as fallback). Gemini was dropped long ago (429 on first call).
  *
- * SCOPE (Istiak's decision): AI is used for SHORT, personal, non-evidential
- * tasks — encouragement, nudges, comfort, recaps. It is deliberately NOT used
- * to explain tafsir: that is sacred exegesis where a mis-worded paraphrase
- * could distort meaning, and it burned the most tokens for the least benefit.
+ * Free tier limits (Aug 2026): 30 RPM, 1K RPD, 8K TPM, 200K TPD.
+ * All features cache aggressively on the client (localStorage keyed by time
+ * period) so a typical user makes 1-3 calls per week.
  */
 
 interface Provider {
@@ -25,17 +24,25 @@ interface Provider {
 }
 
 function providers(): Provider[] {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) return [];
   return [
     {
-      name: 'groq',
+      name: 'groq-120b',
       url: 'https://api.groq.com/openai/v1/chat/completions',
-      key: process.env.GROQ_API_KEY,
-      model: 'llama-3.3-70b-versatile',
+      key,
+      model: 'openai/gpt-oss-120b',
     },
-  ].filter((p) => !!p.key);
+    {
+      name: 'groq-20b',
+      url: 'https://api.groq.com/openai/v1/chat/completions',
+      key,
+      model: 'openai/gpt-oss-20b',
+    },
+  ];
 }
 
-export const AI_AVAILABLE = (): boolean => providers().length > 0;
+export const AI_AVAILABLE = (): boolean => !!process.env.GROQ_API_KEY;
 
 /** The immutable guardrail prepended to every system prompt. */
 const GUARDRAIL = `You are "Naseeh", the gentle worship companion inside Ihsan, a Muslim habit app.
@@ -48,7 +55,7 @@ Your ONLY job is to ENCOURAGE, PERSONALIZE and warmly reflect. Follow these ABSO
 6. Do not produce long Arabic supplication text (the app has verified ones already).
 Stay strictly within encouragement and personal reflection.`;
 
-async function callProvider(p: Provider, system: string, user: string, maxTokens = 900): Promise<string | null> {
+async function callProvider(p: Provider, system: string, user: string, maxTokens = 600): Promise<string | null> {
   try {
     const res = await fetch(p.url, {
       method: 'POST',
@@ -60,7 +67,6 @@ async function callProvider(p: Provider, system: string, user: string, maxTokens
           { role: 'user', content: user },
         ],
         temperature: 0.8,
-        // Bengali is token-heavy — a small budget truncated long replies.
         max_tokens: maxTokens,
       }),
     });
@@ -79,7 +85,7 @@ async function callProvider(p: Provider, system: string, user: string, maxTokens
 }
 
 /** Try each provider in order with a fully-formed system prompt. */
-async function completeRaw(system: string, user: string, maxTokens = 900): Promise<{ text: string; provider: string } | null> {
+async function completeRaw(system: string, user: string, maxTokens = 600): Promise<{ text: string; provider: string } | null> {
   for (const p of providers()) {
     const text = await callProvider(p, system, user, maxTokens);
     if (text && text.trim()) return { text: text.trim(), provider: p.name };
@@ -88,7 +94,7 @@ async function completeRaw(system: string, user: string, maxTokens = 900): Promi
 }
 
 /** Encouragement path — always prefixed with the immutable guardrail. */
-async function complete(system: string, user: string, maxTokens = 900): Promise<{ text: string; provider: string } | null> {
+async function complete(system: string, user: string, maxTokens = 600): Promise<{ text: string; provider: string } | null> {
   return completeRaw(`${GUARDRAIL}\n\n${system}`, user, maxTokens);
 }
 
@@ -130,26 +136,7 @@ export async function getSuggestions(userSummary: string): Promise<SuggestResult
   };
 }
 
-// ── Feature 2: reflect on an āyah (feelings/meaning, NOT tafsir authority) ────
-export interface ReflectResult { reflection: string; ai: boolean; provider?: string }
-
-export async function getReflection(input: { surah: number; ayah: number; text: string }): Promise<ReflectResult> {
-  const out = await complete(
-    `The user is reading one āyah of the Qur'an (an approved English translation is given). Offer a SHORT, heartfelt personal reflection (2-4 sentences) on what its meaning might stir in a believer's heart today — gratitude, hope, humility, calm. Do NOT explain it as tafsir, do NOT say "scholars say", do NOT add any reference or ruling. Just a gentle, human reflection. Reply ONLY as JSON: {"reflection": string}.`,
-    `Āyah ${input.surah}:${input.ayah} (translation): "${input.text}"`
-  );
-  if (!out) {
-    return { reflection: 'Sit with these words for a moment — let them soften the heart. Even a slow, sincere reading is a meeting with your Lord.', ai: false };
-  }
-  const parsed = parseLoose<{ reflection?: string }>(out.text);
-  if (!parsed?.reflection) {
-    // Some models reply in plain prose — accept it as the reflection.
-    return { reflection: out.text.slice(0, 600), ai: true, provider: out.provider };
-  }
-  return { reflection: String(parsed.reflection), ai: true, provider: out.provider };
-}
-
-// ── Feature 3: weekly worship recap ──────────────────────────────────────────
+// ── Feature 2: weekly worship recap ──────────────────────────────────────────
 export interface WeeklyResult { summary: string; encouragement: string; ai: boolean; provider?: string }
 
 export async function getWeeklySummary(stats: Record<string, unknown>): Promise<WeeklyResult> {
@@ -176,13 +163,7 @@ export async function getWeeklySummary(stats: Record<string, unknown>): Promise<
   };
 }
 
-// NOTE: AI tafsir simplification was REMOVED on purpose (Istiak's decision).
-// Tafsir is sacred exegesis: a mis-worded paraphrase can distort a scholar's
-// meaning, and it consumed by far the most tokens of any feature. The reader
-// shows the authentic tafsir text only. AI stays on short, personal, clearly
-// non-evidential tasks below.
-
-// ── Feature 4: comeback nudge after time away ────────────────────────────────
+// ── Feature 3: comeback nudge after time away ────────────────────────────────
 export interface NudgeResult { message: string; ai: boolean; provider?: string }
 
 export async function getComebackNudge(input: { daysAway: number; bestStreak?: number }): Promise<NudgeResult> {
@@ -197,7 +178,7 @@ export async function getComebackNudge(input: { daysAway: number; bestStreak?: n
   return { message: parsed?.message ? String(parsed.message) : fallback, ai: !!parsed?.message, provider: out.provider };
 }
 
-// ── Feature 5: mood-aware comfort (Rayhanah) ─────────────────────────────────
+// ── Feature 4: mood-aware comfort (Rayhanah) ─────────────────────────────────
 export async function getMoodComfort(input: { moods: string[]; symptoms?: string[] }): Promise<NudgeResult> {
   const out = await complete(
     `A Muslim woman logged how she feels today during her cycle. Write ONE gentle, comforting line (max 2 sentences) that acknowledges EXACTLY the feelings she named — warm, sisterly, never clinical, never preachy. If she named several, hold them together. Do NOT give medical advice, do NOT give any ruling, do NOT cite anything. Reply ONLY as JSON: {"message": string}.`,
@@ -208,4 +189,83 @@ export async function getMoodComfort(input: { moods: string[]; symptoms?: string
   if (!out) return { message: fallback, ai: false };
   const parsed = parseLoose<{ message?: string }>(out.text);
   return { message: parsed?.message ? String(parsed.message) : fallback, ai: !!parsed?.message, provider: out.provider };
+}
+
+// ── Feature 5: streak coaching (milestones & recovery) ───────────────────────
+export interface CoachResult { message: string; tip: string; ai: boolean; provider?: string }
+
+export async function getStreakCoaching(input: {
+  event: 'milestone' | 'break';
+  streakDays?: number;
+  feature: string;
+  bestStreak?: number;
+}): Promise<CoachResult> {
+  const isMilestone = input.event === 'milestone';
+  const out = await complete(
+    isMilestone
+      ? `The user just hit a ${input.streakDays}-day streak in their ${input.feature} tracking. Write ONE warm celebratory "message" (max 2 sentences) and ONE practical "tip" for keeping the momentum (1 sentence). No hadith, no ruling. Reply ONLY as JSON: {"message": string, "tip": string}.`
+      : `The user's ${input.feature} streak just broke after ${input.streakDays ?? 0} days. Their best ever: ${input.bestStreak ?? 0} days. Write ONE shame-free, encouraging "message" (max 2 sentences — this is a restart, not a failure) and ONE tiny "tip" for getting back (1 sentence, smallest possible action). Reply ONLY as JSON: {"message": string, "tip": string}.`,
+    `${input.feature} streak ${isMilestone ? 'milestone' : 'break'}: ${input.streakDays ?? 0} days. Best ever: ${input.bestStreak ?? 0}.`,
+    300
+  );
+  const fallback: CoachResult = isMilestone
+    ? { message: `${input.streakDays} days — masha'Allah, your consistency is beautiful.`, tip: 'Same time, same place — rhythm outlasts willpower.', ai: false }
+    : { message: `Streaks end — but you showed up for ${input.streakDays ?? 0} days, and that counted.`, tip: 'Just one today. One dhikr, one āyah, one prayer logged. That restarts everything.', ai: false };
+  if (!out) return fallback;
+  const parsed = parseLoose<{ message?: string; tip?: string }>(out.text);
+  if (!parsed?.message || !parsed.tip) return fallback;
+  return { message: String(parsed.message), tip: String(parsed.tip), ai: true, provider: out.provider };
+}
+
+// ── Feature 6: fasting companion (daily encouragement during fasts) ──────────
+export interface FastingCompanionResult { message: string; ai: boolean; provider?: string }
+
+export async function getFastingCompanion(input: {
+  period: 'morning' | 'evening';
+  fastType: string;
+  dayNumber?: number;
+}): Promise<FastingCompanionResult> {
+  const isMorning = input.period === 'morning';
+  const out = await complete(
+    isMorning
+      ? `A Muslim is starting their fast today (${input.fastType}${input.dayNumber ? `, day ${input.dayNumber}` : ''}). Write ONE short, gentle morning "message" (max 2 sentences) — a warm focus for the day, a feeling to carry. Not a du'a (the app has verified ones). No hadith citation, no ruling. Reply ONLY as JSON: {"message": string}.`
+      : `A Muslim is nearing iftar after fasting today (${input.fastType}${input.dayNumber ? `, day ${input.dayNumber}` : ''}). Write ONE short, warm evening "message" (max 2 sentences) — acknowledgement of the effort, gentle anticipation. Not a du'a. No hadith, no ruling. Reply ONLY as JSON: {"message": string}.`,
+    `Fasting: ${input.fastType}, ${isMorning ? 'just starting' : 'near iftar'}. Day ${input.dayNumber ?? 1}.`,
+    220
+  );
+  const fallback: FastingCompanionResult = isMorning
+    ? { message: 'A new day of fasting begins — you chose this closeness to Allah. Let every quiet moment today be a conversation with Him.', ai: false }
+    : { message: 'The end is near — you carried this day with patience. Soon the reward of breaking your fast, and every hungry moment counted.', ai: false };
+  if (!out) return fallback;
+  const parsed = parseLoose<{ message?: string }>(out.text);
+  return { message: parsed?.message ? String(parsed.message) : fallback.message, ai: !!parsed?.message, provider: out.provider };
+}
+
+// ── Feature 7: activity pattern analysis ─────────────────────────────────────
+export interface InsightResult { insights: string[]; headline: string; ai: boolean; provider?: string }
+
+export async function getActivityInsight(stats: Record<string, unknown>): Promise<InsightResult> {
+  const out = await complete(
+    `You are given a user's worship activity data for the past month (salat, dhikr, Quran, fasting). Analyze the patterns and write:
+- ONE short "headline" (max 1 sentence) summarizing the overall picture
+- 2-3 "insights" (each 1 sentence) about patterns you notice: which days are strong, what's growing, what dropped, any notable rhythm
+
+Be warm and specific — name the actual numbers you see. No hadith, no ruling, no guilt. Reply ONLY as JSON: {"headline": string, "insights": string[]}.`,
+    `Monthly activity data (JSON): ${JSON.stringify(stats).slice(0, 1200)}`,
+    500
+  );
+  const fallback: InsightResult = {
+    headline: 'Your month had its own rhythm — every day you showed up mattered.',
+    insights: ['Look at your strongest days and keep protecting that time.', 'Small consistency beats occasional bursts — the quiet days add up too.'],
+    ai: false,
+  };
+  if (!out) return fallback;
+  const parsed = parseLoose<{ headline?: string; insights?: string[] }>(out.text);
+  if (!parsed?.headline || !parsed.insights?.length) return fallback;
+  return {
+    headline: String(parsed.headline),
+    insights: parsed.insights.slice(0, 4).map(String),
+    ai: true,
+    provider: out.provider,
+  };
 }
