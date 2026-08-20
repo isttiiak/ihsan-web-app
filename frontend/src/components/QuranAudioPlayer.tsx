@@ -5,6 +5,7 @@ import { PlayIcon, PauseIcon, ForwardIcon, BackwardIcon } from '@heroicons/react
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useReadAyat } from '../hooks/useQuran.js';
 import { loadSurahList, type SurahMeta } from '../utils/quranData.js';
+import { listenCountsAsAyat } from '../utils/quranPrefs.js';
 
 /**
  * 🎧 Audio Quran — all 114 surahs, streamed from the free Islamic Network CDN
@@ -99,7 +100,7 @@ export default function QuranAudioPlayer() {
       // Convert listened seconds into āyāt using THIS surah's own length.
       const total = surah?.numberOfAyahs ?? 0;
       const dur = a.duration;
-      if (user && total > 0 && Number.isFinite(dur) && dur > 0) {
+      if (user && total > 0 && Number.isFinite(dur) && dur > 0 && listenCountsAsAyat()) {
         const target = Math.min(total, Math.floor((listenedRef.current / dur) * total));
         const diff = target - loggedAyatRef.current;
         if (diff >= 1) {

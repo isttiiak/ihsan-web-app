@@ -8,6 +8,7 @@ import {
   ARABIC_FONTS, getArabicFont, setArabicFont,
   FONT_RANGES, getFontPx, setFontPx, type FontKind,
   translitEnabled, setTranslitEnabled,
+  listenCountsAsAyat, setListenCountsAsAyat,
 } from '../utils/quranPrefs.js';
 
 /**
@@ -63,6 +64,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
   const [translations, setTranslations] = useState<string[]>(selectedTranslations);
   const [arabicFontId, setArabicFontId] = useState(() => getArabicFont().id);
   const [translit, setTranslit] = useState(translitEnabled);
+  const [listenCounts, setListenCounts] = useState(listenCountsAsAyat);
 
   // Keep the local goal field in sync when the drawer (re)opens with fresh data
   useEffect(() => { if (open) setGoal(summary?.profile.dailyGoalAyat ?? 0); }, [open, summary?.profile.dailyGoalAyat]);
@@ -228,6 +230,19 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                   <input type="checkbox" className="toggle toggle-sm toggle-warning"
                     checked={translit}
                     onChange={(e) => { setTranslit(e.target.checked); setTranslitEnabled(e.target.checked); }} />
+                </label>
+              </div>
+
+              {/* ── Listening → ayat counting ── */}
+              <div className="rounded-2xl border border-brand-info/20 bg-brand-info/[0.05] p-4">
+                <label className="flex items-center justify-between gap-3 cursor-pointer">
+                  <div>
+                    <p className="text-white/70 text-sm font-bold">🎧 Count listening as āyāt</p>
+                    <p className="text-white/30 text-[11px] mt-0.5">When on, listening time is converted into āyāt and logged toward your daily goal and streak.</p>
+                  </div>
+                  <input type="checkbox" className="toggle toggle-sm toggle-info"
+                    checked={listenCounts}
+                    onChange={(e) => { setListenCounts(e.target.checked); setListenCountsAsAyat(e.target.checked); }} />
                 </label>
               </div>
 

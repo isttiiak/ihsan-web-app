@@ -59,3 +59,15 @@ export function translitEnabled(): boolean {
 export function setTranslitEnabled(on: boolean): void {
   localStorage.setItem(TRANSLIT_KEY, on ? '1' : '0');
 }
+
+// ── Listening → ayat counting toggle ────────────────────────────────────────
+
+const LISTEN_COUNTS_KEY = 'ihsan_quran_listen_counts';
+
+export function listenCountsAsAyat(): boolean {
+  const v = localStorage.getItem(LISTEN_COUNTS_KEY);
+  return v !== '0';
+}
+export function setListenCountsAsAyat(on: boolean): void {
+  localStorage.setItem(LISTEN_COUNTS_KEY, on ? '1' : '0');
+}
