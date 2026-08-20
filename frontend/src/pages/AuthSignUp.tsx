@@ -128,12 +128,12 @@ export default function AuthSignUp() {
 
     setLoading(true);
     try {
+      sessionStorage.setItem('ihsan_pending_gender', gender);
       const res = await createUserWithEmailAndPassword(auth, email, password);
       const fullName = [firstName, lastName].filter(Boolean).join(' ');
       if (fullName) {
         try { await updateProfile(res.user, { displayName: fullName }); } catch { /* non-fatal */ }
       }
-      sessionStorage.setItem('ihsan_pending_gender', gender);
       // Send verification email — redirect to home after verification
       try {
         // continueUrl = home so that after Firebase verifies the email and the

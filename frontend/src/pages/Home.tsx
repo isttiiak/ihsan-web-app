@@ -186,6 +186,7 @@ export default function Home() {
       link: '/salat',
       accentColor: 'var(--brand-emerald, #10b981)',
       iconBg: 'bg-gradient-to-br from-brand-info/20 to-brand-warm/30',
+      tag: salatAnalytics?.currentStreak ? `🕌 ${salatAnalytics.currentStreak}d salat` : undefined,
     },
     {
       id: 'fasting',
@@ -219,7 +220,6 @@ export default function Home() {
       accentColor: 'var(--brand-emerald, #10b981)',
       iconBg: 'bg-gradient-to-br from-brand-info/20 to-brand-info/30',
       streakCount: quranSummary?.streak ?? null,
-      tag: salatAnalytics?.currentStreak ? `🕌 ${salatAnalytics.currentStreak}d salat` : undefined,
     },
   ];
 

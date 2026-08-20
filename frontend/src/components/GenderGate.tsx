@@ -30,7 +30,7 @@ export default function GenderGate() {
       setSaving(true);
       setError('');
       try {
-        await api.put('/api/user', { gender: selected });
+        await api.patch('/api/user/me', { gender: selected });
         const updated: AuthUser = { ...user, gender: selected };
         localStorage.setItem('ihsan_user', JSON.stringify(updated));
         setUser(updated);
@@ -87,7 +87,7 @@ export default function GenderGate() {
             </button>
 
             <p className="text-white/25 text-[11px] leading-relaxed">
-              You can update this later in your Profile settings.
+              You can update this later in <a href="/settings" className="underline text-white/40 hover:text-white/60">Settings</a>.
             </p>
           </div>
         </motion.div>

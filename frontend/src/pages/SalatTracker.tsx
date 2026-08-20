@@ -207,6 +207,7 @@ export default function SalatTracker() {
   // Salat → Zikr wiring (see creditDhikr) + the settings drawer
   const addCounts = useZikrStore((s) => s.addCounts);
   const flushZikr = useZikrStore((s) => s.flush);
+  const hydrateZikr = useZikrStore((s) => s.hydrate);
   const queryClient = useQueryClient();
   const [showSettings, setShowSettings] = useState(false);
 
@@ -402,13 +403,13 @@ export default function SalatTracker() {
       });
     }
 
-    // Push to the server NOW rather than waiting out the debounce, then drop
-    // the cached analytics so the Zikr analytics page reflects it. Without the
-    // invalidate the page kept serving its persisted React Query snapshot
-    // (ihsan_rq_cache, 24h) and showed 0/30 with an empty "today" card while
-    // the counter — which reads live zustand state — showed the real number.
+    // Push to the server NOW rather than waiting out the debounce, then
+    // re-hydrate so zustand counts agree with the DB (prevents stale local
+    // state after undo), and drop the analytics cache so the analytics page
+    // reflects the change.
     void (async () => {
       await flushZikr();
+      await hydrateZikr();
       await queryClient.invalidateQueries({ queryKey: ['analytics'] });
     })();
   };

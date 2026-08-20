@@ -21,21 +21,14 @@ const PRAYER_GRADIENTS: Record<string, string> = {
   isha:    'from-brand-info to-brand-info-dim',
 };
 
-/** Map 0–5 completed prayers to a CSS background colour.
- *  0 = no data/all missed → muted grey
- *  1-2 = shaded red (bad, but not demoralising bright red)
- *  3   = amber (half-way)
- *  4   = light green
- *  5   = rich dark green
- */
 function calendarCellStyle(completed: number, hasData: boolean) {
-  if (!hasData) return { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' };
-  if (completed === 0) return { background: 'rgba(185,28,28,0.35)',  border: '1px solid rgba(185,28,28,0.4)' };
-  if (completed === 1) return { background: 'rgba(185,28,28,0.55)',  border: '1px solid rgba(185,28,28,0.6)' };
-  if (completed === 2) return { background: 'rgba(180,83,9,0.55)',   border: '1px solid rgba(180,83,9,0.7)' };
-  if (completed === 3) return { background: 'rgba(161,98,7,0.55)',   border: '1px solid rgba(161,98,7,0.7)' };
-  if (completed === 4) return { background: 'rgba(6,95,70,0.65)',    border: '1px solid rgba(6,95,70,0.8)' };
-  /* 5 */              return { background: 'rgba(16,185,129,0.75)', border: '1px solid rgba(16,185,129,0.9)' };
+  if (!hasData) return { background: 'rgba(122,158,110,0.04)', border: '1px solid rgba(122,158,110,0.08)' };
+  if (completed === 0) return { background: 'rgba(185,28,28,0.30)', border: '1px solid rgba(185,28,28,0.40)' };
+  if (completed === 1) return { background: 'rgba(196,130,90,0.35)', border: '1px solid rgba(196,130,90,0.45)' };
+  if (completed === 2) return { background: 'rgba(201,169,110,0.35)', border: '1px solid rgba(201,169,110,0.45)' };
+  if (completed === 3) return { background: 'rgba(201,169,110,0.55)', border: '1px solid rgba(201,169,110,0.60)' };
+  if (completed === 4) return { background: 'rgba(122,158,110,0.45)', border: '1px solid rgba(122,158,110,0.55)' };
+  return { background: 'rgba(122,158,110,0.75)', border: '1px solid rgba(122,158,110,0.85)' };
 }
 
 export default function SalatAnalytics() {
@@ -70,6 +63,11 @@ export default function SalatAnalytics() {
       }
     });
     return labels;
+  })();
+
+  const todayStr = (() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
   })();
 
   return (
@@ -121,13 +119,11 @@ export default function SalatAnalytics() {
             <>
               {/* Period note */}
               {data.totalDays < data.periodDays && (
-                <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-brand-surface border border-brand-border text-xs text-white/40">
-                  <InformationCircleIcon className="w-4 h-4 shrink-0 mt-0.5 text-white/30" />
-                  <span>
-                    <span className="text-white/60 font-semibold">{data.totalDays} of {data.periodDays} days</span> have logged prayers in this period.
-                    The completion rate is calculated over <span className="text-white/60">days with actual entries</span>, not the full calendar period.
-                    Days you didn't open the app are not counted against you.
-                  </span>
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-brand-emerald/10 border border-brand-emerald/20">
+                  <span className="text-lg shrink-0">📅</span>
+                  <p className="text-sm text-white/50">
+                    Active on <span className="text-brand-emerald font-semibold">{data.totalDays}</span> of {data.periodDays} days — stats reflect your tracked days only.
+                  </p>
                 </div>
               )}
 
@@ -292,57 +288,73 @@ export default function SalatAnalytics() {
                 </div>
               </div>
 
-              {/* GitHub-style calendar heatmap */}
+              {/* Prayer Calendar */}
               <div className="space-y-3">
                 <div className="flex items-center gap-3 flex-wrap">
                   <h2 className="text-lg font-black text-white">Prayer Calendar</h2>
                   <span className="text-white/30 text-xs">last {data.calendarData.length} days</span>
                 </div>
 
-                <div className="card bg-brand-surface border border-brand-border rounded-2xl overflow-x-auto">
-                  <div className="p-4 min-w-[500px]">
-                    {/* Weekday labels */}
-                    <div className="flex gap-1.5 mb-1 pl-[38px]">
-                      {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                        <div key={i} className="w-[18px] text-center text-white/20 text-xs">{d}</div>
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="card bg-brand-surface border border-brand-border rounded-2xl overflow-x-auto"
+                >
+                  <div className="p-5 min-w-[540px]">
+                    {/* Day headers */}
+                    <div className="flex gap-1 mb-2 pl-10">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
+                        <div key={i} className={`w-7 text-center text-[11px] ${i === 5 ? 'text-brand-emerald/60 font-semibold' : 'text-white/25'}`}>{d}</div>
                       ))}
                     </div>
 
-                    <div className="flex gap-1.5">
-                      {/* Month labels on left */}
-                      <div className="flex flex-col gap-1.5 w-8 shrink-0">
+                    <div className="flex gap-1">
+                      {/* Month labels */}
+                      <div className="flex flex-col gap-1 w-9 shrink-0">
                         {calendarWeeks.map((_, wi) => {
                           const ml = monthLabels.find((m) => m.weekIdx === wi);
                           return (
-                            <div key={wi} className="h-[18px] flex items-center">
+                            <div key={wi} className="h-7 flex items-center">
                               {ml ? <span className="text-white/30 text-xs leading-none">{ml.label}</span> : null}
                             </div>
                           );
                         })}
                       </div>
 
-                      {/* Grid: weeks as rows, days (Sun-Sat) as columns */}
-                      <div className="flex flex-col gap-1.5">
+                      {/* Grid */}
+                      <div className="flex flex-col gap-1">
                         {calendarWeeks.map((week, wi) => (
-                          <div key={wi} className="flex gap-1.5">
+                          <div key={wi} className="flex gap-1">
                             {week.map((cell, di) => {
-                              if (!cell) return <div key={di} className="w-[18px] h-[18px] rounded-sm" />;
-                              const hasData = cell.completed > 0 || data.calendarData.some(
-                                (c) => c.date === cell.date && c.completed === 0
-                              );
-                              const isActuallyLogged = data.calendarData.some((c) => c.date === cell.date);
-                              const cellStyle = calendarCellStyle(cell.completed, isActuallyLogged);
+                              if (!cell) return <div key={di} className="w-7 h-7" />;
+                              const isLogged = data.calendarData.some((c) => c.date === cell.date);
+                              const isPerfect = cell.completed === 5;
+                              const isToday = cell.date === todayStr;
                               return (
-                                <div
+                                <motion.div
                                   key={di}
-                                  className="tooltip"
-                                  data-tip={`${cell.date}: ${cell.completed}/5 prayers`}
+                                  initial={{ opacity: 0, scale: 0.5 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ delay: (wi * 7 + di) * 0.006, duration: 0.25 }}
+                                  className="tooltip cursor-default"
+                                  data-tip={`${cell.date}: ${cell.completed}/5`}
                                 >
                                   <div
-                                    className="w-[18px] h-[18px] rounded-sm"
-                                    style={cellStyle}
-                                  />
-                                </div>
+                                    className={`w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold transition-transform hover:scale-110 ${
+                                      isToday ? 'ring-2 ring-brand-emerald ring-offset-1 ring-offset-brand-surface' : ''
+                                    }`}
+                                    style={{
+                                      ...calendarCellStyle(cell.completed, isLogged),
+                                      ...(isPerfect ? { boxShadow: '0 0 8px rgba(122,158,110,0.35)' } : {}),
+                                    }}
+                                  >
+                                    {isLogged && (
+                                      <span className={isPerfect ? 'text-white' : cell.completed >= 3 ? 'text-white/80' : cell.completed > 0 ? 'text-white/60' : 'text-white/40'}>
+                                        {cell.completed}
+                                      </span>
+                                    )}
+                                  </div>
+                                </motion.div>
                               );
                             })}
                           </div>
@@ -351,16 +363,19 @@ export default function SalatAnalytics() {
                     </div>
 
                     {/* Legend */}
-                    <div className="flex items-center gap-2 mt-3 pl-[38px]">
-                      <span className="text-white/25 text-xs">Less</span>
+                    <div className="flex items-center gap-1.5 mt-4 pl-10 flex-wrap">
+                      <span className="text-white/25 text-xs mr-1">Less</span>
                       {[0, 1, 2, 3, 4, 5].map((n) => (
-                        <div key={n} className="w-[18px] h-[18px] rounded-sm" style={calendarCellStyle(n, n > 0 || n === 0)} />
+                        <div key={n} className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold text-white/50"
+                          style={calendarCellStyle(n, true)}>
+                          {n}
+                        </div>
                       ))}
-                      <span className="text-white/25 text-xs">More</span>
-                      <span className="text-white/20 text-xs ml-2">(prayers/day)</span>
+                      <span className="text-white/25 text-xs ml-1">More</span>
+                      <span className="text-white/20 text-xs ml-2">prayers / day</span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               </div>
 
             </>
