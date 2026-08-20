@@ -45,7 +45,7 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
   if (/[^A-Za-z0-9]/.test(pw)) score++;
   if (score <= 1) return { score, label: 'Weak', color: 'bg-red-500' };
   if (score === 2) return { score, label: 'Fair', color: 'bg-brand-gold' };
-  if (score === 3) return { score, label: 'Good', color: 'bg-teal-400' };
+  if (score === 3) return { score, label: 'Good', color: 'bg-brand-info' };
   return { score, label: 'Strong', color: 'bg-brand-emerald' };
 }
 
@@ -260,7 +260,7 @@ export default function AuthSignUp() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-3 px-4 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 border border-emerald-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3 px-4 bg-white hover:bg-white/90 text-brand-deep rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 border border-brand-emerald/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={google}
                 disabled={loading}
               >

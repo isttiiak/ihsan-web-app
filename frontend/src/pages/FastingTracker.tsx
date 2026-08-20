@@ -242,7 +242,7 @@ export default function FastingTracker() {
     }
     if (kaffarahActive) {
       caps.push({
-        id: 'kaffarah', label: 'Kaffārah', emoji: '⚖️', color: '#a855f7',
+        id: 'kaffarah', label: 'Kaffārah', emoji: '⚖️', color: '#c4825a',
         done: summary?.kaffarah.currentRun ?? 0,
         target: summary?.profile.kaffarah.targetDays ?? 60,
       });
@@ -338,14 +338,14 @@ export default function FastingTracker() {
   const heroGradient = ruling.level === 'haram'
     ? 'from-red-500/25 via-red-900/20 to-brand-deep'
     : log?.status === 'completed'
-    ? 'from-brand-emerald/30 via-teal-600/15 to-brand-deep'
+    ? 'from-brand-emerald/30 via-brand-info/15 to-brand-deep'
     : log?.status === 'intended'
-    ? 'from-cyan-500/25 via-cyan-800/15 to-brand-deep'
+    ? 'from-brand-info/25 via-brand-info-dim/15 to-brand-deep'
     : log?.status === 'broken'
     ? 'from-red-400/15 via-brand-deep to-brand-deep'
     : ruling.level === 'ramadan'
-    ? 'from-brand-gold/25 via-amber-800/15 to-brand-deep'
-    : 'from-indigo-500/20 via-brand-deep to-brand-deep';
+    ? 'from-brand-gold/25 via-brand-gold-dim/15 to-brand-deep'
+    : 'from-brand-info/20 via-brand-deep to-brand-deep';
 
   const currentTypeChip = category === 'voluntary'
     ? `${VOLUNTARY_BY_ID[effectiveKind]?.emoji ?? '💚'} ${VOLUNTARY_BY_ID[effectiveKind]?.label ?? 'Voluntary'}`
@@ -375,7 +375,7 @@ export default function FastingTracker() {
               className={`p-2 rounded-xl border transition-all ${
                 calendarOpen
                   ? 'bg-brand-emerald/20 border-brand-emerald/50 text-brand-emerald'
-                  : 'bg-white/[0.04] border-emerald-500/10 text-white/40 hover:text-white'
+                  : 'bg-white/[0.04] border-brand-emerald/10 text-white/40 hover:text-white'
               }`}
             >
               <CalendarDaysIcon className="w-4 h-4" />
@@ -389,7 +389,7 @@ export default function FastingTracker() {
                 initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.22 }} className="overflow-hidden"
               >
-                <div className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] p-3">
+                <div className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-3">
                   <div className="flex items-center justify-between mb-2">
                     <button
                       onClick={() => {
@@ -443,7 +443,7 @@ export default function FastingTracker() {
                             aria-label={`Select ${dateStr}`}
                             className={`relative h-8 rounded-lg text-xs font-semibold transition-all ${
                               isSel ? 'bg-brand-emerald/25 text-brand-emerald border border-brand-emerald/50'
-                              : isTod ? 'bg-white/10 text-white border border-emerald-500/20'
+                              : isTod ? 'bg-white/10 text-white border border-brand-emerald/20'
                               : disabled ? 'text-white/15 cursor-not-allowed'
                               : 'text-white/60 hover:bg-white/10'
                             }`}
@@ -485,8 +485,8 @@ export default function FastingTracker() {
                   aria-label={`Select ${friendlyDate(d)}`}
                   className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border transition-all ${
                     isSel
-                      ? 'bg-white/10 border-emerald-500/30'
-                      : 'bg-white/[0.03] border-emerald-500/5 hover:border-emerald-500/20'
+                      ? 'bg-white/10 border-brand-emerald/30'
+                      : 'bg-white/[0.03] border-brand-emerald/5 hover:border-brand-emerald/20'
                   }`}
                 >
                   <span className={`text-[9px] uppercase font-bold ${isTod ? 'text-brand-emerald' : 'text-white/30'}`}>
@@ -513,7 +513,7 @@ export default function FastingTracker() {
           {/* ── HERO card ── */}
           <motion.div
             layout
-            className={`relative rounded-3xl border border-emerald-500/15 bg-gradient-to-br ${heroGradient} overflow-hidden shadow-2xl`}
+            className={`relative rounded-3xl border border-brand-emerald/15 bg-gradient-to-br ${heroGradient} overflow-hidden shadow-2xl`}
           >
             {/* soft animated orb */}
             <motion.div
@@ -598,7 +598,7 @@ export default function FastingTracker() {
                     iftar times, tarawih nights and Laylat al-Qadr.
                   </p>
                   <button
-                    className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-gold to-amber-500"
+                    className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-gold to-brand-gold"
                     onClick={() => navigate('/ramadan')}
                   >🌙 Open the Ramadan tracker →</button>
                   <a href="https://quran.com/2/185" target="_blank" rel="noopener noreferrer"
@@ -641,7 +641,7 @@ export default function FastingTracker() {
                       {STATUS_META[log.status].label}
                       {log.status === 'completed' && <span className="text-white/50 font-semibold text-sm"> — may Allah accept it! 🤲</span>}
                     </p>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-emerald-500/15 text-white/60 text-xs font-semibold">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-brand-emerald/15 text-white/60 text-xs font-semibold">
                       {CATEGORY_LABEL[log.category as FastingCategory]?.emoji}{' '}
                       {log.category === 'voluntary' && log.voluntaryKind
                         ? VOLUNTARY_BY_ID[log.voluntaryKind]?.label ?? 'Voluntary'
@@ -684,7 +684,7 @@ export default function FastingTracker() {
                   {/* Fasting-as chip → opens type sheet */}
                   <button
                     onClick={() => setShowTypeSheet(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-emerald-500/20 text-white/70 text-xs font-semibold transition-all"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-brand-emerald/20 text-white/70 text-xs font-semibold transition-all"
                   >
                     {currentTypeChip}
                     <ChevronDownIcon className="w-3 h-3 text-white/40" />
@@ -706,7 +706,7 @@ export default function FastingTracker() {
                       <button
                         onClick={() => requestLog('intended')}
                         disabled={upsert.isPending || (category === 'nadhr' && !vowId)}
-                        className="text-cyan-300/80 hover:text-cyan-200 text-xs font-semibold underline underline-offset-4"
+                        className="text-brand-info/80 hover:text-brand-info text-xs font-semibold underline underline-offset-4"
                       >
                         🌅 {isFuture ? 'I intend to fast tomorrow' : "I'm fasting today (mark intention)"}
                       </button>
@@ -717,7 +717,7 @@ export default function FastingTracker() {
 
               {/* Suhoor / iftar strip */}
               {dayTimes && ruling.level !== 'haram' && (
-                <div className="flex items-center justify-center gap-4 pt-2 border-t border-emerald-500/10 text-xs">
+                <div className="flex items-center justify-center gap-4 pt-2 border-t border-brand-emerald/10 text-xs">
                   <span className="text-white/40">🌌 Suḥūr ends <span className="text-white/80 font-bold tabular-nums">{formatTime(dayTimes.fajr)}</span></span>
                   <span className="text-white/40">🌇 Ifṭār <span className="text-brand-gold font-bold tabular-nums">{formatTime(dayTimes.maghrib)}</span></span>
                 </div>
@@ -782,10 +782,10 @@ export default function FastingTracker() {
                   ? [{ label: 'Qaḍā left', value: qadaRemaining, color: '#c9a96e' }]
                   : [{ label: 'Last 30d', value: summary?.stats.last30 ?? 0, color: '#5a9e8e' }]),
                 ...(kaffarahActive
-                  ? [{ label: 'Kaffārah run', value: summary?.kaffarah.currentRun ?? 0, color: '#a855f7' }]
+                  ? [{ label: 'Kaffārah run', value: summary?.kaffarah.currentRun ?? 0, color: '#c4825a' }]
                   : [{ label: 'All time', value: summary?.stats.total ?? 0, color: '#5a9e8e' }]),
               ].map((s) => (
-                <div key={s.label} className="rounded-xl border border-emerald-500/10 bg-white/[0.04] px-2 py-2 text-center">
+                <div key={s.label} className="rounded-xl border border-brand-emerald/10 bg-white/[0.04] px-2 py-2 text-center">
                   <p className="font-black text-lg tabular-nums leading-none" style={{ color: s.color }}>{s.value}</p>
                   <p className="text-white/30 text-[9px] uppercase tracking-wide mt-1">{s.label}</p>
                 </div>
@@ -801,7 +801,7 @@ export default function FastingTracker() {
               }}
               aria-label="Manage make-up fasts and vows"
               title="Make-up fasts, kaffārah & vows"
-              className="rounded-xl border border-emerald-500/10 bg-white/[0.04] hover:bg-white/10 px-3 flex flex-col items-center justify-center gap-1 text-white/40 hover:text-white transition-all"
+              className="rounded-xl border border-brand-emerald/10 bg-white/[0.04] hover:bg-white/10 px-3 flex flex-col items-center justify-center gap-1 text-white/40 hover:text-white transition-all"
             >
               <Cog6ToothIcon className="w-4 h-4" />
               <span className="text-[9px] font-bold uppercase">Manage</span>
@@ -810,7 +810,7 @@ export default function FastingTracker() {
 
           {/* Vow progress bars (only when vows exist) */}
           {vows.length > 0 && (
-            <div className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] p-3 space-y-2">
+            <div className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-3 space-y-2">
               {vows.map((v) => (
                 <div key={v.id}>
                   <div className="flex justify-between text-[11px] mb-1">
@@ -840,7 +840,7 @@ export default function FastingTracker() {
           )}
 
           {/* ── Learn (single collapsible) ── */}
-          <div className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] overflow-hidden">
+          <div className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] overflow-hidden">
             <button
               onClick={() => setLearnOpen(!learnOpen)}
               className="w-full px-4 py-3 flex items-center justify-between text-left"
@@ -857,7 +857,7 @@ export default function FastingTracker() {
                   initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25 }} className="overflow-hidden"
                 >
-                  <div className="px-4 pb-4 space-y-5 border-t border-emerald-500/5 pt-4">
+                  <div className="px-4 pb-4 space-y-5 border-t border-brand-emerald/5 pt-4">
 
                     {/* The basics */}
                     <div className="space-y-1.5">
@@ -960,8 +960,8 @@ export default function FastingTracker() {
                     onClick={() => { setCategory('voluntary'); setKind(m.id); setShowTypeSheet(false); }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left transition-all ${
                       category === 'voluntary' && effectiveKind === m.id
-                        ? 'border-emerald-500/40 bg-white/10'
-                        : 'border-emerald-500/10 bg-white/[0.03] hover:bg-white/[0.07]'
+                        ? 'border-brand-emerald/40 bg-white/10'
+                        : 'border-brand-emerald/10 bg-white/[0.03] hover:bg-white/[0.07]'
                     }`}
                   >
                     <span className="text-xl shrink-0">{m.emoji}</span>
@@ -981,7 +981,7 @@ export default function FastingTracker() {
                 <p className="text-white/30 text-[10px] uppercase tracking-widest font-bold pt-2">Obligatory make-ups</p>
                 <button
                   onClick={() => { setCategory('qada'); setShowTypeSheet(false); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'qada' ? 'border-emerald-500/40 bg-white/10' : 'border-emerald-500/10 bg-white/[0.03] hover:bg-white/[0.07]'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'qada' ? 'border-brand-emerald/40 bg-white/10' : 'border-brand-emerald/10 bg-white/[0.03] hover:bg-white/[0.07]'}`}
                 >
                   <span className="text-xl">🔄</span>
                   <div>
@@ -994,11 +994,11 @@ export default function FastingTracker() {
                 {kaffarahActive && (
                   <button
                     onClick={() => { setCategory('kaffarah'); setShowTypeSheet(false); }}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'kaffarah' ? 'border-emerald-500/40 bg-white/10' : 'border-emerald-500/10 bg-white/[0.03] hover:bg-white/[0.07]'}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'kaffarah' ? 'border-brand-emerald/40 bg-white/10' : 'border-brand-emerald/10 bg-white/[0.03] hover:bg-white/[0.07]'}`}
                   >
                     <span className="text-xl">⚖️</span>
                     <div>
-                      <p className="text-xs font-bold text-purple-300">Kaffārah — expiation day</p>
+                      <p className="text-xs font-bold text-brand-warm">Kaffārah — expiation day</p>
                       <p className="text-white/30 text-[10px]">Consecutive run: {summary?.kaffarah.currentRun ?? 0}/{summary?.profile.kaffarah.targetDays ?? 60}</p>
                     </div>
                   </button>
@@ -1007,11 +1007,11 @@ export default function FastingTracker() {
                   <button
                     key={v.id}
                     onClick={() => { setCategory('nadhr'); setVowId(v.id); setShowTypeSheet(false); }}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'nadhr' && vowId === v.id ? 'border-emerald-500/40 bg-white/10' : 'border-emerald-500/10 bg-white/[0.03] hover:bg-white/[0.07]'}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'nadhr' && vowId === v.id ? 'border-brand-emerald/40 bg-white/10' : 'border-brand-emerald/10 bg-white/[0.03] hover:bg-white/[0.07]'}`}
                   >
                     <span className="text-xl">🤝</span>
                     <div>
-                      <p className="text-xs font-bold text-cyan-300">Vow: {v.title}</p>
+                      <p className="text-xs font-bold text-brand-info">Vow: {v.title}</p>
                       <p className="text-white/30 text-[10px]">{v.completed}/{v.targetDays} days done</p>
                     </div>
                   </button>
@@ -1038,7 +1038,7 @@ export default function FastingTracker() {
             className="fixed right-0 top-0 bottom-0 z-[65] w-full max-w-sm bg-brand-deep border-l border-brand-border overflow-y-auto"
             role="dialog" aria-label="Fasting settings"
           >
-              <div className="sticky top-0 bg-brand-deep/95 backdrop-blur px-5 py-4 flex items-center justify-between border-b border-emerald-500/5 z-10">
+              <div className="sticky top-0 bg-brand-deep/95 backdrop-blur px-5 py-4 flex items-center justify-between border-b border-brand-emerald/5 z-10">
                 <div>
                   <h3 className="text-lg font-black text-white">⚙️ Fasting settings</h3>
                   <p className="text-white/30 text-[11px]">Obligations & vows — a countdown capsule appears on the main card</p>
@@ -1083,16 +1083,16 @@ export default function FastingTracker() {
                 </div>
 
                 {/* ── Kaffarah ── */}
-                <div className="rounded-2xl border border-purple-400/25 bg-purple-500/5 p-4 space-y-3">
+                <div className="rounded-2xl border border-brand-warm/25 bg-brand-warm/5 p-4 space-y-3">
                   <div className="flex items-center gap-2.5">
-                    <span className="w-9 h-9 rounded-xl bg-purple-500/15 grid place-items-center text-lg shrink-0">⚖️</span>
+                    <span className="w-9 h-9 rounded-xl bg-brand-warm/15 grid place-items-center text-lg shrink-0">⚖️</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-purple-300 font-bold text-sm leading-tight">Kaffārah — expiation</p>
+                      <p className="text-brand-warm font-bold text-sm leading-tight">Kaffārah — expiation</p>
                       <p className="text-white/30 text-[10px]">Consecutive days required (Bukhārī 1936)</p>
                     </div>
                     <button
                       onClick={() => updateProfile.mutate({ kaffarah: { active: !kaffarahActive, targetDays: summary?.profile.kaffarah.targetDays ?? 60 } })}
-                      className={`btn btn-xs border-0 shrink-0 ${kaffarahActive ? 'bg-white/10 text-white/50' : 'bg-purple-500 text-white'}`}
+                      className={`btn btn-xs border-0 shrink-0 ${kaffarahActive ? 'bg-white/10 text-white/50' : 'bg-brand-warm text-white'}`}
                     >{kaffarahActive ? 'Stop' : 'Start'}</button>
                   </div>
                   {kaffarahActive ? (
@@ -1137,11 +1137,11 @@ export default function FastingTracker() {
                 </div>
 
                 {/* ── Vows ── */}
-                <div className="rounded-2xl border border-cyan-400/25 bg-cyan-500/5 p-4 space-y-3">
+                <div className="rounded-2xl border border-brand-info/25 bg-brand-info/5 p-4 space-y-3">
                   <div className="flex items-center gap-2.5">
-                    <span className="w-9 h-9 rounded-xl bg-cyan-500/15 grid place-items-center text-lg shrink-0">🤝</span>
+                    <span className="w-9 h-9 rounded-xl bg-brand-info/15 grid place-items-center text-lg shrink-0">🤝</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-cyan-300 font-bold text-sm leading-tight">Nadhr — vowed fasts</p>
+                      <p className="text-brand-info font-bold text-sm leading-tight">Nadhr — vowed fasts</p>
                       <p className="text-white/30 text-[10px]">"Whoever vows to obey Allah, let him obey Him" (Bukhārī 6696)</p>
                     </div>
                   </div>
@@ -1149,7 +1149,7 @@ export default function FastingTracker() {
                     <p className="text-white/30 text-[11px]">No vows yet. Add one below and it gets its own countdown.</p>
                   )}
                   {vows.map((v) => (
-                    <div key={v.id} className="rounded-xl bg-white/[0.04] border border-emerald-500/10 p-2.5 space-y-1.5">
+                    <div key={v.id} className="rounded-xl bg-white/[0.04] border border-brand-emerald/10 p-2.5 space-y-1.5">
                       <div className="flex items-center gap-2">
                         <p className="text-white/70 text-xs font-bold flex-1 truncate">{v.title}</p>
                         <button onClick={() => setConfirmVowDelete({ id: v.id, title: v.title })} aria-label={`Delete vow ${v.title}`}
@@ -1178,7 +1178,7 @@ export default function FastingTracker() {
                       className="input input-xs w-14 bg-brand-deep border-brand-border text-white placeholder-white/20 text-center"
                     />
                     <button onClick={submitVow} disabled={!vowTitle.trim() || !vowDays || addVow.isPending}
-                      className="btn btn-xs bg-cyan-500 text-white border-0 disabled:opacity-30">Add</button>
+                      className="btn btn-xs bg-brand-info text-white border-0 disabled:opacity-30">Add</button>
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {OBLIGATORY_META[2]!.refs.map((r) => <RefLink key={r.url} r={r} />)}

@@ -49,19 +49,19 @@ interface DangerGroup {
 
 const DANGER_GROUPS: DangerGroup[] = [
   {
-    id: 'zikr', emoji: '📿', title: 'Zikr', card: 'border-emerald-500/20 bg-emerald-500/[0.04]',
+    id: 'zikr', emoji: '📿', title: 'Zikr', card: 'border-brand-emerald/20 bg-brand-emerald/[0.04]',
     rows: [
       { id: 'zikr-all', label: 'All zikr data', detail: 'Counts, daily history, goal & streak', method: 'delete', endpoint: '/api/zikr/all' },
     ],
   },
   {
-    id: 'salat', emoji: '🕌', title: 'Salat', card: 'border-indigo-500/20 bg-indigo-500/[0.04]',
+    id: 'salat', emoji: '🕌', title: 'Salat', card: 'border-brand-info/20 bg-brand-info/[0.04]',
     rows: [
       { id: 'salat-all', label: 'All salat logs', detail: 'Every prayer log and its analytics', method: 'delete', endpoint: '/api/salat/all' },
     ],
   },
   {
-    id: 'fasting', emoji: '🌙', title: 'Fasting', card: 'border-amber-500/20 bg-amber-500/[0.04]',
+    id: 'fasting', emoji: '🌙', title: 'Fasting', card: 'border-brand-gold/20 bg-brand-gold/[0.04]',
     rows: [
       { id: 'fasting-all', label: 'All fasting data', detail: 'Every fast, qaḍā/kaffārah progress & vows', method: 'delete', endpoint: '/api/fasting/all' },
       { id: 'fasting-qada', label: 'Qaḍā only', detail: 'Make-up fast logs + the owed counter', method: 'delete', endpoint: '/api/fasting/category/qada', sub: true },
@@ -72,7 +72,7 @@ const DANGER_GROUPS: DangerGroup[] = [
     ],
   },
   {
-    id: 'quran', emoji: '📖', title: 'Quran', card: 'border-cyan-500/20 bg-cyan-500/[0.04]',
+    id: 'quran', emoji: '📖', title: 'Quran', card: 'border-brand-info/20 bg-brand-info/[0.04]',
     rows: [
       { id: 'quran-all', label: 'All Quran data', detail: 'Reading logs, streak, bookmarks & khatm', method: 'delete', endpoint: '/api/quran/all' },
       { id: 'quran-khatam', label: 'Reset khatam journey', detail: 'Bookmark → 1:1, journey un-starts; completed count stays', method: 'post', endpoint: '/api/quran/khatam/reset', sub: true },
@@ -80,7 +80,7 @@ const DANGER_GROUPS: DangerGroup[] = [
     ],
   },
   {
-    id: 'cycle', emoji: '🌸', title: 'Rayhanah Cycle', card: 'border-rose-500/20 bg-rose-500/[0.04]',
+    id: 'cycle', emoji: '🌸', title: 'Rayhanah Cycle', card: 'border-brand-pink/20 bg-brand-pink/[0.04]',
     rows: [
       { id: 'cycle-all', label: 'All cycle data', detail: 'History, wellness notes & settings — visible only to you', method: 'delete', endpoint: '/api/cycle/all' },
     ],
@@ -122,7 +122,7 @@ function Toggle({ checked, onChange, title, detail, accent = 'toggle-success' }:
   accent?: string;
 }) {
   return (
-    <label className="flex items-center gap-4 p-3 rounded-xl border border-brand-border bg-brand-deep/50 cursor-pointer hover:border-emerald-500/20 transition-colors">
+    <label className="flex items-center gap-4 p-3 rounded-xl border border-brand-border bg-brand-deep/50 cursor-pointer hover:border-brand-emerald/20 transition-colors">
       <input
         type="checkbox"
         className={`toggle ${accent}`}
@@ -420,7 +420,7 @@ export default function Settings() {
 
           {/* ── Accessibility ── */}
           <SectionCard
-            icon={<EyeIcon className="w-5 h-5 text-cyan-300" />}
+            icon={<EyeIcon className="w-5 h-5 text-brand-info" />}
             title="Accessibility"
             delay={0.15}
           >
@@ -443,7 +443,7 @@ export default function Settings() {
 
           {/* ── AI companion (Naseeh) ── */}
           <SectionCard
-            icon={<LightBulbIcon className="w-5 h-5 text-fuchsia-400" />}
+            icon={<LightBulbIcon className="w-5 h-5 text-brand-pink" />}
             title="Naseeh — your AI companion"
             subtitle="Gentle encouragement & reflection — never a source of religious evidence"
             delay={0.2}
@@ -458,14 +458,14 @@ export default function Settings() {
               <div className="mt-3 space-y-3">
                 <div className="flex flex-wrap gap-2">
                   <button
-                    className="btn btn-sm border-0 text-white gap-2 bg-gradient-to-r from-fuchsia-500 to-purple-600 hover:opacity-90"
+                    className="btn btn-sm border-0 text-white gap-2 bg-gradient-to-r from-brand-pink to-brand-info-dim hover:opacity-90"
                     onClick={runSuggest}
                     disabled={aiSuggest.isPending}
                   >
                     <SparklesIcon className="w-4 h-4" /> Personalised dhikr
                   </button>
                   <button
-                    className="btn btn-sm border-0 text-white gap-2 bg-gradient-to-r from-cyan-500 to-emerald-600 hover:opacity-90"
+                    className="btn btn-sm border-0 text-white gap-2 bg-gradient-to-r from-brand-info to-brand-emerald hover:opacity-90"
                     onClick={() => void runWeekly()}
                     disabled={aiWeekly.isPending}
                   >
@@ -483,7 +483,7 @@ export default function Settings() {
                             <p key={i} className="text-white/80 text-sm">📿 {s}</p>
                           ))}
                           {aiSuggest.data?.motivation && (
-                            <p className="text-fuchsia-200/80 text-sm italic pt-1">{aiSuggest.data.motivation}</p>
+                            <p className="text-brand-pink/80 text-sm italic pt-1">{aiSuggest.data.motivation}</p>
                           )}
                         </div>
                       )}
@@ -499,7 +499,7 @@ export default function Settings() {
                       {aiWeekly.isPending ? <AiThinking label="Naseeh is looking over your week…" /> : (
                         <div className="mt-2 space-y-1.5">
                           <p className="text-white/80 text-sm leading-relaxed">{aiWeekly.data?.summary}</p>
-                          <p className="text-cyan-200/80 text-sm italic">{aiWeekly.data?.encouragement}</p>
+                          <p className="text-brand-info/80 text-sm italic">{aiWeekly.data?.encouragement}</p>
                         </div>
                       )}
                       <AiDisclaimer />

@@ -1141,10 +1141,10 @@ export default function Profile() {
 
               <button
                 onClick={() => { setShowPhotoChoice(false); setAvatarModalOpen(true); }}
-                className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-purple-500/40 hover:bg-purple-500/5 text-white/70 hover:text-white transition-all text-left group"
+                className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-brand-warm/40 hover:bg-brand-warm/5 text-white/70 hover:text-white transition-all text-left group"
               >
-                <div className="w-9 h-9 rounded-xl bg-purple-500/15 flex items-center justify-center shrink-0 group-hover:bg-purple-500/25 transition-colors">
-                  <PhotoIcon className="w-5 h-5 text-purple-400" />
+                <div className="w-9 h-9 rounded-xl bg-brand-warm/15 flex items-center justify-center shrink-0 group-hover:bg-brand-warm/25 transition-colors">
+                  <PhotoIcon className="w-5 h-5 text-brand-warm" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold">Choose Avatar</p>
@@ -1156,7 +1156,7 @@ export default function Profile() {
                 <button
                   onClick={() => void useGoogleAccountPhoto()}
                   disabled={uploading}
-                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-blue-500/40 hover:bg-blue-500/5 text-white/70 hover:text-white transition-all text-left group disabled:opacity-50"
+                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-brand-info/40 hover:bg-brand-info/5 text-white/70 hover:text-white transition-all text-left group disabled:opacity-50"
                 >
                   <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-brand-border">
                     <img src={googlePhotoUrl} alt="Google" className="w-full h-full object-cover" />

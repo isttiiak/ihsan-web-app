@@ -28,7 +28,7 @@ export default function ReportReference({
 
   if (variant === 'card') {
     return (
-      <div className={`rounded-2xl border border-emerald-500/10 bg-white/[0.03] px-4 py-3 ${className}`}>
+      <div className={`rounded-2xl border border-brand-emerald/10 bg-white/[0.03] px-4 py-3 ${className}`}>
         <p className="text-white/35 text-[11px] leading-relaxed">
           <span className="text-white/50 font-semibold">Spotted a mistake?</span>{' '}
           Every reference here is checked against quran.com or sunnah.com, but we are human —

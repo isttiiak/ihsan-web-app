@@ -53,7 +53,7 @@ export default function QuranHabit() {
         {/* ── Today hero ── */}
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl p-6 border border-brand-emerald/20 bg-gradient-to-br from-brand-emerald/10 via-teal-500/10 to-brand-deep"
+          className="rounded-3xl p-6 border border-brand-emerald/20 bg-gradient-to-br from-brand-emerald/10 via-brand-info/10 to-brand-deep"
         >
           <div className="flex items-center gap-5">
             <div className="relative w-24 h-24 shrink-0">
@@ -84,18 +84,18 @@ export default function QuranHabit() {
               {/* stacked on phones — these two buttons were overflowing the card */}
               <div className="flex flex-col sm:flex-row gap-2 mt-3">
                 {khatamStarted ? (
-                  <button className="btn btn-sm w-full sm:w-auto rounded-xl border-0 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-500"
+                  <button className="btn btn-sm w-full sm:w-auto rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-info"
                     onClick={() => { if (pos) navigate(`/quran/read/${pos.surah}?start=${pos.ayah}&mode=khatam`); else navigate('/quran/khatam'); }}>
                     ▶ Continue khatam
                   </button>
                 ) : (
-                  <button className="btn btn-sm w-full sm:w-auto rounded-xl border-0 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-500"
+                  <button className="btn btn-sm w-full sm:w-auto rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-info"
                     disabled={startKhatam.isPending}
                     onClick={() => startKhatam.mutate(undefined, { onSuccess: () => navigate('/quran/khatam') })}>
                     🕋 Begin khatam journey
                   </button>
                 )}
-                <Link to="/quran/browse" className="btn btn-sm w-full sm:w-auto rounded-xl bg-white/5 border-emerald-500/10 text-white/70 font-bold">
+                <Link to="/quran/browse" className="btn btn-sm w-full sm:w-auto rounded-xl bg-white/5 border-brand-emerald/10 text-white/70 font-bold">
                   Pick a surah
                 </Link>
               </div>
@@ -106,7 +106,7 @@ export default function QuranHabit() {
         {/* ── streak + khatam mini — each card gets its OWN color so sections
                are recognizable at a glance (Istiak's spec) ── */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-orange-500/25 bg-orange-500/[0.05] p-4">
+          <div className="rounded-2xl border border-brand-warm/25 bg-brand-warm/[0.05] p-4">
             <p className="text-white font-black text-sm">🔥 {summary?.streak ?? 0}-day streak</p>
             <div className="flex items-end gap-1 h-10 mt-2">
               {(summary?.last7 ?? []).map((d) => (
@@ -117,10 +117,10 @@ export default function QuranHabit() {
             </div>
             <p className="text-white/25 text-[10px] mt-1">best: {summary?.bestStreak ?? 0} days</p>
           </div>
-          <Link to="/quran/khatam" className="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.05] p-4 hover:border-emerald-400/50 transition-all">
+          <Link to="/quran/khatam" className="rounded-2xl border border-brand-emerald/25 bg-brand-emerald/[0.05] p-4 hover:border-brand-emerald/50 transition-all">
             <p className="text-white font-black text-sm">🕋 Khatam · {khatmPct.toFixed(1)}%</p>
             <div className="h-2 rounded-full bg-white/10 overflow-hidden mt-2.5">
-              <div className="h-full rounded-full bg-gradient-to-r from-brand-emerald to-teal-400" style={{ width: `${khatmPct}%` }} />
+              <div className="h-full rounded-full bg-gradient-to-r from-brand-emerald to-brand-info" style={{ width: `${khatmPct}%` }} />
             </div>
             <p className="text-white/25 text-[10px] mt-1.5">
               {pos ? `at ${nameOf(pos.surah)} ${pos.surah}:${pos.ayah}` : 'begin your journey'} · ⭐ {summary?.profile.khatmCount ?? 0} completed
@@ -132,7 +132,7 @@ export default function QuranHabit() {
             completion counts are an insight, not a homepage feature. */}
 
         {/* ── special surahs ── */}
-        <div className="rounded-3xl border border-purple-500/25 bg-purple-500/[0.05] p-5">
+        <div className="rounded-3xl border border-brand-info/25 bg-brand-info/[0.05] p-5">
           <h2 className="text-white font-black text-sm mb-3">🌟 Beloved surahs</h2>
           <div className="grid sm:grid-cols-2 gap-2">
             {SPECIAL_SURAHS.map((sp) => (
@@ -152,7 +152,7 @@ export default function QuranHabit() {
         </div>
 
         {/* ── ayah bundles ── */}
-        <div className="rounded-3xl border border-cyan-500/25 bg-cyan-500/[0.05] p-5">
+        <div className="rounded-3xl border border-brand-info/25 bg-brand-info/[0.05] p-5">
           <h2 className="text-white font-black text-sm mb-1">🛡️ Protection & light — ayah selections</h2>
           <p className="text-white/30 text-[11px] mb-3">Short, authentic selections the Prophet ﷺ taught us to hold onto.</p>
           <div className="grid sm:grid-cols-2 gap-2">
@@ -171,7 +171,7 @@ export default function QuranHabit() {
         </div>
 
         {/* ── duas from the Quran — the prophets' own words, each with its story ── */}
-        <div id="duas" className="rounded-3xl border border-amber-500/25 bg-amber-500/[0.05] p-5 scroll-mt-20">
+        <div id="duas" className="rounded-3xl border border-brand-gold/25 bg-brand-gold/[0.05] p-5 scroll-mt-20">
           <h2 className="text-white font-black text-sm mb-1">🤲 Duas from the Quran</h2>
           <p className="text-white/30 text-[11px] mb-3">Supplications Allah Himself relates — open one to read it with its story and reference.</p>
           <div className="grid sm:grid-cols-2 gap-1.5">
@@ -199,7 +199,7 @@ export default function QuranHabit() {
         </div>
 
         {/* Browse all surahs lives on the dedicated Read tab (no duplicate list here). */}
-        <Link to="/quran/browse" className="block rounded-3xl border border-indigo-500/25 bg-indigo-500/[0.05] p-4 text-center hover:border-indigo-400/50 transition-all">
+        <Link to="/quran/browse" className="block rounded-3xl border border-brand-info/25 bg-brand-info/[0.05] p-4 text-center hover:border-brand-info/50 transition-all">
           <span className="text-white/70 text-sm font-bold">📚 Browse all 114 surahs →</span>
         </Link>
 

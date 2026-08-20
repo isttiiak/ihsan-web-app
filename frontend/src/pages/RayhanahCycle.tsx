@@ -245,33 +245,33 @@ export default function RayhanahCycle() {
         {/* ── Hero ─────────────────────────────────────────────────────────── */}
         {isLoading ? (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-10 grid place-items-center">
-            <span className="loading loading-spinner loading-lg text-pink-300" />
+            <span className="loading loading-spinner loading-lg text-brand-pink" />
           </div>
         ) : isError ? (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-8 text-center space-y-3">
             <p className="text-white/60 text-sm">Couldn't load your cycle data.</p>
-            <button className="btn btn-sm bg-pink-500/20 border-pink-400/30 text-pink-200" onClick={() => void refetch()}>
+            <button className="btn btn-sm bg-brand-pink/20 border-brand-pink/30 text-brand-pink" onClick={() => void refetch()}>
               Try again
             </button>
           </div>
         ) : active ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-3xl p-6 sm:p-8 border border-pink-400/25 bg-gradient-to-br from-pink-500/15 via-rose-500/10 to-purple-500/10 relative overflow-hidden"
+            className="rounded-3xl p-6 sm:p-8 border border-brand-pink/25 bg-gradient-to-br from-brand-pink/15 via-brand-pink/10 to-brand-info/10 relative overflow-hidden"
           >
-            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-pink-500/15 blur-2xl animate-pulse" />
+            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-brand-pink/15 blur-2xl animate-pulse" />
             <div className="relative">
-              <div className="flex items-center gap-2 text-pink-200/90 text-xs font-bold uppercase tracking-widest">
+              <div className="flex items-center gap-2 text-brand-pink/90 text-xs font-bold uppercase tracking-widest">
                 {active.type === 'nifas' ? '🤱 Nifās — post-natal rest' : '🌸 Rayhanah days'}
               </div>
               <h1 className="text-3xl font-black text-white mt-2">
                 Day {active.dayCount}
                 <span className="text-white/40 text-lg font-semibold"> · since {formatDay(active.startDate)}</span>
               </h1>
-              <p className="text-pink-100/80 text-sm mt-3 leading-relaxed">{phraseOfDay()}</p>
+              <p className="text-brand-pink/80 text-sm mt-3 leading-relaxed">{phraseOfDay()}</p>
 
               {active.beyondMax && (
-                <div className="mt-4 rounded-2xl bg-amber-500/15 border border-amber-400/30 p-4 text-amber-100/90 text-xs leading-relaxed">
+                <div className="mt-4 rounded-2xl bg-brand-gold/15 border border-brand-gold/30 p-4 text-brand-gold/90 text-xs leading-relaxed">
                   <span className="font-bold">Day {active.dayCount} has passed the {active.maxDays}-day maximum
                   ({summary?.madhab === 'hanafi' ? 'Ḥanafī' : 'majority'} view{active.type === 'nifas' ? ', nifās' : ''}).</span>{' '}
                   Bleeding beyond the maximum is usually <span className="font-bold">istiḥāḍa</span> — prayer resumes
@@ -282,7 +282,7 @@ export default function RayhanahCycle() {
               )}
 
               <button
-                className="mt-5 w-full btn h-14 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 shadow-lg shadow-pink-900/40"
+                className="mt-5 w-full btn h-14 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-brand-pink to-brand-pink hover:from-brand-pink hover:to-brand-pink shadow-lg shadow-brand-pink-dim/40"
                 onClick={handleEndConfirmed}
                 disabled={endCycle.isPending}
               >
@@ -298,17 +298,17 @@ export default function RayhanahCycle() {
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className="rounded-3xl p-6 sm:p-8 border border-brand-border bg-brand-deep/80 relative overflow-hidden"
           >
-            <div className="flex items-center gap-2 text-emerald-300/80 text-xs font-bold uppercase tracking-widest">
+            <div className="flex items-center gap-2 text-brand-emerald/80 text-xs font-bold uppercase tracking-widest">
               ✨ Days of purity
             </div>
             <h1 className="text-2xl font-black text-white mt-2">Assalamu alaikum, {user.displayName?.split(' ')[0] ?? 'sister'} 🌷</h1>
             <p className="text-white/50 text-sm mt-2 leading-relaxed">
               {nextStartLabel
-                ? <>Based on your history, your next period is expected around <span className="text-pink-200 font-semibold">{nextStartLabel}</span> (avg cycle {summary?.prediction.avgCycleDays} days).</>
+                ? <>Based on your history, your next period is expected around <span className="text-brand-pink font-semibold">{nextStartLabel}</span> (avg cycle {summary?.prediction.avgCycleDays} days).</>
                 : 'Log your first cycle and Rayhanah will learn your rhythm to predict the next one.'}
             </p>
             <button
-              className="mt-5 w-full btn h-14 rounded-2xl border border-pink-400/30 bg-pink-500/15 hover:bg-pink-500/25 text-pink-100 text-base font-black"
+              className="mt-5 w-full btn h-14 rounded-2xl border border-brand-pink/30 bg-brand-pink/15 hover:bg-brand-pink/25 text-brand-pink text-base font-black"
               onClick={() => { setStartDate(today); setStartType('hayd'); setStartOpen(true); }}
             >
               🌸 My period started
@@ -321,7 +321,7 @@ export default function RayhanahCycle() {
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-white font-black">🪻 Garden of Light</h2>
-              <span className="text-xs font-bold text-pink-200/80">{gardenDone}/{GARDEN_ITEMS.length} today</span>
+              <span className="text-xs font-bold text-brand-pink/80">{gardenDone}/{GARDEN_ITEMS.length} today</span>
             </div>
             <p className="text-white/40 text-xs mt-1">
               Everything here remains fully open to you — the Prophet ﷺ remembered Allah in all states
@@ -333,7 +333,7 @@ export default function RayhanahCycle() {
                   <button
                     aria-label={`Mark ${g.label}`}
                     onClick={() => toggleGarden(g.id)}
-                    className={`w-6 h-6 rounded-full grid place-items-center border transition-all flex-shrink-0 ${garden[g.id] ? 'bg-pink-500 border-pink-400 text-white' : 'border-emerald-500/20 text-transparent hover:border-pink-300/60'}`}
+                    className={`w-6 h-6 rounded-full grid place-items-center border transition-all flex-shrink-0 ${garden[g.id] ? 'bg-brand-pink border-brand-pink text-white' : 'border-brand-emerald/20 text-transparent hover:border-brand-pink/60'}`}
                   >
                     ✓
                   </button>
@@ -341,7 +341,7 @@ export default function RayhanahCycle() {
                     {g.icon} {g.label}
                   </span>
                   {g.link && (
-                    <button className="text-xs text-pink-300/80 hover:text-pink-200" onClick={() => navigate(g.link!)}>
+                    <button className="text-xs text-brand-pink/80 hover:text-brand-pink" onClick={() => navigate(g.link!)}>
                       Open →
                     </button>
                   )}
@@ -349,7 +349,7 @@ export default function RayhanahCycle() {
               ))}
             </div>
             {gardenDone === GARDEN_ITEMS.length && (
-              <p className="text-center text-pink-200/90 text-sm font-semibold mt-3">🌺 Mā shāʾ Allāh — a full garden today!</p>
+              <p className="text-center text-brand-pink/90 text-sm font-semibold mt-3">🌺 Mā shāʾ Allāh — a full garden today!</p>
             )}
           </div>
         )}
@@ -371,7 +371,7 @@ export default function RayhanahCycle() {
                   return (
                     <button key={f.id}
                       aria-pressed={on}
-                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-pink-500/30 border-pink-300/70 text-white ring-1 ring-pink-300/50' : 'bg-white/5 border-emerald-500/10 text-white/50 hover:text-white'}`}
+                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-brand-pink/30 border-brand-pink/70 text-white ring-1 ring-brand-pink/50' : 'bg-white/5 border-brand-emerald/10 text-white/50 hover:text-white'}`}
                       onClick={() => setFlow(f.id)}
                     >{on && '✓ '}{f.label}</button>
                   );
@@ -388,7 +388,7 @@ export default function RayhanahCycle() {
                   return (
                     <button key={sy.id}
                       aria-pressed={on}
-                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-rose-500/30 border-rose-300/70 text-white ring-1 ring-rose-300/50' : 'bg-white/5 border-emerald-500/10 text-white/50 hover:text-white'}`}
+                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-brand-pink/30 border-brand-pink/70 text-white ring-1 ring-brand-pink/50' : 'bg-white/5 border-brand-emerald/10 text-white/50 hover:text-white'}`}
                       onClick={() => toggleSymptom(sy.id)}
                     >{on && '✓ '}{sy.label}</button>
                   );
@@ -405,7 +405,7 @@ export default function RayhanahCycle() {
                   return (
                     <button key={mo.id}
                       aria-pressed={on}
-                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-purple-500/30 border-purple-300/70 text-white ring-1 ring-purple-300/50' : 'bg-white/5 border-emerald-500/10 text-white/50 hover:text-white'}`}
+                      className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-brand-info/30 border-brand-info/70 text-white ring-1 ring-brand-info/50' : 'bg-white/5 border-brand-emerald/10 text-white/50 hover:text-white'}`}
                       onClick={() => toggleMood(mo.id)}
                     >{on && '✓ '}{mo.label}</button>
                   );
@@ -417,7 +417,7 @@ export default function RayhanahCycle() {
             <MoodComfort day={today} moods={todayNote?.moods ?? []} symptoms={todayNote?.symptoms} />
 
             {(todayNote?.symptoms?.length ?? 0) > 0 && (
-              <p className="text-pink-200/70 text-xs leading-relaxed border-t border-emerald-500/5 pt-2.5">
+              <p className="text-brand-pink/70 text-xs leading-relaxed border-t border-brand-emerald/5 pt-2.5">
                 May Allah give you ease — no fatigue or pain touches a Muslim except that Allah wipes away
                 sins with it (<a className="underline" href="https://sunnah.com/bukhari:5641" target="_blank" rel="noreferrer">Bukhārī 5641</a>). 🌸
               </p>
@@ -430,17 +430,17 @@ export default function RayhanahCycle() {
         {lastEnded && (
           <motion.div
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-pink-400/25 bg-pink-500/[0.06] p-4 flex flex-col sm:flex-row sm:items-center gap-3"
+            className="rounded-2xl border border-brand-pink/25 bg-brand-pink/[0.06] p-4 flex flex-col sm:flex-row sm:items-center gap-3"
           >
             <div className="flex-1 min-w-0">
-              <p className="text-pink-100/90 text-sm font-bold">Ended too early?</p>
+              <p className="text-brand-pink/90 text-sm font-bold">Ended too early?</p>
               <p className="text-white/40 text-xs mt-0.5 leading-relaxed">
                 If the flow returned after you marked {formatDay(lastEnded.endDate!)} as the end, you can reopen
                 that cycle — all your daily notes stay exactly where they are.
               </p>
             </div>
             <button
-              className="btn btn-sm rounded-xl border border-pink-400/40 bg-pink-500/15 text-pink-100 hover:bg-pink-500/25 shrink-0"
+              className="btn btn-sm rounded-xl border border-brand-pink/40 bg-brand-pink/15 text-brand-pink hover:bg-brand-pink/25 shrink-0"
               disabled={editCycle.isPending}
               onClick={() => editCycle.mutate(
                 { logId: lastEnded._id, endDate: null },
@@ -457,15 +457,15 @@ export default function RayhanahCycle() {
         {summary && summary.prediction.basedOnCycles > 0 && (
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-              <p className="text-2xl font-black text-pink-200">{summary.prediction.avgCycleDays}</p>
+              <p className="text-2xl font-black text-brand-pink">{summary.prediction.avgCycleDays}</p>
               <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">avg cycle days</p>
             </div>
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-              <p className="text-2xl font-black text-pink-200">{summary.prediction.avgPeriodDays}</p>
+              <p className="text-2xl font-black text-brand-pink">{summary.prediction.avgPeriodDays}</p>
               <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">avg period days</p>
             </div>
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-              <p className="text-2xl font-black text-pink-200">{summary.prediction.basedOnCycles + 1}</p>
+              <p className="text-2xl font-black text-brand-pink">{summary.prediction.basedOnCycles + 1}</p>
               <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">cycles learned</p>
             </div>
           </div>
@@ -475,17 +475,17 @@ export default function RayhanahCycle() {
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5 space-y-4">
           <h2 className="text-white font-black">📖 Your fiqh companion</h2>
           <div className="grid sm:grid-cols-2 gap-3 text-xs leading-relaxed">
-            <div className="rounded-2xl bg-rose-500/10 border border-rose-400/20 p-4">
-              <p className="font-bold text-rose-200 mb-1.5">Paused for now 🌙</p>
+            <div className="rounded-2xl bg-brand-pink/10 border border-brand-pink/20 p-4">
+              <p className="font-bold text-brand-pink mb-1.5">Paused for now 🌙</p>
               <ul className="space-y-1 text-white/60">
-                <li>• Ṣalāt — fully excused, <span className="font-semibold text-rose-200/90">never made up</span> (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>)</li>
+                <li>• Ṣalāt — fully excused, <span className="font-semibold text-brand-pink/90">never made up</span> (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>)</li>
                 <li>• Fasting — excused now, made up later (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>)</li>
                 <li>• Ṭawāf around the Kaʿbah (<a className="underline" href="https://sunnah.com/bukhari:305" target="_blank" rel="noreferrer">Bukhārī 305</a>)</li>
                 <li>• Intimacy during menses (<a className="underline" href="https://quran.com/2/222" target="_blank" rel="noreferrer">Quran 2:222</a>)</li>
               </ul>
             </div>
-            <div className="rounded-2xl bg-emerald-500/10 border border-emerald-400/20 p-4">
-              <p className="font-bold text-emerald-200 mb-1.5">Fully open to you 🌸</p>
+            <div className="rounded-2xl bg-brand-emerald/10 border border-brand-emerald/20 p-4">
+              <p className="font-bold text-brand-emerald mb-1.5">Fully open to you 🌸</p>
               <ul className="space-y-1 text-white/60">
                 <li>• All dhikr, duʿā & ṣalawāt (<a className="underline" href="https://sunnah.com/muslim:373" target="_blank" rel="noreferrer">Muslim 373</a>)</li>
                 <li>• Listening to the Quran, tafsīr & knowledge</li>
@@ -513,7 +513,7 @@ export default function RayhanahCycle() {
               {(['hanafi', 'majority'] as const).map((m) => (
                 <button
                   key={m}
-                  className={`join-item btn btn-xs ${summary?.madhab === m ? 'bg-pink-500/30 border-pink-400/40 text-pink-100' : 'bg-white/5 border-emerald-500/10 text-white/50'}`}
+                  className={`join-item btn btn-xs ${summary?.madhab === m ? 'bg-brand-pink/30 border-brand-pink/40 text-brand-pink' : 'bg-white/5 border-brand-emerald/10 text-white/50'}`}
                   onClick={() => setMadhab.mutate(m)}
                 >
                   {m === 'hanafi' ? 'Ḥanafī' : 'Majority'}
@@ -542,7 +542,7 @@ export default function RayhanahCycle() {
                         <span className="text-white/70 flex-1">
                           {formatDay(l.startDate)} — {l.endDate ? formatDay(l.endDate) : 'ongoing'}
                         </span>
-                        <button aria-label="Edit entry" className="text-white/25 hover:text-pink-200" onClick={() => openEdit(l)}>✏️</button>
+                        <button aria-label="Edit entry" className="text-white/25 hover:text-brand-pink" onClick={() => openEdit(l)}>✏️</button>
                         <button aria-label="Delete entry" className="text-white/25 hover:text-red-300" onClick={() => setConfirmDelete(l._id)}>🗑</button>
                       </div>
                     ))}
@@ -552,7 +552,7 @@ export default function RayhanahCycle() {
             )}
           </AnimatePresence>
 
-          <p className="text-white/25 text-[10px] leading-relaxed border-t border-emerald-500/5 pt-3">
+          <p className="text-white/25 text-[10px] leading-relaxed border-t border-brand-emerald/5 pt-3">
             🔒 Your cycle data is visible only to you. It is never shown to friends — on the leaderboard your
             Noor simply flows from the dhikr, Quran and ṣalawāt you do, exactly like any other day.
           </p>
@@ -568,7 +568,7 @@ export default function RayhanahCycle() {
           >
             <motion.div
               initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
-              className="w-full max-w-sm rounded-3xl bg-brand-deep border border-pink-400/25 p-6 space-y-4"
+              className="w-full max-w-sm rounded-3xl bg-brand-deep border border-brand-pink/25 p-6 space-y-4"
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-white font-black text-lg">🌸 Log the start</h3>
@@ -577,13 +577,13 @@ export default function RayhanahCycle() {
                 <input
                   id="cycle-start-date" type="date" value={startDate} max={today}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="input input-bordered w-full mt-1 bg-white/5 border-emerald-500/10 text-white"
+                  className="input input-bordered w-full mt-1 bg-white/5 border-brand-emerald/10 text-white"
                 />
               </div>
               <div className="flex gap-2">
                 {(['hayd', 'nifas'] as const).map((t) => (
                   <button key={t}
-                    className={`flex-1 btn btn-sm rounded-xl ${startType === t ? 'bg-pink-500/30 border-pink-400/40 text-pink-100' : 'bg-white/5 border-emerald-500/10 text-white/50'}`}
+                    className={`flex-1 btn btn-sm rounded-xl ${startType === t ? 'bg-brand-pink/30 border-brand-pink/40 text-brand-pink' : 'bg-white/5 border-brand-emerald/10 text-white/50'}`}
                     onClick={() => setStartType(t)}
                   >
                     {t === 'hayd' ? '🌸 Period (hayd)' : '🤱 Post-natal (nifās)'}
@@ -591,7 +591,7 @@ export default function RayhanahCycle() {
                 ))}
               </div>
               <button
-                className="w-full btn rounded-2xl border-0 text-white font-black bg-gradient-to-r from-pink-500 to-rose-500"
+                className="w-full btn rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-pink to-brand-pink"
                 disabled={startCycle.isPending}
                 onClick={() => startCycle.mutate({ date: startDate, type: startType }, { onSuccess: () => setStartOpen(false) })}
               >
@@ -613,7 +613,7 @@ export default function RayhanahCycle() {
           >
             <motion.div
               initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
-              className="w-full max-w-sm rounded-3xl bg-brand-deep border border-emerald-400/25 p-6 space-y-4 max-h-[85vh] overflow-y-auto"
+              className="w-full max-w-sm rounded-3xl bg-brand-deep border border-brand-emerald/25 p-6 space-y-4 max-h-[85vh] overflow-y-auto"
             >
               <h3 className="text-white font-black text-lg">🕊️ Welcome back to salat</h3>
               <p className="text-white/50 text-xs leading-relaxed">
@@ -625,19 +625,19 @@ export default function RayhanahCycle() {
                   <button key={step} className="w-full flex items-start gap-3 rounded-xl px-3 py-2.5 bg-white/5 hover:bg-white/5 text-left"
                     onClick={() => setGhuslChecked((c) => c.map((v, j) => (j === i ? !v : v)))}
                   >
-                    <span className={`w-5 h-5 rounded-full grid place-items-center border text-[10px] flex-shrink-0 mt-0.5 ${ghuslChecked[i] ? 'bg-emerald-500 border-emerald-400 text-white' : 'border-emerald-500/20 text-white/30'}`}>
+                    <span className={`w-5 h-5 rounded-full grid place-items-center border text-[10px] flex-shrink-0 mt-0.5 ${ghuslChecked[i] ? 'bg-brand-emerald border-brand-emerald text-white' : 'border-brand-emerald/20 text-white/30'}`}>
                       {ghuslChecked[i] ? '✓' : i + 1}
                     </span>
                     <span className={`text-xs leading-relaxed ${ghuslChecked[i] ? 'text-white/40 line-through' : 'text-white/75'}`}>{step}</span>
                   </button>
                 ))}
               </div>
-              <p className="text-emerald-200/80 text-xs leading-relaxed">
+              <p className="text-brand-emerald/80 text-xs leading-relaxed">
                 Then pray the ṣalāt of the time you're now in — no past prayers to make up
                 (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>). Welcome back 🌸
               </p>
               <button
-                className="w-full btn rounded-2xl border-0 text-white font-black bg-gradient-to-r from-emerald-500 to-teal-500"
+                className="w-full btn rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-emerald to-brand-info"
                 onClick={() => { setGhuslOpen(false); celebrateSmall(); }}
               >
                 Alhamdulillah 🤲
@@ -666,7 +666,7 @@ export default function RayhanahCycle() {
           >
             <motion.div
               initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
-              className="w-full max-w-sm rounded-3xl bg-brand-deep border border-pink-400/25 p-6 space-y-4"
+              className="w-full max-w-sm rounded-3xl bg-brand-deep border border-brand-pink/25 p-6 space-y-4"
               role="dialog" aria-label="Edit cycle"
             >
               <div>
@@ -681,29 +681,29 @@ export default function RayhanahCycle() {
                   <label className="text-white/50 text-xs font-bold" htmlFor="edit-cycle-start">Start date</label>
                   <input id="edit-cycle-start" type="date" value={editStart} max={today}
                     onChange={(e) => setEditStart(e.target.value)}
-                    className="input input-sm w-full mt-1 bg-white/5 border-pink-400/20 text-white rounded-xl" />
+                    className="input input-sm w-full mt-1 bg-white/5 border-brand-pink/20 text-white rounded-xl" />
                 </div>
                 <div>
                   <label className="text-white/50 text-xs font-bold" htmlFor="edit-cycle-end">End date</label>
                   <input id="edit-cycle-end" type="date" value={editEnd} min={editStart} max={today}
                     onChange={(e) => setEditEnd(e.target.value)}
-                    className="input input-sm w-full mt-1 bg-white/5 border-pink-400/20 text-white rounded-xl" />
+                    className="input input-sm w-full mt-1 bg-white/5 border-brand-pink/20 text-white rounded-xl" />
                   {editTarget.endDate && (
                     <button
-                      className="mt-1.5 text-pink-200/70 hover:text-pink-100 text-[11px] underline"
+                      className="mt-1.5 text-brand-pink/70 hover:text-brand-pink text-[11px] underline"
                       onClick={() => setEditEnd('')}
                     >Clear the end date — this cycle is still ongoing</button>
                   )}
                   {editEnd === '' && (
-                    <p className="text-pink-200/60 text-[11px] mt-1">🌸 Saving without an end date reopens the cycle.</p>
+                    <p className="text-brand-pink/60 text-[11px] mt-1">🌸 Saving without an end date reopens the cycle.</p>
                   )}
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className="flex-1 btn btn-sm rounded-xl bg-white/5 border-slate-500/20 text-white/60"
+                <button className="flex-1 btn btn-sm rounded-xl bg-white/5 border-white/20 text-white/60"
                   onClick={() => setEditTarget(null)}>Cancel</button>
                 <button
-                  className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-pink-500/80 hover:bg-pink-500"
+                  className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-brand-pink/80 hover:bg-brand-pink"
                   disabled={editCycle.isPending || !editStart}
                   onClick={() => editCycle.mutate(
                     { logId: editTarget._id, startDate: editStart, endDate: editEnd === '' ? null : editEnd },
@@ -730,7 +730,7 @@ export default function RayhanahCycle() {
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm grid place-items-center p-4"
           >
             <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
-              className="w-full max-w-sm rounded-3xl bg-brand-deep border border-amber-400/25 p-6 space-y-4"
+              className="w-full max-w-sm rounded-3xl bg-brand-deep border border-brand-gold/25 p-6 space-y-4"
             >
               <h3 className="text-white font-black text-lg">🌙 Ramadan days to make up</h3>
               <p className="text-white/60 text-sm leading-relaxed">
@@ -739,10 +739,10 @@ export default function RayhanahCycle() {
                 Add {qadaPrompt.days > 1 ? 'them' : 'it'} to your qaḍā counter?
               </p>
               <div className="flex gap-2">
-                <button className="flex-1 btn btn-sm rounded-xl bg-white/5 border-emerald-500/10 text-white/60" onClick={() => setQadaPrompt(null)}>
+                <button className="flex-1 btn btn-sm rounded-xl bg-white/5 border-brand-emerald/10 text-white/60" onClick={() => setQadaPrompt(null)}>
                   Not now
                 </button>
-                <button className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-amber-500 to-orange-500"
+                <button className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-gold to-brand-warm"
                   disabled={updateFastingProfile.isPending} onClick={addQada}
                 >
                   Add to qaḍā ✓

@@ -52,7 +52,7 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
             aria-modal="true"
             aria-label="Salat settings"
           >
-            <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-brand-deep/95 backdrop-blur border-b border-emerald-500/10">
+            <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-brand-deep/95 backdrop-blur border-b border-brand-emerald/10">
               <h2 className="text-brand-emerald font-black text-lg">Salat settings</h2>
               <button
                 onClick={onClose}
@@ -84,7 +84,7 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
                         className={`w-full text-left p-3.5 rounded-2xl border transition-all ${
                           active
                             ? 'border-brand-emerald/40 bg-brand-emerald/10'
-                            : 'border-emerald-500/10 bg-white/5 hover:border-emerald-500/30'
+                            : 'border-brand-emerald/10 bg-white/5 hover:border-brand-emerald/30'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -99,7 +99,7 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
                           {m.steps.map((s) => (
                             <span
                               key={s.zikr}
-                              className="px-2 py-0.5 rounded-lg bg-black/30 border border-emerald-500/10 text-[11px] text-white/60"
+                              className="px-2 py-0.5 rounded-lg bg-black/30 border border-brand-emerald/10 text-[11px] text-white/60"
                             >
                               {s.zikr.length > 18 ? 'Tahlīl' : s.zikr} <b className="text-white/80">×{s.count}</b>
                             </span>
@@ -152,15 +152,15 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
                         aria-pressed={active}
                         className={`w-full text-left p-3.5 rounded-2xl border transition-all ${
                           active
-                            ? 'border-cyan-400/40 bg-cyan-500/10'
-                            : 'border-emerald-500/10 bg-white/5 hover:border-cyan-400/30'
+                            ? 'border-brand-info/40 bg-brand-info/10'
+                            : 'border-brand-emerald/10 bg-white/5 hover:border-brand-info/30'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className={`font-black text-sm ${active ? 'text-cyan-300' : 'text-white/80'}`}>
+                          <span className={`font-black text-sm ${active ? 'text-brand-info' : 'text-white/80'}`}>
                             {m.label}
                           </span>
-                          {active && <span className="text-cyan-300 text-xs font-bold shrink-0">✓ Using</span>}
+                          {active && <span className="text-brand-info text-xs font-bold shrink-0">✓ Using</span>}
                         </div>
                         <p className="text-white/50 text-xs mt-1 leading-relaxed">{m.detail}</p>
                       </button>
@@ -172,7 +172,7 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
                 </p>
               </section>
 
-              <p className="text-white/25 text-[11px] leading-relaxed border-t border-emerald-500/10 pt-4">
+              <p className="text-white/25 text-[11px] leading-relaxed border-t border-brand-emerald/10 pt-4">
                 Looking for data deletion? Everything lives in{' '}
                 <a href="/settings" className="text-brand-emerald/70 hover:text-brand-emerald underline underline-offset-2">
                   Settings

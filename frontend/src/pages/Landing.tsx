@@ -19,32 +19,32 @@ const FEATURES = [
   {
     emoji: '🕌', title: 'Salat Tracker',
     text: 'All five prayers with on-time, late and missed states — plus sunnah and nafl. Mark the tasbīḥ after a prayer and it logs to your zikr count on its own; Āyatul Kursī and the post-salat surahs are one tap away.',
-    grad: 'from-indigo-500/20 to-purple-500/10', border: 'border-indigo-400/25',
+    grad: 'from-brand-info/20 to-brand-warm/10', border: 'border-brand-info/25',
   },
   {
     emoji: '📿', title: 'Zikr Counter',
     text: 'A beautiful tap counter with goals, fair streaks that give you a grace day, and a verified library of ṣalawāt, istighfār and the weighty words — with Arabic, transliteration and the exact reference for each.',
-    grad: 'from-emerald-500/20 to-teal-500/10', border: 'border-emerald-400/25',
+    grad: 'from-brand-emerald/20 to-brand-info/10', border: 'border-brand-emerald/25',
   },
   {
     emoji: '📖', title: 'Quran — read & listen',
     text: 'An āyah-by-āyah reader with recitation, word highlighting, Bengali & English translations, a khatam journey, seven reciters, and one unified streak.',
-    grad: 'from-teal-500/20 to-cyan-500/10', border: 'border-teal-400/25',
+    grad: 'from-brand-info/20 to-brand-info/10', border: 'border-brand-info/25',
   },
   {
     emoji: '🌙', title: 'Fasting + Ramadan',
     text: 'Qaḍā, kaffārah, vows and every sunnah day — each rule cited to its exact hadith. And a dedicated Ramadan home with suhoor, iftar, tarawih and Laylat al-Qadr.',
-    grad: 'from-amber-500/20 to-orange-500/10', border: 'border-amber-400/25',
+    grad: 'from-brand-gold/20 to-brand-warm/10', border: 'border-brand-gold/25',
   },
   {
     emoji: '🕐', title: 'Prayer Times',
     text: 'Computed fully on your device — your location never leaves your browser. Live countdowns, forbidden windows, nafl windows.',
-    grad: 'from-sky-500/20 to-blue-500/10', border: 'border-sky-400/25',
+    grad: 'from-brand-info/20 to-brand-info/10', border: 'border-brand-info/25',
   },
   {
     emoji: '🤝', title: 'Friends & Noor',
     text: '"So compete with one another in doing good" (Quran 2:148). Connect with one link and race each other gently with Noor — a calm daily light out of 100.',
-    grad: 'from-fuchsia-500/20 to-purple-500/10', border: 'border-fuchsia-400/25',
+    grad: 'from-brand-pink/20 to-brand-warm/10', border: 'border-brand-pink/25',
   },
 ];
 
@@ -64,7 +64,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }}
             className="text-4xl sm:text-6xl font-black text-white leading-tight"
           >
-            Worship, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">beautifully kept</span>
+            Worship, <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-emerald to-brand-info">beautifully kept</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }}
@@ -79,11 +79,11 @@ export default function Landing() {
             className="flex flex-wrap justify-center gap-3 mt-8"
           >
             <button
-              className="btn h-13 px-8 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 shadow-xl shadow-emerald-900/40"
+              className="btn h-13 px-8 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-brand-emerald to-brand-info hover:from-brand-emerald hover:to-brand-info shadow-xl shadow-brand-emerald-dim/40"
               onClick={() => navigate('/signup')}
             >Begin your journey — free</button>
             <button
-              className="btn h-13 px-6 rounded-2xl bg-white/5 border-emerald-500/15 text-white/80 font-bold"
+              className="btn h-13 px-6 rounded-2xl bg-white/5 border-brand-emerald/15 text-white/80 font-bold"
               onClick={() => navigate('/zikr')}
             >📿 Try the counter first</button>
           </motion.div>
@@ -95,22 +95,22 @@ export default function Landing() {
 
         {/* ── Rayhanah highlight — the first ── */}
         <motion.section {...fadeUp} className="mb-10">
-          <div className="rounded-3xl p-6 sm:p-10 border border-pink-400/25 bg-gradient-to-br from-pink-500/15 via-rose-500/10 to-purple-500/10 relative overflow-hidden">
+          <div className="rounded-3xl p-6 sm:p-10 border border-brand-pink/25 bg-gradient-to-br from-brand-pink/15 via-brand-pink/10 to-brand-warm/10 relative overflow-hidden">
             <motion.div
-              className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-pink-500/15 blur-3xl"
+              className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-brand-pink/15 blur-3xl"
               animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
             />
             <div className="relative sm:flex items-center gap-8">
               <div className="text-6xl sm:text-7xl text-center sm:text-left mb-4 sm:mb-0">🌸</div>
               <div>
-                <p className="text-pink-300/80 text-xs font-black uppercase tracking-widest">A first among Muslim productivity apps</p>
+                <p className="text-brand-pink/80 text-xs font-black uppercase tracking-widest">A first among Muslim productivity apps</p>
                 <h2 className="text-2xl sm:text-3xl font-black text-white mt-2">Rayhanah Cycle — for our sisters</h2>
-                <p className="text-pink-100/70 text-sm sm:text-base mt-3 leading-relaxed max-w-2xl">
+                <p className="text-brand-pink/70 text-sm sm:text-base mt-3 leading-relaxed max-w-2xl">
                   Allah Himself excused women from salat and fasting during their days — so Ihsan does too,
                   with zero guilt. Cycle tracking with predictions and wellness notes, a ghusl guide,
                   Ramadan days flowing into the make-up counter automatically, and a Noor score that keeps
                   shining from dhikr, Quran and ṣalawāt. Completely private:
-                  <span className="font-bold text-pink-200"> no friend can ever tell.</span>
+                  <span className="font-bold text-brand-pink"> no friend can ever tell.</span>
                 </p>
               </div>
             </div>
@@ -152,7 +152,7 @@ export default function Landing() {
 
         {/* ── The day begins at Fajr ── */}
         <motion.section {...fadeUp} className="mb-12">
-          <div className="rounded-3xl border border-emerald-500/10 bg-brand-deep/70 p-6 sm:p-8 text-center">
+          <div className="rounded-3xl border border-brand-emerald/10 bg-brand-deep/70 p-6 sm:p-8 text-center">
             <div className="text-4xl mb-2">🌅</div>
             <h3 className="text-white font-black text-lg">Your day begins at Fajr — not midnight</h3>
             <p className="text-white/40 text-sm mt-2 max-w-xl mx-auto leading-relaxed">
@@ -172,10 +172,10 @@ export default function Landing() {
           </p>
           <div className="flex flex-wrap justify-center gap-3 mt-7">
             <button
-              className="btn h-13 px-10 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 shadow-xl shadow-emerald-900/40"
+              className="btn h-13 px-10 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-brand-emerald to-brand-info hover:from-brand-emerald hover:to-brand-info shadow-xl shadow-brand-emerald-dim/40"
               onClick={() => navigate('/signup')}
             >Create your free account</button>
-            <Link to="/about" className="btn h-13 px-6 rounded-2xl bg-white/5 border-emerald-500/15 text-white/70 font-bold">
+            <Link to="/about" className="btn h-13 px-6 rounded-2xl bg-white/5 border-brand-emerald/15 text-white/70 font-bold">
               Read our story
             </Link>
           </div>

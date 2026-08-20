@@ -314,12 +314,12 @@ function LiveClockCard({ times, timeline, hasLocation }: {
         {activeNafl && !activeForbidden && (
           <motion.div
             initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-            className="mt-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-left"
+            className="mt-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-brand-info/10 border border-brand-info/20 text-left"
           >
             <span className="text-base shrink-0">{activeNafl.icon}</span>
             <div>
-              <p className="text-cyan-300 font-bold text-xs">{activeNafl.label} time</p>
-              <p className="text-cyan-300/50 text-xs">Until {formatTime(activeNafl.end)}</p>
+              <p className="text-brand-info font-bold text-xs">{activeNafl.label} time</p>
+              <p className="text-brand-info/50 text-xs">Until {formatTime(activeNafl.end)}</p>
             </div>
           </motion.div>
         )}
@@ -736,10 +736,10 @@ export default function PrayerTimes() {
                         transition={{ delay: 0.03 * i }}
                         className={`rounded-2xl border overflow-hidden transition-all ${
                           isActiveNow
-                            ? 'bg-cyan-500/10 border-cyan-400/40'
+                            ? 'bg-brand-info/10 border-brand-info/40'
                             : isPast
-                            ? 'bg-teal-900/10 border-teal-900/20 opacity-50'
-                            : 'bg-teal-900/10 border-teal-800/25'
+                            ? 'bg-brand-info-dim/10 border-brand-info-dim/20 opacity-50'
+                            : 'bg-brand-info-dim/10 border-brand-info-dim/25'
                         }`}
                       >
                         <button
@@ -749,16 +749,16 @@ export default function PrayerTimes() {
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <span className="text-lg shrink-0">{entry.icon}</span>
                             <div className="min-w-0">
-                              <p className={`font-bold text-sm ${isActiveNow ? 'text-cyan-300' : 'text-teal-300/70'}`}>
+                              <p className={`font-bold text-sm ${isActiveNow ? 'text-brand-info' : 'text-brand-info/70'}`}>
                                 {entry.label}
-                                {isActiveNow && <span className="ml-2 text-xs font-normal text-cyan-300/60">● now</span>}
+                                {isActiveNow && <span className="ml-2 text-xs font-normal text-brand-info/60">● now</span>}
                               </p>
-                              <p className="text-teal-300/40 text-xs">{entry.arabicName}</p>
+                              <p className="text-brand-info/40 text-xs">{entry.arabicName}</p>
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-teal-300/50 text-xs tabular-nums">{formatTime(entry.start)}</p>
-                            <p className="text-teal-300/30 text-xs">→ {formatTime(entry.end)}</p>
+                            <p className="text-brand-info/50 text-xs tabular-nums">{formatTime(entry.start)}</p>
+                            <p className="text-brand-info/30 text-xs">→ {formatTime(entry.end)}</p>
                           </div>
                         </button>
                         <AnimatePresence>
@@ -768,15 +768,15 @@ export default function PrayerTimes() {
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.18 }}
-                              className="border-t border-teal-400/20 px-4 py-3 space-y-2"
+                              className="border-t border-brand-info/20 px-4 py-3 space-y-2"
                             >
-                              <p className={`text-sm ${isActiveNow ? 'text-cyan-200/80' : 'text-teal-200/50'}`}>{entry.note}</p>
-                              <p className="text-teal-300/40 text-xs italic leading-relaxed">{entry.hadith}</p>
+                              <p className={`text-sm ${isActiveNow ? 'text-brand-info/80' : 'text-brand-info/50'}`}>{entry.note}</p>
+                              <p className="text-brand-info/40 text-xs italic leading-relaxed">{entry.hadith}</p>
                               <a
                                 href={entry.hadithUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-teal-400/60 hover:text-teal-300/80 underline"
+                                className="inline-flex items-center gap-1 text-xs text-brand-info/60 hover:text-brand-info/80 underline"
                               >
                                 📖 View on sunnah.com
                               </a>

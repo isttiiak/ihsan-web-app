@@ -63,7 +63,7 @@ export default function DaifExplainer({ topics }: { topics: DaifTopic[] }) {
   if (list.length === 0) return null;
 
   return (
-    <div className="rounded-3xl border border-amber-400/20 bg-amber-500/[0.05] overflow-hidden">
+    <div className="rounded-3xl border border-brand-gold/20 bg-brand-gold/[0.05] overflow-hidden">
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
@@ -71,14 +71,14 @@ export default function DaifExplainer({ topics }: { topics: DaifTopic[] }) {
       >
         <span className="text-lg shrink-0">⚖️</span>
         <span className="flex-1 min-w-0">
-          <span className="block text-amber-200/90 font-bold text-sm">
+          <span className="block text-brand-gold/90 font-bold text-sm">
             Why some things on this page are marked <span className="italic">ḍaʿīf</span>
           </span>
-          <span className="block text-white/35 text-[11px] mt-0.5">
+          <span className="block text-white/30 text-[11px] mt-0.5">
             {list.length} narration{list.length > 1 ? 's' : ''} — the chain, the defect, and who graded it
           </span>
         </span>
-        <ChevronDownIcon className={`w-4 h-4 text-amber-200/50 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDownIcon className={`w-4 h-4 text-brand-gold/50 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       <AnimatePresence>
@@ -88,7 +88,7 @@ export default function DaifExplainer({ topics }: { topics: DaifTopic[] }) {
             transition={{ duration: 0.2 }}
           >
             <div className="px-5 pb-5 space-y-4">
-              <p className="text-white/45 text-xs leading-relaxed border-l-2 border-amber-400/25 pl-3">
+              <p className="text-white/40 text-xs leading-relaxed border-l-2 border-brand-gold/25 pl-3">
                 <b className="text-white/70">Ḍaʿīf</b> means the chain of transmission has a flaw — a narrator with
                 weak memory, an unknown link, or a break — so the words cannot be attributed to the Prophet ﷺ with
                 confidence. It does not automatically mean the meaning is false. Many scholars permit acting on a weak
@@ -98,24 +98,24 @@ export default function DaifExplainer({ topics }: { topics: DaifTopic[] }) {
               </p>
 
               {list.map((e) => (
-                <div key={e.id} className="rounded-2xl bg-black/20 border border-amber-400/15 p-4">
+                <div key={e.id} className="rounded-2xl bg-black/20 border border-brand-gold/15 p-4">
                   <p className="text-white/80 text-sm font-semibold leading-relaxed">{e.claim}</p>
 
                   <dl className="mt-2.5 space-y-1.5 text-xs leading-relaxed">
                     <div>
-                      <dt className="inline text-white/35">Where it is found: </dt>
+                      <dt className="inline text-white/30">Where it is found: </dt>
                       <dd className="inline text-white/60">{e.source}</dd>
                     </div>
                     <div>
-                      <dt className="inline text-white/35">The defect: </dt>
+                      <dt className="inline text-white/30">The defect: </dt>
                       <dd className="inline text-white/60">{e.defect}</dd>
                     </div>
                     <div>
-                      <dt className="inline text-white/35">Verdict: </dt>
-                      <dd className="inline text-amber-200/80 font-semibold">{e.verdict}</dd>
+                      <dt className="inline text-white/30">Verdict: </dt>
+                      <dd className="inline text-brand-gold/80 font-semibold">{e.verdict}</dd>
                     </div>
                     <div>
-                      <dt className="inline text-white/35">How Ihsan uses it: </dt>
+                      <dt className="inline text-white/30">How Ihsan uses it: </dt>
                       <dd className="inline text-white/60">{e.practice}</dd>
                     </div>
                   </dl>
@@ -124,7 +124,7 @@ export default function DaifExplainer({ topics }: { topics: DaifTopic[] }) {
                     href={e.sourceUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-block mt-2 text-[11px] text-amber-200/60 hover:text-amber-200 underline underline-offset-2"
+                    className="inline-block mt-2 text-[11px] text-brand-gold/60 hover:text-brand-gold underline underline-offset-2"
                   >
                     Read the scholarly discussion ↗
                   </a>

@@ -19,9 +19,9 @@ function shiftStr(dateStr: string, delta: number): string {
 }
 
 const FLOW_DOT: Record<string, string> = {
-  light: 'rgba(251,207,232,0.9)',   // pink-200
-  medium: 'rgba(244,114,182,0.95)', // pink-400
-  heavy: 'rgba(190,24,93,1)',       // pink-700
+  light: 'rgba(212,131,158,0.5)',
+  medium: 'rgba(212,131,158,0.8)',
+  heavy: 'rgba(176,106,132,1)',
 };
 
 export default function CycleCalendar({ summary, today }: { summary: CycleSummary; today: string }) {
@@ -92,9 +92,9 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
               title={cycleType ? (cycleType === 'nifas' ? 'Nifās day' : 'Period day') : predicted ? 'Expected period' : undefined}
               className={[
                 'relative aspect-square rounded-xl grid place-items-center text-[11px] font-bold transition-all',
-                cycleType === 'hayd' ? 'bg-pink-500/30 text-pink-100' :
-                cycleType === 'nifas' ? 'bg-purple-500/30 text-purple-100' :
-                predicted ? 'border border-dashed border-pink-400/50 text-pink-200/80' :
+                cycleType === 'hayd' ? 'bg-brand-pink/30 text-brand-pink' :
+                cycleType === 'nifas' ? 'bg-brand-warm/30 text-brand-warm' :
+                predicted ? 'border border-dashed border-brand-pink/50 text-brand-pink/80' :
                 'text-white/40 bg-white/[0.03]',
                 isToday ? 'ring-2 ring-white/70' : '',
               ].join(' ')}
@@ -112,9 +112,9 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[10px] text-white/30">
-        <span><span className="inline-block w-2.5 h-2.5 rounded bg-pink-500/50 align-middle mr-1" />period</span>
-        <span><span className="inline-block w-2.5 h-2.5 rounded bg-purple-500/50 align-middle mr-1" />nifās</span>
-        <span><span className="inline-block w-2.5 h-2.5 rounded border border-dashed border-pink-400/60 align-middle mr-1" />expected (next 3)</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-pink/50 align-middle mr-1" />period</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-warm/50 align-middle mr-1" />nifās</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded border border-dashed border-brand-pink/60 align-middle mr-1" />expected (next 3)</span>
         <span><span className="inline-block w-2.5 h-2.5 rounded ring-2 ring-white/70 align-middle mr-1" />today</span>
       </div>
       {/* the small dots are the flow notes from "How are you today?" */}

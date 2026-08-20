@@ -57,7 +57,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.02, y: -4 }}
       className={`relative overflow-hidden rounded-[1.25rem] backdrop-blur-2xl border bg-brand-deep/60 text-white shadow-glass ${
-        isPaused ? 'border-rose-400/40' : streakAtRisk ? 'border-brand-gold/50' : 'border-emerald-500/10'
+        isPaused ? 'border-brand-pink/40' : streakAtRisk ? 'border-brand-gold/50' : 'border-brand-emerald/10'
       }`}
     >
       <motion.div
@@ -81,8 +81,8 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
           >
             {isPaused ? (
               <span className="relative inline-flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.8)] animate-pulse" />
-                <span className="px-2 py-0.5 rounded-full text-[11px] uppercase font-black tracking-wider bg-gradient-to-r from-brand-warm/90 via-brand-warm/80 to-brand-gold/80 text-white ring-1 ring-inset ring-rose-200/40">
+                <span className="w-2.5 h-2.5 rounded-full bg-brand-pink shadow-[0_0_12px_rgba(244,63,94,0.8)] animate-pulse" />
+                <span className="px-2 py-0.5 rounded-full text-[11px] uppercase font-black tracking-wider bg-gradient-to-r from-brand-warm/90 via-brand-warm/80 to-brand-gold/80 text-white ring-1 ring-inset ring-brand-pink/40">
                   Paused
                 </span>
               </span>
@@ -100,7 +100,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
             whileHover={{ scale: 1.08, rotate: isPaused ? 0 : 2 }}
             whileTap={{ scale: 0.95 }}
             className={`w-10 h-10 rounded-2xl grid place-items-center border ${
-              isPaused ? 'border-emerald-300/40 bg-emerald-400/15' : 'border-emerald-500/30 bg-white/10'
+              isPaused ? 'border-brand-emerald/40 bg-brand-emerald/15' : 'border-brand-emerald/30 bg-white/10'
             } backdrop-blur-md hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-60 disabled:cursor-not-allowed`}
             title={isPaused ? 'Resume Streak' : 'Pause Streak'}
           >
@@ -113,7 +113,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-3 relative overflow-hidden rounded-lg border border-fuchsia-400/30 bg-gradient-to-r from-fuchsia-600/20 via-purple-600/20 to-fuchsia-600/20 text-white backdrop-blur-sm"
+            className="mb-3 relative overflow-hidden rounded-lg border border-brand-pink/30 bg-gradient-to-r from-brand-pink/20 via-brand-warm/20 to-brand-pink/20 text-white backdrop-blur-sm"
           >
             <div className="flex items-center gap-2 px-3 py-2 text-xs font-extrabold uppercase tracking-wider">
               <ExclamationTriangleIcon className="w-4 h-4 text-fuchsia-200" />
@@ -137,7 +137,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
             </div>
             <Link
               to="/zikr"
-              className="shrink-0 px-2.5 py-1 rounded-lg bg-brand-gold text-brand-deep text-[11px] font-black whitespace-nowrap hover:bg-amber-400 transition-colors"
+              className="shrink-0 px-2.5 py-1 rounded-lg bg-brand-gold text-brand-deep text-[11px] font-black whitespace-nowrap hover:bg-brand-gold transition-colors"
             >
               Count now →
             </Link>
@@ -157,7 +157,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
             <p className="text-xs font-bold text-white/80">Day Streak</p>
           </div>
 
-          <div className="text-center border-l border-emerald-500/10">
+          <div className="text-center border-l border-brand-emerald/10">
             <motion.div className="relative inline-block px-2 py-1" whileHover={!prefersReducedMotion ? { scale: 1.05 } : {}}>
               <span className="absolute -inset-3 rounded-full bg-gradient-radial from-brand-gold/25 to-transparent blur-md" />
               {!prefersReducedMotion && (
@@ -264,7 +264,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
         {/* Status line */}
         {!isPaused && (currentStreak ?? 0) > 0 && !streakAtRisk && (
           <motion.div
-            className="p-2 bg-white/10 rounded-lg backdrop-blur-sm border border-emerald-500/15 mb-2"
+            className="p-2 bg-white/10 rounded-lg backdrop-blur-sm border border-brand-emerald/15 mb-2"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -277,7 +277,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
 
         {isPaused && (
           <motion.div
-            className="p-2 bg-white/10 rounded-lg backdrop-blur-sm border border-emerald-500/15 mb-2"
+            className="p-2 bg-white/10 rounded-lg backdrop-blur-sm border border-brand-emerald/15 mb-2"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -291,7 +291,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
                 disabled={isLoading}
                 whileHover={{ scale: 1.05, y: -1 }}
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black text-white bg-brand-emerald/80 hover:bg-brand-emerald/90 border border-emerald-300/40 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black text-white bg-brand-emerald/80 hover:bg-brand-emerald/90 border border-brand-emerald/40 disabled:opacity-60"
               >
                 <PlayIcon className="w-3.5 h-3.5" />
                 Resume now
@@ -302,7 +302,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
 
         {/* How streaks work */}
         <motion.div
-          className="p-3 bg-white/5 rounded-lg border border-emerald-500/10 backdrop-blur-sm"
+          className="p-3 bg-white/5 rounded-lg border border-brand-emerald/10 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.25 }}

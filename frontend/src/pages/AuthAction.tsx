@@ -25,7 +25,7 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
   if (/[^A-Za-z0-9]/.test(pw)) score++;
   if (score <= 1) return { score, label: 'Weak', color: 'bg-red-500' };
   if (score === 2) return { score, label: 'Fair', color: 'bg-brand-gold' };
-  if (score === 3) return { score, label: 'Good', color: 'bg-teal-400' };
+  if (score === 3) return { score, label: 'Good', color: 'bg-brand-info' };
   return { score, label: 'Strong', color: 'bg-brand-emerald' };
 }
 
@@ -33,10 +33,10 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
 function ActionLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen relative overflow-hidden bg-brand-void flex items-center justify-center p-4">
-      <motion.div className="absolute top-0 left-0 w-96 h-96 rounded-full bg-gradient-to-br from-brand-emerald/20 to-teal-500/20 blur-3xl pointer-events-none"
+      <motion.div className="absolute top-0 left-0 w-96 h-96 rounded-full bg-gradient-to-br from-brand-emerald/20 to-brand-info/20 blur-3xl pointer-events-none"
         animate={{ y: [0, -30, 0], opacity: [0.4, 0.7, 0.4] }}
         transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }} />
-      <motion.div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-gradient-to-br from-brand-warm/20 to-purple-500/20 blur-3xl pointer-events-none"
+      <motion.div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-gradient-to-br from-brand-warm/20 to-brand-warm/20 blur-3xl pointer-events-none"
         animate={{ y: [0, 30, 0], opacity: [0.4, 0.7, 0.4] }}
         transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2 }} />
       <div className="relative w-full max-w-md">

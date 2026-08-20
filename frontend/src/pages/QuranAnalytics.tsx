@@ -53,11 +53,11 @@ export default function QuranAnalytics() {
             <p className="text-white/30 text-[10px] font-bold uppercase mt-1">day streak (best {summary?.bestStreak ?? 0})</p>
           </div>
           <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-            <p className="text-2xl font-black text-teal-300">{summary?.stats.last30Units ?? 0}</p>
+            <p className="text-2xl font-black text-brand-info">{summary?.stats.last30Units ?? 0}</p>
             <p className="text-white/30 text-[10px] font-bold uppercase mt-1">āyāt · last 30 days</p>
           </div>
           <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-            <p className="text-2xl font-black text-purple-300">⭐ {summary?.profile.khatmCount ?? 0}</p>
+            <p className="text-2xl font-black text-brand-info">⭐ {summary?.profile.khatmCount ?? 0}</p>
             <p className="text-white/30 text-[10px] font-bold uppercase mt-1">khatm · now {khatmPct.toFixed(0)}%</p>
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function QuranAnalytics() {
               <div
                 key={d.date}
                 title={`${d.date}: ${d.units} āyāt`}
-                className={`flex-1 rounded-t ${d.units > 0 ? 'bg-gradient-to-t from-emerald-600/70 to-teal-400/70' : 'bg-white/5'}`}
+                className={`flex-1 rounded-t ${d.units > 0 ? 'bg-gradient-to-t from-brand-emerald-dim/70 to-brand-info/70' : 'bg-white/5'}`}
                 style={{ height: `${Math.max(4, (d.units / chart.max) * 100)}%` }}
               />
             ))}
@@ -96,7 +96,7 @@ export default function QuranAnalytics() {
                   <span className="w-5 text-white/30 font-black">{i + 1}</span>
                   <span className="text-white/70 font-bold w-32 truncate">{nameOf(t.surah)}</span>
                   <div className="flex-1 h-4 rounded-full bg-white/5 overflow-hidden">
-                    <div className="h-full rounded-full bg-gradient-to-r from-emerald-500/60 to-teal-400/60" style={{ width: `${(t.completions / maxTop) * 100}%` }} />
+                    <div className="h-full rounded-full bg-gradient-to-r from-brand-emerald/60 to-brand-info/60" style={{ width: `${(t.completions / maxTop) * 100}%` }} />
                   </div>
                   <span className="text-brand-emerald font-bold w-16 text-right">×{t.completions}</span>
                 </div>
@@ -109,7 +109,7 @@ export default function QuranAnalytics() {
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
           <h2 className="text-white font-black mb-2">🕋 Khatam projection</h2>
           <div className="h-2.5 rounded-full bg-white/10 overflow-hidden">
-            <div className="h-full rounded-full bg-gradient-to-r from-brand-emerald to-teal-400" style={{ width: `${khatmPct}%` }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-brand-emerald to-brand-info" style={{ width: `${khatmPct}%` }} />
           </div>
           <p className="text-white/40 text-xs mt-2">
             {summary?.estDaysToKhatm

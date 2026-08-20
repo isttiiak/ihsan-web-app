@@ -194,7 +194,7 @@ export default function Navbar() {
     if (location.pathname === '/salat') {
       return (
         <div className="hidden sm:flex items-center gap-1.5">
-          <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-white text-xs font-bold whitespace-nowrap">
+          <span className="px-2 py-0.5 rounded-full bg-brand-info/20 border border-brand-info/30 text-white text-xs font-bold whitespace-nowrap">
             🕌 {salatCount}/5 today
           </span>
         </div>
@@ -361,7 +361,7 @@ export default function Navbar() {
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 text-sm transition-colors"
                       >
-                        <ShieldCheckIcon className="w-4 h-4 text-cyan-300/60" />
+                        <ShieldCheckIcon className="w-4 h-4 text-brand-info/60" />
                         {t('nav.privacy')}
                       </Link>
 
@@ -369,9 +369,9 @@ export default function Navbar() {
                         <Link
                           to="/cycle"
                           onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-pink-500/10 text-sm transition-colors"
+                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-brand-pink/10 text-sm transition-colors"
                         >
-                          <span className="w-4 h-4 grid place-items-center text-pink-300/90 text-sm leading-none">🌸</span>
+                          <span className="w-4 h-4 grid place-items-center text-brand-pink/90 text-sm leading-none">🌸</span>
                           Rayhanah Cycle
                         </Link>
                       )}
@@ -380,7 +380,7 @@ export default function Navbar() {
                       <Link
                         to="/feedback"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 mt-1 rounded-xl border border-emerald-500/15 text-white/70 hover:text-white hover:bg-white/5 hover:border-brand-emerald/40 text-sm transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2.5 mt-1 rounded-xl border border-brand-emerald/15 text-white/70 hover:text-white hover:bg-white/5 hover:border-brand-emerald/40 text-sm transition-colors"
                       >
                         <ChatBubbleLeftRightIcon className="w-4 h-4 text-brand-emerald/70" />
                         Feedback & Contact

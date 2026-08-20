@@ -155,10 +155,10 @@ const FULL_PREDEFINED: Record<string, { arabic: string; transliteration?: string
 const GLOW_PALETTE = [
   { glow: 'rgba(122,158,110,0.9)', ring: 'rgba(122,158,110,0.3)', bar: 'bg-brand-emerald', solid: '#7a9e6e' },
   { glow: 'rgba(201,169,110,0.9)', ring: 'rgba(201,169,110,0.3)', bar: 'bg-brand-gold',    solid: '#c9a96e' },
-  { glow: 'rgba(99,102,241,0.9)',  ring: 'rgba(99,102,241,0.3)',  bar: 'bg-indigo-500',    solid: '#6366f1' },
+  { glow: 'rgba(90,158,142,0.9)',  ring: 'rgba(90,158,142,0.3)',  bar: 'bg-brand-info',    solid: '#5a9e8e' },
   { glow: 'rgba(196,130,90,0.9)',  ring: 'rgba(196,130,90,0.3)',  bar: 'bg-brand-warm',    solid: '#c4825a' },
-  { glow: 'rgba(90,158,142,0.9)',  ring: 'rgba(90,158,142,0.3)',  bar: 'bg-teal-500',      solid: '#5a9e8e' },
-  { glow: 'rgba(168,85,247,0.9)',  ring: 'rgba(168,85,247,0.3)',  bar: 'bg-purple-500',    solid: '#a855f7' },
+  { glow: 'rgba(90,158,142,0.9)',  ring: 'rgba(90,158,142,0.3)',  bar: 'bg-brand-info',      solid: '#5a9e8e' },
+  { glow: 'rgba(196,130,90,0.9)',  ring: 'rgba(196,130,90,0.3)',  bar: 'bg-brand-info',    solid: '#c4825a' },
 ];
 
 
@@ -326,10 +326,10 @@ export default function ZikrCounter() {
     toast(
       (t) => (
         <div className="flex flex-col gap-3">
-          <p className="font-semibold text-gray-800 text-sm">
-            Reset <span className="font-bold text-emerald-600">{selected}</span> counter?
+          <p className="font-semibold text-brand-deep text-sm">
+            Reset <span className="font-bold text-brand-emerald">{selected}</span> counter?
             <br />
-            <span className="text-gray-500 text-xs">Server-confirmed analytics won't be affected.</span>
+            <span className="text-white text-xs">Server-confirmed analytics won't be affected.</span>
           </p>
           <div className="flex gap-2">
             <button
@@ -425,7 +425,7 @@ export default function ZikrCounter() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-emerald-500/15"
+          className="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-brand-emerald/15"
           style={{ background: 'rgba(255,255,255,0.07)' }}
         >
           {/* Selected name — glowing accent */}
@@ -460,7 +460,7 @@ export default function ZikrCounter() {
           {/* Manage my list (delete) */}
           <button
             onClick={() => setShowManage(true)}
-            className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-emerald-500/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
+            className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-brand-emerald/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
             title="Manage my zikr list"
             aria-label="Manage my zikr list"
           >
@@ -470,7 +470,7 @@ export default function ZikrCounter() {
           {/* Add custom */}
           <button
             onClick={() => setShowAddCustom(true)}
-            className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-emerald-500/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
+            className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-brand-emerald/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
             title="Add custom dhikr"
             aria-label="Add custom dhikr"
           >
@@ -483,7 +483,7 @@ export default function ZikrCounter() {
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.08 }}
-          className="relative rounded-3xl border border-emerald-500/20 bg-white/10 backdrop-blur-lg shadow-2xl overflow-hidden"
+          className="relative rounded-3xl border border-brand-emerald/20 bg-white/10 backdrop-blur-lg shadow-2xl overflow-hidden"
           style={{ background: 'rgba(255,255,255,0.07)' }}
         >
           {/* Focus mode button */}
@@ -602,7 +602,7 @@ export default function ZikrCounter() {
             onClick={onDecrement}
             disabled={currentCount === 0}
             aria-label="Decrease count by one"
-            className="btn btn-circle bg-white/15 hover:bg-white/25 border-emerald-500/20 text-white backdrop-blur-sm disabled:opacity-25"
+            className="btn btn-circle bg-white/15 hover:bg-white/25 border-brand-emerald/20 text-white backdrop-blur-sm disabled:opacity-25"
           >
             <MinusIcon className="w-6 h-6" />
           </motion.button>
@@ -624,7 +624,7 @@ export default function ZikrCounter() {
             onClick={onReset}
             disabled={currentCount === 0}
             aria-label="Reset counter"
-            className="btn btn-circle bg-white/15 hover:bg-red-500/70 border-emerald-500/20 text-white backdrop-blur-sm disabled:opacity-25 transition-colors"
+            className="btn btn-circle bg-white/15 hover:bg-red-500/70 border-brand-emerald/20 text-white backdrop-blur-sm disabled:opacity-25 transition-colors"
           >
             <ArrowPathIcon className="w-6 h-6" />
           </motion.button>
@@ -632,7 +632,7 @@ export default function ZikrCounter() {
 
         {/* Keyboard hint */}
         <p className="text-center text-white/30 text-xs">
-          Press <kbd className="kbd kbd-xs bg-white/15 text-white border-emerald-500/20">Space</kbd> to count
+          Press <kbd className="kbd kbd-xs bg-white/15 text-white border-brand-emerald/20">Space</kbd> to count
         </p>
 
         {/* ── Expandable full text & reference for the selected dhikr ──
@@ -657,7 +657,7 @@ export default function ZikrCounter() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.25 }}
-              className="rounded-2xl border border-emerald-500/10 bg-white/5 backdrop-blur-sm overflow-hidden"
+              className="rounded-2xl border border-brand-emerald/10 bg-white/5 backdrop-blur-sm overflow-hidden"
             >
               <button
                 onClick={() => setRefExpanded((v) => !v)}
@@ -699,7 +699,7 @@ export default function ZikrCounter() {
                         <p className="text-brand-gold/60 text-xs leading-relaxed">✨ {full.virtue}</p>
                       )}
                       {builtin && (
-                        <p className="text-white/50 text-xs italic leading-relaxed border-l-2 border-emerald-500/25 pl-3">{builtin.text}</p>
+                        <p className="text-white/50 text-xs italic leading-relaxed border-l-2 border-brand-emerald/25 pl-3">{builtin.text}</p>
                       )}
                       <ReportReference what={selected} className="pt-1" />
                       {(builtin || full?.source) && (
@@ -783,7 +783,7 @@ export default function ZikrCounter() {
                 }}
                 className="flex items-center gap-1.5 opacity-55 hover:opacity-90 transition-opacity cursor-pointer"
               >
-                <span className="text-sm font-bold truncate max-w-[200px] sm:max-w-[300px] text-emerald-300/90">
+                <span className="text-sm font-bold truncate max-w-[200px] sm:max-w-[300px] text-brand-emerald/90">
                   {selected}
                 </span>
                 <svg className="w-3 h-3 text-white/25 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -875,7 +875,7 @@ export default function ZikrCounter() {
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={onIncrement}
-                  className="relative flex items-center justify-center gap-3 font-black rounded-3xl w-full select-none outline-none border border-emerald-400/25 text-white"
+                  className="relative flex items-center justify-center gap-3 font-black rounded-3xl w-full select-none outline-none border border-brand-emerald/25 text-white"
                   style={{
                     height: 'clamp(120px, 18vh, 180px)',
                     fontSize: 'clamp(24px, 4vw, 36px)',

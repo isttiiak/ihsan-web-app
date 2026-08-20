@@ -157,7 +157,7 @@ export default function RamadanSalatCard({
       </div>
 
       {excused ? (
-        <p className="text-pink-200/70 text-xs leading-relaxed">
+        <p className="text-brand-pink/70 text-xs leading-relaxed">
           🌸 Salat is fully excused today and is never made up (Muslim 335). Rest with a clear heart —
           dhikr and duʿā remain open to you.
         </p>
@@ -171,14 +171,14 @@ export default function RamadanSalatCard({
               const isOpen = openPrayer === p.id;
               return (
                 <div key={p.id} className={`rounded-2xl border transition-colors ${
-                  done ? 'border-brand-emerald/25 bg-brand-emerald/[0.07]' : 'border-emerald-500/10 bg-white/[0.03]'
+                  done ? 'border-brand-emerald/25 bg-brand-emerald/[0.07]' : 'border-brand-emerald/10 bg-white/[0.03]'
                 }`}>
                   <div className="flex items-center gap-2 p-2.5">
                     <span className="text-base shrink-0">{p.emoji}</span>
                     <span className={`flex-1 min-w-0 truncate text-sm font-bold ${done ? 'text-brand-emerald' : 'text-white/55'}`}>
                       {p.name}
                     </span>
-                    {entry?.tasbeeh && <span className="text-cyan-400/60 text-xs shrink-0">📿</span>}
+                    {entry?.tasbeeh && <span className="text-brand-info/60 text-xs shrink-0">📿</span>}
                     {entry?.ayatulKursi && <span className="text-brand-gold/60 text-xs shrink-0">📖</span>}
                     <div className="flex gap-1 shrink-0">
                       <button
@@ -193,7 +193,7 @@ export default function RamadanSalatCard({
                         onClick={() => setStatus(p.id, 'kaza')}
                         className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
                           status === 'kaza'
-                            ? 'bg-amber-500/25 border-amber-400/50 text-amber-200'
+                            ? 'bg-brand-gold/25 border-brand-gold/50 text-brand-gold'
                             : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                         }`}
                       >⏰</button>
@@ -219,7 +219,7 @@ export default function RamadanSalatCard({
                           onClick={() => toggleTag(p.id, 'tasbeeh')}
                           className={`px-2 py-1 rounded-lg text-[11px] font-semibold border transition-colors ${
                             entry?.tasbeeh
-                              ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-200'
+                              ? 'bg-brand-info/20 border-brand-info/50 text-brand-info'
                               : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                           }`}
                         >📿 Tasbeeh</button>
@@ -248,18 +248,18 @@ export default function RamadanSalatCard({
               onClick={onToggleTarawih}
               className={`mt-1.5 w-full flex items-center gap-2 rounded-2xl border p-2.5 text-left transition-colors ${
                 tarawih
-                  ? 'border-indigo-400/40 bg-indigo-500/15'
-                  : 'border-emerald-500/10 bg-white/[0.03] hover:border-indigo-400/25'
+                  ? 'border-brand-info/40 bg-brand-info/15'
+                  : 'border-brand-emerald/10 bg-white/[0.03] hover:border-brand-info/25'
               }`}
             >
               <span className="text-base shrink-0">🕌</span>
-              <span className={`flex-1 min-w-0 text-sm font-bold ${tarawih ? 'text-indigo-100' : 'text-white/55'}`}>
+              <span className={`flex-1 min-w-0 text-sm font-bold ${tarawih ? 'text-brand-info' : 'text-white/55'}`}>
                 Tarawih
                 <span className="block text-[10px] font-semibold text-white/25">after Isha, through the night</span>
               </span>
               <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 ${
                 tarawih
-                  ? 'bg-indigo-500/25 border-indigo-400/50 text-indigo-100'
+                  ? 'bg-brand-info/25 border-brand-info/50 text-brand-info'
                   : 'bg-brand-deep border-brand-border text-white/40'
               }`}>
                 {tarawih ? '✅ Prayed' : 'Mark done'}
@@ -269,11 +269,11 @@ export default function RamadanSalatCard({
 
           {/* Nafl — extra weight in Ramadan, so it lives here rather than a page away */}
           <div className={`mt-2.5 rounded-2xl border p-2.5 ${
-            nafl.completed ? 'border-cyan-400/25 bg-cyan-500/[0.07]' : 'border-emerald-500/10 bg-white/[0.03]'
+            nafl.completed ? 'border-brand-info/25 bg-brand-info/[0.07]' : 'border-brand-emerald/10 bg-white/[0.03]'
           }`}>
             <div className="flex items-center gap-2">
               <span className="text-base shrink-0">🌙</span>
-              <span className={`flex-1 min-w-0 text-sm font-bold ${nafl.completed ? 'text-cyan-200' : 'text-white/55'}`}>
+              <span className={`flex-1 min-w-0 text-sm font-bold ${nafl.completed ? 'text-brand-info' : 'text-white/55'}`}>
                 Nafl
                 {nafl.completed && <span className="text-white/30 font-semibold"> · {nafl.rakat ?? MIN_RAKAT} rakʿah</span>}
               </span>
@@ -281,7 +281,7 @@ export default function RamadanSalatCard({
                 onClick={toggleNaflDone}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 transition-colors ${
                   nafl.completed
-                    ? 'bg-cyan-500/25 border-cyan-400/50 text-cyan-100'
+                    ? 'bg-brand-info/25 border-brand-info/50 text-brand-info'
                     : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                 }`}
               >{nafl.completed ? '✅ Done' : 'Mark done'}</button>
@@ -310,7 +310,7 @@ export default function RamadanSalatCard({
                           onClick={() => toggleNaflType(t.id)}
                           title={t.shortNote}
                           className={`px-2 py-1 rounded-lg text-[11px] font-semibold border transition-colors ${
-                            on ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-200'
+                            on ? 'bg-brand-info/20 border-brand-info/50 text-brand-info'
                                : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                           }`}
                         >{t.emoji} {t.label}</button>

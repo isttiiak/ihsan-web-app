@@ -42,7 +42,7 @@ function SizeSlider({ label, kind, sample, sampleStyle }: {
         type="range" min={min} max={max} value={v}
         aria-label={`${label} size`}
         onChange={(e) => { const n = Number(e.target.value); setV(n); setFontPx(kind, n); }}
-        className="range range-xs w-full [--range-shdw:theme(colors.emerald.400)]"
+        className="range range-xs w-full [--range-shdw:theme(colors.brand.emerald)]"
       />
       {sample && (
         <p className="text-white/60 mt-1 truncate" style={{ fontSize: v, ...sampleStyle }}>{sample}</p>
@@ -115,7 +115,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
             className="fixed right-0 top-0 bottom-0 z-[55] w-full max-w-sm bg-brand-deep border-l border-brand-border overflow-y-auto"
             role="dialog" aria-label="Quran settings"
           >
-            <div className="sticky top-0 bg-brand-deep/95 backdrop-blur border-b border-emerald-500/5 px-5 py-4 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-brand-deep/95 backdrop-blur border-b border-brand-emerald/5 px-5 py-4 flex items-center justify-between z-10">
               <h3 className="text-white font-black text-lg">⚙️ Quran settings</h3>
               <button aria-label="Close settings" className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10" onClick={onClose}>
                 <XMarkIcon className="w-5 h-5" />
@@ -135,8 +135,8 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                     onClick={() => setGoal(0)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                       goal === 0
-                        ? 'bg-white/15 text-white border-slate-300/40'
-                        : 'bg-white/5 border-emerald-500/15 text-white/60 hover:border-slate-300/40'
+                        ? 'bg-white/15 text-white border-brand-border'
+                        : 'bg-white/5 border-brand-emerald/15 text-white/60 hover:border-brand-border'
                     }`}
                   >No goal</button>
                   {GOAL_PRESETS.map((p) => (
@@ -145,7 +145,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                         goal === p
                           ? 'bg-brand-emerald text-white border-brand-emerald'
-                          : 'bg-white/5 border-emerald-500/15 text-white/60 hover:border-brand-emerald/40'
+                          : 'bg-white/5 border-brand-emerald/15 text-white/60 hover:border-brand-emerald/40'
                       }`}
                     >{p} āyah{p > 1 ? 's' : ''}</button>
                   ))}
@@ -156,12 +156,12 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                     id="q-goal" type="number" min={0} max={6236}
                     value={goal}
                     onChange={(e) => setGoal(Number(e.target.value))}
-                    className="input input-bordered input-sm flex-1 bg-white/5 border-emerald-500/15 text-white"
+                    className="input input-bordered input-sm flex-1 bg-white/5 border-brand-emerald/15 text-white"
                   />
                   <span className="text-white/30 text-[11px]">/ day</span>
                 </div>
                 <button
-                  className="w-full btn btn-sm h-10 mt-3 rounded-xl border-0 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-500 disabled:opacity-50"
+                  className="w-full btn btn-sm h-10 mt-3 rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-info disabled:opacity-50"
                   onClick={saveGoal}
                   disabled={!goalDirty || updateProfile.isPending}
                 >
@@ -169,13 +169,13 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                 </button>
               </div>
 
-              <div className="border-t border-emerald-500/10 pt-4">
+              <div className="border-t border-brand-emerald/10 pt-4">
                 <p className="text-white/40 text-[11px] font-bold uppercase tracking-wider mb-3">Reading & audio</p>
               </div>
 
               <div>
                 <label className="text-white/50 text-xs font-bold" htmlFor="q-reciter">🎙️ Default reciter</label>
-                <select id="q-reciter" className="select select-sm w-full mt-1.5 bg-white/5 border-emerald-500/10 text-white rounded-xl"
+                <select id="q-reciter" className="select select-sm w-full mt-1.5 bg-white/5 border-brand-emerald/10 text-white rounded-xl"
                   value={reciter} onChange={(e) => setReciter(e.target.value)}>
                   {RECITER_OPTIONS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
@@ -186,14 +186,14 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                 <p className="text-white/50 text-xs font-bold">🌐 Translations <span className="text-white/25 font-normal">(up to two shown together)</span></p>
                 <div>
                   <label className="text-white/30 text-[10px] font-bold" htmlFor="q-tr1">Primary</label>
-                  <select id="q-tr1" className="select select-sm w-full mt-1 bg-white/5 border-emerald-500/10 text-white rounded-xl"
+                  <select id="q-tr1" className="select select-sm w-full mt-1 bg-white/5 border-brand-emerald/10 text-white rounded-xl"
                     value={primary} onChange={(e) => setPrimary(e.target.value)}>
                     {TRANSLATIONS.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-white/30 text-[10px] font-bold" htmlFor="q-tr2">Second (optional)</label>
-                  <select id="q-tr2" className="select select-sm w-full mt-1 bg-white/5 border-emerald-500/10 text-white rounded-xl"
+                  <select id="q-tr2" className="select select-sm w-full mt-1 bg-white/5 border-brand-emerald/10 text-white rounded-xl"
                     value={secondary} onChange={(e) => setSecondary(e.target.value)}>
                     <option value="none">None — one translation only</option>
                     {TRANSLATIONS.filter((t) => t.id !== primary).map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
@@ -202,11 +202,11 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
               </div>
 
               {/* ── Arabic font — the "clean" default is the easiest to read ── */}
-              <div className="rounded-2xl border border-purple-500/20 bg-purple-500/[0.05] p-4 space-y-2">
+              <div className="rounded-2xl border border-brand-warm/20 bg-brand-warm/[0.05] p-4 space-y-2">
                 <p className="text-white/60 text-xs font-bold">🔤 Arabic font</p>
                 <select
                   aria-label="Arabic font"
-                  className="select select-sm w-full bg-white/5 border-purple-400/15 text-white rounded-xl"
+                  className="select select-sm w-full bg-white/5 border-brand-warm/15 text-white rounded-xl"
                   value={arabicFontId}
                   onChange={(e) => { setArabicFontId(e.target.value); setArabicFont(e.target.value); }}
                 >
@@ -219,7 +219,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
               </div>
 
               {/* ── Transliteration (pronunciation aid, free source) ── */}
-              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-4">
+              <div className="rounded-2xl border border-brand-gold/20 bg-brand-gold/[0.05] p-4">
                 <label className="flex items-center justify-between gap-3 cursor-pointer">
                   <div>
                     <p className="text-white/70 text-sm font-bold">🗣️ Transliteration</p>
@@ -232,7 +232,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
               </div>
 
               {/* ── Text sizes — one slider per text kind (Istiak's spec) ── */}
-              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.05] p-4 space-y-4">
+              <div className="rounded-2xl border border-brand-info/20 bg-brand-info/[0.05] p-4 space-y-4">
                 <p className="text-white/60 text-xs font-bold">📏 Text sizes</p>
                 <SizeSlider label="Arabic" kind="arabic" sample="بِسْمِ اللَّهِ"
                   sampleStyle={{ fontFamily: ARABIC_FONTS.find((f) => f.id === arabicFontId)?.stack, direction: 'rtl' }} />
@@ -242,7 +242,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
               </div>
 
               <button
-                className="w-full btn btn-sm h-11 rounded-2xl border-0 text-white font-black bg-gradient-to-r from-emerald-500 to-teal-500"
+                className="w-full btn btn-sm h-11 rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-emerald to-brand-info"
                 onClick={save}
               >
                 Save reading settings

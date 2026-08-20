@@ -49,12 +49,12 @@ export default function MoodComfort({
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-purple-400/25 bg-purple-500/[0.07] p-3.5"
+      className="rounded-2xl border border-brand-pink/25 bg-brand-pink/[0.07] p-3.5"
     >
       <AiBadge label="Naseeh · for you today" />
       {comfort.isPending && !message ? (
         <div className="flex items-center gap-2 mt-2">
-          {['#a855f7', '#c4825a', '#5a9e8e'].map((c, i) => (
+          {['#c4825a', '#c4825a', '#5a9e8e'].map((c, i) => (
             <motion.span
               key={c} className="w-2 h-2 rounded-full" style={{ background: c }}
               animate={{ opacity: [0.3, 1, 0.3] }}
@@ -64,7 +64,7 @@ export default function MoodComfort({
           <span className="text-white/40 text-xs">finding the right words…</span>
         </div>
       ) : (
-        <p className="text-purple-100/80 text-sm leading-relaxed mt-2">{message}</p>
+        <p className="text-brand-pink/80 text-sm leading-relaxed mt-2">{message}</p>
       )}
       <p className="text-white/30 text-[10px] mt-2">
         ✨ A companion's words — not medical or religious advice.

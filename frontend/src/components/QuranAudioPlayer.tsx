@@ -145,13 +145,13 @@ export default function QuranAudioPlayer() {
   };
 
   return (
-    <div className="card bg-gradient-to-br from-teal-500/10 to-brand-deep border border-teal-400/20 rounded-3xl">
+    <div className="card bg-gradient-to-br from-brand-info/10 to-brand-deep border border-brand-info/20 rounded-3xl">
       <div className="card-body p-5 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-white font-black">🎧 Listen to the Quran</h2>
           <select
             aria-label="Reciter"
-            className="select select-xs bg-white/5 border-emerald-500/10 text-white/70 rounded-lg max-w-[45%]"
+            className="select select-xs bg-white/5 border-brand-emerald/10 text-white/70 rounded-lg max-w-[45%]"
             value={reciter}
             onChange={(e) => { setReciter(e.target.value); localStorage.setItem('ihsan_reciter', e.target.value); }}
           >
@@ -165,7 +165,7 @@ export default function QuranAudioPlayer() {
           <>
             <select
               aria-label="Surah"
-              className="select select-sm w-full bg-white/5 border-emerald-500/10 text-white rounded-xl"
+              className="select select-sm w-full bg-white/5 border-brand-emerald/10 text-white rounded-xl"
               value={surahNo}
               onChange={(e) => changeSurah(Number(e.target.value))}
             >
@@ -177,7 +177,7 @@ export default function QuranAudioPlayer() {
             </select>
 
             {surah && (
-              <p className="text-center text-2xl text-teal-100/90 font-serif" dir="rtl">{surah.name}</p>
+              <p className="text-center text-2xl text-brand-info/90 font-serif" dir="rtl">{surah.name}</p>
             )}
 
             {/* transport */}
@@ -189,7 +189,7 @@ export default function QuranAudioPlayer() {
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 aria-label={playing ? 'Pause' : 'Play'}
-                className="w-14 h-14 rounded-full grid place-items-center text-white shadow-lg bg-gradient-to-br from-teal-500 to-emerald-600"
+                className="w-14 h-14 rounded-full grid place-items-center text-white shadow-lg bg-gradient-to-br from-brand-info to-brand-emerald-dim"
                 onClick={togglePlay}
               >
                 {buffering ? <span className="loading loading-spinner loading-sm" /> : playing ? <PauseIcon className="w-6 h-6" /> : <PlayIcon className="w-6 h-6 ml-0.5" />}
@@ -208,7 +208,7 @@ export default function QuranAudioPlayer() {
                 aria-label="Seek"
                 value={duration ? (progress / duration) * 100 : 0}
                 onChange={seek}
-                className="range range-xs flex-1 [--range-shdw:theme(colors.teal.400)]"
+                className="range range-xs flex-1 [--range-shdw:theme(colors.brand.info)]"
               />
               <span className="w-9">{fmtClock(duration)}</span>
             </div>
@@ -229,7 +229,7 @@ export default function QuranAudioPlayer() {
                   setMuted(v === 0);
                   localStorage.setItem('ihsan_quran_volume', String(v));
                 }}
-                className="range range-xs w-32 [--range-shdw:theme(colors.teal.400)]"
+                className="range range-xs w-32 [--range-shdw:theme(colors.brand.info)]"
               />
             </div>
 

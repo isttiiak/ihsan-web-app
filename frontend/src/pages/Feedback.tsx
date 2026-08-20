@@ -10,42 +10,42 @@ const TYPES: FormType[] = [
   },
   {
     id: 'idea', label: 'I have an idea', emoji: '💡',
-    active: 'bg-brand-gold/15 border-brand-gold/40 text-amber-100',
+    active: 'bg-brand-gold/15 border-brand-gold/40 text-brand-gold',
     hint: 'A feature that would help your worship',
   },
   {
     id: 'design', label: 'Design & usability', emoji: '🎨',
-    active: 'bg-fuchsia-500/15 border-fuchsia-400/40 text-fuchsia-100',
+    active: 'bg-brand-pink/15 border-brand-pink/40 text-brand-pink',
     hint: 'Hard to read, hard to reach, confusing flow',
   },
   {
     id: 'reference', label: 'A reference needs fixing', emoji: '📖',
-    active: 'bg-brand-emerald/15 border-brand-emerald/40 text-emerald-100',
+    active: 'bg-brand-emerald/15 border-brand-emerald/40 text-brand-emerald',
     hint: 'A verse, hadith or grading you believe is inaccurate',
   },
   {
     id: 'question', label: 'A question', emoji: '❓',
-    active: 'bg-cyan-500/15 border-cyan-400/40 text-cyan-100',
+    active: 'bg-brand-info/15 border-brand-info/40 text-brand-info',
     hint: 'How something works, or where to find it',
   },
   {
     id: 'account', label: 'Account help', emoji: '🔑',
-    active: 'bg-indigo-500/15 border-indigo-400/40 text-indigo-100',
+    active: 'bg-brand-info/15 border-brand-info/40 text-brand-info',
     hint: 'Sign-in trouble, or data that looks wrong',
   },
   {
     id: 'privacy', label: 'Privacy & my data', emoji: '🔒',
-    active: 'bg-brand-emerald/15 border-brand-emerald/40 text-emerald-100',
+    active: 'bg-brand-emerald/15 border-brand-emerald/40 text-brand-emerald',
     hint: 'Export, deletion, or a privacy question',
   },
   {
     id: 'collab', label: 'Collaborate', emoji: '🤝',
-    active: 'bg-brand-gold/15 border-brand-gold/40 text-amber-100',
+    active: 'bg-brand-gold/15 border-brand-gold/40 text-brand-gold',
     hint: 'Scholars, translators, designers, developers',
   },
   {
     id: 'appreciation', label: 'Just to say salam', emoji: '💚',
-    active: 'bg-teal-500/15 border-teal-400/40 text-teal-100',
+    active: 'bg-brand-info/15 border-brand-info/40 text-brand-info',
     hint: 'Encouragement, du\'a, or what you love',
   },
   {
@@ -55,7 +55,7 @@ const TYPES: FormType[] = [
   },
   {
     id: 'other', label: 'Something else', emoji: '✨',
-    active: 'bg-indigo-500/15 border-indigo-400/40 text-indigo-100',
+    active: 'bg-brand-info/15 border-brand-info/40 text-brand-info',
     hint: "Anything that doesn't fit above",
   },
 ];
@@ -74,7 +74,7 @@ export default function Feedback() {
         {/* hero */}
         <motion.div
           initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }}
-          className="relative rounded-3xl border border-brand-emerald/25 bg-gradient-to-br from-brand-emerald/10 via-teal-500/10 to-brand-deep p-6 sm:p-8 overflow-hidden"
+          className="relative rounded-3xl border border-brand-emerald/25 bg-gradient-to-br from-brand-emerald/10 via-brand-info/10 to-brand-deep p-6 sm:p-8 overflow-hidden"
         >
           <motion.div
             aria-hidden
@@ -108,7 +108,7 @@ export default function Feedback() {
             <motion.div
               key={p.title}
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 * i }}
-              className="rounded-2xl border border-emerald-500/10 bg-white/[0.03] p-4"
+              className="rounded-2xl border border-brand-emerald/10 bg-white/[0.03] p-4"
             >
               <div className="text-2xl">{p.emoji}</div>
               <p className="text-white/80 text-sm font-bold mt-1.5">{p.title}</p>

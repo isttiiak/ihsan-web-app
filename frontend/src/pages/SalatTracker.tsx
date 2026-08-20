@@ -430,7 +430,7 @@ export default function SalatTracker() {
           onClick={() => setShowSettings(true)}
           aria-label="Salat settings"
           title="Salat settings"
-          className="shrink-0 p-2 rounded-xl border border-emerald-500/20 bg-white/5 text-white/50 hover:text-brand-emerald hover:border-brand-emerald/40 transition-colors"
+          className="shrink-0 p-2 rounded-xl border border-brand-emerald/20 bg-white/5 text-white/50 hover:text-brand-emerald hover:border-brand-emerald/40 transition-colors"
         >
           <Cog6ToothIcon className="w-5 h-5" />
         </button>
@@ -450,7 +450,7 @@ export default function SalatTracker() {
               animate={{ opacity: 1, y: 0 }}
               className={`rounded-2xl border p-4 ${
                 fridayHour.isFinalStretch
-                  ? 'border-brand-gold/50 bg-gradient-to-br from-brand-gold/15 to-amber-600/5'
+                  ? 'border-brand-gold/50 bg-gradient-to-br from-brand-gold/15 to-brand-gold-dim/5'
                   : 'border-brand-gold/25 bg-brand-gold/[0.06]'
               }`}
             >
@@ -549,7 +549,7 @@ export default function SalatTracker() {
               </div>
               <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-brand-emerald to-cyan-400 rounded-full"
+                  className="h-full bg-gradient-to-r from-brand-emerald to-brand-info rounded-full"
                   initial={{ width: 0 }}
                   animate={{ width: `${(completedCount / 5) * 100}%` }}
                   transition={{ duration: 0.5 }}
@@ -628,7 +628,7 @@ export default function SalatTracker() {
                       {/* Primary action buttons (future prayers locked for today) */}
                       {isFuture ? (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-white/20 text-xs font-medium px-2 py-1 rounded-lg border border-emerald-500/10">
+                          <span className="text-white/20 text-xs font-medium px-2 py-1 rounded-lg border border-brand-emerald/10">
                             🔒 not yet
                           </span>
                         </div>
@@ -682,7 +682,7 @@ export default function SalatTracker() {
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.18 }}
-                          className="overflow-hidden border-t border-emerald-500/10"
+                          className="overflow-hidden border-t border-brand-emerald/10"
                         >
                           <div className="px-3 py-2.5 space-y-2">
                             {/* Location tags — only for completed (kaza is always prayed alone) */}
@@ -714,7 +714,7 @@ export default function SalatTracker() {
                                 onClick={() => handleSubTag(prayerId, 'tasbeeh', !(entry?.tasbeeh ?? false))}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
                                   entry?.tasbeeh
-                                    ? 'bg-cyan-500/20 border-cyan-400/60 text-cyan-300'
+                                    ? 'bg-brand-info/20 border-brand-info/60 text-brand-info'
                                     : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                                 }`}
                               >
@@ -743,7 +743,7 @@ export default function SalatTracker() {
                               // row of chunky buttons read as a to-do list —
                               // the opposite of the intent.
                               return (
-                                <div className="pt-1.5 border-t border-emerald-500/5">
+                                <div className="pt-1.5 border-t border-brand-emerald/5">
                                   <p className="text-white/25 text-[11px] leading-relaxed">
                                     <span className="text-white/20">Optional · </span>
                                     {recs.map((r, i) => (
@@ -759,7 +759,7 @@ export default function SalatTracker() {
                                           className={`underline underline-offset-2 decoration-dotted transition-colors ${
                                             r.fridayOnly
                                               ? 'text-brand-gold/60 hover:text-brand-gold'
-                                              : 'text-white/35 hover:text-brand-emerald'
+                                              : 'text-white/30 hover:text-brand-emerald'
                                           }`}
                                         >
                                           {r.label}
@@ -769,7 +769,7 @@ export default function SalatTracker() {
                                         {r.weak && (
                                           <span
                                             title={r.caveat}
-                                            className="ml-1 text-[9px] uppercase tracking-wide text-amber-400/50 border border-amber-400/25 rounded px-1 py-px align-middle"
+                                            className="ml-1 text-[9px] uppercase tracking-wide text-brand-gold/50 border border-brand-gold/25 rounded px-1 py-px align-middle"
                                           >
                                             ḍaʿīf
                                           </span>
@@ -789,13 +789,13 @@ export default function SalatTracker() {
                     {hasSubTag && !isFuture && (
                       <button
                         onClick={() => setExpandedPrayer(isExpanded ? null : prayerId)}
-                        className="w-full flex items-center justify-center gap-1 py-1 border-t border-emerald-500/5 text-white/20 hover:text-white/50 text-xs transition-colors"
+                        className="w-full flex items-center justify-center gap-1 py-1 border-t border-brand-emerald/5 text-white/20 hover:text-white/50 text-xs transition-colors"
                       >
                         {isExpanded ? '▲ Less' : '▾ Details'}
                         {status === 'completed' && entry?.location && entry.location !== 'home' && (
                           <span className="text-brand-emerald/60">{LOCATION_TAGS.find((t) => t.value === entry.location)?.emoji}</span>
                         )}
-                        {entry?.tasbeeh && <span className="text-cyan-400/60">📿</span>}
+                        {entry?.tasbeeh && <span className="text-brand-info/60">📿</span>}
                         {entry?.ayatulKursi && <span className="text-brand-gold/60">📖</span>}
                       </button>
                     )}
@@ -809,13 +809,13 @@ export default function SalatTracker() {
                         onClick={(e) => { e.stopPropagation(); toggleTarawih(); }}
                         className={`w-full px-3 py-2.5 border-t flex items-center gap-2 text-left transition-colors ${
                           ramadanTodayLog?.tarawih
-                            ? 'border-indigo-400/30 bg-indigo-500/15'
-                            : 'border-indigo-400/15 bg-indigo-500/[0.06] hover:bg-indigo-500/10'
+                            ? 'border-brand-info/30 bg-brand-info/15'
+                            : 'border-brand-info/15 bg-brand-info/[0.06] hover:bg-brand-info/10'
                         }`}
                       >
                         <span className="text-base shrink-0">🕌</span>
                         <span className="flex-1 min-w-0">
-                          <span className={`block font-bold text-xs ${ramadanTodayLog?.tarawih ? 'text-indigo-100' : 'text-indigo-200/70'}`}>
+                          <span className={`block font-bold text-xs ${ramadanTodayLog?.tarawih ? 'text-brand-info' : 'text-brand-info/70'}`}>
                             Tarawih tonight
                           </span>
                           <span className="block text-white/30 text-[11px]">
@@ -824,7 +824,7 @@ export default function SalatTracker() {
                         </span>
                         <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 ${
                           ramadanTodayLog?.tarawih
-                            ? 'bg-indigo-500/25 border-indigo-400/50 text-indigo-100'
+                            ? 'bg-brand-info/25 border-brand-info/50 text-brand-info'
                             : 'bg-brand-deep border-brand-border text-white/40'
                         }`}>
                           {ramadanTodayLog?.tarawih ? '✅ Prayed' : 'Mark done'}
@@ -868,7 +868,7 @@ export default function SalatTracker() {
               layout
               className={`rounded-2xl border overflow-hidden transition-colors ${
                 naflEntry.completed
-                  ? 'bg-cyan-500/10 border-cyan-400/40'
+                  ? 'bg-brand-info/10 border-brand-info/40'
                   : 'bg-brand-surface border-brand-border'
               }`}
             >
@@ -877,7 +877,7 @@ export default function SalatTracker() {
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <span className="text-2xl shrink-0">📿</span>
                   <div className="min-w-0">
-                    <p className={`font-bold text-sm leading-none ${naflEntry.completed ? 'text-cyan-300' : 'text-white/60'}`}>
+                    <p className={`font-bold text-sm leading-none ${naflEntry.completed ? 'text-brand-info' : 'text-white/60'}`}>
                       Nafl Prayer
                     </p>
                     <p className="text-white/25 text-xs mt-0.5">voluntary prayers</p>
@@ -889,8 +889,8 @@ export default function SalatTracker() {
                   onClick={handleNaflToggle}
                   className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                     naflEntry.completed
-                      ? 'bg-cyan-500 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.4)]'
-                      : 'bg-brand-deep border-brand-border text-white/50 hover:border-cyan-400/50 hover:text-white/80'
+                      ? 'bg-brand-info text-white border-brand-info shadow-[0_0_12px_rgba(6,182,212,0.4)]'
+                      : 'bg-brand-deep border-brand-border text-white/50 hover:border-brand-info/50 hover:text-white/80'
                   }`}
                 >
                   {naflEntry.completed ? '✅ Done' : 'Mark Done'}
@@ -905,7 +905,7 @@ export default function SalatTracker() {
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="overflow-hidden border-t border-emerald-500/10"
+                    className="overflow-hidden border-t border-brand-emerald/10"
                   >
                     <div className="px-3 py-3 space-y-3">
 
@@ -924,7 +924,7 @@ export default function SalatTracker() {
                                   onClick={() => handleNaflTypeToggle(t.id)}
                                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
                                     selected
-                                      ? 'bg-cyan-500/20 border-cyan-400/60 text-cyan-300'
+                                      ? 'bg-brand-info/20 border-brand-info/60 text-brand-info'
                                       : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                                   }`}
                                 >
@@ -952,14 +952,14 @@ export default function SalatTracker() {
                                       transition={{ duration: 0.15 }}
                                       className="overflow-hidden"
                                     >
-                                      <div className="mx-1 mt-1 mb-1 p-2 rounded-lg bg-brand-deep border border-emerald-500/10 space-y-1">
+                                      <div className="mx-1 mt-1 mb-1 p-2 rounded-lg bg-brand-deep border border-brand-emerald/10 space-y-1">
                                         <p className="text-white/50 text-xs leading-relaxed">{t.fullNote}</p>
                                         <p className="text-white/25 text-xs italic">{t.hadith}</p>
                                         <a
                                           href={t.hadithUrl}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          className="text-cyan-400/50 text-xs underline hover:text-cyan-300/80"
+                                          className="text-brand-info/50 text-xs underline hover:text-brand-info/80"
                                         >
                                           📖 sunnah.com
                                         </a>
@@ -978,14 +978,14 @@ export default function SalatTracker() {
                         const suggested = suggestedRakat(naflEntry.types ?? []);
                         const currentRakat = naflEntry.rakat ?? suggested;
                         return (
-                          <div className={`flex items-center gap-3 px-2 py-1.5 rounded-xl transition-colors ${currentRakat !== suggested ? 'bg-cyan-500/10 border border-cyan-400/20' : ''}`}>
+                          <div className={`flex items-center gap-3 px-2 py-1.5 rounded-xl transition-colors ${currentRakat !== suggested ? 'bg-brand-info/10 border border-brand-info/20' : ''}`}>
                             <p className="text-white/30 text-xs">Rak'ahs prayed:</p>
                             <div className="flex items-center gap-2">
                               <motion.button
                                 whileTap={{ scale: 0.85 }}
                                 onClick={() => handleNaflRakat(-1)}
                                 disabled={currentRakat <= MIN_RAKAT}
-                                className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center disabled:opacity-25 hover:border-cyan-400/40 hover:text-white transition-all"
+                                className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center disabled:opacity-25 hover:border-brand-info/40 hover:text-white transition-all"
                               >−</motion.button>
                               <span className="text-white font-black text-lg tabular-nums w-8 text-center">
                                 {currentRakat}
@@ -993,7 +993,7 @@ export default function SalatTracker() {
                               <motion.button
                                 whileTap={{ scale: 0.85 }}
                                 onClick={() => handleNaflRakat(1)}
-                                className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center hover:border-cyan-400/40 hover:text-white transition-all"
+                                className="w-7 h-7 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-base flex items-center justify-center hover:border-brand-info/40 hover:text-white transition-all"
                               >+</motion.button>
                             </div>
                             <p className="text-white/20 text-xs">usual {suggested}r</p>
@@ -1010,11 +1010,11 @@ export default function SalatTracker() {
               {naflEntry.completed && (
                 <button
                   onClick={() => setNaflExpanded(!naflExpanded)}
-                  className="w-full flex items-center justify-center gap-1 py-1 border-t border-emerald-500/5 text-white/20 hover:text-white/50 text-xs transition-colors"
+                  className="w-full flex items-center justify-center gap-1 py-1 border-t border-brand-emerald/5 text-white/20 hover:text-white/50 text-xs transition-colors"
                 >
                   {naflExpanded ? '▲ Less' : '▾ Details'}
                   {(naflEntry.types?.length ?? 0) > 0 && (
-                    <span className="text-cyan-400/50 text-xs">
+                    <span className="text-brand-info/50 text-xs">
                       {naflEntry.types.map((t) => NAFL_TYPE_META.find((m) => m.id === t)?.emoji).join(' ')}
                     </span>
                   )}
@@ -1039,7 +1039,7 @@ export default function SalatTracker() {
                 <p>📖 <span className="text-white/70 font-medium">Ayatul Kursi</span> — toggle after marking Done/Kaza (tap ▾ Details)</p>
                 <p>📿 <span className="text-white/70 font-medium">Nafl</span> — mark voluntary prayers and pick type + rak'ahs</p>
 
-                <div className="pt-2.5 mt-1 border-t border-emerald-500/10 space-y-1.5">
+                <div className="pt-2.5 mt-1 border-t border-brand-emerald/10 space-y-1.5">
                   <p className="text-brand-emerald/70 font-semibold">Counts itself now</p>
                   <p>
                     📿 Tapping <span className="text-white/70 font-medium">Tasbeeh</span> adds the full

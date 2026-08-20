@@ -121,7 +121,7 @@ export default function ZikrLibrarySection() {
       </p>
 
       {ZIKR_LIBRARY.map((cat) => (
-        <div key={cat.id} id={`zikr-cat-${cat.id}`} className="rounded-2xl border border-emerald-500/10 bg-white/5 overflow-hidden">
+        <div key={cat.id} id={`zikr-cat-${cat.id}`} className="rounded-2xl border border-brand-emerald/10 bg-white/5 overflow-hidden">
           <button
             className="w-full px-4 py-3 flex items-center justify-between text-left"
             onClick={() => {
@@ -150,7 +150,7 @@ export default function ZikrLibrarySection() {
                   {cat.items.map((item) => {
                     const added = inList(item.name);
                     return (
-                      <div key={item.name} className="rounded-xl bg-white/5 border border-emerald-500/10 p-3">
+                      <div key={item.name} className="rounded-xl bg-white/5 border border-brand-emerald/10 p-3">
                         <div className="flex items-start gap-3">
                           <div className="flex-1 min-w-0">
                             <p className="text-white/80 text-sm font-bold">{item.name}</p>
@@ -162,7 +162,7 @@ export default function ZikrLibrarySection() {
                             </a>
                           </div>
                           <button
-                            className={`btn btn-xs rounded-lg shrink-0 ${added ? 'bg-brand-emerald border-brand-emerald text-white font-bold cursor-default !opacity-100' : 'bg-white/5 border-emerald-500/20 text-white/70 hover:border-brand-emerald/50'}`}
+                            className={`btn btn-xs rounded-lg shrink-0 ${added ? 'bg-brand-emerald border-brand-emerald text-white font-bold cursor-default !opacity-100' : 'bg-white/5 border-brand-emerald/20 text-white/70 hover:border-brand-emerald/50'}`}
                             disabled={added || adding === item.name}
                             onClick={() => addFromLibrary(item)}
                           >
@@ -180,7 +180,7 @@ export default function ZikrLibrarySection() {
       ))}
 
       {/* custom add — full form, same fields as the counter's modal */}
-      <div className="rounded-2xl border border-emerald-500/10 bg-white/5 p-4">
+      <div className="rounded-2xl border border-brand-emerald/10 bg-white/5 p-4">
         <p className="text-white/60 text-xs font-bold mb-1">➕ Add your own zikr</p>
         <p className="text-white/30 text-[11px] mb-3">Name and meaning are required — Arabic and a reference make it complete.</p>
         <div className="space-y-2">
@@ -188,7 +188,7 @@ export default function ZikrLibrarySection() {
             type="text"
             placeholder="Name — e.g. Rabbi zidni ilma *"
             aria-label="Custom zikr name"
-            className="input input-sm w-full bg-white/5 border-emerald-500/15 text-white rounded-xl"
+            className="input input-sm w-full bg-white/5 border-brand-emerald/15 text-white rounded-xl"
             value={customName}
             maxLength={100}
             onChange={(e) => setCustomName(e.target.value)}
@@ -198,7 +198,7 @@ export default function ZikrLibrarySection() {
             dir="rtl"
             placeholder="Arabic — رَبِّ زِدْنِي عِلْمًا"
             aria-label="Custom zikr Arabic text"
-            className="input input-sm w-full bg-white/5 border-emerald-500/15 text-white rounded-xl font-serif"
+            className="input input-sm w-full bg-white/5 border-brand-emerald/15 text-white rounded-xl font-serif"
             value={customArabic}
             onChange={(e) => setCustomArabic(e.target.value)}
           />
@@ -206,7 +206,7 @@ export default function ZikrLibrarySection() {
             type="text"
             placeholder="Meaning — e.g. My Lord, increase me in knowledge *"
             aria-label="Custom zikr meaning"
-            className="input input-sm w-full bg-white/5 border-emerald-500/15 text-white rounded-xl"
+            className="input input-sm w-full bg-white/5 border-brand-emerald/15 text-white rounded-xl"
             value={customMeaningText}
             onChange={(e) => setCustomMeaningText(e.target.value)}
           />
@@ -215,7 +215,7 @@ export default function ZikrLibrarySection() {
               type="text"
               placeholder="Reference — e.g. Quran 20:114"
               aria-label="Custom zikr reference"
-              className="input input-sm w-full bg-white/5 border-emerald-500/15 text-white rounded-xl text-xs"
+              className="input input-sm w-full bg-white/5 border-brand-emerald/15 text-white rounded-xl text-xs"
               value={customSource}
               onChange={(e) => setCustomSource(e.target.value)}
             />
@@ -223,12 +223,12 @@ export default function ZikrLibrarySection() {
               type="text"
               placeholder="Link — https://quran.com/20/114"
               aria-label="Custom zikr reference link"
-              className="input input-sm w-full bg-white/5 border-emerald-500/15 text-white rounded-xl text-xs"
+              className="input input-sm w-full bg-white/5 border-brand-emerald/15 text-white rounded-xl text-xs"
               value={customSourceUrl}
               onChange={(e) => setCustomSourceUrl(e.target.value)}
             />
           </div>
-          <button className="btn btn-sm w-full rounded-xl border-0 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-500"
+          <button className="btn btn-sm w-full rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-info"
             disabled={!customName.trim() || !customMeaningText.trim() || !!adding} onClick={addCustom}>Add to my counter</button>
         </div>
 
@@ -237,7 +237,7 @@ export default function ZikrLibrarySection() {
           <div className="mt-4 space-y-1.5">
             <p className="text-white/40 text-[11px] font-bold">Your custom additions</p>
             {customTypes.map((name) => (
-              <div key={name} className="flex items-center gap-1.5 rounded-xl bg-white/5 border border-emerald-500/10 px-3 py-2">
+              <div key={name} className="flex items-center gap-1.5 rounded-xl bg-white/5 border border-brand-emerald/10 px-3 py-2">
                 <span className="flex-1 min-w-0 truncate text-white/75 text-xs">{name}</span>
                 <button
                   onClick={() => setEditZikr(name)}

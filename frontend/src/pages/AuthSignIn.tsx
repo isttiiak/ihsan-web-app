@@ -256,7 +256,7 @@ export default function AuthSignIn() {
                     variants={itemVariants}
                     whileHover={{ scale: 1.02, y: -2 }}
                     whileTap={{ scale: 0.98 }}
-                    className="w-full relative group bg-white hover:bg-gray-50 text-gray-700 font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full relative group bg-white hover:bg-white/90 text-brand-deep font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={google}
                     disabled={loading}
                   >

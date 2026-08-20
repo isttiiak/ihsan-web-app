@@ -170,7 +170,7 @@ export default function Home() {
       action: t('home.startCounting'),
       link: '/zikr',
       accentColor: 'var(--brand-emerald, #10b981)',
-      iconBg: 'bg-gradient-to-br from-brand-emerald/20 to-emerald-400/30',
+      iconBg: 'bg-gradient-to-br from-brand-emerald/20 to-brand-emerald/30',
       streakCount,
       goalCompleted,
     },
@@ -185,7 +185,7 @@ export default function Home() {
       action: t('home.trackPrayer'),
       link: '/salat',
       accentColor: 'var(--brand-emerald, #10b981)',
-      iconBg: 'bg-gradient-to-br from-indigo-500/20 to-purple-500/30',
+      iconBg: 'bg-gradient-to-br from-brand-info/20 to-brand-warm/30',
     },
     {
       id: 'fasting',
@@ -201,7 +201,7 @@ export default function Home() {
       action: 'Track Fasting',
       link: '/fasting',
       accentColor: 'var(--brand-gold, #f59e0b)',
-      iconBg: 'bg-gradient-to-br from-brand-gold/20 to-amber-500/30',
+      iconBg: 'bg-gradient-to-br from-brand-gold/20 to-brand-gold/30',
     },
     {
       id: 'quran',
@@ -217,7 +217,7 @@ export default function Home() {
       action: 'Read & Track',
       link: '/quran',
       accentColor: 'var(--brand-emerald, #10b981)',
-      iconBg: 'bg-gradient-to-br from-teal-500/20 to-cyan-500/30',
+      iconBg: 'bg-gradient-to-br from-brand-info/20 to-brand-info/30',
       streakCount: quranSummary?.streak ?? null,
       tag: salatAnalytics?.currentStreak ? `🕌 ${salatAnalytics.currentStreak}d salat` : undefined,
     },
@@ -235,8 +235,8 @@ export default function Home() {
         {upcomingCycleDays !== null && (
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <Link to="/cycle">
-              <div className="rounded-2xl border border-pink-400/20 bg-pink-500/10 px-5 py-3.5 hover:border-pink-300/30 transition-all">
-                <p className="text-pink-100/90 font-bold text-sm">
+              <div className="rounded-2xl border border-brand-pink/20 bg-brand-pink/10 px-5 py-3.5 hover:border-brand-pink/30 transition-all">
+                <p className="text-brand-pink/90 font-bold text-sm">
                   🌷 {upcomingCycleDays === 0 ? 'Your period may begin today' : `Your period may begin in ~${upcomingCycleDays} day${upcomingCycleDays > 1 ? 's' : ''}`}
                 </p>
                 <p className="text-white/30 text-xs mt-0.5">Based on your own rhythm — open Rayhanah Cycle to see your calendar →</p>
@@ -249,8 +249,8 @@ export default function Home() {
         {cycleActive && (
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <Link to="/cycle">
-              <div className="rounded-2xl border border-pink-400/25 bg-gradient-to-r from-pink-500/15 via-rose-500/10 to-purple-500/10 px-5 py-4 hover:border-pink-300/40 transition-all">
-                <p className="text-pink-100 font-bold text-sm">
+              <div className="rounded-2xl border border-brand-pink/25 bg-gradient-to-r from-brand-pink/15 via-brand-pink/10 to-brand-warm/10 px-5 py-4 hover:border-brand-pink/40 transition-all">
+                <p className="text-brand-pink font-bold text-sm">
                   🌸 Rayhanah day {cycleActive.dayCount} — your reward flows on
                 </p>
                 <p className="text-white/40 text-xs mt-1">
@@ -317,8 +317,8 @@ export default function Home() {
                       </>
                     ) : prayerWidgetData.naflWindow ? (
                       <>
-                        <p className="text-cyan-400/60 text-[10px] uppercase tracking-widest leading-none mb-0.5">Nafl Time</p>
-                        <p className="text-cyan-300 font-black text-sm leading-tight">{prayerWidgetData.naflWindow.name}</p>
+                        <p className="text-brand-info/60 text-[10px] uppercase tracking-widest leading-none mb-0.5">Nafl Time</p>
+                        <p className="text-brand-info font-black text-sm leading-tight">{prayerWidgetData.naflWindow.name}</p>
                         <p className="text-white/30 text-[10px] mt-0.5">
                           {formatTime(prayerWidgetData.naflWindow.start)} – {formatTime(prayerWidgetData.naflWindow.end)}
                         </p>
@@ -432,7 +432,7 @@ export default function Home() {
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <div className={`rounded-2xl border p-4 ${
               fridayHour.isFinalStretch
-                ? 'border-brand-gold/50 bg-gradient-to-br from-brand-gold/15 to-amber-600/5'
+                ? 'border-brand-gold/50 bg-gradient-to-br from-brand-gold/15 to-brand-gold-dim/5'
                 : 'border-brand-gold/25 bg-brand-gold/[0.06]'
             }`}>
               <div className="flex items-start gap-3">
@@ -500,11 +500,11 @@ export default function Home() {
                   <motion.div
                     whileHover={{ scale: 1.02, y: -8 }}
                     whileTap={{ scale: 0.98 }}
-                    className="relative h-full rounded-3xl overflow-hidden backdrop-blur-2xl border border-emerald-500/10 bg-white/5"
+                    className="relative h-full rounded-3xl overflow-hidden backdrop-blur-2xl border border-brand-emerald/10 bg-white/5"
                   >
                     {a.tag && (
                       <span
-                        className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md border border-emerald-500/10"
+                        className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg backdrop-blur-md border border-brand-emerald/10"
                         style={{
                           letterSpacing: '0.04em',
                           background: 'linear-gradient(90deg, var(--brand-gold) 0%, var(--brand-warm) 100%)',
@@ -516,7 +516,7 @@ export default function Home() {
 
                     {a.id === 'fasting' && (
                       <button
-                        className="absolute top-4 right-4 z-20 px-2.5 py-1 rounded-full text-[11px] font-black text-white shadow-lg border border-emerald-500/15 hover:scale-105 transition-transform"
+                        className="absolute top-4 right-4 z-20 px-2.5 py-1 rounded-full text-[11px] font-black text-white shadow-lg border border-brand-emerald/15 hover:scale-105 transition-transform"
                         style={{ background: 'linear-gradient(90deg, #b45309 0%, #7c3aed 100%)' }}
                         title={ramadan.active ? 'Open the Ramadan tracker' : 'Countdown to Ramadan — tap to prepare'}
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/ramadan'); }}
@@ -546,7 +546,7 @@ export default function Home() {
                     )}
 
                     <div className="relative z-10 p-6 sm:p-8">
-                      <div className={`w-16 h-16 sm:w-20 sm:h-20 ${a.iconBg} rounded-2xl grid place-items-center border border-emerald-500/10 mb-5`}>
+                      <div className={`w-16 h-16 sm:w-20 sm:h-20 ${a.iconBg} rounded-2xl grid place-items-center border border-brand-emerald/10 mb-5`}>
                         <span className="text-4xl sm:text-5xl">{a.icon}</span>
                       </div>
                       <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">{a.title}</h2>

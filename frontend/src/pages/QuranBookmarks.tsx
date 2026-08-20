@@ -73,7 +73,7 @@ export default function QuranBookmarks() {
         <QuranTabNav active="bookmarks" />
 
         {/* sub-tabs: saved āyāt vs saved duʿās */}
-        <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-emerald-500/10">
+        <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-brand-emerald/10">
           {([['ayat', `🔖 Āyāt${(summary?.bookmarks?.length ?? 0) > 0 ? ` · ${summary?.bookmarks?.length}` : ''}`], ['duas', `🤲 Duas${savedDuas.length > 0 ? ` · ${savedDuas.length}` : ''}`]] as const).map(([id, label]) => (
             <button key={id}
               onClick={() => setTab(id)}
@@ -92,7 +92,7 @@ export default function QuranBookmarks() {
               <p className="text-white/40 text-sm max-w-sm mx-auto leading-relaxed">
                 On the Quran page, tap the 🏷️ tag on any duʿā from the Quran to keep it here.
               </p>
-              <button className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-500"
+              <button className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-info"
                 onClick={() => navigate('/quran')}>Browse duas →</button>
             </div>
           ) : (
@@ -123,7 +123,7 @@ export default function QuranBookmarks() {
               While reading, tap the bookmark icon on any āyah that touches your heart — it will wait for
               you here, organized by surah.
             </p>
-            <button className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-emerald-500 to-teal-500"
+            <button className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-info"
               onClick={() => navigate('/quran/browse')}>Start reading →</button>
           </div>
         ) : (
@@ -146,7 +146,7 @@ export default function QuranBookmarks() {
                   {g.items.map((b) => {
                     const a = ayahText(b.surah, b.ayah);
                     return (
-                      <div key={`${b.surah}:${b.ayah}`} className="rounded-2xl bg-white/5 border border-emerald-500/10 p-3.5 hover:border-brand-emerald/30 transition-all">
+                      <div key={`${b.surah}:${b.ayah}`} className="rounded-2xl bg-white/5 border border-brand-emerald/10 p-3.5 hover:border-brand-emerald/30 transition-all">
                         <button className="w-full text-left" onClick={() => navigate(`/quran/read/${b.surah}?start=${b.ayah}`)}>
                           <p className="text-brand-emerald text-[11px] font-black mb-1.5">Āyah {b.ayah} →</p>
                           {a ? (

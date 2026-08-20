@@ -85,7 +85,7 @@ export default function ComebackNudge() {
             <Link to="/quran/browse" className="btn btn-xs rounded-xl border-0 text-white font-bold bg-brand-emerald hover:bg-brand-emerald-dim">
               📖 Read one āyah
             </Link>
-            <Link to="/zikr" className="btn btn-xs rounded-xl bg-white/5 border-emerald-500/15 text-white/70">
+            <Link to="/zikr" className="btn btn-xs rounded-xl bg-white/5 border-brand-emerald/15 text-white/70">
               📿 One dhikr
             </Link>
           </div>

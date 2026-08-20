@@ -174,7 +174,7 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
                   ))}
                 </div>
                 {daysBack > 0 && (
-                  <p className="text-cyan-300/70 text-[11px]">
+                  <p className="text-brand-info/70 text-[11px]">
                     🧊 Backfilling a missed day can restore your streak — the grace window covers up to 2 days back.
                   </p>
                 )}
@@ -218,7 +218,7 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
 
               {/* Today's existing count (only meaningful for today) */}
               {daysBack === 0 && (
-                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-emerald-500/10">
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-brand-emerald/10">
                   <span className="text-white/50 text-sm">Today's count so far</span>
                   <span className="text-white font-black text-lg tabular-nums">{existingCount.toLocaleString()}</span>
                 </div>
@@ -498,7 +498,7 @@ export default function ZikrAnalytics() {
                 animate={{ opacity: 1, y: 0 }}
                 whileHover={{ y: -8, scale: 1.03 }}
                 transition={{ delay: 0.05 }}
-                className="sm:col-span-2 lg:col-span-1 card relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-emerald via-teal-600 to-cyan-600 backdrop-blur-xl border border-emerald-500/20 shadow-[0_8px_32px_rgba(16,185,129,0.4)] hover:shadow-[0_12px_48px_rgba(16,185,129,0.6)] cursor-pointer group"
+                className="sm:col-span-2 lg:col-span-1 card relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-emerald via-brand-info-dim to-brand-info-dim backdrop-blur-xl border border-brand-emerald/20 shadow-[0_8px_32px_rgba(16,185,129,0.4)] hover:shadow-[0_12px_48px_rgba(16,185,129,0.6)] cursor-pointer group"
               >
                 <div className="absolute inset-0 opacity-40">
                   <motion.div
@@ -528,18 +528,18 @@ export default function ZikrAnalytics() {
               </motion.div>
 
               {[
-                { label: '📅 Today', value: todayTotal.toLocaleString(), delay: 0.1, gradient: 'from-brand-gold to-amber-400', textGrad: 'from-amber-300 to-orange-300' },
+                { label: '📅 Today', value: todayTotal.toLocaleString(), delay: 0.1, gradient: 'from-brand-gold to-brand-gold', textGrad: 'from-brand-gold to-brand-warm' },
                 {
                   label: '🏆 Best',
                   value: allTime?.bestDay?.count?.toLocaleString() ?? '0',
                   delay: 0.15,
-                  gradient: 'from-brand-emerald to-emerald-400',
-                  textGrad: 'from-green-300 to-emerald-300',
+                  gradient: 'from-brand-emerald to-brand-emerald',
+                  textGrad: 'from-brand-emerald to-brand-emerald',
                   sub: allTime?.bestDay?.date
                     ? new Date(allTime.bestDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                     : 'N/A',
                 },
-                { label: '🎯 Types', value: allTimeTypes.filter((t) => t.total > 0).length, delay: 0.2, gradient: 'from-brand-warm to-rose-400', textGrad: 'from-pink-300 to-rose-300' },
+                { label: '🎯 Types', value: allTimeTypes.filter((t) => t.total > 0).length, delay: 0.2, gradient: 'from-brand-warm to-brand-pink', textGrad: 'from-brand-pink to-brand-pink' },
               ].map(({ label, value, delay, gradient, textGrad, sub }) => (
                 <motion.div
                   key={label}
@@ -547,7 +547,7 @@ export default function ZikrAnalytics() {
                   animate={{ opacity: 1, y: 0 }}
                   whileHover={{ y: -6, scale: 1.02 }}
                   transition={{ delay }}
-                  className="card backdrop-blur-xl bg-white/10 border border-emerald-500/20 rounded-2xl shadow-lg cursor-pointer"
+                  className="card backdrop-blur-xl bg-white/10 border border-brand-emerald/20 rounded-2xl shadow-lg cursor-pointer"
                 >
                   <div className="card-body p-5 sm:p-6">
                     <div className={`text-xs sm:text-sm font-bold mb-2 bg-gradient-to-r ${gradient} bg-clip-text text-transparent uppercase tracking-wide`}>{label}</div>
@@ -562,8 +562,8 @@ export default function ZikrAnalytics() {
           {/* Breakdown by Type */}
           <div className="space-y-6">
             <div className="flex items-center justify-between px-2 flex-wrap gap-4">
-              <h2 className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-purple-400 via-pink-400 to-rose-400 bg-clip-text text-transparent flex items-center gap-3">
-                <ChartBarIcon className="w-8 h-8 text-purple-400" /> Breakdown by Type
+              <h2 className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-brand-info via-brand-pink to-brand-pink bg-clip-text text-transparent flex items-center gap-3">
+                <ChartBarIcon className="w-8 h-8 text-brand-info" /> Breakdown by Type
               </h2>
               <div className="tabs tabs-boxed bg-brand-deep border border-brand-border shadow-lg">
                 {(['today', 'all'] as const).map((tab) => (
@@ -581,7 +581,7 @@ export default function ZikrAnalytics() {
             {displayData?.length ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {displayData.map((t, index) => {
-                  const gradients = ['from-cyan-600 via-blue-600 to-indigo-600', 'from-violet-600 via-purple-600 to-fuchsia-600', 'from-rose-600 via-pink-600 to-red-600', 'from-amber-600 via-orange-600 to-red-600', 'from-emerald-600 via-teal-600 to-cyan-600', 'from-indigo-600 via-blue-600 to-cyan-600'];
+                  const gradients = ['from-brand-info-dim via-brand-info-dim to-brand-info-dim', 'from-brand-info-dim via-brand-info-dim to-brand-pink-dim', 'from-brand-pink-dim via-brand-pink-dim to-red-600', 'from-brand-gold-dim via-brand-warm-dim to-red-600', 'from-brand-emerald via-brand-info-dim to-brand-info-dim', 'from-brand-info-dim via-brand-info-dim to-brand-info-dim'];
                   return (
                     <motion.div
                       key={t.zikrType}
@@ -589,7 +589,7 @@ export default function ZikrAnalytics() {
                       animate={{ opacity: 1, y: 0 }}
                       whileHover={{ y: -8, scale: 1.03 }}
                       transition={{ delay: 0.1 + index * 0.05 }}
-                      className={`card relative overflow-hidden bg-gradient-to-br ${gradients[index % gradients.length]} backdrop-blur-xl border border-emerald-500/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)] cursor-pointer rounded-2xl group`}
+                      className={`card relative overflow-hidden bg-gradient-to-br ${gradients[index % gradients.length]} backdrop-blur-xl border border-brand-emerald/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)] cursor-pointer rounded-2xl group`}
                     >
                       <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent" initial={{ x: '-100%' }} whileHover={{ x: '100%' }} transition={{ duration: 0.6 }} />
                       <div className="card-body p-6 relative z-10">

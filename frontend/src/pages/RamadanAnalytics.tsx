@@ -23,17 +23,17 @@ import { getTrackingDay } from '../utils/trackingDay.js';
  */
 
 const ASHRA = [
-  { from: 1, to: 10, label: 'Raḥmah', tone: '#34d399' },
-  { from: 11, to: 20, label: 'Maghfirah', tone: '#22d3ee' },
-  { from: 21, to: 30, label: 'ʿItq min an-Nār', tone: '#c084fc' },
+  { from: 1, to: 10, label: 'Raḥmah', tone: '#7a9e6e' },
+  { from: 11, to: 20, label: 'Maghfirah', tone: '#5a9e8e' },
+  { from: 21, to: 30, label: 'ʿItq min an-Nār', tone: '#c9a96e' },
 ];
 
 function Stat({ label, value, suffix, hint, tone }: {
   label: string; value: string | number; suffix?: string; hint?: string; tone: string;
 }) {
   return (
-    <div className="rounded-2xl border border-emerald-500/10 bg-white/[0.03] p-4">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-white/35">{label}</p>
+    <div className="rounded-2xl border border-brand-emerald/10 bg-white/[0.03] p-4">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">{label}</p>
       <p className="font-black text-2xl leading-tight mt-1" style={{ color: tone }}>
         {value}{suffix && <span className="text-white/25 text-sm font-bold">{suffix}</span>}
       </p>
@@ -156,7 +156,7 @@ export default function RamadanAnalytics() {
             {/* Headline */}
             <motion.div
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              className="rounded-3xl p-6 border border-brand-gold/25 bg-gradient-to-br from-brand-gold/15 via-amber-500/10 to-purple-500/10"
+              className="rounded-3xl p-6 border border-brand-gold/25 bg-gradient-to-br from-brand-gold/15 via-brand-gold/10 to-brand-info/10"
             >
               <p className="text-brand-gold/80 text-xs font-bold uppercase tracking-widest">
                 Ramadan {window_.hijriYear ?? ''} AH
@@ -169,7 +169,7 @@ export default function RamadanAnalytics() {
               </div>
               <div className="mt-3 h-2.5 rounded-full bg-white/10 overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-brand-gold to-amber-400"
+                  className="h-full rounded-full bg-gradient-to-r from-brand-gold to-brand-gold"
                   initial={{ width: 0 }}
                   animate={{ width: `${model.rate}%` }}
                   transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -202,7 +202,7 @@ export default function RamadanAnalytics() {
                     <div key={a.label}>
                       <div className="flex items-baseline justify-between gap-2 mb-1.5">
                         <span className="font-bold text-sm" style={{ color: a.tone }}>{a.label}</span>
-                        <span className="text-white/35 text-[11px] tabular-nums">
+                        <span className="text-white/30 text-[11px] tabular-nums">
                           {a.fasted}/{a.elapsed || a.total} fasted · {a.tarawih} tarawih
                         </span>
                       </div>
@@ -222,23 +222,23 @@ export default function RamadanAnalytics() {
             </div>
 
             {/* Last ten focus */}
-            <div className="rounded-3xl p-5 border border-purple-400/25 bg-gradient-to-br from-purple-500/12 to-indigo-500/8">
+            <div className="rounded-3xl p-5 border border-brand-info/25 bg-gradient-to-br from-brand-info/10 to-brand-info/5">
               <h2 className="text-white font-black">✨ The last ten</h2>
-              <p className="text-purple-100/60 text-xs mt-1 leading-relaxed">
+              <p className="text-brand-info/60 text-xs mt-1 leading-relaxed">
                 “Seek Laylat al-Qadr in the odd nights of the last ten” —{' '}
                 <a className="underline" href="https://sunnah.com/bukhari:2017" target="_blank" rel="noreferrer">Ṣaḥīḥ al-Bukhārī 2017</a>.
                 This is the one part of the month whose virtue needs no qualification.
               </p>
               <div className="grid grid-cols-2 gap-2.5 mt-3">
-                <div className="rounded-2xl bg-black/25 border border-purple-400/20 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/35">Tarawih, last ten</p>
-                  <p className="text-purple-200 font-black text-xl mt-0.5">
+                <div className="rounded-2xl bg-black/25 border border-brand-info/20 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">Tarawih, last ten</p>
+                  <p className="text-brand-info font-black text-xl mt-0.5">
                     {model.lastTenTarawih}<span className="text-white/25 text-sm">/{model.lastTenTotal}</span>
                   </p>
                 </div>
-                <div className="rounded-2xl bg-black/25 border border-purple-400/20 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/35">Odd nights kept</p>
-                  <p className="text-purple-200 font-black text-xl mt-0.5">
+                <div className="rounded-2xl bg-black/25 border border-brand-info/20 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">Odd nights kept</p>
+                  <p className="text-brand-info font-black text-xl mt-0.5">
                     {model.oddNightsTarawih}<span className="text-white/25 text-sm">/{model.oddNightsTotal}</span>
                   </p>
                 </div>
@@ -251,8 +251,8 @@ export default function RamadanAnalytics() {
               <div className="grid grid-cols-10 gap-1">
                 {model.days.map((d) => {
                   let cls = 'bg-white/[0.05]';
-                  if (d.excused) cls = 'bg-pink-500/40';
-                  else if (d.fasted) cls = 'bg-emerald-500/60';
+                  if (d.excused) cls = 'bg-brand-pink/40';
+                  else if (d.fasted) cls = 'bg-brand-emerald/60';
                   else if (d.broken) cls = 'bg-red-500/50';
                   else if (d.unlogged) cls = 'bg-white/[0.10]';
                   return (

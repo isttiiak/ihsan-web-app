@@ -18,17 +18,17 @@ import { FastingCategory, VOLUNTARY_BY_ID } from '../utils/fastingRules.js';
 // category, fixed order, never cycled. Chips elsewhere use the app's lighter
 // hues of the same families.
 const CATEGORY_CHART: Record<FastingCategory, { label: string; emoji: string; color: string }> = {
-  voluntary: { label: 'Voluntary', emoji: '💚', color: '#059669' },
-  qada:      { label: 'Qaḍā',      emoji: '🔄', color: '#d97706' },
-  kaffarah:  { label: 'Kaffārah',  emoji: '⚖️', color: '#9333ea' },
-  nadhr:     { label: 'Vow',       emoji: '🤝', color: '#0891b2' },
-  ramadan:   { label: 'Ramadan',   emoji: '🌙', color: '#b45309' },
+  voluntary: { label: 'Voluntary', emoji: '💚', color: '#7a9e6e' },
+  qada:      { label: 'Qaḍā',      emoji: '🔄', color: '#c9a96e' },
+  kaffarah:  { label: 'Kaffārah',  emoji: '⚖️', color: '#c4825a' },
+  nadhr:     { label: 'Vow',       emoji: '🤝', color: '#5a9e8e' },
+  ramadan:   { label: 'Ramadan',   emoji: '🌙', color: '#a08850' },
 };
 const CATEGORY_ORDER: FastingCategory[] = ['voluntary', 'qada', 'kaffarah', 'nadhr'];
 
 const STATUS_CHIP: Record<string, { label: string; cls: string }> = {
   completed: { label: '✓ Fasted',   cls: 'bg-brand-emerald/15 text-brand-emerald border-brand-emerald/40' },
-  intended:  { label: '🌅 Intended', cls: 'bg-cyan-500/15 text-cyan-300 border-cyan-400/40' },
+  intended:  { label: '🌅 Intended', cls: 'bg-brand-info/15 text-brand-info border-brand-info/40' },
   broken:    { label: '💔 Broken',   cls: 'bg-red-500/15 text-red-300 border-red-400/40' },
 };
 
@@ -126,7 +126,7 @@ export default function FastingAnalytics() {
                   <motion.div
                     key={s.label}
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                    className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] px-3 py-3"
+                    className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] px-3 py-3"
                   >
                     <p className="text-white/30 text-[10px] uppercase tracking-widest font-bold">{s.label}</p>
                     <p className="text-white font-black text-2xl tabular-nums mt-0.5">{s.value}</p>
@@ -138,7 +138,7 @@ export default function FastingAnalytics() {
               {/* ── Category breakdown ── */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] p-4 space-y-3"
+                className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-4 space-y-3"
               >
                 <p className="text-white/70 font-bold text-sm">Completed fasts by type <span className="text-white/25 font-normal text-[11px]">— last 12 months</span></p>
                 <div className="space-y-2.5">
@@ -173,7 +173,7 @@ export default function FastingAnalytics() {
               {/* ── Monthly trend ── */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] p-4"
+                className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-4"
               >
                 <p className="text-white/70 font-bold text-sm mb-3">Completed fasts per month</p>
                 <div className="flex items-end justify-between gap-2 h-28">
@@ -196,7 +196,7 @@ export default function FastingAnalytics() {
                           animate={{ height: `${h}%` }}
                           transition={{ duration: 0.5, ease: 'easeOut' }}
                           className={`w-full rounded-t-[4px] ${isCurrent ? 'ring-1 ring-white/30' : ''}`}
-                          style={{ background: m.count > 0 ? '#059669' : 'rgba(255,255,255,0.08)' }}
+                          style={{ background: m.count > 0 ? '#7a9e6e' : 'rgba(255,255,255,0.08)' }}
                         />
                         <span className={`text-[9px] ${isCurrent ? 'text-white/60 font-bold' : 'text-white/25'}`}>
                           {monthLabel(m.ym)}
@@ -210,7 +210,7 @@ export default function FastingAnalytics() {
               {/* ── History (edit / delete) ── */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                className="rounded-2xl border border-emerald-500/10 bg-white/[0.04] overflow-hidden"
+                className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] overflow-hidden"
               >
                 <div className="px-4 pt-4 pb-2">
                   <p className="text-white/70 font-bold text-sm">Fasting history</p>

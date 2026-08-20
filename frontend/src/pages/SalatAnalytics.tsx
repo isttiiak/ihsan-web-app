@@ -14,11 +14,11 @@ const PERIOD_OPTIONS = [
 ];
 
 const PRAYER_GRADIENTS: Record<string, string> = {
-  fajr:    'from-indigo-500 to-blue-600',
-  dhuhr:   'from-amber-400 to-orange-500',
-  asr:     'from-cyan-500 to-teal-600',
-  maghrib: 'from-rose-500 to-pink-600',
-  isha:    'from-violet-500 to-purple-600',
+  fajr:    'from-brand-info to-brand-info-dim',
+  dhuhr:   'from-brand-gold to-brand-warm',
+  asr:     'from-brand-info to-brand-info-dim',
+  maghrib: 'from-brand-pink to-brand-pink-dim',
+  isha:    'from-brand-info to-brand-info-dim',
 };
 
 /** Map 0–5 completed prayers to a CSS background colour.
@@ -138,27 +138,27 @@ export default function SalatAnalytics() {
                     label: 'Completion',
                     value: `${data.completionRate}%`,
                     sub: `(Done + Kaza) ÷ (${data.totalDays} tracked days × 5) × 100`,
-                    gradient: 'from-brand-emerald to-cyan-400',
+                    gradient: 'from-brand-emerald to-brand-info',
                     tooltip: true,
                   },
                   {
                     label: 'Days without a gap',
                     value: data.currentStreak,
                     sub: 'How long you have prayed all 5, day after day',
-                    gradient: 'from-brand-gold to-orange-400',
+                    gradient: 'from-brand-gold to-brand-warm',
                     icon: <FireIcon className="w-3 h-3 inline" />,
                   },
                   {
                     label: 'Best run',
                     value: data.bestStreak,
                     sub: 'Your longest run of all-5-prayer days',
-                    gradient: 'from-violet-500 to-purple-400',
+                    gradient: 'from-brand-info to-brand-info',
                   },
                   {
                     label: 'Nafl Days',
                     value: data.naflDays ?? 0,
                     sub: 'Days with at least one nafl prayer logged',
-                    gradient: 'from-cyan-500 to-teal-400',
+                    gradient: 'from-brand-info to-brand-info',
                   },
                 ].map(({ label, value, sub, gradient, icon, tooltip }) => (
                   <motion.div
@@ -216,8 +216,8 @@ export default function SalatAnalytics() {
                       { label: 'On time', count: data.completedCount, color: 'bg-brand-emerald' },
                       { label: 'Kaza',    count: data.kazaCount,      color: 'bg-brand-gold' },
                       { label: 'Missed',  count: data.missedCount,    color: 'bg-red-600/70' },
-                      { label: 'Mosque',  count: data.mosqueCount,    color: 'bg-cyan-400' },
-                      { label: 'Jamat',   count: data.jamaatCount,    color: 'bg-teal-400' },
+                      { label: 'Mosque',  count: data.mosqueCount,    color: 'bg-brand-info' },
+                      { label: 'Jamat',   count: data.jamaatCount,    color: 'bg-brand-info' },
                     ].map(({ label, count, color }) => (
                       <div key={label} className="flex items-center gap-1.5">
                         <span className={`w-2.5 h-2.5 rounded-sm ${color}`} />
@@ -226,7 +226,7 @@ export default function SalatAnalytics() {
                       </div>
                     ))}
                   </div>
-                  <div className="space-y-0.5 pt-1 border-t border-emerald-500/10">
+                  <div className="space-y-0.5 pt-1 border-t border-brand-emerald/10">
                     <p className="text-white/20 text-xs flex items-center gap-1">
                       <InformationCircleIcon className="w-3 h-3 shrink-0" />
                       Completion = (On time + Kaza) ÷ ({data.totalDays} × 5) × 100 = <strong className="text-white/30">{data.completionRate}%</strong>
@@ -250,7 +250,7 @@ export default function SalatAnalytics() {
                     const total = data.totalDays;
                     const done = stats.completed + stats.kaza;
                     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-                    const gradient = PRAYER_GRADIENTS[prayer.id] ?? 'from-gray-500 to-gray-600';
+                    const gradient = PRAYER_GRADIENTS[prayer.id] ?? 'from-white to-brand-border';
                     return (
                       <motion.div
                         key={prayer.id}
@@ -258,7 +258,7 @@ export default function SalatAnalytics() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.05 * i }}
                         whileHover={{ y: -4, scale: 1.02 }}
-                        className={`card relative overflow-hidden bg-gradient-to-br ${gradient} border border-emerald-500/20 rounded-2xl`}
+                        className={`card relative overflow-hidden bg-gradient-to-br ${gradient} border border-brand-emerald/20 rounded-2xl`}
                       >
                         <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent" initial={{ x: '-100%' }} whileHover={{ x: '100%' }} transition={{ duration: 0.5 }} />
                         <div className="card-body p-4 relative z-10">

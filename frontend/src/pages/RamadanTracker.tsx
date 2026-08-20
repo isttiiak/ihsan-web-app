@@ -45,13 +45,13 @@ const ASHRA = [
 
 const WORSHIP_TILES = [
   { id: 'salat', label: 'Fard salat', emoji: '🕌', to: '/salat',
-    border: 'border-emerald-500/20', bg: 'bg-emerald-500/[0.07]', tone: 'text-emerald-200' },
+    border: 'border-brand-emerald/20', bg: 'bg-brand-emerald/[0.07]', tone: 'text-brand-emerald' },
   { id: 'nafl', label: 'Nafl rakʿahs', emoji: '🌙', to: '/salat',
-    border: 'border-cyan-400/20', bg: 'bg-cyan-500/[0.07]', tone: 'text-cyan-200' },
+    border: 'border-brand-info/20', bg: 'bg-brand-info/[0.07]', tone: 'text-brand-info' },
   { id: 'quran', label: 'Qurʾān today', emoji: '📖', to: '/quran',
-    border: 'border-purple-400/20', bg: 'bg-purple-500/[0.07]', tone: 'text-purple-200' },
+    border: 'border-brand-info/20', bg: 'bg-brand-info/[0.07]', tone: 'text-brand-info' },
   { id: 'zikr', label: 'Dhikr today', emoji: '📿', to: '/zikr',
-    border: 'border-brand-gold/20', bg: 'bg-brand-gold/[0.07]', tone: 'text-amber-200' },
+    border: 'border-brand-gold/20', bg: 'bg-brand-gold/[0.07]', tone: 'text-brand-gold' },
 ] as const;
 
 type WorshipId = (typeof WORSHIP_TILES)[number]['id'];
@@ -243,7 +243,7 @@ export default function RamadanTracker() {
         <div className="max-w-2xl mx-auto px-4 pt-4 pb-16 space-y-5">
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-3xl p-8 border border-brand-gold/25 bg-gradient-to-br from-brand-gold/15 via-amber-500/10 to-purple-500/10 text-center relative overflow-hidden"
+            className="rounded-3xl p-8 border border-brand-gold/25 bg-gradient-to-br from-brand-gold/15 via-brand-gold/10 to-brand-info/10 text-center relative overflow-hidden"
           >
             <motion.div
               className="absolute -top-14 -right-14 w-48 h-48 rounded-full bg-brand-gold/15 blur-2xl"
@@ -259,7 +259,7 @@ export default function RamadanTracker() {
               {startStr && (
                 <p className="text-white/30 text-xs mt-2">expected around {formatGregorian(startStr)} (moon sighting decides)</p>
               )}
-              <p className="text-amber-100/80 text-sm mt-4 leading-relaxed max-w-md mx-auto">
+              <p className="text-brand-gold/80 text-sm mt-4 leading-relaxed max-w-md mx-auto">
                 "When Ramadan begins, the gates of Paradise are opened, the gates of Hellfire are closed,
                 and the devils are chained." —{' '}
                 <a className="underline" href="https://sunnah.com/bukhari:1899" target="_blank" rel="noreferrer">Ṣaḥīḥ al-Bukhārī 1899</a>
@@ -326,7 +326,7 @@ export default function RamadanTracker() {
         {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl p-6 sm:p-8 border border-brand-gold/25 bg-gradient-to-br from-brand-gold/15 via-amber-500/10 to-indigo-500/10 relative overflow-hidden"
+          className="rounded-3xl p-6 sm:p-8 border border-brand-gold/25 bg-gradient-to-br from-brand-gold/15 via-brand-gold/10 to-brand-info/10 relative overflow-hidden"
         >
           <div className="relative">
             <p className="text-brand-gold/80 text-xs font-bold uppercase tracking-widest">🌙 Ramadan {window_.hijriYear} AH</p>
@@ -344,14 +344,14 @@ export default function RamadanTracker() {
                     : `Iftar at ${prayerTimes ? formatTime(prayerTimes.maghrib) : ''}`}
                   className={`shrink-0 flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-full border ${
                     fastClock.phase === 'suhoor'
-                      ? 'border-cyan-400/35 bg-cyan-500/10'
-                      : 'border-brand-gold/35 bg-brand-gold/10'
+                      ? 'border-brand-info/30 bg-brand-info/10'
+                      : 'border-brand-gold/30 bg-brand-gold/10'
                   }`}
                 >
                   <span className="text-sm leading-none">{fastClock.phase === 'suhoor' ? '🌅' : '🌇'}</span>
                   <span className="leading-tight">
                     <span className={`block text-[9px] font-bold uppercase tracking-wider ${
-                      fastClock.phase === 'suhoor' ? 'text-cyan-300/70' : 'text-brand-gold/70'
+                      fastClock.phase === 'suhoor' ? 'text-brand-info/70' : 'text-brand-gold/70'
                     }`}>
                       {fastClock.phase === 'suhoor' ? 'Suhoor in' : 'Iftar in'}
                     </span>
@@ -364,7 +364,7 @@ export default function RamadanTracker() {
             {/* progress */}
             <div className="mt-3 h-2.5 rounded-full bg-white/10 overflow-hidden">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-brand-gold to-amber-400"
+                className="h-full rounded-full bg-gradient-to-r from-brand-gold to-brand-gold"
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.round((fastedCount / window_.days.length) * 100)}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -375,12 +375,12 @@ export default function RamadanTracker() {
             {/* suhoor / iftar */}
             {prayerTimes ? (
               <div className="flex gap-3 mt-4">
-                <div className="flex-1 rounded-2xl bg-white/5 border border-emerald-500/10 p-3 text-center">
+                <div className="flex-1 rounded-2xl bg-white/5 border border-brand-emerald/10 p-3 text-center">
                   <p className="text-white/30 text-[10px] font-bold uppercase">Suhoor ends (Fajr)</p>
                   <p className="text-white font-black text-lg">{formatTime(prayerTimes.fajr)}</p>
                   <p className="text-white/25 text-[10px]">"Take suhoor — there is blessing in it" · <a className="underline" href="https://sunnah.com/bukhari:1923" target="_blank" rel="noreferrer">Bukhārī 1923</a></p>
                 </div>
-                <div className="flex-1 rounded-2xl bg-white/5 border border-emerald-500/10 p-3 text-center">
+                <div className="flex-1 rounded-2xl bg-white/5 border border-brand-emerald/10 p-3 text-center">
                   <p className="text-white/30 text-[10px] font-bold uppercase">Iftar (Maghrib)</p>
                   <p className="text-white font-black text-lg">{formatTime(prayerTimes.maghrib)}</p>
                   <p className="text-white/25 text-[10px]">"People remain upon good while they hasten iftar" · <a className="underline" href="https://sunnah.com/bukhari:1957" target="_blank" rel="noreferrer">Bukhārī 1957</a></p>
@@ -396,8 +396,8 @@ export default function RamadanTracker() {
             {excusedToday ? (
               <div className="mt-4"><ExcusedCard feature="fasting" /></div>
             ) : todayLog?.status === 'completed' ? (
-              <div className="mt-4 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 p-4 text-center">
-                <p className="text-emerald-200 font-black">✅ Day {dayNo} fasted — taqabbal Allāh! </p>
+              <div className="mt-4 rounded-2xl bg-brand-emerald/15 border border-brand-emerald/30 p-4 text-center">
+                <p className="text-brand-emerald font-black">✅ Day {dayNo} fasted — taqabbal Allāh! </p>
                 {confirmUnlog ? (
                   <p className="text-xs mt-1">
                     <button className="text-red-300 underline" onClick={() => { clearLog.mutate(today); setConfirmUnlog(false); }}>Yes, remove it</button>
@@ -413,7 +413,7 @@ export default function RamadanTracker() {
               // optional (Istiak). Voluntary fasts keep it in /fasting.
               <div className="mt-4">
                 <button
-                  className="w-full btn h-12 rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-gold to-amber-500 hover:from-amber-400 hover:to-amber-500"
+                  className="w-full btn h-12 rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-gold to-brand-gold hover:from-brand-gold hover:to-brand-gold"
                   disabled={upsert.isPending}
                   onClick={() => logToday('completed')}
                 >✅ I fasted today</button>
@@ -472,10 +472,10 @@ export default function RamadanTracker() {
         {inLastTen && (
           <motion.div
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-3xl p-5 border border-purple-400/30 bg-gradient-to-br from-purple-500/15 to-indigo-500/10"
+            className="rounded-3xl p-5 border border-brand-info/30 bg-gradient-to-br from-brand-info/15 to-brand-info/10"
           >
             <h2 className="text-white font-black">✨ The last ten nights</h2>
-            <p className="text-purple-100/70 text-xs mt-1 leading-relaxed">
+            <p className="text-brand-info/70 text-xs mt-1 leading-relaxed">
               Seek Laylat al-Qadr in the odd nights — it is better than a thousand months
               (<a className="underline" href="https://quran.com/97/3" target="_blank" rel="noreferrer">Quran 97:3</a>,{' '}
               <a className="underline" href="https://sunnah.com/bukhari:2017" target="_blank" rel="noreferrer">Bukhārī 2017</a>).
@@ -484,7 +484,7 @@ export default function RamadanTracker() {
             </p>
             <div className="flex gap-1.5 mt-3">
               {[21, 23, 25, 27, 29].map((n) => (
-                <span key={n} className={`flex-1 text-center py-2 rounded-xl text-sm font-black ${n === dayNo ? 'bg-purple-500/40 text-white ring-2 ring-purple-300/60' : n < dayNo ? 'bg-white/5 text-white/30' : 'bg-purple-500/15 text-purple-200'}`}>
+                <span key={n} className={`flex-1 text-center py-2 rounded-xl text-sm font-black ${n === dayNo ? 'bg-brand-info/40 text-white ring-2 ring-brand-info/60' : n < dayNo ? 'bg-white/5 text-white/30' : 'bg-brand-info/15 text-brand-info'}`}>
                   {n}
                 </span>
               ))}
@@ -524,14 +524,14 @@ export default function RamadanTracker() {
                   {group.weak && (
                     <span
                       title="The mercy / forgiveness / freedom split comes from a narration in Ibn Khuzaymah (1887) with a weak chain. The names are widely used to organise the month; treat them as a framing, not as a graded promise. The last ten's virtue is separately authentic (Bukhārī 2017)."
-                      className="text-[9px] uppercase tracking-wide text-amber-400/45 border border-amber-400/20 rounded px-1 py-px"
+                      className="text-[9px] uppercase tracking-wide text-brand-gold/40 border border-brand-gold/20 rounded px-1 py-px"
                     >
                       ḍaʿīf
                     </span>
                   )}
                 </div>
                 {group.note && (
-                  <p className="text-purple-300/50 text-[11px] -mt-1 mb-2">{group.note}</p>
+                  <p className="text-brand-info/50 text-[11px] -mt-1 mb-2">{group.note}</p>
                 )}
                 <div className="grid grid-cols-5 gap-2">
                   {groupDays.map((d) => {
@@ -542,9 +542,9 @@ export default function RamadanTracker() {
                     const oddNight = d.isLastTen && d.isOdd;
                     let face = String(d.dayNumber);
                     let cls = 'bg-white/[0.04] text-white/40';
-                    if (excused && d.date <= today) { face = '🌸'; cls = 'bg-pink-500/20 text-pink-100'; }
-                    else if (log?.status === 'completed') { face = '✓'; cls = 'bg-emerald-500/30 text-emerald-100'; }
-                    else if (log?.status === 'intended') { face = '🌅'; cls = 'bg-cyan-500/20 text-cyan-100'; }
+                    if (excused && d.date <= today) { face = '🌸'; cls = 'bg-brand-pink/20 text-brand-pink'; }
+                    else if (log?.status === 'completed') { face = '✓'; cls = 'bg-brand-emerald/30 text-brand-emerald'; }
+                    else if (log?.status === 'intended') { face = '🌅'; cls = 'bg-brand-info/20 text-brand-info'; }
                     else if (log?.status === 'broken') { face = '💔'; cls = 'bg-red-500/20 text-red-200'; }
                     else if (isPast) { cls = 'bg-white/[0.03] text-white/20'; }
                     return (
@@ -583,7 +583,7 @@ export default function RamadanTracker() {
                           />
                         )}
                         {oddNight && (
-                          <span className="absolute top-1 left-1.5 text-[9px] leading-none text-purple-200/90">⭐</span>
+                          <span className="absolute top-1 left-1.5 text-[9px] leading-none text-brand-info/90">⭐</span>
                         )}
                         {log?.tarawih && <span className="absolute top-1 right-1.5 text-[9px] leading-none">🕌</span>}
 
@@ -606,7 +606,7 @@ export default function RamadanTracker() {
 
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[10px] text-white/30">
             <span>✓ fasted</span><span>💔 broken</span><span>🌸 excused → qaḍā</span>
-            <span>🕌 tarawih</span><span className="text-purple-300/60">glowing = odd night of last ten</span>
+            <span>🕌 tarawih</span><span className="text-brand-info/60">glowing = odd night of last ten</span>
           </div>
           <p className="text-white/25 text-[10px] mt-2 leading-relaxed">
             🌸 Rayhanah days are excused with zero guilt — when the cycle ends, those Ramadan days are offered

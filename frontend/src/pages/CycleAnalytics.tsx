@@ -79,10 +79,10 @@ export default function CycleAnalytics() {
     // Regularity: SD of cycle gaps (medically, ≤~4 days variation reads as regular)
     const regularity =
       gapVals.length < 2 ? { label: 'Learning…', tone: 'text-white/40' }
-      : sd <= 2 ? { label: 'Very regular', tone: 'text-emerald-300' }
-      : sd <= 4 ? { label: 'Regular', tone: 'text-emerald-300/80' }
-      : sd <= 7 ? { label: 'Somewhat variable', tone: 'text-amber-300/80' }
-      : { label: 'Irregular', tone: 'text-rose-300/80' };
+      : sd <= 2 ? { label: 'Very regular', tone: 'text-brand-emerald' }
+      : sd <= 4 ? { label: 'Regular', tone: 'text-brand-emerald/80' }
+      : sd <= 7 ? { label: 'Somewhat variable', tone: 'text-brand-gold/80' }
+      : { label: 'Irregular', tone: 'text-brand-pink/80' };
 
     // Next 3 predicted windows: lastStart + n·mean, each ± max(1, round(SD))
     const lastStart = hayd.length ? hayd[hayd.length - 1]!.startDate : null;
@@ -145,22 +145,22 @@ export default function CycleAnalytics() {
 
         {isLoading ? (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-10 grid place-items-center">
-            <span className="loading loading-spinner loading-lg text-pink-300" />
+            <span className="loading loading-spinner loading-lg text-brand-pink" />
           </div>
         ) : (
           <>
             {/* Stat tiles */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                <p className="text-2xl font-black text-pink-200">{stats.haydCount}</p>
+                <p className="text-2xl font-black text-brand-pink">{stats.haydCount}</p>
                 <p className="text-white/30 text-[10px] font-bold uppercase mt-1">cycles tracked</p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                <p className="text-2xl font-black text-pink-200">{stats.gaps.length ? Math.round(stats.mean) : '—'}</p>
+                <p className="text-2xl font-black text-brand-pink">{stats.gaps.length ? Math.round(stats.mean) : '—'}</p>
                 <p className="text-white/30 text-[10px] font-bold uppercase mt-1">avg cycle days</p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                <p className="text-2xl font-black text-pink-200">{stats.lengths.length ? Math.round(stats.meanLen) : '—'}</p>
+                <p className="text-2xl font-black text-brand-pink">{stats.lengths.length ? Math.round(stats.meanLen) : '—'}</p>
                 <p className="text-white/30 text-[10px] font-bold uppercase mt-1">avg period days</p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
@@ -183,11 +183,11 @@ export default function CycleAnalytics() {
                     <motion.div
                       key={w.center}
                       initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
-                      className="flex items-center gap-3 rounded-xl bg-pink-500/10 border border-pink-400/15 px-4 py-2.5"
+                      className="flex items-center gap-3 rounded-xl bg-brand-pink/10 border border-brand-pink/15 px-4 py-2.5"
                     >
                       <span className="text-lg">{['🌸', '🌷', '🌺'][i]}</span>
                       <div className="flex-1">
-                        <p className="text-pink-100/90 text-sm font-bold">{fmt(w.from)} – {fmt(w.to)}</p>
+                        <p className="text-brand-pink/90 text-sm font-bold">{fmt(w.from)} – {fmt(w.to)}</p>
                         <p className="text-white/30 text-[10px]">most likely around {fmtFull(w.center)}</p>
                       </div>
                     </motion.div>
@@ -205,9 +205,9 @@ export default function CycleAnalytics() {
                     <div key={g.from} className="flex items-center gap-2 text-xs">
                       <span className="text-white/30 w-14">{fmt(g.from)}</span>
                       <div className="flex-1 h-4 rounded-full bg-white/5 overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-pink-500/60 to-rose-400/60" style={{ width: `${(g.days / maxGap) * 100}%` }} />
+                        <div className="h-full rounded-full bg-gradient-to-r from-brand-pink/60 to-brand-pink/60" style={{ width: `${(g.days / maxGap) * 100}%` }} />
                       </div>
-                      <span className="text-pink-200/80 font-bold w-8 text-right">{g.days}d</span>
+                      <span className="text-brand-pink/80 font-bold w-8 text-right">{g.days}d</span>
                     </div>
                   ))}
                 </div>
@@ -219,9 +219,9 @@ export default function CycleAnalytics() {
                         <div key={l.from} className="flex items-center gap-2 text-xs">
                           <span className="text-white/30 w-14">{fmt(l.from)}</span>
                           <div className="flex-1 h-4 rounded-full bg-white/5 overflow-hidden">
-                            <div className="h-full rounded-full bg-gradient-to-r from-purple-500/50 to-pink-400/50" style={{ width: `${(l.days / maxLen) * 100}%` }} />
+                            <div className="h-full rounded-full bg-gradient-to-r from-brand-warm/50 to-brand-pink/50" style={{ width: `${(l.days / maxLen) * 100}%` }} />
                           </div>
-                          <span className="text-purple-200/80 font-bold w-8 text-right">{l.days}d</span>
+                          <span className="text-brand-warm/80 font-bold w-8 text-right">{l.days}d</span>
                         </div>
                       ))}
                     </div>
@@ -240,7 +240,7 @@ export default function CycleAnalytics() {
                       <div key={sy} className="flex items-center gap-2 text-xs">
                         <span className="text-white/60 w-28">{SYMPTOM_LABEL[sy] ?? sy}</span>
                         <div className="flex-1 h-3 rounded-full bg-white/5 overflow-hidden">
-                          <div className="h-full rounded-full bg-rose-400/50" style={{ width: `${Math.min(100, n * 12)}%` }} />
+                          <div className="h-full rounded-full bg-brand-pink/50" style={{ width: `${Math.min(100, n * 12)}%` }} />
                         </div>
                         <span className="text-white/30 w-10 text-right">{n} day{n > 1 ? 's' : ''}</span>
                       </div>
@@ -251,9 +251,9 @@ export default function CycleAnalytics() {
                   <div>
                     <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">Flow mix</p>
                     <div className="flex h-3 rounded-full overflow-hidden">
-                      {stats.flowLight > 0 && <div className="bg-pink-200/60" style={{ width: `${(stats.flowLight / stats.flowTotal) * 100}%` }} />}
-                      {stats.flowMed > 0 && <div className="bg-pink-400/70" style={{ width: `${(stats.flowMed / stats.flowTotal) * 100}%` }} />}
-                      {stats.flowHeavy > 0 && <div className="bg-pink-700/80" style={{ width: `${(stats.flowHeavy / stats.flowTotal) * 100}%` }} />}
+                      {stats.flowLight > 0 && <div className="bg-brand-pink/60" style={{ width: `${(stats.flowLight / stats.flowTotal) * 100}%` }} />}
+                      {stats.flowMed > 0 && <div className="bg-brand-pink/70" style={{ width: `${(stats.flowMed / stats.flowTotal) * 100}%` }} />}
+                      {stats.flowHeavy > 0 && <div className="bg-brand-pink-dim/80" style={{ width: `${(stats.flowHeavy / stats.flowTotal) * 100}%` }} />}
                     </div>
                     <p className="text-white/25 text-[10px] mt-1">{stats.flowLight} light · {stats.flowMed} medium · {stats.flowHeavy} heavy</p>
                   </div>
@@ -266,7 +266,7 @@ export default function CycleAnalytics() {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-white font-black">🗓️ Full history</h2>
                 <button
-                  className="btn btn-xs rounded-xl border border-pink-400/30 bg-pink-500/15 text-pink-100 font-bold"
+                  className="btn btn-xs rounded-xl border border-brand-pink/30 bg-brand-pink/15 text-brand-pink font-bold"
                   onClick={() => { setPastStart(''); setPastEnd(''); setPastType('hayd'); setPastOpen(true); }}
                 >＋ Log a past period</button>
               </div>
@@ -302,30 +302,30 @@ export default function CycleAnalytics() {
       {/* Past period modal */}
       {pastOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm grid place-items-center p-4" onClick={() => setPastOpen(false)}>
-          <div className="w-full max-w-sm rounded-3xl bg-brand-deep border border-pink-400/25 p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-sm rounded-3xl bg-brand-deep border border-brand-pink/25 p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-white font-black text-lg">🗓️ Log a past period</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-white/50 text-xs font-bold" htmlFor="past-start">Started</label>
                 <input id="past-start" type="date" value={pastStart} max={today} onChange={(e) => setPastStart(e.target.value)}
-                  className="input input-bordered input-sm w-full mt-1 bg-white/5 border-emerald-500/10 text-white" />
+                  className="input input-bordered input-sm w-full mt-1 bg-white/5 border-brand-emerald/10 text-white" />
               </div>
               <div>
                 <label className="text-white/50 text-xs font-bold" htmlFor="past-end">Ended</label>
                 <input id="past-end" type="date" value={pastEnd} max={today} onChange={(e) => setPastEnd(e.target.value)}
-                  className="input input-bordered input-sm w-full mt-1 bg-white/5 border-emerald-500/10 text-white" />
+                  className="input input-bordered input-sm w-full mt-1 bg-white/5 border-brand-emerald/10 text-white" />
               </div>
             </div>
             <div className="flex gap-2">
               {(['hayd', 'nifas'] as const).map((t) => (
                 <button key={t}
-                  className={`flex-1 btn btn-xs rounded-xl ${pastType === t ? 'bg-pink-500/30 border-pink-400/40 text-pink-100' : 'bg-white/5 border-emerald-500/10 text-white/50'}`}
+                  className={`flex-1 btn btn-xs rounded-xl ${pastType === t ? 'bg-brand-pink/30 border-brand-pink/40 text-brand-pink' : 'bg-white/5 border-brand-emerald/10 text-white/50'}`}
                   onClick={() => setPastType(t)}
                 >{t === 'hayd' ? '🌸 Period' : '🤱 Nifās'}</button>
               ))}
             </div>
             <button
-              className="w-full btn btn-sm rounded-2xl border-0 text-white font-black bg-gradient-to-r from-pink-500 to-rose-500"
+              className="w-full btn btn-sm rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-pink to-brand-pink"
               disabled={!pastStart || !pastEnd || addPast.isPending}
               onClick={() => addPast.mutate({ startDate: pastStart, endDate: pastEnd, type: pastType }, { onSuccess: () => setPastOpen(false) })}
             >

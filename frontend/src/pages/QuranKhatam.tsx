@@ -47,7 +47,7 @@ export default function QuranKhatam() {
           <>
             <motion.div
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              className="rounded-3xl p-6 sm:p-8 border border-brand-emerald/25 bg-gradient-to-br from-brand-emerald/15 via-teal-500/10 to-brand-deep relative overflow-hidden"
+              className="rounded-3xl p-6 sm:p-8 border border-brand-emerald/25 bg-gradient-to-br from-brand-emerald/15 via-brand-info/10 to-brand-deep relative overflow-hidden"
             >
               <p className="text-brand-emerald/80 text-xs font-bold uppercase tracking-widest">🕋 Khatam journey</p>
               <h2 className="text-2xl font-black text-white mt-1">
@@ -56,7 +56,7 @@ export default function QuranKhatam() {
 
               <div className="mt-4 h-3 rounded-full bg-white/10 overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-brand-emerald to-teal-400"
+                  className="h-full rounded-full bg-gradient-to-r from-brand-emerald to-brand-info"
                   initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8 }}
                 />
               </div>
@@ -68,7 +68,7 @@ export default function QuranKhatam() {
               {khatamStarted ? (
                 <>
                   <button
-                    className="mt-5 w-full btn h-13 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400"
+                    className="mt-5 w-full btn h-13 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-brand-emerald to-brand-info hover:from-brand-emerald hover:to-brand-info"
                     onClick={() => { if (pos) navigate(`/quran/read/${pos.surah}?start=${pos.ayah}&mode=khatam`); }}
                     disabled={!pos}
                   >
@@ -81,7 +81,7 @@ export default function QuranKhatam() {
               ) : (
                 <>
                   <button
-                    className="mt-5 w-full btn h-13 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400"
+                    className="mt-5 w-full btn h-13 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-brand-emerald to-brand-info hover:from-brand-emerald hover:to-brand-info"
                     disabled={startKhatam.isPending}
                     onClick={() => startKhatam.mutate(undefined, {
                       onSuccess: () => navigate('/quran/read/1?start=1&mode=khatam'),
