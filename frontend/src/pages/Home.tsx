@@ -163,7 +163,7 @@ export default function Home() {
       id: 'zikr',
       icon: '📿',
       title: t('home.zikrTitle'),
-      stats: { label: 'Today', value: effectiveToday },
+      stats: { label: t('home.today'), value: effectiveToday },
       link: '/zikr',
       accent: 'brand-emerald',
       border: 'border-brand-emerald/15',
@@ -175,8 +175,8 @@ export default function Home() {
       icon: '🕌',
       title: t('home.salatTitle'),
       stats: cycleActive
-        ? { label: 'Rayhanah', value: '🌸 Excused' }
-        : { label: 'Today', value: salatCompletedToday !== null ? `${salatCompletedToday}/5` : '—/5' },
+        ? { label: t('home.rayhanah'), value: `🌸 ${t('home.excused')}` }
+        : { label: t('home.today'), value: salatCompletedToday !== null ? `${salatCompletedToday}/5` : '—/5' },
       link: '/salat',
       accent: 'brand-info',
       border: 'border-brand-info/15',
@@ -185,12 +185,12 @@ export default function Home() {
     {
       id: 'fasting',
       icon: '🌙',
-      title: 'Fasting Tracker',
+      title: t('home.fastingTitle'),
       stats: cycleActive
-        ? { label: 'Rayhanah', value: '🌸 Excused' }
+        ? { label: t('home.rayhanah'), value: `🌸 ${t('home.excused')}` }
         : {
-            label: 'This month',
-            value: fastingSummary ? `${fastingSummary.stats.thisMonth} fasts` : '—',
+            label: t('home.thisMonth'),
+            value: fastingSummary ? `${fastingSummary.stats.thisMonth} ${t('home.fasts')}` : '—',
           },
       link: '/fasting',
       accent: 'brand-gold',
@@ -199,9 +199,9 @@ export default function Home() {
     {
       id: 'quran',
       icon: '📖',
-      title: 'Quran Habit',
+      title: t('home.quranTitle'),
       stats: {
-        label: 'Today',
+        label: t('home.today'),
         value: quranSummary
           ? `${quranSummary.todayAyat}/${quranSummary.profile.dailyGoalAyat} āyāt`
           : '—',
@@ -236,9 +236,9 @@ export default function Home() {
             <Link to="/cycle">
               <div className="rounded-2xl border border-brand-pink/20 bg-brand-pink/10 px-5 py-3.5 hover:border-brand-pink/30 transition-all">
                 <p className="text-brand-pink/90 font-bold text-sm">
-                  🌷 {upcomingCycleDays === 0 ? 'Your period may begin today' : `Your period may begin in ~${upcomingCycleDays} day${upcomingCycleDays > 1 ? 's' : ''}`}
+                  🌷 {upcomingCycleDays === 0 ? t('home.periodMayBegin') : upcomingCycleDays > 1 ? t('home.periodMayBeginInPlural', { days: upcomingCycleDays }) : t('home.periodMayBeginIn', { days: upcomingCycleDays })}
                 </p>
-                <p className="text-white/30 text-xs mt-0.5">Based on your own rhythm — open Rayhanah Cycle to see your calendar →</p>
+                <p className="text-white/30 text-xs mt-0.5">{t('home.openRayhanah')}</p>
               </div>
             </Link>
           </motion.div>
@@ -250,10 +250,10 @@ export default function Home() {
             <Link to="/cycle">
               <div className="rounded-2xl border border-brand-pink/25 bg-gradient-to-r from-brand-pink/15 via-brand-pink/10 to-brand-warm/10 px-5 py-4 hover:border-brand-pink/40 transition-all">
                 <p className="text-brand-pink font-bold text-sm">
-                  🌸 Rayhanah day {cycleActive.dayCount} — your reward flows on
+                  🌸 {t('home.rayhanahDay', { day: cycleActive.dayCount })}
                 </p>
                 <p className="text-white/40 text-xs mt-1">
-                  Salat & fasting are lifted from you — open your Garden of Light for today's dhikr, Quran & ṣalawāt →
+                  {t('home.rayhanahDetail')}
                 </p>
               </div>
             </Link>
@@ -285,38 +285,38 @@ export default function Home() {
                   <div className="min-w-0 flex-1">
                     {prayerWidgetData.forbiddenWindow ? (
                       <>
-                        <p className="text-red-400/60 text-[10px] uppercase tracking-widest leading-none mb-0.5">Forbidden Time</p>
+                        <p className="text-red-400/60 text-[10px] uppercase tracking-widest leading-none mb-0.5">{t('home.forbiddenTime')}</p>
                         <p className="text-red-300 font-black text-sm leading-tight">
                           {prayerWidgetData.forbiddenWindow.label.replace('Forbidden — ', '')}
                         </p>
                         <p className="text-white/30 text-[10px] mt-0.5">
-                          ends {formatTime(prayerWidgetData.forbiddenWindow.end)} — no prayer
+                          {t('common.ends')} {formatTime(prayerWidgetData.forbiddenWindow.end)} — {t('home.noPrayer')}
                         </p>
                       </>
                     ) : prayerWidgetData.currentMandatory ? (
                       <>
-                        <p className="text-white/30 text-[10px] uppercase tracking-widest leading-none mb-0.5">Current</p>
+                        <p className="text-white/30 text-[10px] uppercase tracking-widest leading-none mb-0.5">{t('home.current')}</p>
                         <p className="text-white font-black text-sm leading-tight">
                           {PRAYER_META.find((p) => p.id === prayerWidgetData.currentMandatory)?.name}
                         </p>
                         <p className="text-white/30 text-[10px] mt-0.5">
-                          ends {formatTime(prayerWidgetData.currentMandatoryEnd!)}
+                          {t('common.ends')} {formatTime(prayerWidgetData.currentMandatoryEnd!)}
                         </p>
                         {/* Nafl alongside mandatory (Awabeen during Maghrib, Tahajjud during Isha) */}
                         {prayerWidgetData.naflWindow && (
                           <div className="mt-1 pt-1 border-t border-brand-border/40">
                             <p className="text-brand-warm/80 text-[10px] font-semibold leading-none">
-                              {prayerWidgetData.naflWindow.icon} {prayerWidgetData.naflWindow.name} time
+                              {prayerWidgetData.naflWindow.icon} {prayerWidgetData.naflWindow.name} {t('common.time')}
                             </p>
                             <p className="text-white/25 text-[10px] leading-none mt-0.5">
-                              until {formatTime(prayerWidgetData.naflWindow.end)}
+                              {t('common.until')} {formatTime(prayerWidgetData.naflWindow.end)}
                             </p>
                           </div>
                         )}
                       </>
                     ) : prayerWidgetData.naflWindow ? (
                       <>
-                        <p className="text-brand-info/60 text-[10px] uppercase tracking-widest leading-none mb-0.5">Nafl Time</p>
+                        <p className="text-brand-info/60 text-[10px] uppercase tracking-widest leading-none mb-0.5">{t('home.naflTime')}</p>
                         <p className="text-brand-info font-black text-sm leading-tight">{prayerWidgetData.naflWindow.name}</p>
                         <p className="text-white/30 text-[10px] mt-0.5">
                           {formatTime(prayerWidgetData.naflWindow.start)} – {formatTime(prayerWidgetData.naflWindow.end)}
@@ -324,10 +324,10 @@ export default function Home() {
                       </>
                     ) : (
                       <>
-                        <p className="text-white/25 text-[10px] uppercase tracking-widest leading-none mb-0.5">Free Time</p>
-                        <p className="text-white/50 font-semibold text-sm leading-tight">Next prayer coming up</p>
+                        <p className="text-white/25 text-[10px] uppercase tracking-widest leading-none mb-0.5">{t('home.freeTime')}</p>
+                        <p className="text-white/50 font-semibold text-sm leading-tight">{t('home.nextPrayerComing')}</p>
                         <p className="text-white/25 text-[10px] mt-0.5">
-                          in {prayerWidgetData.nextHh > 0 ? `${prayerWidgetData.nextHh}h ` : ''}
+                          {t('common.in')} {prayerWidgetData.nextHh > 0 ? `${prayerWidgetData.nextHh}h ` : ''}
                           {String(prayerWidgetData.nextMm).padStart(2, '0')}m
                         </p>
                       </>
@@ -337,7 +337,7 @@ export default function Home() {
                   {/* Ends-in counter (right side of left section) */}
                   {(prayerWidgetData.endHh > 0 || prayerWidgetData.endMm > 0) && (
                     <div className="text-right shrink-0">
-                      <p className="text-white/30 text-[10px] uppercase tracking-widest leading-none mb-0.5">Ends in</p>
+                      <p className="text-white/30 text-[10px] uppercase tracking-widest leading-none mb-0.5">{t('home.endsIn')}</p>
                       <p className={`font-black text-base tabular-nums leading-tight ${
                         prayerWidgetData.forbiddenWindow ? 'text-red-400' : 'text-brand-gold'
                       }`}>
@@ -358,7 +358,7 @@ export default function Home() {
                       {PRAYER_META.find((p) => p.id === prayerWidgetData.nextMandatory)?.icon}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-white/30 text-[10px] uppercase tracking-widest leading-none mb-0.5">Next</p>
+                      <p className="text-white/30 text-[10px] uppercase tracking-widest leading-none mb-0.5">{t('home.next')}</p>
                       <p className="text-brand-emerald font-bold text-xs leading-tight">
                         {PRAYER_META.find((p) => p.id === prayerWidgetData.nextMandatory)?.name}
                       </p>
@@ -366,7 +366,7 @@ export default function Home() {
                     </div>
                   </div>
                   <p className="text-white/20 text-[10px] mt-1">
-                    in {prayerWidgetData.nextHh > 0 ? `${prayerWidgetData.nextHh}h ` : ''}
+                    {t('common.in')} {prayerWidgetData.nextHh > 0 ? `${prayerWidgetData.nextHh}h ` : ''}
                     {String(prayerWidgetData.nextMm).padStart(2, '0')}m
                   </p>
                 </div>
@@ -387,12 +387,12 @@ export default function Home() {
                   : <MapPinIcon className="w-5 h-5 text-brand-emerald/60 shrink-0" />
                 }
                 <div className="min-w-0">
-                  <p className="text-white/70 font-semibold text-sm leading-none mb-0.5">Enable Prayer Times</p>
-                  <p className="text-white/30 text-xs">Tap to share your location and see live prayer times here</p>
+                  <p className="text-white/70 font-semibold text-sm leading-none mb-0.5">{t('home.enablePrayerTimes')}</p>
+                  <p className="text-white/30 text-xs">{t('home.enablePrayerTimesDetail')}</p>
                 </div>
               </div>
               <span className="text-brand-emerald/50 text-xs font-semibold shrink-0">
-                {locLoading ? 'Locating…' : 'Set Location →'}
+                {locLoading ? t('home.locating') : t('home.setLocation')}
               </span>
             </motion.button>
           )}
@@ -439,10 +439,10 @@ export default function Home() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <h3 className="text-brand-gold font-black text-sm">
-                      {fridayHour.isFinalStretch ? 'The hour of response — now' : 'Friday: the hour of response'}
+                      {fridayHour.isFinalStretch ? t('home.fridayHourNow') : t('home.fridayHourTitle')}
                     </h3>
                     <span className="text-brand-gold/70 text-xs font-bold tabular-nums">
-                      {fridayHour.countdown} to Maghrib
+                      {fridayHour.countdown} {t('home.toMaghrib')}
                     </span>
                   </div>
                   <p className="text-white/60 text-xs mt-1.5 leading-relaxed">
@@ -473,7 +473,7 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <span className="text-2xl shrink-0">🌟</span>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-brand-emerald font-black text-sm">It's Friday — read Sūrat al-Kahf</h3>
+                  <h3 className="text-brand-emerald font-black text-sm">{t('home.fridayKahf')}</h3>
                   <p className="text-white/50 text-xs mt-1 leading-relaxed">
                     "A light will shine for him between the two Fridays."
                   </p>
@@ -534,7 +534,7 @@ export default function Home() {
                             title={ramadan.active ? 'Open the Ramadan tracker' : 'Countdown to Ramadan'}
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/ramadan'); }}
                           >
-                            {ramadan.active ? `🌙 Ramadan · Day ${ramadan.todayNumber}` : `🌙 Ramadan in ${ramadan.daysUntil}d`}
+                            {ramadan.active ? `🌙 ${t('home.ramadanDay', { day: ramadan.todayNumber })}` : `🌙 ${t('home.ramadanIn', { days: ramadan.daysUntil })}`}
                           </button>
                         )}
                       </div>
@@ -555,17 +555,17 @@ export default function Home() {
             <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-brand-gold/20 bg-brand-gold/[0.06] hover:bg-brand-gold/10 transition-all">
               <span className="text-2xl shrink-0">🤝</span>
               <div className="min-w-0 flex-1">
-                <h2 className="text-sm font-black text-white">Friends & Leaderboard</h2>
-                <p className="text-white/30 text-xs truncate">Race each other to good deeds — Quran 2:148</p>
+                <h2 className="text-sm font-black text-white">{t('home.friendsTitle')}</h2>
+                <p className="text-white/30 text-xs truncate">{t('home.friendsSubtitle')}</p>
               </div>
               <span className="shrink-0 text-brand-gold/60 text-xs font-bold group-hover:text-brand-gold transition-colors">
-                Compete →
+                {t('home.compete')}
               </span>
             </div>
           </Link>
         </motion.div>
 
-        <div className="text-center text-xs text-white/30 pb-4">May your remembrance be constant.</div>
+        <div className="text-center text-xs text-white/30 pb-4">{t('home.footer')}</div>
       </div>
     </AnimatedBackground>
   );

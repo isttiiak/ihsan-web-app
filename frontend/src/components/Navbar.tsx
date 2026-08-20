@@ -22,7 +22,9 @@ import {
   ShieldCheckIcon,
   ChatBubbleLeftRightIcon,
   EnvelopeIcon,
+  GlobeAltIcon,
 } from '@heroicons/react/24/outline';
+import i18n from '../i18n.js';
 
 // ── Page metadata ─────────────────────────────────────────────────────────────
 // i18n keys for the translatable page titles (fallback = the English title)
@@ -264,8 +266,17 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* ── Right: noor + profile ─────────────────────── */}
+          {/* ── Right: lang + noor + profile ────────────────── */}
           <div className="flex items-center gap-0.5 flex-shrink-0">
+            {/* Language toggle — cycles en ↔ bn */}
+            <button
+              onClick={() => { void i18n.changeLanguage(i18n.resolvedLanguage === 'bn' ? 'en' : 'bn'); }}
+              aria-label={t('nav.switchLang')}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all mr-0.5"
+            >
+              <GlobeAltIcon className="w-4 h-4" />
+              <span className="text-[10px] font-bold uppercase">{i18n.resolvedLanguage === 'bn' ? 'EN' : 'বা'}</span>
+            </button>
             {user && noor && (noorTodayVisible || noorAllTimeVisible) && (
               <div className="flex items-center gap-1 mr-1">
                 {noorTodayVisible && (
@@ -372,7 +383,7 @@ export default function Navbar() {
                           className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-brand-pink/10 text-sm transition-colors"
                         >
                           <span className="w-4 h-4 grid place-items-center text-brand-pink/90 text-sm leading-none">🌸</span>
-                          Rayhanah Cycle
+                          {t('nav.rayhanahCycle')}
                         </Link>
                       )}
 
@@ -383,7 +394,7 @@ export default function Navbar() {
                         className="flex items-center gap-2.5 px-3 py-2.5 mt-1 rounded-xl border border-brand-emerald/15 text-white/70 hover:text-white hover:bg-white/5 hover:border-brand-emerald/40 text-sm transition-colors"
                       >
                         <ChatBubbleLeftRightIcon className="w-4 h-4 text-brand-emerald/70" />
-                        Feedback & Contact
+                        {t('nav.feedbackContact')}
                       </Link>
 
                       <div className="border-t border-brand-border/60 mt-1 pt-1">
@@ -417,10 +428,10 @@ export default function Navbar() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="card bg-brand-surface border border-brand-border shadow-2xl w-full max-w-sm">
             <div className="card-body gap-4 p-6">
-              <h3 className="text-lg font-black text-brand-emerald">Sign Out?</h3>
-              <p className="text-sm text-white/60">Are you sure? Any unsynced counts will be lost.</p>
+              <h3 className="text-lg font-black text-brand-emerald">{t('nav.signOutConfirm')}</h3>
+              <p className="text-sm text-white/60">{t('nav.signOutMsg')}</p>
               <div className="flex gap-3 justify-end">
-                <button className="btn btn-ghost btn-sm text-white/60" onClick={() => setConfirmLogout(false)}>Cancel</button>
+                <button className="btn btn-ghost btn-sm text-white/60" onClick={() => setConfirmLogout(false)}>{t('common.cancel')}</button>
                 <button
                   className="btn btn-sm bg-red-500 hover:bg-red-600 text-white border-0"
                   onClick={async () => {
@@ -434,7 +445,7 @@ export default function Navbar() {
                     navigate('/', { replace: true });
                   }}
                 >
-                  Sign Out
+                  {t('nav.signOut')}
                 </button>
               </div>
             </div>

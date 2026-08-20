@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 
@@ -11,46 +12,17 @@ const fadeUp = {
   transition: { duration: 0.5 },
 };
 
-const FEATURES = [
-  {
-    emoji: '🕌', title: 'Salat Tracker',
-    text: 'All five prayers with on-time, late and missed states — plus sunnah and nafl. Mark the tasbīḥ after a prayer and it logs to your zikr count on its own; Āyatul Kursī and the post-salat surahs are one tap away.',
-    grad: 'from-brand-info/20 to-brand-warm/10', border: 'border-brand-info/25',
-    to: '/salat',
-  },
-  {
-    emoji: '📿', title: 'Zikr Counter',
-    text: 'A beautiful tap counter with goals, fair streaks that give you a grace day, and a verified library of ṣalawāt, istighfār and the weighty words — with Arabic, transliteration and the exact reference for each.',
-    grad: 'from-brand-emerald/20 to-brand-info/10', border: 'border-brand-emerald/25',
-    to: '/zikr',
-  },
-  {
-    emoji: '📖', title: 'Quran — read & listen',
-    text: 'An āyah-by-āyah reader with recitation, word highlighting, Bengali & English translations, a khatam journey, seven reciters, and one unified streak.',
-    grad: 'from-brand-info/20 to-brand-info/10', border: 'border-brand-info/25',
-    to: '/quran',
-  },
-  {
-    emoji: '🌙', title: 'Fasting + Ramadan',
-    text: 'Qaḍā, kaffārah, vows and every sunnah day — each rule cited to its exact hadith. And a dedicated Ramadan home with suhoor, iftar, tarawih and Laylat al-Qadr.',
-    grad: 'from-brand-gold/20 to-brand-warm/10', border: 'border-brand-gold/25',
-    to: '/fasting',
-  },
-  {
-    emoji: '🕐', title: 'Prayer Times',
-    text: 'Computed fully on your device — your location never leaves your browser. Live countdowns, forbidden windows, nafl windows.',
-    grad: 'from-brand-info/20 to-brand-info/10', border: 'border-brand-info/25',
-    to: '/prayer-times',
-  },
-  {
-    emoji: '🤝', title: 'Friends & Noor',
-    text: '"So compete with one another in doing good" (Quran 2:148). Connect with one link and race each other gently with Noor — a calm daily light out of 100.',
-    grad: 'from-brand-pink/20 to-brand-warm/10', border: 'border-brand-pink/25',
-    to: '/friends',
-  },
+const FEATURE_DEFS = [
+  { emoji: '🕌', titleKey: 'landing.featureSalat', textKey: 'landing.featureSalatDesc', grad: 'from-brand-info/20 to-brand-warm/10', border: 'border-brand-info/25', to: '/salat' },
+  { emoji: '📿', titleKey: 'landing.featureZikr', textKey: 'landing.featureZikrDesc', grad: 'from-brand-emerald/20 to-brand-info/10', border: 'border-brand-emerald/25', to: '/zikr' },
+  { emoji: '📖', titleKey: 'landing.featureQuran', textKey: 'landing.featureQuranDesc', grad: 'from-brand-info/20 to-brand-info/10', border: 'border-brand-info/25', to: '/quran' },
+  { emoji: '🌙', titleKey: 'landing.featureFasting', textKey: 'landing.featureFastingDesc', grad: 'from-brand-gold/20 to-brand-warm/10', border: 'border-brand-gold/25', to: '/fasting' },
+  { emoji: '🕐', titleKey: 'landing.featurePrayer', textKey: 'landing.featurePrayerDesc', grad: 'from-brand-info/20 to-brand-info/10', border: 'border-brand-info/25', to: '/prayer-times' },
+  { emoji: '🤝', titleKey: 'landing.featureFriends', textKey: 'landing.featureFriendsDesc', grad: 'from-brand-pink/20 to-brand-warm/10', border: 'border-brand-pink/25', to: '/friends' },
 ];
 
 export default function Landing() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { enterDemoMode } = useAuthStore();
   const [showPicker, setShowPicker] = useState(false);
@@ -74,15 +46,13 @@ export default function Landing() {
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }}
             className="text-4xl sm:text-6xl font-black text-white leading-tight"
           >
-            Worship, <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-emerald to-brand-info">beautifully kept</span>
+            {t('landing.heroTitle1')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-emerald to-brand-info">{t('landing.heroTitle2')}</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }}
             className="text-white/50 text-base sm:text-lg max-w-2xl mx-auto mt-5 leading-relaxed"
           >
-            Iḥsān is to worship Allah as though you see Him. This is your companion for that path —
-            salat, zikr, Quran, fasting, and the gentle numbers that keep you going. Free, ad-free,
-            and honest with every reference.
+            {t('landing.heroDesc')}
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32, duration: 0.5 }}
@@ -91,16 +61,16 @@ export default function Landing() {
             <button
               className="btn h-13 px-8 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-brand-emerald to-brand-info hover:from-brand-emerald hover:to-brand-info shadow-xl shadow-brand-emerald-dim/40"
               onClick={() => navigate('/signup')}
-            >Begin your journey — free</button>
+            >{t('landing.cta')}</button>
             <button
               className="btn h-13 px-6 rounded-2xl bg-white/5 border-brand-emerald/15 text-white/80 font-bold"
               onClick={() => setShowPicker(true)}
-            >Explore the full app</button>
+            >{t('landing.ctaExplore')}</button>
           </motion.div>
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
             className="text-white/25 text-xs mt-4"
-          >No ads · no subscriptions · your data stays yours</motion.p>
+          >{t('landing.noAds')}</motion.p>
         </section>
 
         {/* ── Rayhanah highlight — the first ── */}
@@ -113,14 +83,11 @@ export default function Landing() {
             <div className="relative sm:flex items-center gap-8">
               <div className="text-6xl sm:text-7xl text-center sm:text-left mb-4 sm:mb-0">🌸</div>
               <div>
-                <p className="text-brand-pink/80 text-xs font-black uppercase tracking-widest">A first among Muslim productivity apps</p>
-                <h2 className="text-2xl sm:text-3xl font-black text-white mt-2">Rayhanah Cycle — for our sisters</h2>
+                <p className="text-brand-pink/80 text-xs font-black uppercase tracking-widest">{t('landing.rayhanahHighlight')}</p>
+                <h2 className="text-2xl sm:text-3xl font-black text-white mt-2">{t('landing.rayhanahTitle')}</h2>
                 <p className="text-brand-pink/70 text-sm sm:text-base mt-3 leading-relaxed max-w-2xl">
-                  Allah Himself excused women from salat and fasting during their days — so Ihsan does too,
-                  with zero guilt. Cycle tracking with predictions and wellness notes, a ghusl guide,
-                  Ramadan days flowing into the make-up counter automatically, and a Noor score that keeps
-                  shining from dhikr, Quran and ṣalawāt. Completely private:
-                  <span className="font-bold text-brand-pink"> no friend can ever tell.</span>
+                  {t('landing.rayhanahDesc')}
+                  <span className="font-bold text-brand-pink">{t('landing.rayhanahPrivate')}</span>
                 </p>
               </div>
             </div>
@@ -129,9 +96,9 @@ export default function Landing() {
 
         {/* ── Feature grid ── */}
         <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-          {FEATURES.map((f, i) => (
+          {FEATURE_DEFS.map((f, i) => (
             <motion.div
-              key={f.title}
+              key={f.titleKey}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
@@ -142,9 +109,9 @@ export default function Landing() {
                 className={`block rounded-3xl border ${f.border} bg-gradient-to-br ${f.grad} p-6 h-full transition-transform hover:scale-[1.02] hover:shadow-lg`}
               >
                 <div className="text-4xl mb-3">{f.emoji}</div>
-                <h3 className="text-white font-black text-lg">{f.title}</h3>
-                <p className="text-white/50 text-sm mt-2 leading-relaxed">{f.text}</p>
-                <span className="inline-block mt-3 text-xs font-semibold text-brand-emerald/70">Try it →</span>
+                <h3 className="text-white font-black text-lg">{t(f.titleKey)}</h3>
+                <p className="text-white/50 text-sm mt-2 leading-relaxed">{t(f.textKey)}</p>
+                <span className="inline-block mt-3 text-xs font-semibold text-brand-emerald/70">{t('landing.tryIt')}</span>
               </Link>
             </motion.div>
           ))}
@@ -155,11 +122,9 @@ export default function Landing() {
           <div className="rounded-3xl border border-brand-gold/25 bg-gradient-to-r from-brand-gold/10 to-transparent p-6 sm:p-8 sm:flex items-center gap-6">
             <div className="text-5xl text-center sm:text-left mb-3 sm:mb-0">🔍</div>
             <div>
-              <h3 className="text-white font-black text-lg">Every reference, verified</h3>
+              <h3 className="text-white font-black text-lg">{t('landing.verifiedTitle')}</h3>
               <p className="text-white/50 text-sm mt-1.5 leading-relaxed max-w-2xl">
-                Each Quran verse and hadith in Ihsan links to quran.com or sunnah.com with its exact
-                number, and grades are shown where they matter. No fabricated virtues, no folklore —
-                if we can't verify it, we don't say it.
+                {t('landing.verifiedDesc')}
               </p>
             </div>
           </div>
@@ -169,10 +134,9 @@ export default function Landing() {
         <motion.section {...fadeUp} className="mb-12">
           <div className="rounded-3xl border border-brand-emerald/10 bg-brand-deep/70 p-6 sm:p-8 text-center">
             <div className="text-4xl mb-2">🌅</div>
-            <h3 className="text-white font-black text-lg">Your day begins at Fajr — not midnight</h3>
+            <h3 className="text-white font-black text-lg">{t('landing.fajrTitle')}</h3>
             <p className="text-white/40 text-sm mt-2 max-w-xl mx-auto leading-relaxed">
-              Isha prayed after midnight and suhoor before dawn belong to the right day, because Ihsan's
-              tracking day flows the way a worship day actually does: dawn to dawn.
+              {t('landing.fajrDesc')}
             </p>
           </div>
         </motion.section>
@@ -189,9 +153,9 @@ export default function Landing() {
             <button
               className="btn h-13 px-10 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-brand-emerald to-brand-info hover:from-brand-emerald hover:to-brand-info shadow-xl shadow-brand-emerald-dim/40"
               onClick={() => navigate('/signup')}
-            >Create your free account</button>
+            >{t('landing.finalCta')}</button>
             <Link to="/about" className="btn h-13 px-6 rounded-2xl bg-white/5 border-brand-emerald/15 text-white/70 font-bold">
-              Read our story
+              {t('landing.readOurStory')}
             </Link>
           </div>
         </motion.section>
@@ -214,22 +178,22 @@ export default function Landing() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-4xl mb-3">🌙</div>
-              <h3 className="text-white font-black text-xl">How would you like to explore?</h3>
-              <p className="text-white/40 text-sm mt-2 mb-6">Choose a demo profile — you can explore all features freely.</p>
+              <h3 className="text-white font-black text-xl">{t('landing.genderPickerTitle')}</h3>
+              <p className="text-white/40 text-sm mt-2 mb-6">{t('landing.genderPickerDesc')}</p>
               <div className="flex gap-3">
                 <button
                   className="flex-1 py-4 rounded-2xl border border-brand-info/25 bg-brand-info/10 hover:bg-brand-info/20 transition-colors"
                   onClick={() => pickGender('male')}
                 >
                   <div className="text-3xl mb-1">🕌</div>
-                  <div className="text-white font-bold text-sm">Brother</div>
+                  <div className="text-white font-bold text-sm">{t('landing.brother')}</div>
                 </button>
                 <button
                   className="flex-1 py-4 rounded-2xl border border-brand-pink/25 bg-brand-pink/10 hover:bg-brand-pink/20 transition-colors"
                   onClick={() => pickGender('female')}
                 >
                   <div className="text-3xl mb-1">🌸</div>
-                  <div className="text-white font-bold text-sm">Sister</div>
+                  <div className="text-white font-bold text-sm">{t('landing.sister')}</div>
                 </button>
               </div>
             </motion.div>

@@ -328,32 +328,30 @@ export default function Settings() {
               ))}
             </div>
             <p className="text-white/25 text-[10px] mt-3 leading-relaxed">
-              বাংলা covers the main screens today — the rest is arriving screen by screen, and every
-              untranslated text safely falls back to English. Quran &amp; hadith references are never
-              machine-translated.
+              {t('settings.languageNote')}
             </p>
           </SectionCard>
 
           {/* ── Noor display ── */}
           <SectionCard
             icon={<SparklesIcon className="w-5 h-5 text-brand-gold" />}
-            title="Noor in the navbar"
-            subtitle="Your daily light — always shown on the Friends page; turn these on to carry it everywhere"
+            title={t('settings.noorSection')}
+            subtitle={t('settings.noorSubtitle')}
             delay={0.05}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Toggle
                 checked={showNoorToday}
                 onChange={setShowNoorToday}
-                title="✨ Today's Noor"
-                detail="Fresh every morning — resets at midnight"
+                title={`✨ ${t('settings.noorToday')}`}
+                detail={t('settings.noorTodayDetail')}
                 accent="toggle-success"
               />
               <Toggle
                 checked={showNoorAllTime}
                 onChange={setShowNoorAllTime}
-                title="🌟 All-time Noor"
-                detail="Every day's light gathered — never resets"
+                title={`🌟 ${t('settings.noorAllTime')}`}
+                detail={t('settings.noorAllTimeDetail')}
                 accent="toggle-warning"
               />
             </div>
@@ -362,8 +360,8 @@ export default function Settings() {
           {/* ── Islamic calendar ── */}
           <SectionCard
             icon={<MoonIcon className="w-5 h-5 text-brand-gold" />}
-            title="Hijri date adjustment"
-            subtitle="Match your local moon sighting — affects special days and fasting rules everywhere"
+            title={t('settings.hijriSection')}
+            subtitle={t('settings.hijriSubtitle')}
             delay={0.1}
           >
             <div className="flex items-center gap-2">
@@ -377,34 +375,34 @@ export default function Settings() {
                       : 'bg-brand-deep text-white/50 border-brand-border hover:text-white'
                   }`}
                 >
-                  {d === 0 ? 'Default' : d > 0 ? '+1 day' : '−1 day'}
+                  {d === 0 ? t('settings.hijriDefault') : d > 0 ? t('settings.hijriPlus') : t('settings.hijriMinus')}
                 </button>
               ))}
             </div>
             <p className="text-brand-gold/60 text-xs mt-3">
               Today: {(() => { const h = getHijriToday(); return h ? formatHijriDate(h) : '—'; })()}
-              <span className="text-white/30"> · Bangladesh, India &amp; Pakistan are often −1 day from the default (Umm al-Qura) calendar</span>
+              <span className="text-white/30"> · {t('settings.hijriNote')}</span>
             </p>
           </SectionCard>
 
           {/* ── Accessibility ── */}
           <SectionCard
             icon={<EyeIcon className="w-5 h-5 text-brand-info" />}
-            title="Accessibility"
+            title={t('settings.accessibilitySection')}
             delay={0.15}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Toggle
                 checked={reduceMotion}
                 onChange={setReduceMotion}
-                title="Reduce animations"
-                detail="Tone down motion effects and celebrations"
+                title={t('settings.reduceMotion')}
+                detail={t('settings.reduceMotionDetail')}
               />
               <Toggle
                 checked={highContrast}
                 onChange={setHighContrast}
-                title="High contrast"
-                detail="Stronger text and focus outlines"
+                title={t('settings.highContrast')}
+                detail={t('settings.highContrastDetail')}
                 accent="toggle-warning"
               />
             </div>
@@ -413,8 +411,8 @@ export default function Settings() {
           {/* ── Naseeh AI companion ── */}
           <SectionCard
             icon={<SparklesIcon className="w-5 h-5 text-brand-gold" />}
-            title="Naseeh AI companion"
-            subtitle="Personalised encouragement from your weekly activity — never a source of religious evidence"
+            title={t('settings.naseehSection')}
+            subtitle={t('settings.naseehSubtitle')}
             delay={0.18}
           >
             <Toggle
@@ -423,8 +421,8 @@ export default function Settings() {
                 setAiEnabled(v);
                 if (user) api.patch('/api/user/me', { aiEnabled: v }).catch(() => {});
               }}
-              title="Enable Naseeh"
-              detail="Weekly reflections, streak coaching and fasting companion"
+              title={t('settings.enableNaseeh')}
+              detail={t('settings.enableNaseehDetail')}
               accent="toggle-warning"
             />
           </SectionCard>
@@ -432,8 +430,8 @@ export default function Settings() {
           {/* ── Zikr library ── */}
           <SectionCard
             icon={<span className="text-lg">📿</span>}
-            title="Zikr library"
-            subtitle="Ṣalawāt, istighfār, the weighty words — verified adhkār to add to your counter"
+            title={t('settings.zikrLibrary')}
+            subtitle={t('settings.zikrLibrarySubtitle')}
             delay={0.22}
           >
             <ZikrLibrarySection />
@@ -442,8 +440,8 @@ export default function Settings() {
           {/* ── Your data ── */}
           <SectionCard
             icon={<ShieldCheckIcon className="w-5 h-5 text-brand-emerald" />}
-            title="Your data"
-            subtitle="It's yours — take it with you or remove it, feature by feature"
+            title={t('settings.dataSection')}
+            subtitle={t('settings.dataSubtitle')}
             delay={0.25}
           >
             <div className="flex flex-wrap gap-2 mb-5">
@@ -453,7 +451,7 @@ export default function Settings() {
                 disabled={exporting}
               >
                 {exporting ? <span className="loading loading-spinner loading-xs" /> : <ArrowDownTrayIcon className="w-4 h-4" />}
-                Full backup (.json)
+                {t('settings.fullBackup')}
               </button>
               <button
                 className="btn btn-sm bg-brand-deep border border-brand-border text-white/70 hover:text-white gap-2"
@@ -461,27 +459,25 @@ export default function Settings() {
                 disabled={exportingXlsx}
               >
                 {exportingXlsx ? <span className="loading loading-spinner loading-xs" /> : <ArrowDownTrayIcon className="w-4 h-4" />}
-                Export as Excel (.xlsx)
+                {t('settings.exportExcel')}
               </button>
               <label className={`btn btn-sm bg-brand-deep border border-brand-border text-white/70 hover:text-white gap-2 cursor-pointer ${importing ? 'pointer-events-none opacity-60' : ''}`}>
                 {importing ? <span className="loading loading-spinner loading-xs" /> : <ArrowUpTrayIcon className="w-4 h-4" />}
-                Restore backup
+                {t('settings.restoreBackup')}
                 <input type="file" accept="application/json,.json" className="hidden" onChange={(e) => void importProfile(e)} />
               </label>
             </div>
             <p className="text-white/30 text-[11px] mb-4 leading-relaxed">
-              The .json backup contains <b className="text-white/50">everything</b> — zikr history, salat, fasting,
-              Quran progress{user?.gender === 'female' ? ', Rayhanah cycle data' : ''} and your profile. Restoring
-              merges it back: days in the file overwrite the same days here, everything else stays.
+              {t('settings.backupNote')}{user?.gender === 'female' ? t('settings.backupNoteCycle') : ''}
             </p>
 
             {/* Saved prayer location (stored only in this browser) */}
             <div className="flex items-center gap-3 p-2.5 rounded-xl border border-brand-border bg-brand-deep/40 mb-5">
               <span className="text-lg shrink-0">📍</span>
               <div className="flex-1 min-w-0">
-                <p className="text-white/70 text-sm font-semibold">Prayer times location</p>
+                <p className="text-white/70 text-sm font-semibold">{t('settings.prayerLocation')}</p>
                 <p className="text-white/30 text-[11px] truncate">
-                  {savedLocation ? `${savedLocation} — stored only in this browser` : 'Not set — choose one on the Prayer Times page'}
+                  {savedLocation ? t('settings.locationSet', { name: savedLocation }) : t('settings.locationNotSet')}
                 </p>
               </div>
               {savedLocation && (
@@ -492,18 +488,18 @@ export default function Settings() {
                     toast.success('Saved location cleared.');
                   }}
                   className="btn btn-xs btn-ghost text-white/40 hover:text-red-400 shrink-0"
-                >Clear</button>
+                >{t('settings.clearLocation')}</button>
               )}
             </div>
 
             {/* separator: everything below is destructive (Istiak's spec) */}
             <div className="flex items-center gap-3 my-5">
               <div className="flex-1 border-t border-red-500/25" />
-              <span className="text-red-400/80 text-[11px] uppercase tracking-widest font-bold">⚠️ Danger zone</span>
+              <span className="text-red-400/80 text-[11px] uppercase tracking-widest font-bold">⚠️ {t('settings.dangerZone')}</span>
               <div className="flex-1 border-t border-red-500/25" />
             </div>
             <div className="rounded-2xl bg-red-500/[0.08] border border-red-500/25 p-3 space-y-3">
-              <p className="text-red-300/60 text-[11px]">These actions cannot be undone — take a full backup first.</p>
+              <p className="text-red-300/60 text-[11px]">{t('settings.dangerNote')}</p>
               {dangerGroups.map((g) => (
                 <div key={g.id} className={`rounded-2xl border ${g.card} p-3 space-y-1.5`}>
                   <p className="text-white/70 text-xs font-black">{g.emoji} {g.title}</p>
@@ -520,10 +516,10 @@ export default function Settings() {
                             disabled={deleting === row.id}
                             className="btn btn-xs bg-red-500 hover:bg-red-600 text-white border-0"
                           >
-                            {deleting === row.id ? <span className="loading loading-spinner loading-xs" /> : 'Yes, do it'}
+                            {deleting === row.id ? <span className="loading loading-spinner loading-xs" /> : t('settings.yesDoIt')}
                           </button>
                           <button onClick={() => setConfirmTarget(null)} className="btn btn-xs btn-ghost text-white/50">
-                            Cancel
+                            {t('common.cancel')}
                           </button>
                         </div>
                       ) : (
@@ -532,7 +528,7 @@ export default function Settings() {
                           aria-label={row.label}
                           className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10 gap-1 shrink-0"
                         >
-                          <TrashIcon className="w-3.5 h-3.5" /> {row.method === 'delete' ? 'Delete' : row.id === 'quran-khatam' ? 'Reset' : 'Remove'}
+                          <TrashIcon className="w-3.5 h-3.5" /> {row.method === 'delete' ? t('common.delete') : row.id === 'quran-khatam' ? t('common.reset') : t('common.remove')}
                         </button>
                       )}
                     </div>
@@ -541,7 +537,7 @@ export default function Settings() {
               ))}
             </div>
             <p className="text-white/25 text-[10px] mt-3">
-              Account details (name, photo, email) are managed from your <a href="/profile" className="underline text-white/40">Profile</a> page.
+              {t('settings.accountNote')}
             </p>
           </SectionCard>
 
