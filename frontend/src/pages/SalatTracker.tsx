@@ -214,19 +214,27 @@ export default function SalatTracker() {
   // Nafl state
   const [naflExpanded, setNaflExpanded] = useState(false);
   const [naflInfoExpanded, setNaflInfoExpanded] = useState<NaflType | null>(null);
+  const [rakatOverrides, setRakatOverrides] = useState<Record<string, number>>({});
 
   const naflEntry = log?.nafl ?? { completed: false, types: [], rakat: 2 };
+
+  const getTypeRakat = (type: NaflType): number => {
+    if (type in rakatOverrides) return rakatOverrides[type];
+    const meta = NAFL_TYPE_META.find((m) => m.id === type);
+    return meta?.defaultRakat ?? MIN_RAKAT;
+  };
+
+  const naflTotalRakat = (naflEntry.types ?? []).reduce((s, t) => s + getTypeRakat(t), 0);
 
   const handleNaflToggle = () => {
     if (!user) { setShowGuestDialog(true); return; }
     const newCompleted = !naflEntry.completed;
     const keptTypes = newCompleted ? (naflEntry.types ?? []) : [];
+    if (!newCompleted) setRakatOverrides({});
     updateNafl.mutate({
       completed: newCompleted,
       types: keptTypes,
-      // Start from the customary count for whatever types are kept — never a
-      // hardcoded 2, which could contradict the types that are still selected.
-      rakat: suggestedRakat(keptTypes),
+      rakat: newCompleted ? (keptTypes.length > 0 ? keptTypes.reduce((s, t) => s + getTypeRakat(t), 0) : MIN_RAKAT) : MIN_RAKAT,
       date: selectedDate,
     });
     if (newCompleted) setNaflExpanded(true);
@@ -240,30 +248,29 @@ export default function SalatTracker() {
     const next = adding
       ? [...currentTypes, type]
       : currentTypes.filter((t) => t !== type);
-    // Add/subtract the toggled type's default rakat instead of recalculating
-    // from scratch, so manual adjustments on other types are preserved.
-    const typeMeta = NAFL_TYPE_META.find((m) => m.id === type);
-    const typeRakat = typeMeta?.defaultRakat ?? MIN_RAKAT;
-    const currentRakat = naflEntry.rakat ?? suggestedRakat(currentTypes);
-    const newRakat = adding
-      ? currentRakat + typeRakat
-      : Math.max(MIN_RAKAT, currentRakat - typeRakat);
+    if (!adding) {
+      setRakatOverrides((prev) => { const n = { ...prev }; delete n[type]; return n; });
+    }
+    const newTotal = next.reduce((s, t) => s + getTypeRakat(t), 0);
     updateNafl.mutate({
       completed: naflEntry.completed,
       types: next,
-      rakat: newRakat,
+      rakat: Math.max(MIN_RAKAT, newTotal),
       date: selectedDate,
     });
   };
 
-  const handleNaflRakat = (delta: number) => {
+  const handleTypeRakat = (type: NaflType, delta: number) => {
     if (!user) { setShowGuestDialog(true); return; }
-    // Step in pairs — nafl rak'ahs come two at a time.
-    const next = Math.max(MIN_RAKAT, (naflEntry.rakat ?? suggestedRakat(naflEntry.types ?? [])) + delta * 2);
+    const current = getTypeRakat(type);
+    const next = Math.max(MIN_RAKAT, current + delta * 2);
+    setRakatOverrides((prev) => ({ ...prev, [type]: next }));
+    const types = naflEntry.types ?? [];
+    const newTotal = types.reduce((s, t) => s + (t === type ? next : getTypeRakat(t)), 0);
     updateNafl.mutate({
       completed: naflEntry.completed,
-      types: naflEntry.types ?? [],
-      rakat: next,
+      types,
+      rakat: newTotal,
       date: selectedDate,
     });
   };
@@ -885,21 +892,27 @@ export default function SalatTracker() {
                       {naflEntry.completed && (naflEntry.types?.length ?? 0) > 0
                         ? naflEntry.types.map((t) => NAFL_TYPE_META.find((m) => m.id === t)?.label).filter(Boolean).join(', ')
                         : 'voluntary prayers'}
-                      {naflEntry.completed && naflEntry.rakat > 0 && ` · ${naflEntry.rakat} rak'ahs`}
                     </p>
                   </div>
                 </div>
-                <motion.button
-                  whileTap={{ scale: 0.88 }}
-                  onClick={handleNaflToggle}
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                    naflEntry.completed
-                      ? 'bg-brand-info text-white border-brand-info shadow-[0_0_12px_rgba(90,158,142,0.35)]'
-                      : 'bg-brand-deep border-brand-border text-white/50 hover:border-brand-info/50 hover:text-white/80'
-                  }`}
-                >
-                  {naflEntry.completed ? '✅ Done' : 'Mark Done'}
-                </motion.button>
+                <div className="flex items-center gap-2 shrink-0">
+                  {naflEntry.completed && naflTotalRakat > 0 && (
+                    <span className="px-2.5 py-1 rounded-lg bg-brand-info/15 text-brand-info text-xs font-black tabular-nums">
+                      {naflTotalRakat} rak'ah
+                    </span>
+                  )}
+                  <motion.button
+                    whileTap={{ scale: 0.88 }}
+                    onClick={handleNaflToggle}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                      naflEntry.completed
+                        ? 'bg-brand-info text-white border-brand-info shadow-[0_0_12px_rgba(90,158,142,0.35)]'
+                        : 'bg-brand-deep border-brand-border text-white/50 hover:border-brand-info/50 hover:text-white/80'
+                    }`}
+                  >
+                    {naflEntry.completed ? '✅ Done' : 'Mark Done'}
+                  </motion.button>
+                </div>
               </div>
 
               {/* Expanded: tile grid + rak'ah counter */}
@@ -922,6 +935,8 @@ export default function SalatTracker() {
                         )).map((t) => {
                           const selected = (naflEntry.types ?? []).includes(t.id);
                           const infoOpen = naflInfoExpanded === t.id;
+                          const typeRak = getTypeRakat(t.id);
+                          const isFixed = t.id === 'awwabin';
                           return (
                             <motion.div key={t.id} layout className="flex flex-col">
                               <motion.button
@@ -947,6 +962,37 @@ export default function SalatTracker() {
                                 </p>
                                 <p className="text-white/20 text-[10px] mt-0.5 leading-snug">{t.shortNote}</p>
                               </motion.button>
+
+                              {/* Per-type rak'ah counter (only when selected) */}
+                              {selected && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="mt-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-brand-info/[0.06] border border-brand-info/15">
+                                    {isFixed ? (
+                                      <span className="text-brand-info/70 text-[11px] font-bold tabular-nums">{t.defaultRakat} rak'ah</span>
+                                    ) : (
+                                      <>
+                                        <motion.button
+                                          whileTap={{ scale: 0.85 }}
+                                          onClick={(e) => { e.stopPropagation(); handleTypeRakat(t.id, -1); }}
+                                          disabled={typeRak <= MIN_RAKAT}
+                                          className="w-6 h-6 rounded-md bg-brand-deep border border-brand-border text-white/50 font-bold text-sm flex items-center justify-center disabled:opacity-20 hover:border-brand-info/40 transition-all"
+                                        >−</motion.button>
+                                        <span className="text-brand-info font-black text-sm tabular-nums w-6 text-center">{typeRak}</span>
+                                        <motion.button
+                                          whileTap={{ scale: 0.85 }}
+                                          onClick={(e) => { e.stopPropagation(); handleTypeRakat(t.id, 1); }}
+                                          className="w-6 h-6 rounded-md bg-brand-deep border border-brand-border text-white/50 font-bold text-sm flex items-center justify-center hover:border-brand-info/40 transition-all"
+                                        >+</motion.button>
+                                      </>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              )}
+
                               {/* Info toggle */}
                               <button
                                 onClick={() => setNaflInfoExpanded(infoOpen ? null : t.id)}
@@ -982,39 +1028,6 @@ export default function SalatTracker() {
                           );
                         })}
                       </div>
-
-                      {/* Rak'ah counter — prominent */}
-                      {(() => {
-                        const suggested = suggestedRakat(naflEntry.types ?? []);
-                        const currentRakat = naflEntry.rakat ?? suggested;
-                        const isCustom = currentRakat !== suggested;
-                        return (
-                          <div className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors ${
-                            isCustom ? 'bg-brand-info/10 border border-brand-info/20' : 'bg-white/[0.03] border border-brand-border'
-                          }`}>
-                            <div>
-                              <p className="text-white/50 text-xs font-bold">Rak'ahs prayed</p>
-                              {isCustom && <p className="text-white/20 text-[10px]">usual {suggested}</p>}
-                            </div>
-                            <div className="flex items-center gap-2.5">
-                              <motion.button
-                                whileTap={{ scale: 0.85 }}
-                                onClick={() => handleNaflRakat(-1)}
-                                disabled={currentRakat <= MIN_RAKAT}
-                                className="w-8 h-8 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-lg flex items-center justify-center disabled:opacity-25 hover:border-brand-info/40 hover:text-white transition-all"
-                              >−</motion.button>
-                              <span className="text-white font-black text-xl tabular-nums w-8 text-center">
-                                {currentRakat}
-                              </span>
-                              <motion.button
-                                whileTap={{ scale: 0.85 }}
-                                onClick={() => handleNaflRakat(1)}
-                                className="w-8 h-8 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-lg flex items-center justify-center hover:border-brand-info/40 hover:text-white transition-all"
-                              >+</motion.button>
-                            </div>
-                          </div>
-                        );
-                      })()}
                     </div>
                   </motion.div>
                 )}

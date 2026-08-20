@@ -7,10 +7,9 @@ import { useSalatAnalytics } from '../hooks/useSalatLog.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
 
 const PERIOD_OPTIONS = [
-  { label: '7d',  value: 7 },
   { label: '30d', value: 30 },
-  { label: '60d', value: 60 },
   { label: '90d', value: 90 },
+  { label: '1y',  value: 365 },
 ];
 
 const PRAYER_GRADIENTS: Record<string, string> = {
@@ -35,12 +34,12 @@ export default function SalatAnalytics() {
   const [days, setDays] = useState(30);
   const { data, isLoading, isError } = useSalatAnalytics(days);
 
-  // Group calendar data into weeks (Sun–Sat) for the heatmap
+  // Group calendar data into weeks (Fri–Thu, Islamic week) for the heatmap
   const calendarWeeks = (() => {
     if (!data?.calendarData) return [];
     const cells = [...data.calendarData];
-    // pad front to align first day to correct weekday
-    const firstDay = new Date(cells[0].date + 'T12:00:00').getDay(); // 0=Sun
+    const jsDay = new Date(cells[0].date + 'T12:00:00').getDay(); // 0=Sun
+    const firstDay = (jsDay + 2) % 7; // Fri=0, Sat=1, ..., Thu=6
     const padded: (typeof cells[number] | null)[] = Array(firstDay).fill(null).concat(cells);
     const weeks: (typeof cells[number] | null)[][] = [];
     for (let i = 0; i < padded.length; i += 7) {
@@ -54,7 +53,8 @@ export default function SalatAnalytics() {
     if (!data?.calendarData) return [];
     const labels: { label: string; weekIdx: number }[] = [];
     let lastMonth = -1;
-    const firstDay = new Date(data.calendarData[0].date + 'T12:00:00').getDay();
+    const jsDay = new Date(data.calendarData[0].date + 'T12:00:00').getDay();
+    const firstDay = (jsDay + 2) % 7;
     data.calendarData.forEach((d, i) => {
       const paddedIdx = firstDay + i;
       const weekIdx = Math.floor(paddedIdx / 7);
@@ -316,10 +316,10 @@ export default function SalatAnalytics() {
                     </div>
 
                     <div className="flex gap-1">
-                      {/* Day-of-week labels on the left */}
+                      {/* Day-of-week labels on the left (Islamic week: Fri→Thu) */}
                       <div className="flex flex-col gap-1 w-9 shrink-0">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
-                          <div key={i} className={`h-7 flex items-center text-[11px] ${i === 5 ? 'text-brand-emerald/60 font-semibold' : 'text-white/25'}`}>
+                        {['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu'].map((d, i) => (
+                          <div key={i} className={`h-7 flex items-center text-[11px] ${i === 0 ? 'text-brand-emerald/60 font-semibold' : 'text-white/25'}`}>
                             {d}
                           </div>
                         ))}
