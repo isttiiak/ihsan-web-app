@@ -20,31 +20,37 @@ const FEATURES = [
     emoji: '🕌', title: 'Salat Tracker',
     text: 'All five prayers with on-time, late and missed states — plus sunnah and nafl. Mark the tasbīḥ after a prayer and it logs to your zikr count on its own; Āyatul Kursī and the post-salat surahs are one tap away.',
     grad: 'from-brand-info/20 to-brand-warm/10', border: 'border-brand-info/25',
+    to: '/salat',
   },
   {
     emoji: '📿', title: 'Zikr Counter',
     text: 'A beautiful tap counter with goals, fair streaks that give you a grace day, and a verified library of ṣalawāt, istighfār and the weighty words — with Arabic, transliteration and the exact reference for each.',
     grad: 'from-brand-emerald/20 to-brand-info/10', border: 'border-brand-emerald/25',
+    to: '/zikr',
   },
   {
     emoji: '📖', title: 'Quran — read & listen',
     text: 'An āyah-by-āyah reader with recitation, word highlighting, Bengali & English translations, a khatam journey, seven reciters, and one unified streak.',
     grad: 'from-brand-info/20 to-brand-info/10', border: 'border-brand-info/25',
+    to: '/quran',
   },
   {
     emoji: '🌙', title: 'Fasting + Ramadan',
     text: 'Qaḍā, kaffārah, vows and every sunnah day — each rule cited to its exact hadith. And a dedicated Ramadan home with suhoor, iftar, tarawih and Laylat al-Qadr.',
     grad: 'from-brand-gold/20 to-brand-warm/10', border: 'border-brand-gold/25',
+    to: '/fasting',
   },
   {
     emoji: '🕐', title: 'Prayer Times',
     text: 'Computed fully on your device — your location never leaves your browser. Live countdowns, forbidden windows, nafl windows.',
     grad: 'from-brand-info/20 to-brand-info/10', border: 'border-brand-info/25',
+    to: '/prayer-times',
   },
   {
     emoji: '🤝', title: 'Friends & Noor',
     text: '"So compete with one another in doing good" (Quran 2:148). Connect with one link and race each other gently with Noor — a calm daily light out of 100.',
     grad: 'from-brand-pink/20 to-brand-warm/10', border: 'border-brand-pink/25',
+    to: '/friends',
   },
 ];
 
@@ -84,8 +90,8 @@ export default function Landing() {
             >Begin your journey — free</button>
             <button
               className="btn h-13 px-6 rounded-2xl bg-white/5 border-brand-emerald/15 text-white/80 font-bold"
-              onClick={() => navigate('/zikr')}
-            >📿 Try the counter first</button>
+              onClick={() => navigate('/salat')}
+            >Explore the full app</button>
           </motion.div>
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
@@ -126,11 +132,16 @@ export default function Landing() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ delay: (i % 3) * 0.08, duration: 0.45 }}
-              className={`rounded-3xl border ${f.border} bg-gradient-to-br ${f.grad} p-6`}
             >
-              <div className="text-4xl mb-3">{f.emoji}</div>
-              <h3 className="text-white font-black text-lg">{f.title}</h3>
-              <p className="text-white/50 text-sm mt-2 leading-relaxed">{f.text}</p>
+              <Link
+                to={f.to}
+                className={`block rounded-3xl border ${f.border} bg-gradient-to-br ${f.grad} p-6 h-full transition-transform hover:scale-[1.02] hover:shadow-lg`}
+              >
+                <div className="text-4xl mb-3">{f.emoji}</div>
+                <h3 className="text-white font-black text-lg">{f.title}</h3>
+                <p className="text-white/50 text-sm mt-2 leading-relaxed">{f.text}</p>
+                <span className="inline-block mt-3 text-xs font-semibold text-brand-emerald/70">Try it →</span>
+              </Link>
             </motion.div>
           ))}
         </section>
