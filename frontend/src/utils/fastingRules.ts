@@ -209,7 +209,7 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
       url: 'https://sunnah.com/bukhari:1969',
       grade: 'Ṣaḥīḥ',
     },
-    color: '#a855f7',
+    color: '#c4825a',
   },
   {
     id: 'dhul_hijjah',

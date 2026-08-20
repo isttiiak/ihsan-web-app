@@ -138,8 +138,8 @@ export default function TrendChart({ data, period }: TrendChartProps) {
         >
           <defs>
             <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--brand-emerald, #10b981)" stopOpacity={0.35} />
-              <stop offset="95%" stopColor="var(--brand-emerald, #10b981)" stopOpacity={0} />
+              <stop offset="5%" stopColor="var(--brand-emerald, #7a9e6e)" stopOpacity={0.35} />
+              <stop offset="95%" stopColor="var(--brand-emerald, #7a9e6e)" stopOpacity={0} />
             </linearGradient>
           </defs>
 
@@ -165,7 +165,7 @@ export default function TrendChart({ data, period }: TrendChartProps) {
           <motion.path
             d={line}
             fill="none"
-            stroke="var(--brand-emerald, #10b981)"
+            stroke="var(--brand-emerald, #7a9e6e)"
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -184,7 +184,7 @@ export default function TrendChart({ data, period }: TrendChartProps) {
               />
               <circle
                 cx={pts[hover].x} cy={pts[hover].y} r={4}
-                fill="var(--brand-emerald, #10b981)" stroke="#14130e" strokeWidth={2}
+                fill="var(--brand-emerald, #7a9e6e)" stroke="#0e0d0a" strokeWidth={2}
                 vectorEffect="non-scaling-stroke"
               />
             </g>

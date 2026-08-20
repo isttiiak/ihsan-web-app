@@ -27,7 +27,7 @@ export function AiBadge({ label = 'Naseeh · AI companion' }: { label?: string }
 
 /** Prismatic "thinking" loader — colorful pulsing dots over a soft aurora. */
 export function AiThinking({ label = 'Naseeh is reflecting…' }: { label?: string }) {
-  const colors = ['#7a9e6e', '#5a9e8e', '#a855f7', '#c4825a', '#c9a96e'];
+  const colors = ['#7a9e6e', '#5a9e8e', '#c4825a', '#c4825a', '#c9a96e'];
   return (
     <div className="relative flex flex-col items-center justify-center gap-3 py-6">
       <motion.div
