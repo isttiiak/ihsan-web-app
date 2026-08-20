@@ -36,6 +36,7 @@ router.post('/dua-bookmark', requireAuth, validate(quranDuaBookmarkSchema), qura
 // Khatam journey is OPT-IN: explicit start + reset (Istiak's spec)
 router.post('/khatam/start', requireAuth, quranController.startKhatam);
 router.post('/khatam/reset', requireAuth, quranController.resetKhatam);
+router.post('/reset-reading', requireAuth, quranController.resetReading);
 
 // DELETE /api/quran/all — wipe all Quran data for the user
 router.delete('/all', requireAuth, quranController.deleteAll);

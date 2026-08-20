@@ -500,13 +500,22 @@ export default function Home() {
                   <div
                     className={`relative rounded-2xl ${a.border} border bg-white/[0.04] hover:bg-white/[0.07] backdrop-blur-md p-4 transition-all`}
                   >
-                    {/* Top row: icon + title + badges */}
+                    {/* Top row: icon + title */}
                     <div className="flex items-center gap-3 mb-3">
                       <span className="text-3xl shrink-0 leading-none">{a.icon}</span>
                       <h2 className="text-base font-black text-white flex-1 min-w-0 truncate">{a.title}</h2>
+                      <span className="text-white/20 text-xs font-bold group-hover:text-white/40 transition-colors">→</span>
+                    </div>
 
-                      {/* Badges cluster */}
-                      <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Stat row */}
+                    <div className="flex items-baseline">
+                      <span className="text-2xl font-black text-white tabular-nums">{a.stats.value}</span>
+                      <span className="text-white/30 text-xs font-semibold ml-2 uppercase">{a.stats.label}</span>
+                    </div>
+
+                    {/* Bottom badges row — streak, goal, ramadan */}
+                    {(isZikr || a.id === 'quran' || a.tag || a.id === 'fasting') && (
+                      <div className="mt-2.5 pt-2 border-t border-white/[0.06] flex flex-wrap items-center gap-1.5">
                         {isZikr && (
                           <>
                             <StreakBadge streak={a.streakCount ?? 0} state={analyticsData?.streak?.state} size="sm" />
@@ -516,35 +525,18 @@ export default function Home() {
                         {a.id === 'quran' && quranSummary && (
                           <StreakBadge streak={quranSummary.streak} state={quranSummary.streak > 0 ? 'active' : 'none'} size="sm" />
                         )}
-                      </div>
-                    </div>
-
-                    {/* Stat row */}
-                    <div className="flex items-baseline justify-between">
-                      <div>
-                        <span className="text-2xl font-black text-white tabular-nums">{a.stats.value}</span>
-                        <span className="text-white/30 text-xs font-semibold ml-2 uppercase">{a.stats.label}</span>
-                      </div>
-                      <span className="text-white/20 text-xs font-bold group-hover:text-white/40 transition-colors">→</span>
-                    </div>
-
-                    {/* Tags (salat streak, ramadan countdown) */}
-                    {a.tag && (
-                      <div className="mt-2.5 pt-2 border-t border-white/[0.06]">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black text-white bg-gradient-to-r from-brand-gold to-brand-warm">
-                          {a.tag}
-                        </span>
-                      </div>
-                    )}
-                    {a.id === 'fasting' && (
-                      <div className="mt-2.5 pt-2 border-t border-white/[0.06]">
-                        <button
-                          className="px-2.5 py-0.5 rounded-full text-[10px] font-black text-white border border-brand-gold/20 bg-gradient-to-r from-amber-700/80 to-purple-700/80 hover:scale-105 transition-transform"
-                          title={ramadan.active ? 'Open the Ramadan tracker' : 'Countdown to Ramadan'}
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/ramadan'); }}
-                        >
-                          {ramadan.active ? `🌙 Ramadan · Day ${ramadan.todayNumber}` : `🌙 Ramadan in ${ramadan.daysUntil}d`}
-                        </button>
+                        {a.tag && (
+                          <StreakBadge streak={salatAnalytics?.currentStreak ?? 0} state={salatAnalytics?.currentStreak ? 'active' : 'none'} size="sm" />
+                        )}
+                        {a.id === 'fasting' && (
+                          <button
+                            className="px-2.5 py-0.5 rounded-full text-[10px] font-black text-white border border-brand-gold/20 bg-gradient-to-r from-amber-700/80 to-purple-700/80 hover:scale-105 transition-transform"
+                            title={ramadan.active ? 'Open the Ramadan tracker' : 'Countdown to Ramadan'}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/ramadan'); }}
+                          >
+                            {ramadan.active ? `🌙 Ramadan · Day ${ramadan.todayNumber}` : `🌙 Ramadan in ${ramadan.daysUntil}d`}
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

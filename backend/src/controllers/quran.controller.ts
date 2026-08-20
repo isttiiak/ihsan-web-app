@@ -76,6 +76,13 @@ export const resetKhatam = async (req: Request, res: Response, next: NextFunctio
   } catch (err) { next(err); }
 };
 
+export const resetReading = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    await quranService.resetReading(req.user.uid);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+};
+
 export const updateProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const profile = await quranService.updateProfile(

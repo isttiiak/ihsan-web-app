@@ -14,6 +14,8 @@ router.post('/types', requireAuth, validate(addZikrTypeSchema), zikrController.a
 router.patch('/types/rename', requireAuth, validate(renameZikrTypeSchema), zikrController.renameTypeHandler);
 router.delete('/types/:name', requireAuth, zikrController.removeTypeHandler);
 
+// POST /api/zikr/reset — zero counters + streak but keep daily history
+router.post('/reset', requireAuth, zikrController.resetZikrCounters);
 // DELETE /api/zikr/all — delete all zikr data for the authenticated user
 router.delete('/all', requireAuth, zikrController.deleteAllZikrData);
 

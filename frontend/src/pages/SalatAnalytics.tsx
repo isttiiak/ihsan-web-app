@@ -123,7 +123,7 @@ export default function SalatAnalytics() {
                 <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-brand-emerald/10 border border-brand-emerald/20">
                   <span className="text-lg shrink-0">📅</span>
                   <p className="text-sm text-white/50">
-                    Active on <span className="text-brand-emerald font-semibold">{data.totalDays}</span> of {data.periodDays} days — stats reflect your tracked days only.
+                    You tracked salat on <span className="text-brand-emerald font-semibold">{data.totalDays}</span> of the last {data.periodDays} days — completion rate and breakdown are calculated from tracked days only, not the full window.
                   </p>
                 </div>
               )}

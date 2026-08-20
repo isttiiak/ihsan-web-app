@@ -120,3 +120,12 @@ export const deleteAllZikrData = async (req: Request, res: Response, next: NextF
     next(err);
   }
 };
+
+export const resetZikrCounters = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    await zikrService.resetZikrCounters(req.user.uid);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+};

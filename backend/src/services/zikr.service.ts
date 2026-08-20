@@ -254,3 +254,16 @@ export async function deleteAllUserZikrData(userId: string): Promise<void> {
     { $set: { currentStreak: 0, longestStreak: 0, lastCompletedDate: null, isPaused: false } }
   );
 }
+
+/** Reset zikr counters without deleting history. Zeros the running totals
+ *  and streak but keeps daily snapshots and zikr types intact. */
+export async function resetZikrCounters(userId: string): Promise<void> {
+  await User.updateOne({ uid: userId }, { $set: { totalCount: 0, zikrTotals: {} } });
+  const ZikrStreak = (await import('../models/ZikrStreak.js')).default;
+  await ZikrStreak.updateOne(
+    { userId },
+    { $set: { currentStreak: 0, longestStreak: 0, lastCompletedDate: null, isPaused: false } }
+  );
+  const ZikrGoal = (await import('../models/ZikrGoal.js')).default;
+  await ZikrGoal.deleteMany({ userId });
+}

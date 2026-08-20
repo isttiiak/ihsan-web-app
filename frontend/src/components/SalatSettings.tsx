@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useQueryClient } from '@tanstack/react-query';
+import { XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import api from '../lib/api.js';
+import ConfirmDialog from './ConfirmDialog.js';
 import {
   TASBIH_MODES, getTasbihMode, setTasbihMode, type TasbihMode,
   ASR_MADHABS, getAsrMadhab, setAsrMadhab, type AsrMadhab,
@@ -20,8 +23,28 @@ import {
  * Both are stored locally (utils/salatPrefs.ts) — no server round-trip.
  */
 export default function SalatSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const queryClient = useQueryClient();
   const [tasbih, setTasbih] = useState<TasbihMode>(() => getTasbihMode());
   const [madhab, setMadhab] = useState<AsrMadhab>(() => getAsrMadhab());
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  const handleReset = async () => {
+    setResetting(true);
+    try {
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      await api.post('/api/salat/reset', { today });
+      queryClient.invalidateQueries({ queryKey: ['salat'] });
+      toast.success('Salat tracking reset — your history is preserved', { icon: '🕌' });
+      setConfirmReset(false);
+      onClose();
+    } catch {
+      toast.error('Could not reset — try again');
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const chooseTasbih = (m: TasbihMode) => {
     setTasbih(m);
@@ -172,6 +195,24 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
                 </p>
               </section>
 
+              {/* ── Reset tracking ─────────────────────────────────── */}
+              <section className="rounded-2xl border border-brand-gold/20 bg-brand-gold/[0.06] p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <ArrowPathIcon className="w-4 h-4 text-brand-gold" />
+                  <h3 className="text-brand-gold font-bold text-sm">Start fresh</h3>
+                </div>
+                <p className="text-white/40 text-xs leading-relaxed mb-3">
+                  Analytics and streaks will count from today. All past prayer logs stay
+                  intact — you can still view them, but they won't affect your new stats.
+                </p>
+                <button
+                  onClick={() => setConfirmReset(true)}
+                  className="btn btn-sm border border-brand-gold/30 bg-brand-gold/10 text-brand-gold hover:bg-brand-gold/20 gap-1.5"
+                >
+                  <ArrowPathIcon className="w-3.5 h-3.5" /> Reset tracking
+                </button>
+              </section>
+
               <p className="text-white/25 text-[11px] leading-relaxed border-t border-brand-emerald/10 pt-4">
                 Looking for data deletion? Everything lives in{' '}
                 <a href="/settings" className="text-brand-emerald/70 hover:text-brand-emerald underline underline-offset-2">
@@ -180,6 +221,15 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
               </p>
             </div>
           </motion.aside>
+
+          <ConfirmDialog
+            open={confirmReset}
+            title="Reset salat tracking?"
+            message="Your streak and analytics will start fresh from today. All past prayer logs will be preserved — they just won't count toward the new stats."
+            confirmLabel={resetting ? 'Resetting…' : 'Yes, start fresh'}
+            onConfirm={() => void handleReset()}
+            onCancel={() => setConfirmReset(false)}
+          />
         </>
       )}
     </AnimatePresence>,

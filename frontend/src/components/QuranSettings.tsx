@@ -1,7 +1,10 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useQueryClient } from '@tanstack/react-query';
+import { XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import api from '../lib/api.js';
+import ConfirmDialog from './ConfirmDialog.js';
 import { useQuranSummary, useUpdateQuranProfile } from '../hooks/useQuran.js';
 import { TRANSLATIONS, selectedTranslations } from '../utils/quranData.js';
 import {
@@ -55,8 +58,12 @@ function SizeSlider({ label, kind, sample, sampleStyle }: {
 const GOAL_PRESETS = [1, 3, 5, 10, 20];
 
 export default function QuranSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const queryClient = useQueryClient();
   const { data: summary } = useQuranSummary();
   const updateProfile = useUpdateQuranProfile();
+  const [confirmResetKhatam, setConfirmResetKhatam] = useState(false);
+  const [confirmResetReading, setConfirmResetReading] = useState(false);
+  const [resetting, setResetting] = useState<string | null>(null);
 
   const savedGoal = summary?.profile.dailyGoalAyat ?? 0;
   const [goal, setGoal] = useState<number>(savedGoal);
@@ -263,14 +270,80 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                 Save reading settings
               </button>
 
-              {/* Deletes/resets live in ONE place now (Istiak's spec): the main
-                  Settings danger zone — including khatam reset + goal removal. */}
+              {/* ── Reset options ── */}
+              <div className="rounded-2xl border border-brand-gold/20 bg-brand-gold/[0.06] p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <ArrowPathIcon className="w-4 h-4 text-brand-gold" />
+                  <h3 className="text-brand-gold font-bold text-sm">Reset progress</h3>
+                </div>
+                <div className="space-y-2.5">
+                  <div>
+                    <p className="text-white/60 text-xs font-semibold">Khatam journey</p>
+                    <p className="text-white/30 text-[11px] mb-1.5">Bookmark back to 1:1, journey un-started. Completed count stays.</p>
+                    <button
+                      onClick={() => setConfirmResetKhatam(true)}
+                      disabled={!summary?.profile.khatamStartedAt}
+                      className="btn btn-xs border border-brand-gold/30 bg-brand-gold/10 text-brand-gold hover:bg-brand-gold/20 gap-1 disabled:opacity-30"
+                    >
+                      <ArrowPathIcon className="w-3 h-3" /> Reset khatam
+                    </button>
+                  </div>
+                  <div className="border-t border-white/[0.06] pt-2.5">
+                    <p className="text-white/60 text-xs font-semibold">Reading progress</p>
+                    <p className="text-white/30 text-[11px] mb-1.5">Zero surah completion counts and reader positions. Logs, bookmarks and goal stay.</p>
+                    <button
+                      onClick={() => setConfirmResetReading(true)}
+                      className="btn btn-xs border border-brand-gold/30 bg-brand-gold/10 text-brand-gold hover:bg-brand-gold/20 gap-1"
+                    >
+                      <ArrowPathIcon className="w-3 h-3" /> Reset reading
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <p className="text-white/25 text-[11px] leading-relaxed">
-                Looking to reset the khatam journey or remove the goal? Every data
-                reset lives in <a href="/settings" className="underline text-white/40">Settings → Danger zone</a>.
+                Looking for full data deletion? That lives in{' '}
+                <a href="/settings" className="underline text-white/40">Settings → Danger zone</a>.
               </p>
             </div>
           </motion.aside>
+
+          <ConfirmDialog
+            open={confirmResetKhatam}
+            title="Reset khatam journey?"
+            message="Your bookmark will go back to 1:1. The number of completed khatams stays."
+            confirmLabel={resetting === 'khatam' ? 'Resetting…' : 'Yes, reset'}
+            onConfirm={() => {
+              setResetting('khatam');
+              api.post('/api/quran/khatam/reset')
+                .then(() => {
+                  queryClient.invalidateQueries({ queryKey: ['quran'] });
+                  toast.success('Khatam journey reset', { icon: '📖' });
+                  setConfirmResetKhatam(false);
+                })
+                .catch(() => toast.error('Could not reset — try again'))
+                .finally(() => setResetting(null));
+            }}
+            onCancel={() => setConfirmResetKhatam(false)}
+          />
+          <ConfirmDialog
+            open={confirmResetReading}
+            title="Reset reading progress?"
+            message="Surah completion counts and reader positions will be zeroed. Your reading logs, bookmarks and goal are preserved."
+            confirmLabel={resetting === 'reading' ? 'Resetting…' : 'Yes, reset'}
+            onConfirm={() => {
+              setResetting('reading');
+              api.post('/api/quran/reset-reading')
+                .then(() => {
+                  queryClient.invalidateQueries({ queryKey: ['quran'] });
+                  toast.success('Reading progress reset', { icon: '📖' });
+                  setConfirmResetReading(false);
+                })
+                .catch(() => toast.error('Could not reset — try again'))
+                .finally(() => setResetting(null));
+            }}
+            onCancel={() => setConfirmResetReading(false)}
+          />
         </>
       )}
     </AnimatePresence>

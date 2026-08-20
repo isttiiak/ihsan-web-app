@@ -19,7 +19,8 @@ import { getHiddenZikr, hideZikr } from '../utils/hiddenZikr.js';
 import { PREDEFINED_TYPES, findLibraryZikr, isCoreZikr } from '../utils/zikrLibrary.js';
 import EditZikrModal from '../components/EditZikrModal.js';
 import ReportReference from '../components/ReportReference.js';
-import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowsPointingOutIcon, XMarkIcon, TrashIcon, PencilSquareIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import ZikrSettings from '../components/ZikrSettings.js';
+import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowsPointingOutIcon, XMarkIcon, TrashIcon, PencilSquareIcon, ChevronDownIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 // Meanings for all built-in dhikr
 const DEFAULT_MEANINGS: Record<string, { arabic: string; transliteration: string; meaning: string }> = {
@@ -188,6 +189,7 @@ export default function ZikrCounter() {
   const [showManage, setShowManage] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [editZikr, setEditZikr] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const [refExpanded, setRefExpanded] = useState(false);
 
   // Collapse the full-text card when switching dhikr
@@ -396,20 +398,34 @@ export default function ZikrCounter() {
 
       <div className="max-w-2xl mx-auto px-4 pb-10 pt-4 space-y-5">
 
-        {/* Tab navigation */}
-        <TabNav
-          items={[
-            { label: '📿 Counter', to: '/zikr', active: true },
-            {
-              label: '📊 Analytics',
-              to: '/zikr/analytics',
-              // Guests with unsaved counts get the save dialog instead of navigation
-              ...(!user && Object.values(pending ?? {}).reduce((a, b) => a + b, 0) > 0
-                ? { onClick: () => setShowGuestDialog(true) }
-                : {}),
-            },
-          ]}
-        />
+        {/* Tab navigation + settings */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <TabNav
+              items={[
+                { label: '📿 Counter', to: '/zikr', active: true },
+                {
+                  label: '📊 Analytics',
+                  to: '/zikr/analytics',
+                  ...(!user && Object.values(pending ?? {}).reduce((a, b) => a + b, 0) > 0
+                    ? { onClick: () => setShowGuestDialog(true) }
+                    : {}),
+                },
+              ]}
+            />
+          </div>
+          {user && (
+            <button
+              onClick={() => setShowSettings(true)}
+              aria-label="Zikr settings"
+              title="Zikr settings"
+              className="shrink-0 p-2 rounded-xl border border-brand-emerald/20 bg-white/5 text-white/50 hover:text-brand-emerald hover:border-brand-emerald/40 transition-colors"
+            >
+              <Cog6ToothIcon className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+        <ZikrSettings open={showSettings} onClose={() => setShowSettings(false)} />
 
         {/* Motivational subtitle */}
         <motion.p

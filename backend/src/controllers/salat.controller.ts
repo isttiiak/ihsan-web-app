@@ -52,8 +52,20 @@ export const getAnalytics = async (req: Request, res: Response, next: NextFuncti
   try {
     const days = Number(req.query['days'] ?? 30);
     const today = req.query['today'] as string | undefined;
-    const analytics = await salatService.getSalatAnalytics(req.user.uid, days, today);
+    const User = (await import('../models/User.js')).default;
+    const user = await User.findOne({ uid: req.user.uid }).select('salatResetDate').lean();
+    const analytics = await salatService.getSalatAnalytics(req.user.uid, days, today, user?.salatResetDate);
     res.json({ ok: true, ...analytics });
+  } catch (err) { next(err); }
+};
+
+export const resetSalat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const today = req.body?.today as string | undefined;
+    const resetDate = today ?? salatService.todayDateString();
+    const User = (await import('../models/User.js')).default;
+    await User.updateOne({ uid: req.user.uid }, { $set: { salatResetDate: resetDate } });
+    res.json({ ok: true, resetDate });
   } catch (err) { next(err); }
 };
 

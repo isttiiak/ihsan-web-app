@@ -29,6 +29,7 @@ export interface IUser extends Document {
   country?: string;
   hijriOffset: number;
   aiEnabled: boolean;
+  salatResetDate?: string;
   totalCount: number;
   zikrTotals: Map<string, number>;
   zikrTypes: mongoose.Types.DocumentArray<IZikrTypeItem & Document>;
@@ -67,6 +68,7 @@ const userSchema = new Schema(
     birthDate: { type: Date },
     hijriOffset: { type: Number, default: 0, min: -1, max: 1 },
     aiEnabled: { type: Boolean, default: false },
+    salatResetDate: { type: String, default: undefined },
     totalCount: { type: Number, default: 0 },
     zikrTotals: { type: Map, of: Number, default: {} },
     zikrTypes: {

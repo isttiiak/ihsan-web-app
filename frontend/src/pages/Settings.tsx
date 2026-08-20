@@ -140,6 +140,7 @@ export default function Settings() {
   // Rayhanah is a sisters-only feature — its delete group must not appear for
   // anyone else (a brother seeing a 🌸 cycle-data row was a bug).
   const dangerGroups = DANGER_GROUPS.filter((g) => g.id !== 'cycle' || user?.gender === 'female');
+  const { aiEnabled, setAiEnabled } = useAuthStore();
   const {
     reduceMotion, highContrast, showNoorAllTime, showNoorToday,
     setReduceMotion, setHighContrast, setShowNoorAllTime, setShowNoorToday,
@@ -407,6 +408,25 @@ export default function Settings() {
                 accent="toggle-warning"
               />
             </div>
+          </SectionCard>
+
+          {/* ── Naseeh AI companion ── */}
+          <SectionCard
+            icon={<SparklesIcon className="w-5 h-5 text-brand-gold" />}
+            title="Naseeh AI companion"
+            subtitle="Personalised encouragement from your weekly activity — never a source of religious evidence"
+            delay={0.18}
+          >
+            <Toggle
+              checked={aiEnabled}
+              onChange={(v) => {
+                setAiEnabled(v);
+                if (user) api.patch('/api/user/me', { aiEnabled: v }).catch(() => {});
+              }}
+              title="Enable Naseeh"
+              detail="Weekly reflections, streak coaching and fasting companion"
+              accent="toggle-warning"
+            />
           </SectionCard>
 
           {/* ── Zikr library ── */}

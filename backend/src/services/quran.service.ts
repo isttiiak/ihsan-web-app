@@ -213,6 +213,16 @@ export async function resetKhatam(userId: string): Promise<IQuranProfile> {
   return profile;
 }
 
+/** Reset reading progress: zero counters and positions but keep logs,
+ *  bookmarks, savedDuas. Goal + khatam stay — reset those separately. */
+export async function resetReading(userId: string): Promise<IQuranProfile> {
+  const profile = await getOrCreateProfile(userId);
+  profile.surahCounts = new Map();
+  profile.readerPos = new Map();
+  await profile.save();
+  return profile;
+}
+
 export interface QuranSummary {
   profile: {
     dailyGoalPages: number;

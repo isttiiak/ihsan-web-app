@@ -7,7 +7,7 @@ import SalatLog, {
   NaflType,
 } from '../models/SalatLog.js';
 
-function todayDateString(): string {
+export function todayDateString(): string {
   return new Date().toISOString().substring(0, 10);
 }
 
@@ -163,14 +163,13 @@ export interface SalatAnalyticsResult {
   calendarData: Array<{ date: string; completed: number; total: number }>;
 }
 
-export async function getSalatAnalytics(userId: string, days: number, clientToday?: string): Promise<SalatAnalyticsResult> {
-  // "Today" must come from the user's device — the server runs UTC, which is
-  // a different calendar date than the user's for part of every day.
+export async function getSalatAnalytics(userId: string, days: number, clientToday?: string, resetDate?: string): Promise<SalatAnalyticsResult> {
   const today = clientToday ?? todayDateString();
   const calendarDays = Math.max(days, 90);
   const logs = await getSalatHistory(userId, calendarDays, today);
 
-  const statsCutoff = shiftDateStr(today, -(days - 1));
+  const rawCutoff = shiftDateStr(today, -(days - 1));
+  const statsCutoff = resetDate && resetDate > rawCutoff ? resetDate : rawCutoff;
   const statsLogs = logs.filter((l) => l.date >= statsCutoff);
 
   let completedCount = 0;
@@ -223,22 +222,22 @@ export async function getSalatAnalytics(userId: string, days: number, clientToda
     });
   };
 
-  // Best streak: walk the window day by day so gap days (no log at all)
-  // correctly break the run. The old version only iterated existing rows,
-  // silently skipping missed days.
+  // Effective window size (may be smaller than requested when resetDate is set)
+  const effectiveDays = resetDate && resetDate > rawCutoff
+    ? Math.max(1, Math.round((new Date(today + 'T12:00:00').getTime() - new Date(statsCutoff + 'T12:00:00').getTime()) / 86_400_000) + 1)
+    : days;
+
   let bestStreak = 0;
   let runStreak = 0;
-  for (let i = 0; i < days; i++) {
+  for (let i = 0; i < effectiveDays; i++) {
     const date = shiftDateStr(statsCutoff, i);
     runStreak = isAllDone(date) ? runStreak + 1 : 0;
     if (runStreak > bestStreak) bestStreak = runStreak;
   }
 
-  // Current streak: walk backwards from today. Today itself may be
-  // incomplete (day in progress) — start from yesterday in that case.
   let currentStreak = 0;
   let cursor = isAllDone(today) ? today : shiftDateStr(today, -1);
-  while (isAllDone(cursor)) {
+  while (isAllDone(cursor) && cursor >= statsCutoff) {
     currentStreak++;
     cursor = shiftDateStr(cursor, -1);
   }
@@ -271,7 +270,7 @@ export async function getSalatAnalytics(userId: string, days: number, clientToda
     : 0;
 
   return {
-    periodDays: days,
+    periodDays: effectiveDays,
     totalDays,
     totalPossiblePrayers,
     completedCount,
