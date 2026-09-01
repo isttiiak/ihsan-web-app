@@ -291,7 +291,7 @@ export default function Navbar() {
                 {noorAllTimeVisible && (
                   <div className="tooltip tooltip-bottom" data-tip="All-time Noor — every day's light, gathered. Never resets">
                     <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 border border-brand-gold/40 text-brand-gold text-xs font-bold flex items-center gap-1 whitespace-nowrap">
-                      🌟 {noor.allTime.toLocaleString()}
+                      🌟 {(noor.allTime ?? 0).toLocaleString()}
                     </span>
                   </div>
                 )}
