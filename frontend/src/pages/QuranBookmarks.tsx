@@ -6,7 +6,7 @@ import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
 import { useQuranSummary, useToggleBookmark, useToggleDuaBookmark, type QuranBookmark } from '../hooks/useQuran.js';
-import { loadSurahList, loadSurahText, type SurahMeta, type AyahText } from '../utils/quranData.js';
+import { loadSurahList, loadSurahText, surahDisplayName, type SurahMeta, type AyahText } from '../utils/quranData.js';
 import { QURANIC_DUAS } from '../utils/quranMeta.js';
 
 /**
@@ -15,7 +15,7 @@ import { QURANIC_DUAS } from '../utils/quranMeta.js';
  * curated list. Each entry opens straight in the reader.
  */
 export default function QuranBookmarks() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { data: summary, isLoading } = useQuranSummary();
   const toggleBookmark = useToggleBookmark();
@@ -138,7 +138,7 @@ export default function QuranBookmarks() {
               >
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-white font-black text-sm">
-                    {g.surah}. {meta?.englishName ?? `Surah ${g.surah}`}
+                    {g.surah}. {meta ? surahDisplayName(meta, i18n.language) : `Surah ${g.surah}`}
                     <span className="text-white/30 font-normal"> · {t('quranBookmarks.savedCount', '{{count}} saved', { count: g.items.length })}</span>
                   </h2>
                   <span className="text-lg text-white/60 font-serif" dir="rtl">{meta?.name}</span>

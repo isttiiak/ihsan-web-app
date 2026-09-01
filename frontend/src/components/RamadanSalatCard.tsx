@@ -8,6 +8,7 @@ import {
   NAFL_TYPE_META, SELECTABLE_NAFL_TYPES,
   type PrayerId, type PrayerStatus, type NaflType,
 } from '../hooks/useSalatLog.js';
+import { translateSalatName } from '../utils/prayerTimes.js';
 import { useZikrStore } from '../store/useZikrStore.js';
 import {
   getTasbihMode, tasbihModeMeta, tasbihDeltas, AYATUL_KURSI_ZIKR,
@@ -177,7 +178,7 @@ export default function RamadanSalatCard({
                   <div className="flex items-center gap-2 p-2.5">
                     <span className="text-base shrink-0">{p.emoji}</span>
                     <span className={`flex-1 min-w-0 truncate text-sm font-bold ${done ? 'text-brand-emerald' : 'text-white/55'}`}>
-                      {p.name}
+                      {translateSalatName(p.id, p.name, t)}
                     </span>
                     {entry?.tasbeeh && <span className="text-brand-info/60 text-xs shrink-0">📿</span>}
                     {entry?.ayatulKursi && <span className="text-brand-gold/60 text-xs shrink-0">📖</span>}
@@ -201,7 +202,7 @@ export default function RamadanSalatCard({
                       {done && (
                         <button
                           onClick={() => setOpenPrayer(isOpen ? null : p.id)}
-                          aria-label={`After-salat options for ${p.name}`}
+                          aria-label={`After-salat options for ${translateSalatName(p.id, p.name, t)}`}
                           className="px-2 py-1 rounded-lg text-[11px] border bg-brand-deep border-brand-border text-white/30 hover:text-white/60"
                         >{isOpen ? '▲' : '▾'}</button>
                       )}

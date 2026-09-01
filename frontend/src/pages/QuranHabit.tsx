@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
 import { useQuranSummary, useStartKhatam, useToggleDuaBookmark, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
-import { loadSurahList, locateGlobalAyah, type SurahMeta } from '../utils/quranData.js';
+import { loadSurahList, locateGlobalAyah, surahDisplayName, type SurahMeta } from '../utils/quranData.js';
 import { SPECIAL_SURAHS, AYAH_BUNDLES, QURANIC_DUAS } from '../utils/quranMeta.js';
 
 /**
@@ -14,7 +14,7 @@ import { SPECIAL_SURAHS, AYAH_BUNDLES, QURANIC_DUAS } from '../utils/quranMeta.j
  * the Listen tab, and everything flows into ONE daily ayat goal + streak.
  */
 export default function QuranHabit() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { data: summary, isLoading } = useQuranSummary();
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
@@ -35,7 +35,10 @@ export default function QuranHabit() {
 
   const startKhatam = useStartKhatam();
   const toggleDua = useToggleDuaBookmark();
-  const nameOf = (n: number) => surahs.find((s) => s.number === n)?.englishName ?? `Surah ${n}`;
+  const nameOf = (n: number) => {
+    const s = surahs.find((s) => s.number === n);
+    return s ? surahDisplayName(s, i18n.language) : `Surah ${n}`;
+  };
   // Goal is OPT-IN (0 = not set); khatam starts only when the user says so.
   const goal = summary?.profile.dailyGoalAyat ?? 0;
   const today = summary?.todayAyat ?? 0;

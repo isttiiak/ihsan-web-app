@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
-import { loadSurahList, type SurahMeta } from '../utils/quranData.js';
+import { loadSurahList, surahDisplayName, type SurahMeta } from '../utils/quranData.js';
 import { ArrowUpIcon } from '@heroicons/react/24/solid';
 
 /**
@@ -12,7 +12,7 @@ import { ArrowUpIcon } from '@heroicons/react/24/solid';
  * Everything read here still counts toward the daily goal and streak.
  */
 export default function QuranBrowse() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [q, setQ] = useState('');
@@ -76,7 +76,7 @@ export default function QuranBrowse() {
                   {s.number}
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-white font-bold text-sm">{s.englishName}</span>
+                  <span className="block text-white font-bold text-sm">{surahDisplayName(s, i18n.language)}</span>
                   <span className="block text-white/30 text-xs truncate">{s.englishNameTranslation} · {s.numberOfAyahs} āyāt · {s.revelationType}</span>
                 </span>
                 <span className="text-xl text-white/70 font-serif" dir="rtl">{s.name}</span>

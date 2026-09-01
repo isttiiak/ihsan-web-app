@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
 import { useQuranSummary, useQuranHistory, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
-import { loadSurahList, type SurahMeta } from '../utils/quranData.js';
+import { loadSurahList, surahDisplayName, type SurahMeta } from '../utils/quranData.js';
 
 /** The whole Quran journey in numbers — reading, listening, khatam, favourites. */
 export default function QuranAnalytics() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: summary } = useQuranSummary();
   const { data: history } = useQuranHistory(30, true);
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
@@ -18,7 +18,10 @@ export default function QuranAnalytics() {
     return () => { alive = false; };
   }, []);
 
-  const nameOf = (n: number) => surahs.find((s) => s.number === n)?.englishName ?? `Surah ${n}`;
+  const nameOf = (n: number) => {
+    const s = surahs.find((s) => s.number === n);
+    return s ? surahDisplayName(s, i18n.language) : `Surah ${n}`;
+  };
 
   const chart = useMemo(() => {
     const byDate = new Map((history ?? []).map((h) => [h.date, h.units]));

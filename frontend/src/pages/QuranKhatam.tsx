@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
 import { useQuranSummary, useStartKhatam, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
-import { loadSurahList, locateGlobalAyah, juzOf, type SurahMeta } from '../utils/quranData.js';
+import { loadSurahList, locateGlobalAyah, juzOf, surahDisplayName, type SurahMeta } from '../utils/quranData.js';
+import { formatLocaleNumber } from '../utils/localeDate.js';
 
 /**
  * The Khatam journey — a serial, self-paced read-through of the whole Quran.
@@ -13,7 +14,7 @@ import { loadSurahList, locateGlobalAyah, juzOf, type SurahMeta } from '../utils
  * this tab owns that journey while the Read tab stays free for any surah.
  */
 export default function QuranKhatam() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { data: summary, isLoading } = useQuranSummary();
   const startKhatam = useStartKhatam();
@@ -53,7 +54,7 @@ export default function QuranKhatam() {
             >
               <p className="text-brand-emerald/80 text-xs font-bold uppercase tracking-widest">{t('quranKhatam.journeyLabel')}</p>
               <h2 className="text-2xl font-black text-white mt-1">
-                {pos && posMeta ? <>{posMeta.englishName} <span className="text-white/40 text-base">· {t('quranKhatam.ayahOfTotal', { ayah: pos.ayah, total: posMeta.numberOfAyahs })} · Juz {juzOf(pos.surah, pos.ayah)}</span></> : t('quranKhatam.beginJourneyHeading')}
+                {pos && posMeta ? <>{surahDisplayName(posMeta, i18n.language)} <span className="text-white/40 text-base">· {t('quranKhatam.ayahOfTotal', { ayah: formatLocaleNumber(pos.ayah), total: formatLocaleNumber(posMeta.numberOfAyahs) })} · {t('quranReader.juz', 'Juz')} {formatLocaleNumber(juzOf(pos.surah, pos.ayah))}</span></> : t('quranKhatam.beginJourneyHeading')}
               </h2>
 
               <div className="mt-4 h-3 rounded-full bg-white/10 overflow-hidden">
@@ -63,8 +64,8 @@ export default function QuranKhatam() {
                 />
               </div>
               <div className="flex justify-between text-[11px] text-white/40 mt-1.5">
-                <span>{summary.profile.currentAyah} / {QURAN_TOTAL_AYAT} {t('quranKhatam.ayatLabel')} · {pct.toFixed(1)}%</span>
-                <span>{summary.estDaysToKhatm ? t('quranKhatam.estDays', { days: summary.estDaysToKhatm }) : t('quranKhatam.readFewDays')}</span>
+                <span>{formatLocaleNumber(summary.profile.currentAyah)} / {formatLocaleNumber(QURAN_TOTAL_AYAT)} {t('quranKhatam.ayatLabel')} · {formatLocaleNumber(Number(pct.toFixed(1)))}%</span>
+                <span>{summary.estDaysToKhatm ? t('quranKhatam.estDays', { days: formatLocaleNumber(summary.estDaysToKhatm) }) : t('quranKhatam.readFewDays')}</span>
               </div>
 
               {khatamStarted ? (
@@ -74,7 +75,7 @@ export default function QuranKhatam() {
                     onClick={() => { if (pos) navigate(`/quran/read/${pos.surah}?start=${pos.ayah}&mode=khatam`); }}
                     disabled={!pos}
                   >
-                    {t('quranKhatam.continueFrom', { ref: pos ? `${pos.surah}:${pos.ayah}` : '…' })}
+                    {t('quranKhatam.continueFrom', { ref: pos ? `${formatLocaleNumber(pos.surah)}:${formatLocaleNumber(pos.ayah)}` : '…' })}
                   </button>
                   <p className="text-white/30 text-[11px] text-center mt-2">
                     {t('quranKhatam.calmPace')}
@@ -100,11 +101,11 @@ export default function QuranKhatam() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                <p className="text-2xl font-black text-brand-gold">⭐ {summary.profile.khatmCount}</p>
+                <p className="text-2xl font-black text-brand-gold">⭐ {formatLocaleNumber(summary.profile.khatmCount)}</p>
                 <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('quranKhatam.khatmCompleted')}</p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                <p className="text-2xl font-black text-brand-emerald">{summary.pace ?? '—'}</p>
+                <p className="text-2xl font-black text-brand-emerald">{summary.pace != null ? formatLocaleNumber(summary.pace) : '—'}</p>
                 <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('quranKhatam.ayatPerDay')}</p>
               </div>
             </div>

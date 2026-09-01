@@ -24,7 +24,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useZikrStore } from '../store/useZikrStore.js';
-import { formatLocaleDate } from '../utils/localeDate.js';
+import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 
 // ── Country → Cities data ─────────────────────────────────────────────────────
 const COUNTRIES_CITIES: Record<string, string[]> = {
@@ -631,7 +631,7 @@ export default function Profile() {
 
 
   const ageInfo = calcFullAge(profile.birthDate);
-  const totalZikr = (dbUser?.totalCount ?? 0).toLocaleString();
+  const totalZikr = formatLocaleNumber(dbUser?.totalCount ?? 0);
   const longestStreak = analyticsData?.streak?.longestStreak ?? null;
   const memberSince = dbUser?.createdAt ? formatFullDate(dbUser.createdAt) : null;
 

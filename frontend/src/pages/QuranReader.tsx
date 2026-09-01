@@ -14,7 +14,7 @@ import { useTafsir } from '../hooks/useQuran.js';
 import { TAFSIRS, getPreferredTafsir, setPreferredTafsir } from '../utils/tafsir.js';
 import { QURANIC_DUAS } from '../utils/quranMeta.js';
 import { getArabicFont, getFontPx, translitEnabled } from '../utils/quranPrefs.js';
-import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, selectedTranslations, TRANSLATIONS, type SurahMeta, type AyahText } from '../utils/quranData.js';
+import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, selectedTranslations, surahDisplayName, TRANSLATIONS, type SurahMeta, type AyahText } from '../utils/quranData.js';
 import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrate.js';
 
 /**
@@ -68,7 +68,7 @@ export default function QuranReader() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const surahNo = Math.min(114, Math.max(1, Number(surahParam) || 1));
   const mode = (params.get('mode') ?? 'free') as ReaderMode;
@@ -311,13 +311,13 @@ export default function QuranReader() {
     clearResume(surahNo);
     syncResume(0);
     if (mode === 'single') {
-      finishAndRedirect(t('quranReader.singleComplete', '{{name}} complete 🌿', { name: surahMeta?.englishName ?? t('quranReader.surah', 'Surah') }));
+      finishAndRedirect(t('quranReader.singleComplete', '{{name}} complete 🌿', { name: surahMeta ? surahDisplayName(surahMeta, i18n.language) : t('quranReader.surah', 'Surah') }));
       return;
     }
     if (surahNo < 114) {
       suppressSaveRef.current = true;
       celebrateSmall();
-      toast.success(t('quranReader.surahDone', '{{name}} completed — onward! 🌿', { name: surahMeta?.englishName ?? t('quranReader.surah', 'Surah') }), { id: 'surah-done', duration: 2200 });
+      toast.success(t('quranReader.surahDone', '{{name}} completed — onward! 🌿', { name: surahMeta ? surahDisplayName(surahMeta, i18n.language) : t('quranReader.surah', 'Surah') }), { id: 'surah-done', duration: 2200 });
       // REPLACE so Back returns to where you came from — not the finished surah
       // — and so you can't step back into the previous surah.
       navigate(`/quran/read/${surahNo + 1}?mode=${mode}`, { replace: true });
@@ -463,7 +463,7 @@ export default function QuranReader() {
         {/* info chips */}
         <div className="flex flex-wrap items-center gap-2 text-[11px]">
           <span className="px-2.5 py-1 rounded-full bg-white/5 border border-brand-emerald/10 text-white/70 font-bold">
-            {surahNo}. {surahMeta?.englishName ?? '…'} <span className="text-white/30">· {surahMeta?.numberOfAyahs ?? '–'} {t('quranReader.ayahWord', 'āyāt')}</span>
+            {surahNo}. {surahMeta ? surahDisplayName(surahMeta, i18n.language) : '…'} <span className="text-white/30">· {surahMeta?.numberOfAyahs ?? '–'} {t('quranReader.ayahWord', 'āyāt')}</span>
           </span>
           <span className="px-2.5 py-1 rounded-full bg-white/5 border border-brand-emerald/10 text-white/50">
             {t('quranReader.juz', 'Juz')} {current ? juzOf(surahNo, current.numberInSurah) : '–'}
@@ -578,7 +578,7 @@ export default function QuranReader() {
                   </p>
                   {surahMeta?.englishNameTranslation && (
                     <p className="text-white/30 text-[11px]">
-                      {surahMeta.englishName} — “{surahMeta.englishNameTranslation}”
+                      {surahDisplayName(surahMeta, i18n.language)} — “{surahMeta.englishNameTranslation}”
                     </p>
                   )}
                 </div>
@@ -832,7 +832,7 @@ export default function QuranReader() {
               <div className="text-3xl mb-2">📖</div>
               <h3 className="text-white font-black text-base">{t('quranReader.continueReading', 'Continue reading?')}</h3>
               <p className="text-white/50 text-xs mt-1.5 leading-relaxed">
-                {t('quranReader.leftOffAt', 'You left {{name}} at āyah', { name: surahMeta?.englishName ?? t('quranReader.thisSurah', 'this surah') })} <b className="text-brand-emerald">{resumeAyah}</b>.
+                {t('quranReader.leftOffAt', 'You left {{name}} at āyah', { name: surahMeta ? surahDisplayName(surahMeta, i18n.language) : t('quranReader.thisSurah', 'this surah') })} <b className="text-brand-emerald">{resumeAyah}</b>.
                 {' '}{t('quranReader.pickUpOrRestart', 'Pick up from there, or start over from the beginning.')}
               </p>
               <div className="flex gap-2 mt-4">

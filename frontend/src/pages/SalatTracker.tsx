@@ -25,6 +25,7 @@ import {
   calcPrayerTimes,
   getCurrentAndNextPrayer,
   formatTime,
+  translateSalatName,
 } from '../utils/prayerTimes.js';
 import { getHijriDate, formatHijriDate } from '../utils/islamicCalendar.js';
 import { useCycleActive } from '../hooks/useCycle.js';
@@ -623,7 +624,7 @@ export default function SalatTracker() {
                         <span className="text-2xl shrink-0">{prayer.icon}</span>
                         <div className="min-w-0">
                           <p className={`font-bold text-sm leading-none ${isCurrent ? 'text-brand-emerald' : style.text}`}>
-                            {prayerId === 'dhuhr' && isCivilFriday ? "Jumu'ah" : prayer.name}
+                            {prayerId === 'dhuhr' && isCivilFriday ? t('salatNames.jumuah', "Jumu'ah") : translateSalatName(prayer.id, prayer.name, t)}
                             {isCurrent && <span className="ml-2 text-xs font-normal text-brand-emerald/70">● now</span>}
                             {prayerId === 'dhuhr' && isCivilFriday && (
                               <span className="ml-2 text-xs font-normal text-brand-emerald/60">🕌 congregation</span>
@@ -898,7 +899,10 @@ export default function SalatTracker() {
                     </p>
                     <p className="text-white/25 text-xs mt-0.5">
                       {naflEntry.completed && (naflEntry.types?.length ?? 0) > 0
-                        ? naflEntry.types.map((nt) => NAFL_TYPE_META.find((m) => m.id === nt)?.label).filter(Boolean).join(', ')
+                        ? naflEntry.types.map((nt) => {
+                            const m = NAFL_TYPE_META.find((mm) => mm.id === nt);
+                            return m ? translateSalatName(m.id, m.label, t) : null;
+                          }).filter(Boolean).join(', ')
                         : t('salatTracker.voluntaryPrayers', 'voluntary prayers')}
                     </p>
                   </div>
@@ -966,7 +970,7 @@ export default function SalatTracker() {
                                   )}
                                 </div>
                                 <p className={`text-xs font-bold mt-1.5 leading-tight ${selected ? 'text-brand-info' : 'text-white/70'}`}>
-                                  {nt.label}
+                                  {translateSalatName(nt.id, nt.label, t)}
                                 </p>
                                 <p className="text-white/20 text-[10px] mt-0.5 leading-snug">{nt.shortNote}</p>
                               </motion.button>

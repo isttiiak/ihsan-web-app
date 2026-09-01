@@ -18,6 +18,8 @@ import {
 } from '../hooks/useAnalytics.js';
 import { useZikrTypes, useAddZikrType } from '../hooks/useZikrTypes.js';
 import { useZikrStore } from '../store/useZikrStore.js';
+import { zikrDisplayName } from '../utils/zikrLibrary.js';
+import { formatLocaleNumber } from '../utils/localeDate.js';
 import api from '../lib/api.js';
 import { getUserTimezoneOffset } from '../utils/timezone.js';
 import { getTrackingDay, getTrackingDayMiddayTs } from '../utils/trackingDay.js';
@@ -32,7 +34,7 @@ interface ManualEntryModalProps {
 }
 
 function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const { types, addConfirmedCounts, setTypes, setCustomMeaning } = useZikrStore();
   const { data: fetchedTypes } = useZikrTypes();
@@ -94,7 +96,7 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
       // refetch here, which made saving feel slow on mobile networks. The
       // refetch happens in the background; the charts catch up on their own.
       void queryClient.invalidateQueries({ queryKey: ['analytics'] });
-      toast.success(`${t('zikrAnalytics.backfillToast', { amount: parsedAmount.toLocaleString(), type: selectedType, day: dayLabel(daysBack).toLowerCase() })} 📿`, { id: 'zikr-backfill' });
+      toast.success(`${t('zikrAnalytics.backfillToast', { amount: formatLocaleNumber(parsedAmount), type: zikrDisplayName(selectedType, i18n.language), day: dayLabel(daysBack).toLowerCase() })} 📿`, { id: 'zikr-backfill' });
       onClose();
     } catch {
       setSubmitError(t('zikrAnalytics.saveError'));
@@ -191,7 +193,7 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
                   className="select select-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm"
                 >
                   {allTypes.map((tn) => (
-                    <option key={tn} value={tn} className="bg-brand-deep">{tn}</option>
+                    <option key={tn} value={tn} className="bg-brand-deep">{zikrDisplayName(tn, i18n.language)}</option>
                   ))}
                 </select>
                 <button
@@ -222,7 +224,7 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
               {daysBack === 0 && (
                 <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-brand-emerald/10">
                   <span className="text-white/50 text-sm">{t('zikrAnalytics.todaysCountSoFar')}</span>
-                  <span className="text-white font-black text-lg tabular-nums">{existingCount.toLocaleString()}</span>
+                  <span className="text-white font-black text-lg tabular-nums">{formatLocaleNumber(existingCount)}</span>
                 </div>
               )}
 
@@ -236,15 +238,15 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
                   {daysBack === 0 ? (
                     <>
                       <span className="text-brand-emerald/80 text-sm font-semibold">
-                        {existingCount.toLocaleString()} + {parsedAmount.toLocaleString()}
+                        {formatLocaleNumber(existingCount)} + {formatLocaleNumber(parsedAmount)}
                       </span>
                       <span className="text-brand-emerald font-black text-xl tabular-nums">
-                        = {newTotal.toLocaleString()}
+                        = {formatLocaleNumber(newTotal)}
                       </span>
                     </>
                   ) : (
                     <span className="text-brand-emerald font-bold text-sm">
-                      {t('zikrAnalytics.backfillPreview', { amount: parsedAmount.toLocaleString(), day: dayLabel(daysBack) })}
+                      {t('zikrAnalytics.backfillPreview', { amount: formatLocaleNumber(parsedAmount), day: dayLabel(daysBack) })}
                     </span>
                   )}
                 </motion.div>
@@ -362,7 +364,7 @@ function ManualEntryModal({ onClose, todayPerType, localCounts }: ManualEntryMod
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ZikrAnalytics() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState(7);
   const [activeTab, setActiveTab] = useState<'today' | 'all'>('today');
   const [showGoalModal, setShowGoalModal] = useState(false);
@@ -486,11 +488,11 @@ export default function ZikrAnalytics() {
           {/* Overview Statistics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: t('zikrAnalytics.allTimeStat'), value: allTime?.totalCount?.toLocaleString() ?? '0', accent: 'text-brand-emerald' },
-              { label: t('common.today'), value: todayTotal.toLocaleString(), accent: 'text-brand-gold' },
+              { label: t('zikrAnalytics.allTimeStat'), value: allTime?.totalCount != null ? formatLocaleNumber(allTime.totalCount) : '0', accent: 'text-brand-emerald' },
+              { label: t('common.today'), value: formatLocaleNumber(todayTotal), accent: 'text-brand-gold' },
               {
                 label: t('zikrAnalytics.bestDay'),
-                value: allTime?.bestDay?.count?.toLocaleString() ?? '0',
+                value: allTime?.bestDay?.count != null ? formatLocaleNumber(allTime.bestDay.count) : '0',
                 accent: 'text-brand-info',
                 sub: allTime?.bestDay?.date
                   ? formatLocaleDate(new Date(allTime.bestDay.date), { month: 'short', day: 'numeric' })
@@ -544,8 +546,8 @@ export default function ZikrAnalytics() {
                       className="group"
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-white/70 text-xs font-bold truncate max-w-[60%]">{item.zikrType}</span>
-                        <span className="text-white font-black text-xs tabular-nums">{item.total.toLocaleString()}</span>
+                        <span className="text-white/70 text-xs font-bold truncate max-w-[60%]">{zikrDisplayName(item.zikrType, i18n.language)}</span>
+                        <span className="text-white font-black text-xs tabular-nums">{formatLocaleNumber(item.total)}</span>
                       </div>
                       <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
                         <motion.div

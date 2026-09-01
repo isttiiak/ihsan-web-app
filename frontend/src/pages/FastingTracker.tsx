@@ -244,11 +244,11 @@ export default function FastingTracker() {
   const debtCapsules = useMemo(() => {
     const caps: Array<{ id: string; label: string; emoji: string; color: string; done: number; target: number }> = [];
     if (qadaOwed > 0) {
-      caps.push({ id: 'qada', label: 'Qaḍā', emoji: '🔄', color: '#c9a96e', done: qadaDone, target: qadaOwed });
+      caps.push({ id: 'qada', label: t('fasting.qada', 'Qaḍā'), emoji: '🔄', color: '#c9a96e', done: qadaDone, target: qadaOwed });
     }
     if (kaffarahActive) {
       caps.push({
-        id: 'kaffarah', label: 'Kaffārah', emoji: '⚖️', color: '#c4825a',
+        id: 'kaffarah', label: t('fasting.kaffarah', 'Kaffārah'), emoji: '⚖️', color: '#c4825a',
         done: summary?.kaffarah.currentRun ?? 0,
         target: summary?.profile.kaffarah.targetDays ?? 60,
       });
@@ -259,7 +259,7 @@ export default function FastingTracker() {
       }
     }
     return caps;
-  }, [qadaOwed, qadaDone, kaffarahActive, summary, vows]);
+  }, [qadaOwed, qadaDone, kaffarahActive, summary, vows, t]);
 
   // Week strip: last 6 days + today + tomorrow
   const weekDays = useMemo(() => {
@@ -643,13 +643,13 @@ export default function FastingTracker() {
                       </AnimatePresence>
                     </div>
                     <p className="font-black text-lg" style={{ color: STATUS_META[log.status].color }}>
-                      {t(`fasting.status.${log.status}`, STATUS_META[log.status].label)}
+                      {t(`fasting.${log.status}`, STATUS_META[log.status].label)}
                       {log.status === 'completed' && <span className="text-white/50 font-semibold text-sm"> — {t('fasting.mayAllahAccept', 'may Allah accept it!')} 🤲</span>}
                     </p>
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-brand-emerald/15 text-white/60 text-xs font-semibold">
                       {CATEGORY_LABEL[log.category as FastingCategory]?.emoji}{' '}
                       {log.category === 'voluntary' && log.voluntaryKind
-                        ? VOLUNTARY_BY_ID[log.voluntaryKind]?.label ?? t('fasting.voluntary', 'Voluntary')
+                        ? (VOLUNTARY_BY_ID[log.voluntaryKind] ? t(`fastingRules.voluntary.${log.voluntaryKind}`, VOLUNTARY_BY_ID[log.voluntaryKind]!.label) : t('fasting.voluntary', 'Voluntary'))
                         : log.category === 'nadhr'
                         ? (vows.find((v) => v.id === log.vowId)?.title ?? t('fasting.nadhr', 'Vow'))
                         : t(`fasting.${log.category}`, CATEGORY_LABEL[log.category as FastingCategory]?.label ?? '')}
@@ -758,7 +758,7 @@ export default function FastingTracker() {
                   >{r.emoji}</motion.span>
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-sm leading-tight" style={{ color: r.color }}>
-                      {r.label} <span className="text-white/40 font-normal text-[11px]">— {t('fasting.sunnahFast', 'sunnah fast!')}</span>
+                      {t(`fastingRules.voluntary.${r.id}`, r.label)} <span className="text-white/40 font-normal text-[11px]">— {t('fasting.sunnahFast', 'sunnah fast!')}</span>
                     </p>
                     <p className="text-white/40 text-[11px] leading-snug">{r.virtue}</p>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -780,7 +780,7 @@ export default function FastingTracker() {
           {/* Caution note (full warning shows at log time) */}
           {ruling.level === 'normal' && ruling.cautions.length > 0 && !log && (
             <p className="text-brand-gold/60 text-[11px] px-2 leading-relaxed">
-              ⚠️ {ruling.cautions.map((c) => c.info.label).join(' · ')} — {t('fasting.remindBeforeLogging', "we'll remind you before logging.")}
+              ⚠️ {ruling.cautions.map((c) => t(`fastingRules.disliked.${c.info.id}`, c.info.label)).join(' · ')} — {t('fasting.remindBeforeLogging', "we'll remind you before logging.")}
             </p>
           )}
 
@@ -893,7 +893,7 @@ export default function FastingTracker() {
                         {VOLUNTARY_META.filter((m) => m.id !== 'general').map((m) => (
                           <div key={m.id} className="rounded-xl border px-2.5 py-2"
                             style={{ background: `${m.color}10`, borderColor: `${m.color}30` }}>
-                            <p className="text-[11px] font-bold leading-tight" style={{ color: m.color }}>{m.emoji} {m.label}</p>
+                            <p className="text-[11px] font-bold leading-tight" style={{ color: m.color }}>{m.emoji} {t(`fastingRules.voluntary.${m.id}`, m.label)}</p>
                             <p className="text-white/30 text-[10px] leading-snug mt-0.5">{m.when}</p>
                             <div className="mt-1"><RefLink r={m.ref} /></div>
                           </div>
@@ -906,7 +906,7 @@ export default function FastingTracker() {
                       <p className="text-red-400 text-[10px] uppercase tracking-widest font-bold">🚫 {t('fasting.neverFastOn', 'Never fast on')}</p>
                       {PROHIBITED_INFO.map((p) => (
                         <div key={p.id} className="rounded-xl bg-red-500/10 border border-red-500/25 px-3 py-2">
-                          <p className="text-red-300 text-[11px] font-bold">{p.emoji} {p.label}</p>
+                          <p className="text-red-300 text-[11px] font-bold">{p.emoji} {t(`fastingRules.prohibited.${p.id}`, p.label)}</p>
                           <p className="text-white/30 text-[10px] leading-snug">{p.detail}</p>
                           <div className="mt-0.5">{p.refs.map((r) => <RefLink key={r.url} r={r} />)}</div>
                         </div>
@@ -918,7 +918,7 @@ export default function FastingTracker() {
                       <p className="text-brand-gold/80 text-[10px] uppercase tracking-widest font-bold">⚠️ {t('fasting.betterToAvoid', 'Better to avoid')}</p>
                       {DISLIKED_INFO.map((p) => (
                         <div key={p.id} className="rounded-xl bg-brand-gold/10 border border-brand-gold/20 px-3 py-2">
-                          <p className="text-brand-gold/90 text-[11px] font-bold">{p.emoji} {p.label}</p>
+                          <p className="text-brand-gold/90 text-[11px] font-bold">{p.emoji} {t(`fastingRules.disliked.${p.id}`, p.label)}</p>
                           <p className="text-white/30 text-[10px] leading-snug">{p.detail}</p>
                           <div className="mt-0.5">{p.refs.map((r) => <RefLink key={r.url} r={r} />)}</div>
                         </div>
@@ -980,7 +980,7 @@ export default function FastingTracker() {
                     <span className="text-xl shrink-0">{m.emoji}</span>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold" style={{ color: m.color }}>
-                        {m.label}
+                        {t(`fastingRules.voluntary.${m.id}`, m.label)}
                         {ruling.recommended.some((r) => r.id === m.id) && (
                           <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-brand-emerald/20 text-brand-emerald">{t('fasting.todayTag', 'today ✓')}</span>
                         )}
@@ -1236,7 +1236,7 @@ export default function FastingTracker() {
               <div className="space-y-3 mb-5">
                 {warnState.cautions.map((c) => (
                   <div key={c.id} className="rounded-xl bg-brand-gold/10 border border-brand-gold/25 p-3 space-y-1">
-                    <p className="text-brand-gold font-bold text-sm">{c.info.emoji} {c.info.label}</p>
+                    <p className="text-brand-gold font-bold text-sm">{c.info.emoji} {t(`fastingRules.disliked.${c.info.id}`, c.info.label)}</p>
                     <p className="text-white/60 text-xs leading-relaxed">{c.info.detail}</p>
                     {c.info.refs.map((r) => (
                       <div key={r.url} className="space-y-0.5 pt-1">

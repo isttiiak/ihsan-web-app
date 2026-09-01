@@ -1,5 +1,7 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import { formatLocaleNumber } from '../../utils/localeDate.js';
 import { CheckCircleIcon, FireIcon as FireIconSolid } from '@heroicons/react/24/solid';
 import { PencilIcon, FlagIcon, SparklesIcon, TrophyIcon } from '@heroicons/react/24/outline';
 
@@ -19,6 +21,7 @@ interface GoalCardProps {
 }
 
 export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
+  const { t } = useTranslation();
   const { dailyTarget } = goal || { dailyTarget: 100 };
   const { total: todayTotal, goalMet } = today || { total: 0, goalMet: false };
   const prefersReducedMotion = useReducedMotion();
@@ -72,7 +75,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
           <div className="flex items-center gap-2 relative z-20">
             <h3 className="text-base sm:text-lg font-extrabold flex items-center gap-2 text-white/95">
               <FlagIcon className="w-5 h-5 drop-shadow" />
-              Goal
+              {t('zikrAnalytics.goalCard.goalTitle', 'Goal')}
             </h3>
             {goalMet && (
               <motion.div
@@ -83,7 +86,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
               >
                 <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 bg-brand-emerald/90 text-[var(--brand-deep)] font-black uppercase text-[10px] tracking-wider shadow-[0_4px_16px_rgba(0,0,0,0.3)] border border-brand-emerald/30 ring-1 ring-inset ring-brand-gold/30">
                   <CheckCircleIcon className="w-3.5 h-3.5 text-brand-emerald-dim" />
-                  Achieved
+                  {t('zikrAnalytics.goalCard.achieved', 'Achieved')}
                 </span>
               </motion.div>
             )}
@@ -94,7 +97,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.97 }}
             className="w-10 h-10 rounded-2xl grid place-items-center border border-brand-emerald/30 bg-white/10 text-white hover:bg-white/15 transition-colors"
-            title="Edit Goal"
+            title={t('zikrAnalytics.goalCard.editGoal', 'Edit Goal')}
           >
             <PencilIcon className="w-4 h-4" />
           </motion.button>
@@ -132,9 +135,9 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
                 className="text-4xl sm:text-5xl font-black leading-none"
                 whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
               >
-                {todayTotal}
+                {formatLocaleNumber(todayTotal)}
               </motion.div>
-              <div className="text-xs font-semibold text-white/80 mt-0.5">/ {dailyTarget}</div>
+              <div className="text-xs font-semibold text-white/80 mt-0.5">/ {formatLocaleNumber(dailyTarget)}</div>
             </div>
           </div>
           <motion.div
@@ -143,7 +146,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
           >
-            {progress.toFixed(0)}%
+            {formatLocaleNumber(Number(progress.toFixed(0)))}%
           </motion.div>
         </div>
 
@@ -154,7 +157,7 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
             className="p-2 bg-gradient-to-r from-brand-emerald/20 via-brand-gold/20 to-brand-warm/20 rounded-lg backdrop-blur-sm border border-brand-emerald/20 flex items-center justify-center gap-2"
           >
             <TrophyIcon className="w-5 h-5" />
-            <span className="text-sm font-extrabold tracking-wide">Congratulations! Goal Achieved</span>
+            <span className="text-sm font-extrabold tracking-wide">{t('zikrAnalytics.goalCard.congrats', 'Congratulations! Goal Achieved')}</span>
           </motion.div>
         ) : (
           <motion.div
@@ -164,14 +167,13 @@ export default function GoalCard({ goal, today, onEditGoal }: GoalCardProps) {
             transition={{ delay: 0.25 }}
           >
             <p className="text-sm font-semibold text-white/90 flex items-center justify-center gap-1.5">
-              <span className="font-black text-xl">{remaining}</span>{' '}
-              <span>more to reach goal</span>
+              {t('zikrAnalytics.goalCard.moreToReach', '{{amount}} more to reach goal', { amount: formatLocaleNumber(remaining) })}
             </p>
           </motion.div>
         )}
 
         <div className="mt-2 text-center text-md font-semibold text-white/70 flex items-center justify-center gap-1">
-          <SparklesIcon className="w-3 h-3" /> Target: {dailyTarget} zikr/day
+          <SparklesIcon className="w-3 h-3" /> {t('zikrAnalytics.goalCard.target', 'Target: {{amount}} zikr/day', { amount: formatLocaleNumber(dailyTarget) })}
         </div>
       </div>
     </motion.div>

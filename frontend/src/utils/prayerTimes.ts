@@ -1,5 +1,6 @@
 import * as adhan from 'adhan';
 import { getAsrMadhab } from './salatPrefs.js';
+import i18n from '../i18n.js';
 
 export type PrayerKey = 'fajr' | 'sunrise' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
 
@@ -91,10 +92,26 @@ export function getForbiddenWindows(times: PrayerTimesResult): ForbiddenWindow[]
 }
 
 export function formatTime(date: Date): string {
-  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const lang = (i18n.language || 'en').split('-')[0]!;
+  return date.toLocaleTimeString(lang === 'bn' ? 'bn' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+/** English display name → `salatNames.*` locale key, for names that don't
+ * carry their own `id` field (NaflWindow below). */
+const SALAT_NAME_TO_KEY: Record<string, string> = {
+  Fajr: 'fajr', Sunrise: 'sunrise', Dhuhr: 'dhuhr', Asr: 'asr', Maghrib: 'maghrib', Isha: 'isha',
+  Tahajjud: 'tahajjud', Ishraq: 'ishraq', Dhuha: 'duha', Awabeen: 'awwabin',
+};
+
+/** Translate a salat/nafl id (or English display name, via lookup) through
+ * the `salatNames.*` namespace, falling back to the given English text. */
+export function translateSalatName(idOrName: string, fallback: string, t: (key: string, fallback: string) => string): string {
+  const key = SALAT_NAME_TO_KEY[idOrName] ?? idOrName;
+  return t(`salatNames.${key}`, fallback);
 }
 
 export interface NaflWindow {
+  id: string;
   name: string;
   icon: string;
   start: Date;
@@ -121,7 +138,7 @@ export function getCurrentNaflWindow(times: PrayerTimesResult, now: Date = new D
     const nightDuration = fajr.getTime() - prevIsha.getTime();
     const tahajjudStart = new Date(prevIsha.getTime() + (2 / 3) * nightDuration);
     if (now >= tahajjudStart) {
-      return { name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: fajr };
+      return { id: 'tahajjud', name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: fajr };
     }
   } else {
     // After Fajr: check tonight's upcoming Tahajjud (starts after tonight's Isha)
@@ -129,7 +146,7 @@ export function getCurrentNaflWindow(times: PrayerTimesResult, now: Date = new D
     const nightDuration = nextDayFajr.getTime() - isha.getTime();
     const tahajjudStart = new Date(isha.getTime() + (2 / 3) * nightDuration);
     if (now >= tahajjudStart) {
-      return { name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: nextDayFajr };
+      return { id: 'tahajjud', name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: nextDayFajr };
     }
   }
 
@@ -137,20 +154,20 @@ export function getCurrentNaflWindow(times: PrayerTimesResult, now: Date = new D
   const ishraakStart = new Date(sunrise.getTime() + 20 * MIN);
   const ishraakEnd   = new Date(sunrise.getTime() + 45 * MIN);
   if (now >= ishraakStart && now < ishraakEnd) {
-    return { name: 'Ishraq', icon: '🌅', start: ishraakStart, end: ishraakEnd };
+    return { id: 'ishraq', name: 'Ishraq', icon: '🌅', start: ishraakStart, end: ishraakEnd };
   }
 
   // Dhuha: 45 min after sunrise → 15 min before Dhuhr
   const dhuhaStart = new Date(sunrise.getTime() + 45 * MIN);
   const dhuhaEnd   = new Date(dhuhr.getTime() - 15 * MIN);
   if (now >= dhuhaStart && now < dhuhaEnd) {
-    return { name: 'Dhuha', icon: '☀️', start: dhuhaStart, end: dhuhaEnd };
+    return { id: 'duha', name: 'Dhuha', icon: '☀️', start: dhuhaStart, end: dhuhaEnd };
   }
 
   // Awabeen: 5 min after Maghrib → Isha
   const awabeenStart = new Date(maghrib.getTime() + 5 * MIN);
   if (now >= awabeenStart && now < isha) {
-    return { name: 'Awabeen', icon: '🌆', start: awabeenStart, end: isha };
+    return { id: 'awwabin', name: 'Awabeen', icon: '🌆', start: awabeenStart, end: isha };
   }
 
   return null;

@@ -18,6 +18,7 @@ import {
   formatTime,
   getMandatoryWidget,
   PRAYER_META,
+  translateSalatName,
 } from '../utils/prayerTimes.js';
 import { isFriday, getTodaySpecialDays } from '../utils/islamicCalendar.js';
 import { useCycleActive, useCycleSummary } from '../hooks/useCycle.js';
@@ -297,7 +298,7 @@ export default function Home() {
                       <>
                         <p className="text-white/30 text-[10px] uppercase tracking-widest leading-none mb-0.5">{t('home.current')}</p>
                         <p className="text-white font-black text-sm leading-tight">
-                          {PRAYER_META.find((p) => p.id === prayerWidgetData.currentMandatory)?.name}
+                          {translateSalatName(prayerWidgetData.currentMandatory ?? '', PRAYER_META.find((p) => p.id === prayerWidgetData.currentMandatory)?.name ?? '', t)}
                         </p>
                         <p className="text-white/30 text-[10px] mt-0.5">
                           {t('common.ends')} {formatTime(prayerWidgetData.currentMandatoryEnd!)}
@@ -306,7 +307,7 @@ export default function Home() {
                         {prayerWidgetData.naflWindow && (
                           <div className="mt-1 pt-1 border-t border-brand-border/40">
                             <p className="text-brand-warm/80 text-[10px] font-semibold leading-none">
-                              {prayerWidgetData.naflWindow.icon} {prayerWidgetData.naflWindow.name} {t('common.time')}
+                              {prayerWidgetData.naflWindow.icon} {translateSalatName(prayerWidgetData.naflWindow.id, prayerWidgetData.naflWindow.name, t)} {t('common.time')}
                             </p>
                             <p className="text-white/25 text-[10px] leading-none mt-0.5">
                               {t('common.until')} {formatTime(prayerWidgetData.naflWindow.end)}
@@ -317,7 +318,7 @@ export default function Home() {
                     ) : prayerWidgetData.naflWindow ? (
                       <>
                         <p className="text-brand-info/60 text-[10px] uppercase tracking-widest leading-none mb-0.5">{t('home.naflTime')}</p>
-                        <p className="text-brand-info font-black text-sm leading-tight">{prayerWidgetData.naflWindow.name}</p>
+                        <p className="text-brand-info font-black text-sm leading-tight">{translateSalatName(prayerWidgetData.naflWindow.id, prayerWidgetData.naflWindow.name, t)}</p>
                         <p className="text-white/30 text-[10px] mt-0.5">
                           {formatTime(prayerWidgetData.naflWindow.start)} – {formatTime(prayerWidgetData.naflWindow.end)}
                         </p>
@@ -360,7 +361,7 @@ export default function Home() {
                     <div className="min-w-0">
                       <p className="text-white/30 text-[10px] uppercase tracking-widest leading-none mb-0.5">{t('home.next')}</p>
                       <p className="text-brand-emerald font-bold text-xs leading-tight">
-                        {PRAYER_META.find((p) => p.id === prayerWidgetData.nextMandatory)?.name}
+                        {translateSalatName(prayerWidgetData.nextMandatory, PRAYER_META.find((p) => p.id === prayerWidgetData.nextMandatory)?.name ?? '', t)}
                       </p>
                       <p className="text-white/30 text-[10px] leading-none">{formatTime(prayerWidgetData.nextMandatoryTime)}</p>
                     </div>

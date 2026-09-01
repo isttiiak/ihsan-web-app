@@ -3,6 +3,7 @@
 // The Islamic day starts at Maghrib: getHijriToday() accounts for this.
 
 import { calcPrayerTimes } from './prayerTimes.js';
+import i18n from '../i18n.js';
 
 export interface SpecialDayTodo {
   icon: string;
@@ -351,9 +352,16 @@ export function getHijriDate(date: Date = new Date()): HijriDate | null {
   }
 }
 
-/** Format Hijri date for display */
+/** Format Hijri date for display — month name, day, and year all follow the
+ * app's selected language (via the shared `hijriMonths.*` locale keys and
+ * বাংলা digits in Bengali mode). */
 export function formatHijriDate(h: HijriDate): string {
-  return `${h.day} ${h.monthName} ${h.year} AH`;
+  const lang = (i18n.language || 'en').split('-')[0];
+  const monthName = i18n.t(`hijriMonths.${h.month - 1}`, { defaultValue: h.monthName });
+  const ah = i18n.t('hijriMonths.ah', { defaultValue: 'AH' });
+  const day = lang === 'bn' ? h.day.toLocaleString('bn') : String(h.day);
+  const year = lang === 'bn' ? h.year.toLocaleString('bn') : String(h.year);
+  return `${day} ${monthName} ${year} ${ah}`;
 }
 
 /**

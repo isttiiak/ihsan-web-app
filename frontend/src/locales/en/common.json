@@ -358,7 +358,12 @@
     "markFastedAria": "Mark {{date}} as fasted",
     "noFastsYet": "No fasts logged yet — start from the Tracker tab",
     "srTitle": "Fasting Analytics",
-    "thisMonth": "This month"
+    "thisMonth": "This month",
+    "status": {
+      "completed": "Fasted",
+      "intended": "Intended",
+      "broken": "Broken"
+    }
   },
   "feedback": {
     "disclaimer": "Messages go directly to the developer. No data is shared with third parties.",
@@ -667,7 +672,8 @@
     "zikrCounter": "Zikr Counter"
   },
   "navbar": {
-    "openAccountMenu": "Open account menu"
+    "openAccountMenu": "Open account menu",
+    "salatTodayCount": "🕌 {{count}}/5 today"
   },
   "notFound": {
     "backHome": "Back to Home",
@@ -942,13 +948,13 @@
     "todaysReading": "Today's reading"
   },
   "quranKhatam": {
-    "ayahOfTotal": "ayah {{current}} of {{total}}",
+    "ayahOfTotal": "ayah {{ayah}} of {{total}}",
     "ayatLabel": "ayat",
     "ayatPerDay": "ayat/day",
     "beginButton": "Begin from Al-Fatihah",
     "beginJourneyHeading": "Begin your khatam journey",
     "calmPace": "Read at your own pace — one page, one ayah, or one juz at a time.",
-    "continueFrom": "Continue from {{surah}} {{ayah}}",
+    "continueFrom": "Continue from {{ref}}",
     "estDays": "est. {{days}} days",
     "journeyLabel": "Your khatam journey",
     "khatmCompleted": "khatm completed",
@@ -2177,7 +2183,47 @@
     "updating": "Updating…",
     "whichDay": "Which day?",
     "yesterday": "Yesterday",
-    "zikrType": "Dhikr Type"
+    "zikrType": "Dhikr Type",
+    "streakCard": {
+      "paused": "Paused",
+      "streakTitle": "Streak",
+      "resumeStreak": "Resume Streak",
+      "pauseStreak": "Pause Streak",
+      "pausedBanner": "Streak Paused — counts won't increase until you resume",
+      "atRisk": "{{remaining}} more to protect your {{streak}}-day streak!",
+      "countNow": "Count now →",
+      "dayStreak": "Day Streak",
+      "best": "Best",
+      "last7Days": "Last 7 days",
+      "legendGoalMet": "✓ goal met",
+      "legendGrace": "🧊 grace (chance used)",
+      "legendMissed": "✖ missed",
+      "legendPartial": "partial",
+      "graceExplainer": "🧊 grace day = you missed it but the streak survived. Backfill it from \"Log Missed Counts\" (up to 2 days back) to turn it green.",
+      "keepItUp": "Keep it up! Strong habit.",
+      "safeResume": "Safe. Resume anytime!",
+      "resumeNow": "Resume now",
+      "howItWorks": "How Streaks Work:",
+      "howItWorks1": "Complete your daily zikr goal to continue your streak",
+      "howItWorks2": "Miss 1 day? No problem! You get a 24-hour grace period",
+      "howItWorks3": "Pause anytime to preserve your streak safely",
+      "howItWorks4": "Note: Missing 2+ days in a row will reset your streak"
+    },
+    "goalCard": {
+      "goalTitle": "Goal",
+      "achieved": "Achieved",
+      "editGoal": "Edit Goal",
+      "congrats": "Congratulations! Goal Achieved",
+      "moreToReach": "{{amount}} more to reach goal",
+      "target": "Target: {{amount}} zikr/day"
+    },
+    "trendChart": {
+      "title": "Trend Chart",
+      "noData": "No data available",
+      "dayTrend": "{{period}}-Day Trend"
+    },
+    "noZikrToday": "No zikr logged today yet",
+    "noZikrAllTime": "No zikr logged yet"
   },
   "zikrLibrary": {
     "addFail": "Could not add — try again.",
@@ -2211,5 +2257,49 @@
     "removeFail": "Could not remove — try again.",
     "removed": "\"{{name}}\" removed",
     "yesDelete": "Yes, delete"
+  },
+  "salatNames": {
+    "fajr": "Fajr",
+    "sunrise": "Sunrise",
+    "dhuhr": "Dhuhr",
+    "asr": "Asr",
+    "maghrib": "Maghrib",
+    "isha": "Isha",
+    "jumuah": "Jumu'ah",
+    "tahajjud": "Tahajjud",
+    "ishraq": "Ishraq",
+    "duha": "Duha (Chasht)",
+    "awwabin": "Awwabin",
+    "witr": "Witr",
+    "tahiyyat_wudu": "Tahiyyat al-Wudu'",
+    "tahiyyat_masjid": "Tahiyyat al-Masjid",
+    "hajat": "Ṣalāt al-Ḥājat",
+    "istikharah": "Istikharah",
+    "tarawih": "Tarawih"
+  },
+  "fastingRules": {
+    "voluntary": {
+      "mon_thu": "Monday / Thursday",
+      "ayyam_bid": "Ayyām al-Bīḍ (White Days)",
+      "arafah": "Day of ʿArafah",
+      "ashura": "ʿĀshūrā (+ Tāsūʿā)",
+      "shawwal_six": "Six of Shawwāl",
+      "muharram": "Muḥarram",
+      "shaban": "Sha'bān",
+      "dhul_hijjah": "First 9 of Dhul Ḥijjah",
+      "dawud": "Fast of Dāwūd",
+      "general": "General Nafl"
+    },
+    "prohibited": {
+      "eid_fitr": "Eid al-Fiṭr (1 Shawwāl)",
+      "eid_adha": "Eid al-Aḍḥā (10 Dhul Ḥijjah)",
+      "tashriq": "Days of Tashrīq (11–13 Dhul Ḥijjah)"
+    },
+    "disliked": {
+      "friday_alone": "Singling out Friday",
+      "saturday_alone": "Singling out Saturday",
+      "day_of_doubt": "Day of Doubt (30 Sha'bān)",
+      "wisal": "Wiṣāl (continuous, no ifṭār)"
+    }
   }
 }

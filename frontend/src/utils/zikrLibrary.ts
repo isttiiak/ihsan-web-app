@@ -52,6 +52,32 @@ export const PREDEFINED_TYPES = [
   'Ayatul Kursi', 'Durud Ibrahim',
 ];
 
+/** Bengali display names (transliteration) for the built-in dhikr above — the
+ * English strings in PREDEFINED_TYPES stay unchanged (they're Map keys in
+ * User.zikrTotals on the backend); this only swaps what's RENDERED. Custom
+ * user-added dhikr have no entry here and fall back to their raw text. */
+const ZIKR_DISPLAY_BN: Record<string, string> = {
+  'SubhanAllah': 'সুবহানাল্লাহ',
+  'Alhamdulillah': 'আলহামদুলিল্লাহ',
+  'Allahu Akbar': 'আল্লাহু আকবার',
+  'La ilaha illallah': 'লা ইলাহা ইল্লাল্লাহ',
+  [TAHLIL_NAME]: 'লা ইলাহা ইল্লাল্লাহু ওয়াহদাহু লা শারিকা লাহ',
+  'Astaghfirullah': 'আস্তাগফিরুল্লাহ',
+  'SubhanAllah wa bihamdihi': 'সুবহানাল্লাহি ওয়া বিহামদিহি',
+  'La hawla wa la quwwata illa billah': 'লা হাওলা ওয়ালা কুওয়াতা ইল্লা বিল্লাহ',
+  'SubhanAllah wal hamdulillah wa la ilaha illAllah wa Allahu akbar':
+    'সুবহানাল্লাহি ওয়াল হামদুলিল্লাহি ওয়ালা ইলাহা ইল্লাল্লাহু ওয়াল্লাহু আকবার',
+  'Ayatul Kursi': 'আয়াতুল কুরসি',
+  'Durud Ibrahim': 'দরুদে ইব্রাহীম',
+};
+
+/** Translate a (predefined) dhikr's counter-key name for display — falls
+ * back to the raw name for custom/unlisted dhikr and non-Bengali languages. */
+export function zikrDisplayName(name: string, lang: string): string {
+  if (lang !== 'bn') return name;
+  return ZIKR_DISPLAY_BN[name] ?? name;
+}
+
 /** Dhikr the app depends on STRUCTURALLY: the salat tracker writes tasbīḥ
  * counts into the first four and Ayatul Kursi into the fifth, so removing any
  * of them would break that wiring. Istighfār is included at Istiak's request

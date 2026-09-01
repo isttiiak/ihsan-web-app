@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { PlayIcon, PauseIcon, ForwardIcon, BackwardIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useReadAyat } from '../hooks/useQuran.js';
-import { loadSurahList, type SurahMeta } from '../utils/quranData.js';
+import { loadSurahList, surahDisplayName, type SurahMeta } from '../utils/quranData.js';
 import { listenCountsAsAyat } from '../utils/quranPrefs.js';
 
 /**
@@ -50,6 +51,7 @@ function fmtClock(sec: number): string {
 }
 
 export default function QuranAudioPlayer() {
+  const { i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const readAyat = useReadAyat();
 
@@ -172,7 +174,7 @@ export default function QuranAudioPlayer() {
             >
               {(surahs.length ? surahs : [{ number: 1, name: '', englishName: 'Al-Fatihah', englishNameTranslation: 'The Opener', numberOfAyahs: 7 }]).map((s) => (
                 <option key={s.number} value={s.number}>
-                  {s.number}. {s.englishName} — {s.englishNameTranslation} ({s.numberOfAyahs} āyāt)
+                  {s.number}. {surahDisplayName(s, i18n.language)} — {s.englishNameTranslation} ({s.numberOfAyahs} āyāt)
                 </option>
               ))}
             </select>

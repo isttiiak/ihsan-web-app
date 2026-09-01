@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useUiStore } from '../../store/useUiStore.js';
-import { formatLocaleDate } from '../../utils/localeDate.js';
+import { formatLocaleDate, formatLocaleNumber } from '../../utils/localeDate.js';
 
 /**
  * Daily-total trend, drawn as plain SVG.
@@ -62,6 +63,7 @@ function niceCeil(max: number): number {
 }
 
 export default function TrendChart({ data, period }: TrendChartProps) {
+  const { t } = useTranslation();
   const reduceMotion = useUiStore((s) => s.reduceMotion);
   const [hover, setHover] = useState<number | null>(null);
 
@@ -97,9 +99,9 @@ export default function TrendChart({ data, period }: TrendChartProps) {
     return (
       <div className="card bg-brand-surface border border-brand-border shadow-glass">
         <div className="card-body p-6">
-          <h3 className="text-lg font-bold text-brand-emerald mb-4">Trend Chart</h3>
+          <h3 className="text-lg font-bold text-brand-emerald mb-4">{t('zikrAnalytics.trendChart.title', 'Trend Chart')}</h3>
           <div className="flex items-center justify-center h-64 text-white/40">
-            <p>No data available</p>
+            <p>{t('zikrAnalytics.trendChart.noData', 'No data available')}</p>
           </div>
         </div>
       </div>
@@ -120,11 +122,11 @@ export default function TrendChart({ data, period }: TrendChartProps) {
     >
       <div className="card-body p-6">
         <div className="flex items-baseline justify-between gap-3 mb-4">
-          <h3 className="text-lg font-bold text-brand-emerald">{period}-Day Trend</h3>
+          <h3 className="text-lg font-bold text-brand-emerald">{t('zikrAnalytics.trendChart.dayTrend', '{{period}}-Day Trend', { period: formatLocaleNumber(period) })}</h3>
           {active && (
             <p className="text-xs text-white/60 tabular-nums">
               <span className="text-white/40">{active.label}</span>{' '}
-              <span className="font-bold text-white">{active.value}</span>
+              <span className="font-bold text-white">{formatLocaleNumber(active.value)}</span>
             </p>
           )}
         </div>
@@ -156,7 +158,7 @@ export default function TrendChart({ data, period }: TrendChartProps) {
                 x={PAD.left - 8} y={t.y + 4} textAnchor="end"
                 className="fill-white/40" style={{ fontSize: 11 }}
               >
-                {t.value}
+                {formatLocaleNumber(t.value)}
               </text>
             </g>
           ))}

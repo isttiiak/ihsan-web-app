@@ -5,7 +5,7 @@ import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
 import { TrashIcon } from '@heroicons/react/24/outline';
-import i18n from '../i18n.js';
+import { formatLocaleDate } from '../utils/localeDate.js';
 import {
   useFastingSummary,
   useFastingHistory,
@@ -28,14 +28,14 @@ const CATEGORY_CHART: Record<FastingCategory, { label: string; emoji: string; co
 };
 const CATEGORY_ORDER: FastingCategory[] = ['voluntary', 'qada', 'kaffarah', 'nadhr'];
 
-const STATUS_CHIP: Record<string, { label: string; cls: string }> = {
-  completed: { label: '✓ Fasted',   cls: 'bg-brand-emerald/15 text-brand-emerald border-brand-emerald/40' },
-  intended:  { label: '🌅 Intended', cls: 'bg-brand-info/15 text-brand-info border-brand-info/40' },
-  broken:    { label: '💔 Broken',   cls: 'bg-red-500/15 text-red-300 border-red-400/40' },
+const STATUS_CHIP: Record<string, { emoji: string; labelEn: string; cls: string }> = {
+  completed: { emoji: '✓', labelEn: 'Fasted',   cls: 'bg-brand-emerald/15 text-brand-emerald border-brand-emerald/40' },
+  intended:  { emoji: '🌅', labelEn: 'Intended', cls: 'bg-brand-info/15 text-brand-info border-brand-info/40' },
+  broken:    { emoji: '💔', labelEn: 'Broken',   cls: 'bg-red-500/15 text-red-300 border-red-400/40' },
 };
 
 function monthLabel(ym: string): string {
-  return new Date(ym + '-15T12:00:00').toLocaleDateString(i18n.language, { month: 'short' });
+  return formatLocaleDate(new Date(ym + '-15T12:00:00'), { month: 'short' });
 }
 
 export default function FastingAnalytics() {
@@ -150,11 +150,11 @@ export default function FastingAnalytics() {
                     const count = derived.byCategory[c] ?? 0;
                     const pct = Math.round((count / maxCat) * 100);
                     return (
-                      <div key={c} className="group" title={`${t(`fastingAnalytics.category.${c}`, meta.label)}: ${count} ${t('fastingAnalytics.completed', 'completed')}`}>
+                      <div key={c} className="group" title={`${t(`fasting.${c}`, meta.label)}: ${count} ${t('fastingAnalytics.completed', 'completed')}`}>
                         <div className="flex justify-between items-baseline mb-1">
                           <span className="text-white/60 text-xs font-semibold flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: meta.color }} />
-                            {meta.emoji} {t(`fastingAnalytics.category.${c}`, meta.label)}
+                            {meta.emoji} {t(`fasting.${c}`, meta.label)}
                           </span>
                           <span className="text-white/80 text-xs font-bold tabular-nums">{count}</span>
                         </div>
@@ -228,7 +228,7 @@ export default function FastingAnalytics() {
                     {derived.groups.map((g) => (
                       <div key={g.ym}>
                         <p className="px-4 py-1.5 bg-white/[0.03] text-white/30 text-[10px] font-bold uppercase tracking-widest">
-                          {new Date(g.ym + '-15T12:00:00').toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })}
+                          {formatLocaleDate(new Date(g.ym + '-15T12:00:00'), { month: 'long', year: 'numeric' })}
                           <span className="ml-2 normal-case font-semibold">
                             {t('fastingAnalytics.fastedCount', { count: g.items.filter((l) => l.status === 'completed').length, defaultValue: '{{count}} fasted' })}
                           </span>
@@ -242,21 +242,21 @@ export default function FastingAnalytics() {
                               <div className="w-11 shrink-0 text-center">
                                 <p className="text-white font-black text-base leading-none tabular-nums">{parseInt(l.date.slice(8), 10)}</p>
                                 <p className="text-white/30 text-[9px] uppercase">
-                                  {new Date(l.date + 'T12:00:00').toLocaleDateString(i18n.language, { weekday: 'short' })}
+                                  {formatLocaleDate(new Date(l.date + 'T12:00:00'), { weekday: 'short' })}
                                 </p>
                               </div>
                               {/* Type */}
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold truncate" style={{ color: cat?.color ?? '#fff' }}>
                                   {cat?.emoji} {l.category === 'voluntary' && l.voluntaryKind
-                                    ? VOLUNTARY_BY_ID[l.voluntaryKind]?.label ?? t(`fastingAnalytics.category.${l.category}`, cat.label)
-                                    : t(`fastingAnalytics.category.${l.category}`, cat?.label)}
+                                    ? (VOLUNTARY_BY_ID[l.voluntaryKind] ? t(`fastingRules.voluntary.${l.voluntaryKind}`, VOLUNTARY_BY_ID[l.voluntaryKind]!.label) : t(`fasting.${l.category}`, cat.label))
+                                    : t(`fasting.${l.category}`, cat?.label)}
                                 </p>
                                 {l.hijri && <p className="text-white/25 text-[10px] truncate">{l.hijri}</p>}
                               </div>
                               {/* Status chip / editor */}
                               <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold shrink-0 ${chip.cls}`}>
-                                {t(`fastingAnalytics.status.${l.status}`, chip.label)}
+                                {chip.emoji} {t(`fastingAnalytics.status.${l.status}`, chip.labelEn)}
                               </span>
                               {/* Actions */}
                               <div className="flex items-center gap-1 shrink-0">

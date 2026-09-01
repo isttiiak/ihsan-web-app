@@ -6,6 +6,7 @@ import TabNav from '../components/TabNav.js';
 import { ChartBarIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useSalatAnalytics } from '../hooks/useSalatLog.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
+import { formatLocaleDate } from '../utils/localeDate.js';
 
 const PERIOD_OPTIONS = [
   { label: '30d', value: 30 },
@@ -62,7 +63,7 @@ export default function SalatAnalytics() {
       const weekIdx = Math.floor(paddedIdx / 7);
       const month = new Date(d.date + 'T12:00:00').getMonth();
       if (month !== lastMonth) {
-        labels.push({ label: new Date(d.date + 'T12:00:00').toLocaleString(i18n.language, { month: 'short' }), weekIdx });
+        labels.push({ label: formatLocaleDate(new Date(d.date + 'T12:00:00'), { month: 'short' }), weekIdx });
         lastMonth = month;
       }
     });

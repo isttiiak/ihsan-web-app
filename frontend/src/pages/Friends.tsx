@@ -7,7 +7,7 @@ import AnimatedBackground from '../components/AnimatedBackground.js';
 import { streakVisual } from '../components/StatusBadges.js';
 import { ClipboardDocumentIcon, CheckIcon, XMarkIcon, ChevronDownIcon, UserPlusIcon, UsersIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useSocialSummary, useUnfriend, useFriendsList } from '../hooks/useSocial.js';
-import { formatLocaleDate } from '../utils/localeDate.js';
+import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 
 const RANK_BADGE = ['🥇', '🥈', '🥉'];
 
@@ -307,13 +307,13 @@ export default function Friends() {
                     {/* Stat chips — prayer, zikr streak, today's zikr, fasted today, quran pages */}
                     <div className="flex flex-wrap gap-1.5 mt-2.5 pl-10">
                       <span className="px-2 py-0.5 rounded-full bg-white/10 border border-brand-emerald/10 text-[10px] font-bold text-white/60">
-                        🕌 {t('friends.prayersStat', { count: f.salatToday })}
+                        🕌 {t('friends.prayersStat', { count: formatLocaleNumber(f.salatToday) })}
                       </span>
                       <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold text-white/70 ${sv.cls}`}>
-                        <span className={sv.iconCls}>{sv.icon}</span> {t('friends.zikrStreakStat', { count: f.zikrStreak })}
+                        <span className={sv.iconCls}>{sv.icon}</span> {t('friends.zikrStreakStat', { count: formatLocaleNumber(f.zikrStreak) })}
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-white/10 border border-brand-emerald/10 text-[10px] font-bold text-white/60">
-                        📿 {t('friends.zikrTodayStat', { count: f.zikrToday.toLocaleString() })}
+                        📿 {t('friends.zikrTodayStat', { count: formatLocaleNumber(f.zikrToday) })}
                       </span>
                       <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
                         f.fastedToday
@@ -323,7 +323,7 @@ export default function Friends() {
                         🌙 {f.fastedToday ? t('friends.fastingToday') : t('friends.notFasting')}
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-white/10 border border-brand-emerald/10 text-[10px] font-bold text-white/60">
-                        📖 {t('friends.quranPagesStat', { current: f.quranPagesToday, goal: f.quranGoal })}
+                        📖 {t('friends.quranPagesStat', { current: formatLocaleNumber(f.quranPagesToday), goal: formatLocaleNumber(f.quranGoal) })}
                       </span>
                     </div>
                   </motion.div>

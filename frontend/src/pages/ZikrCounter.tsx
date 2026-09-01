@@ -17,7 +17,8 @@ import TabNav from '../components/TabNav.js';
 import { StreakBadge, GoalBadge } from '../components/StatusBadges.js';
 import { celebrateGoal } from '../utils/celebrate.js';
 import { getHiddenZikr, hideZikr } from '../utils/hiddenZikr.js';
-import { PREDEFINED_TYPES, findLibraryZikr, isCoreZikr } from '../utils/zikrLibrary.js';
+import { PREDEFINED_TYPES, findLibraryZikr, isCoreZikr, zikrDisplayName } from '../utils/zikrLibrary.js';
+import { formatLocaleNumber } from '../utils/localeDate.js';
 import EditZikrModal from '../components/EditZikrModal.js';
 import ReportReference from '../components/ReportReference.js';
 import ZikrSettings from '../components/ZikrSettings.js';
@@ -178,7 +179,7 @@ const GLOW_PALETTE = [
 
 
 export default function ZikrCounter() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
@@ -466,7 +467,7 @@ export default function ZikrCounter() {
             className="font-bold text-sm truncate flex-shrink-0 max-w-[140px] sm:max-w-[180px]"
             style={{ color: color.glow, textShadow: `0 0 12px ${color.glow}60` }}
           >
-            {selected}
+            {zikrDisplayName(selected, i18n.language)}
           </span>
 
           {/* Separator */}
@@ -482,7 +483,7 @@ export default function ZikrCounter() {
           >
             <option value="" disabled className="bg-brand-deep text-white/40">{t('zikr.change')}</option>
             {types.filter((typ) => typ !== selected).map((typ) => (
-              <option key={typ} value={typ} className="bg-brand-deep text-white">{typ}</option>
+              <option key={typ} value={typ} className="bg-brand-deep text-white">{zikrDisplayName(typ, i18n.language)}</option>
             ))}
           </select>
           {/* Custom caret */}
@@ -546,7 +547,7 @@ export default function ZikrCounter() {
                   transition: 'text-shadow 0.25s ease',
                 }}
               >
-                {currentCount}
+                {formatLocaleNumber(currentCount)}
               </div>
             </motion.div>
           </div>
@@ -597,8 +598,8 @@ export default function ZikrCounter() {
               {dailyGoal !== null && !goalMet && (
                 <>
                   <div className="flex justify-between text-xs text-white/40 mb-1.5">
-                    <span>{t('zikr.todayCount', 'Today')}: {effectiveTotal}{pendingTotal > 0 ? <span className="text-brand-gold/60"> (+{pendingTotal} {t('zikr.syncing', 'syncing')})</span> : ''}</span>
-                    <span>{t('zikr.goalLabel', 'Goal')}: {dailyGoal}</span>
+                    <span>{t('zikr.todayCount', 'Today')}: {formatLocaleNumber(effectiveTotal)}{pendingTotal > 0 ? <span className="text-brand-gold/60"> (+{formatLocaleNumber(pendingTotal)} {t('zikr.syncing', 'syncing')})</span> : ''}</span>
+                    <span>{t('zikr.goalLabel', 'Goal')}: {formatLocaleNumber(dailyGoal)}</span>
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
                     <motion.div
@@ -819,7 +820,7 @@ export default function ZikrCounter() {
                 className="flex items-center gap-1.5 opacity-55 hover:opacity-90 transition-opacity cursor-pointer"
               >
                 <span className="text-sm font-bold truncate max-w-[200px] sm:max-w-[300px] text-brand-emerald/90">
-                  {selected}
+                  {zikrDisplayName(selected, i18n.language)}
                 </span>
                 <svg className="w-3 h-3 text-white/25 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
@@ -833,7 +834,7 @@ export default function ZikrCounter() {
               >
                 <option value="" disabled>{t('zikr.switchZikr', 'Switch zikr...')}</option>
                 {types.filter((typ) => typ !== selected).map((typ) => (
-                  <option key={typ} value={typ} className="bg-[#0e0d0a] text-white">{typ}</option>
+                  <option key={typ} value={typ} className="bg-[#0e0d0a] text-white">{zikrDisplayName(typ, i18n.language)}</option>
                 ))}
               </select>
               <button
@@ -878,7 +879,7 @@ export default function ZikrCounter() {
                   textShadow: '0 0 60px rgba(122,158,110,0.35)',
                 }}
               >
-                {currentCount}
+                {formatLocaleNumber(currentCount)}
               </motion.span>
 
               {/* Transliteration — faint caption below number */}
@@ -1152,7 +1153,7 @@ export default function ZikrCounter() {
                   const locked = isCoreZikr(typ);
                   return (
                     <div key={typ} className="flex items-center gap-2 p-2.5 rounded-xl border border-brand-border bg-brand-deep/50">
-                      <span className="flex-1 min-w-0 truncate text-white/80 text-sm font-semibold">{typ}</span>
+                      <span className="flex-1 min-w-0 truncate text-white/80 text-sm font-semibold">{zikrDisplayName(typ, i18n.language)}</span>
                       {isCustom && (
                         <button
                           onClick={() => { setShowManage(false); setEditZikr(typ); }}

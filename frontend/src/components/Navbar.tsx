@@ -13,7 +13,7 @@ import { useUiStore } from '../store/useUiStore.js';
 import { StreakBadge, GoalBadge } from './StatusBadges.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
 import { getHijriToday, formatHijriDate } from '../utils/islamicCalendar.js';
-import { formatLocaleDate } from '../utils/localeDate.js';
+import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 import {
   Cog6ToothIcon,
   UserCircleIcon,
@@ -199,7 +199,7 @@ export default function Navbar() {
       return (
         <div className="hidden sm:flex items-center gap-1.5">
           <span className="px-2 py-0.5 rounded-full bg-brand-info/20 border border-brand-info/30 text-white text-xs font-bold whitespace-nowrap">
-            🕌 {salatCount}/5 today
+            {t('navbar.salatTodayCount', { count: formatLocaleNumber(salatCount) })}
           </span>
         </div>
       );
@@ -284,14 +284,14 @@ export default function Navbar() {
                 {noorTodayVisible && (
                   <div className="tooltip tooltip-bottom" data-tip="Today's Noor — fresh light every day, resets at midnight">
                     <span className="px-2 py-0.5 rounded-full bg-brand-emerald/15 border border-brand-emerald/40 text-brand-emerald text-xs font-bold flex items-center gap-1 whitespace-nowrap">
-                      ✨ {noor.today}
+                      ✨ {formatLocaleNumber(noor.today)}
                     </span>
                   </div>
                 )}
                 {noorAllTimeVisible && (
                   <div className="tooltip tooltip-bottom" data-tip="All-time Noor — every day's light, gathered. Never resets">
                     <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 border border-brand-gold/40 text-brand-gold text-xs font-bold flex items-center gap-1 whitespace-nowrap">
-                      🌟 {(noor.allTime ?? 0).toLocaleString()}
+                      🌟 {formatLocaleNumber(noor.allTime ?? 0)}
                     </span>
                   </div>
                 )}

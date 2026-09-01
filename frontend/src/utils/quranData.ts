@@ -1,6 +1,8 @@
 // Quran text + metadata loaders — all from the free alquran.cloud API,
 // cached hard in localStorage so each surah is fetched exactly once ever.
 
+import { SURAH_NAMES_BN } from './surahNamesBn.js';
+
 export interface SurahMeta {
   number: number;
   name: string;          // Arabic
@@ -27,7 +29,16 @@ export interface AyahText {
 export const TRANSLATIONS = [
   { id: 'en.sahih', label: 'English — Ṣaḥīḥ International' },
   { id: 'bn.bengali', label: 'Bengali — মুহিউদ্দীন খান' },
+  { id: 'bn.hoque', label: 'Bengali — জহুরুল হক' },
 ] as const;
+
+/** Surah display name in the app's current language — the Bengali table is a
+ * transliteration (how the Arabic name is written in Bengali script), not a
+ * meaning translation, to match `englishName`'s convention. */
+export function surahDisplayName(meta: Pick<SurahMeta, 'number' | 'englishName'>, lang: string): string {
+  if (lang === 'bn') return SURAH_NAMES_BN[meta.number] ?? meta.englishName;
+  return meta.englishName;
+}
 
 const LANG_TO_TRANSLATION: Record<string, string> = {
   en: 'en.sahih',
