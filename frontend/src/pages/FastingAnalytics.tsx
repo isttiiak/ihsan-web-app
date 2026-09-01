@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
 import { TrashIcon } from '@heroicons/react/24/outline';
+import i18n from '../i18n.js';
 import {
   useFastingSummary,
   useFastingHistory,
@@ -33,10 +35,11 @@ const STATUS_CHIP: Record<string, { label: string; cls: string }> = {
 };
 
 function monthLabel(ym: string): string {
-  return new Date(ym + '-15T12:00:00').toLocaleDateString('en-US', { month: 'short' });
+  return new Date(ym + '-15T12:00:00').toLocaleDateString(i18n.language, { month: 'short' });
 }
 
 export default function FastingAnalytics() {
+  const { t } = useTranslation();
   const { data: summary } = useFastingSummary();
   const { data: logs, isLoading } = useFastingHistory(365, true);
   const upsert = useUpsertFastingLog();
@@ -98,14 +101,14 @@ export default function FastingAnalytics() {
 
   return (
     <AnimatedBackground variant="dark">
-      <h1 className="sr-only">Fasting Analytics</h1>
+      <h1 className="sr-only">{t('fastingAnalytics.srTitle', 'Fasting Analytics')}</h1>
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-xl mx-auto space-y-4">
 
           <TabNav
             items={[
-              { label: '🌙 Tracker', to: '/fasting' },
-              { label: '📊 Analytics', to: '/fasting/analytics', active: true },
+              { label: `🌙 ${t('fasting.tracker', 'Tracker')}`, to: '/fasting' },
+              { label: `📊 ${t('fasting.analytics', 'Analytics')}`, to: '/fasting/analytics', active: true },
             ]}
           />
 
@@ -118,10 +121,10 @@ export default function FastingAnalytics() {
               {/* ── Stat tiles ── */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { label: 'All time', value: summary?.stats.total ?? 0, sub: 'fasts completed' },
-                  { label: 'This month', value: summary?.stats.thisMonth ?? 0, sub: 'fasts' },
-                  { label: 'Last 30 days', value: summary?.stats.last30 ?? 0, sub: 'fasts' },
-                  { label: 'Broken', value: derived.brokenCount, sub: 'last 12 months' },
+                  { label: t('fastingAnalytics.allTime', 'All time'), value: summary?.stats.total ?? 0, sub: t('fastingAnalytics.fastsCompleted', 'fasts completed') },
+                  { label: t('fastingAnalytics.thisMonth', 'This month'), value: summary?.stats.thisMonth ?? 0, sub: t('fastingAnalytics.fasts', 'fasts') },
+                  { label: t('fastingAnalytics.last30Days', 'Last 30 days'), value: summary?.stats.last30 ?? 0, sub: t('fastingAnalytics.fasts', 'fasts') },
+                  { label: t('fastingAnalytics.broken', 'Broken'), value: derived.brokenCount, sub: t('fastingAnalytics.last12Months', 'last 12 months') },
                 ].map((s, i) => (
                   <motion.div
                     key={s.label}
@@ -140,18 +143,18 @@ export default function FastingAnalytics() {
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                 className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-4 space-y-3"
               >
-                <p className="text-white/70 font-bold text-sm">Completed fasts by type <span className="text-white/25 font-normal text-[11px]">— last 12 months</span></p>
+                <p className="text-white/70 font-bold text-sm">{t('fastingAnalytics.completedByType', 'Completed fasts by type')} <span className="text-white/25 font-normal text-[11px]">— {t('fastingAnalytics.last12Months', 'last 12 months')}</span></p>
                 <div className="space-y-2.5">
                   {CATEGORY_ORDER.map((c) => {
                     const meta = CATEGORY_CHART[c];
                     const count = derived.byCategory[c] ?? 0;
                     const pct = Math.round((count / maxCat) * 100);
                     return (
-                      <div key={c} className="group" title={`${meta.label}: ${count} completed`}>
+                      <div key={c} className="group" title={`${t(`fastingAnalytics.category.${c}`, meta.label)}: ${count} ${t('fastingAnalytics.completed', 'completed')}`}>
                         <div className="flex justify-between items-baseline mb-1">
                           <span className="text-white/60 text-xs font-semibold flex items-center gap-1.5">
                             <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: meta.color }} />
-                            {meta.emoji} {meta.label}
+                            {meta.emoji} {t(`fastingAnalytics.category.${c}`, meta.label)}
                           </span>
                           <span className="text-white/80 text-xs font-bold tabular-nums">{count}</span>
                         </div>
@@ -175,7 +178,7 @@ export default function FastingAnalytics() {
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
                 className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-4"
               >
-                <p className="text-white/70 font-bold text-sm mb-3">Completed fasts per month</p>
+                <p className="text-white/70 font-bold text-sm mb-3">{t('fastingAnalytics.completedPerMonth', 'Completed fasts per month')}</p>
                 <div className="flex items-end justify-between gap-2 h-28">
                   {derived.months.map((m) => {
                     const isMax = m.count === maxMonth && m.count > 0;
@@ -185,7 +188,7 @@ export default function FastingAnalytics() {
                       <div
                         key={m.ym}
                         className="flex-1 flex flex-col items-center gap-1 tooltip"
-                        data-tip={`${monthLabel(m.ym)}: ${m.count} fast${m.count === 1 ? '' : 's'}`}
+                        data-tip={`${monthLabel(m.ym)}: ${t('fastingAnalytics.fastCount', { count: m.count, defaultValue: '{{count}} fasts' })}`}
                       >
                         {/* Selective direct label: only the peak month */}
                         <span className={`text-[10px] font-bold h-3 leading-none ${isMax ? 'text-white/70' : 'text-transparent'}`}>
@@ -213,21 +216,21 @@ export default function FastingAnalytics() {
                 className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] overflow-hidden"
               >
                 <div className="px-4 pt-4 pb-2">
-                  <p className="text-white/70 font-bold text-sm">Fasting history</p>
-                  <p className="text-white/25 text-[10px]">Every logged day — fix a status or remove an entry</p>
+                  <p className="text-white/70 font-bold text-sm">{t('fastingAnalytics.history', 'Fasting history')}</p>
+                  <p className="text-white/25 text-[10px]">{t('fastingAnalytics.historySubtitle', 'Every logged day — fix a status or remove an entry')}</p>
                 </div>
                 {derived.groups.length === 0 ? (
                   <p className="text-white/30 text-sm text-center py-10">
-                    No fasts logged yet — start from the Tracker tab 🌙
+                    {t('fastingAnalytics.noFastsYet', 'No fasts logged yet — start from the Tracker tab')} 🌙
                   </p>
                 ) : (
                   <div className="divide-y divide-white/5">
                     {derived.groups.map((g) => (
                       <div key={g.ym}>
                         <p className="px-4 py-1.5 bg-white/[0.03] text-white/30 text-[10px] font-bold uppercase tracking-widest">
-                          {new Date(g.ym + '-15T12:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                          {new Date(g.ym + '-15T12:00:00').toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })}
                           <span className="ml-2 normal-case font-semibold">
-                            {g.items.filter((l) => l.status === 'completed').length} fasted
+                            {t('fastingAnalytics.fastedCount', { count: g.items.filter((l) => l.status === 'completed').length, defaultValue: '{{count}} fasted' })}
                           </span>
                         </p>
                         {g.items.map((l) => {
@@ -239,44 +242,44 @@ export default function FastingAnalytics() {
                               <div className="w-11 shrink-0 text-center">
                                 <p className="text-white font-black text-base leading-none tabular-nums">{parseInt(l.date.slice(8), 10)}</p>
                                 <p className="text-white/30 text-[9px] uppercase">
-                                  {new Date(l.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' })}
+                                  {new Date(l.date + 'T12:00:00').toLocaleDateString(i18n.language, { weekday: 'short' })}
                                 </p>
                               </div>
                               {/* Type */}
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold truncate" style={{ color: cat?.color ?? '#fff' }}>
                                   {cat?.emoji} {l.category === 'voluntary' && l.voluntaryKind
-                                    ? VOLUNTARY_BY_ID[l.voluntaryKind]?.label ?? cat.label
-                                    : cat?.label}
+                                    ? VOLUNTARY_BY_ID[l.voluntaryKind]?.label ?? t(`fastingAnalytics.category.${l.category}`, cat.label)
+                                    : t(`fastingAnalytics.category.${l.category}`, cat?.label)}
                                 </p>
                                 {l.hijri && <p className="text-white/25 text-[10px] truncate">{l.hijri}</p>}
                               </div>
                               {/* Status chip / editor */}
                               <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold shrink-0 ${chip.cls}`}>
-                                {chip.label}
+                                {t(`fastingAnalytics.status.${l.status}`, chip.label)}
                               </span>
                               {/* Actions */}
                               <div className="flex items-center gap-1 shrink-0">
                                 {l.status !== 'completed' && l.date <= today && (
                                   <button
                                     onClick={() => setStatus(l, 'completed')}
-                                    title="Mark as fasted"
-                                    aria-label={`Mark ${l.date} as fasted`}
+                                    title={t('fastingAnalytics.markFasted', 'Mark as fasted')}
+                                    aria-label={t('fastingAnalytics.markFastedAria', { date: l.date, defaultValue: 'Mark {{date}} as fasted' })}
                                     className="p-1.5 rounded-lg text-white/30 hover:text-brand-emerald hover:bg-brand-emerald/10 text-xs"
                                   >✓</button>
                                 )}
                                 {l.status !== 'broken' && l.date <= today && (
                                   <button
                                     onClick={() => setStatus(l, 'broken')}
-                                    title="Mark as broken"
-                                    aria-label={`Mark ${l.date} as broken`}
+                                    title={t('fastingAnalytics.markBroken', 'Mark as broken')}
+                                    aria-label={t('fastingAnalytics.markBrokenAria', { date: l.date, defaultValue: 'Mark {{date}} as broken' })}
                                     className="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 text-xs"
                                   >💔</button>
                                 )}
                                 <button
                                   onClick={() => setConfirmDelete(l.date)}
-                                  title="Delete entry"
-                                  aria-label={`Delete ${l.date} entry`}
+                                  title={t('fastingAnalytics.deleteEntry', 'Delete entry')}
+                                  aria-label={t('fastingAnalytics.deleteEntryAria', { date: l.date, defaultValue: 'Delete {{date}} entry' })}
                                   className="p-1.5 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10"
                                 ><TrashIcon className="w-3.5 h-3.5" /></button>
                               </div>
@@ -295,8 +298,8 @@ export default function FastingAnalytics() {
       {/* Second confirmation for deletes (app-wide rule) */}
       <ConfirmDialog
         open={!!confirmDelete}
-        title="Delete this fast log?"
-        message={confirmDelete ? `The entry for ${confirmDelete} will be removed from your history and stats.` : ''}
+        title={t('fastingAnalytics.deleteTitle', 'Delete this fast log?')}
+        message={confirmDelete ? t('fastingAnalytics.deleteMessage', { date: confirmDelete, defaultValue: 'The entry for {{date}} will be removed from your history and stats.' }) : ''}
         onConfirm={() => { if (confirmDelete) clearLog.mutate(confirmDelete); setConfirmDelete(null); }}
         onCancel={() => setConfirmDelete(null)}
       />

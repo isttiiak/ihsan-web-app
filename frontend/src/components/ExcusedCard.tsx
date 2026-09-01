@@ -1,17 +1,18 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Shown in place of salat/fasting logging while a Rayhanah cycle is active.
  * Tone: sweet, powerful, zero guilt (Istiak's spec — flower emojis, motivating).
  */
-const CARD_PHRASES = [
-  '🌸 These days are a mercy, not a gap — your reward flows on.',
-  '🌷 The pen is lifted from this duty, but never from your good deeds.',
-  '🌺 Rest here is obedience. Your Lord wrote it for you with love.',
-];
-
 export default function ExcusedCard({ feature }: { feature: 'salat' | 'fasting' }) {
+  const { t } = useTranslation();
+  const CARD_PHRASES = [
+    t('excusedCard.phrase1'),
+    t('excusedCard.phrase2'),
+    t('excusedCard.phrase3'),
+  ];
   const phrase = CARD_PHRASES[Math.floor(Date.now() / 86_400_000) % CARD_PHRASES.length]!;
   return (
     <motion.div
@@ -22,23 +23,23 @@ export default function ExcusedCard({ feature }: { feature: 'salat' | 'fasting' 
       <div className="absolute -top-8 -left-8 w-32 h-32 rounded-full bg-brand-pink/15 blur-2xl" />
       <div className="relative space-y-3">
         <div className="text-5xl">🌸</div>
-        <h2 className="text-xl font-black text-white">Rayhanah days — you are excused</h2>
+        <h2 className="text-xl font-black text-white">{t('excusedCard.heading')}</h2>
         <p className="text-brand-pink/80 text-sm leading-relaxed max-w-md mx-auto">{phrase}</p>
         <p className="text-white/40 text-xs leading-relaxed max-w-md mx-auto">
           {feature === 'salat' ? (
-            <>Ṣalāt is fully lifted from you during these days and is <span className="font-bold text-brand-pink/90">never made up</span> —{' '}
+            <>{t('excusedCard.salatExplanation')} —{' '}
             <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Ṣaḥīḥ Muslim 335</a>.</>
           ) : (
-            <>Fasting pauses now and is made up later — your qaḍā counter keeps track for you —{' '}
+            <>{t('excusedCard.fastingExplanation')} —{' '}
             <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Ṣaḥīḥ Muslim 335</a>.</>
           )}
         </p>
         <div className="flex flex-wrap justify-center gap-2 pt-2">
           <Link to="/cycle" className="btn btn-sm rounded-xl border border-brand-pink/30 bg-brand-pink/15 hover:bg-brand-pink/25 text-brand-pink font-bold">
-            🪻 Open your Garden of Light
+            {t('excusedCard.openGarden')}
           </Link>
           <Link to="/zikr" className="btn btn-sm rounded-xl border border-brand-emerald/10 bg-white/5 hover:bg-white/10 text-white/70 font-bold">
-            📿 Do dhikr instead
+            {t('excusedCard.doDhikr')}
           </Link>
         </div>
       </div>

@@ -6,6 +6,7 @@ import i18n, { LANGUAGES } from '../i18n.js';
 import { useQueryClient } from '@tanstack/react-query';
 import api, { API_BASE, getIdToken } from '../lib/api.js';
 import { getHijriAdjustment, setHijriAdjustment, getHijriToday, formatHijriDate } from '../utils/islamicCalendar.js';
+import { syncQuranTranslationWithLang } from '../utils/quranData.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useUiStore } from '../store/useUiStore.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -316,7 +317,7 @@ export default function Settings() {
               {LANGUAGES.map((l) => (
                 <button
                   key={l.id}
-                  onClick={() => { void i18n.changeLanguage(l.id); }}
+                  onClick={() => { void i18n.changeLanguage(l.id); syncQuranTranslationWithLang(l.id); }}
                   className={`p-3 rounded-xl border text-sm font-bold transition-all ${
                     i18n.resolvedLanguage === l.id
                       ? 'bg-brand-emerald/20 border-brand-emerald/50 text-brand-emerald'

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -43,6 +44,7 @@ function Stat({ label, value, suffix, hint, tone }: {
 }
 
 export default function RamadanAnalytics() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const today = getTrackingDay();
   const window_ = useMemo(() => getRamadanWindow(), []);
@@ -128,12 +130,12 @@ export default function RamadanAnalytics() {
 
   return (
     <AnimatedBackground variant="dark">
-      <h1 className="sr-only">Ramadan Analytics</h1>
+      <h1 className="sr-only">{t('ramadanAnalytics.title')}</h1>
       <div className="px-4 pt-3 pb-0 max-w-2xl mx-auto">
         <TabNav
           items={[
-            { label: '🌙 Tracker', to: '/ramadan' },
-            { label: '📊 Analytics', to: '/ramadan/analytics', active: true },
+            { label: t('ramadanAnalytics.tabTracker'), to: '/ramadan' },
+            { label: t('ramadanAnalytics.tabAnalytics'), to: '/ramadan/analytics', active: true },
           ]}
         />
       </div>
@@ -142,13 +144,12 @@ export default function RamadanAnalytics() {
         {noData ? (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-8 text-center">
             <div className="text-5xl mb-3">🌙</div>
-            <h2 className="text-white font-black">Nothing to show yet</h2>
+            <h2 className="text-white font-black">{t('ramadanAnalytics.nothingYet')}</h2>
             <p className="text-white/40 text-sm mt-1.5 leading-relaxed">
-              Ramadan {window_.hijriYear ?? ''} hasn't begun. Once you start logging fasts and
-              tarawih nights, this page fills in on its own.
+              {t('ramadanAnalytics.nothingYetDesc', { year: window_.hijriYear ?? '' })}
             </p>
             <Link to="/ramadan" className="inline-block mt-4 text-brand-gold/80 hover:text-brand-gold text-sm underline underline-offset-2">
-              Go to the tracker →
+              {t('ramadanAnalytics.goToTracker')}
             </Link>
           </div>
         ) : (
@@ -159,12 +160,12 @@ export default function RamadanAnalytics() {
               className="rounded-3xl p-6 border border-brand-gold/25 bg-gradient-to-br from-brand-gold/15 via-brand-gold/10 to-brand-info/10"
             >
               <p className="text-brand-gold/80 text-xs font-bold uppercase tracking-widest">
-                Ramadan {window_.hijriYear ?? ''} AH
+                {t('ramadanAnalytics.ramadanYear', { year: window_.hijriYear ?? '' })}
               </p>
               <div className="flex items-end gap-3 mt-1">
                 <h2 className="text-5xl font-black text-white leading-none">{model.fasted}</h2>
                 <p className="text-white/40 text-sm font-semibold pb-1">
-                  of {model.obligated} required day{model.obligated === 1 ? '' : 's'} fasted
+                  {t('ramadanAnalytics.ofRequiredDays', { count: model.obligated })}
                 </p>
               </div>
               <div className="mt-3 h-2.5 rounded-full bg-white/10 overflow-hidden">
@@ -176,24 +177,24 @@ export default function RamadanAnalytics() {
                 />
               </div>
               <p className="text-white/40 text-xs mt-1.5">
-                {model.rate}% of the days you were obliged to fast
-                {model.excused > 0 && <> · {model.excused} 🌸 excused (moved to qaḍā, never counted against you)</>}
+                {t('ramadanAnalytics.rateDescription', { rate: model.rate })}
+                {model.excused > 0 && <> · {t('ramadanAnalytics.excusedNote', { count: model.excused })}</>}
               </p>
             </motion.div>
 
             {/* Stat tiles */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <Stat label="Longest run" value={model.best} suffix=" days" tone="#fbbf24" hint="back to back" />
-              <Stat label="Tarawih nights" value={model.tarawih} suffix={`/${model.elapsed}`} tone="#a5b4fc" hint="so far" />
-              <Stat label="Broken" value={model.broken} tone="#f87171" hint={model.broken ? 'make these up' : 'none, alḥamdulillāh'} />
-              <Stat label="Not logged" value={model.unlogged} tone="#94a3b8" hint={model.unlogged ? 'past days with no entry' : 'all days accounted'} />
+              <Stat label={t('ramadanAnalytics.longestRun')} value={model.best} suffix={` ${t('common.days')}`} tone="#fbbf24" hint={t('ramadanAnalytics.backToBack')} />
+              <Stat label={t('ramadanAnalytics.tarawihNights')} value={model.tarawih} suffix={`/${model.elapsed}`} tone="#a5b4fc" hint={t('ramadanAnalytics.soFar')} />
+              <Stat label={t('ramadanAnalytics.broken')} value={model.broken} tone="#f87171" hint={model.broken ? t('ramadanAnalytics.makeTheseUp') : t('ramadanAnalytics.noneAlhamdulillah')} />
+              <Stat label={t('ramadanAnalytics.notLogged')} value={model.unlogged} tone="#94a3b8" hint={model.unlogged ? t('ramadanAnalytics.pastDaysNoEntry') : t('ramadanAnalytics.allDaysAccounted')} />
             </div>
 
             {/* Per-ashra breakdown */}
             <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-              <h2 className="text-white font-black mb-1">By the three ʿashra</h2>
+              <h2 className="text-white font-black mb-1">{t('ramadanAnalytics.byAshra')}</h2>
               <p className="text-white/30 text-[11px] mb-4">
-                Fasts and tarawih nights in each ten. Names carry a ḍaʿīf grading — see the note below.
+                {t('ramadanAnalytics.ashraSubtitle')}
               </p>
               <div className="space-y-4">
                 {model.byAshra.map((a) => {
@@ -203,7 +204,7 @@ export default function RamadanAnalytics() {
                       <div className="flex items-baseline justify-between gap-2 mb-1.5">
                         <span className="font-bold text-sm" style={{ color: a.tone }}>{a.label}</span>
                         <span className="text-white/30 text-[11px] tabular-nums">
-                          {a.fasted}/{a.elapsed || a.total} fasted · {a.tarawih} tarawih
+                          {a.fasted}/{a.elapsed || a.total} {t('ramadanAnalytics.fasted')} · {a.tarawih} {t('ramadanAnalytics.tarawih')}
                         </span>
                       </div>
                       <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
@@ -223,21 +224,21 @@ export default function RamadanAnalytics() {
 
             {/* Last ten focus */}
             <div className="rounded-3xl p-5 border border-brand-info/25 bg-gradient-to-br from-brand-info/10 to-brand-info/5">
-              <h2 className="text-white font-black">✨ The last ten</h2>
+              <h2 className="text-white font-black">{t('ramadanAnalytics.lastTenTitle')}</h2>
               <p className="text-brand-info/60 text-xs mt-1 leading-relaxed">
-                “Seek Laylat al-Qadr in the odd nights of the last ten” —{' '}
+                {t('ramadanAnalytics.lastTenHadith')}{' '}
                 <a className="underline" href="https://sunnah.com/bukhari:2017" target="_blank" rel="noreferrer">Ṣaḥīḥ al-Bukhārī 2017</a>.
-                This is the one part of the month whose virtue needs no qualification.
+                {t('ramadanAnalytics.lastTenNote')}
               </p>
               <div className="grid grid-cols-2 gap-2.5 mt-3">
                 <div className="rounded-2xl bg-black/25 border border-brand-info/20 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">Tarawih, last ten</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">{t('ramadanAnalytics.tarawihLastTen')}</p>
                   <p className="text-brand-info font-black text-xl mt-0.5">
                     {model.lastTenTarawih}<span className="text-white/25 text-sm">/{model.lastTenTotal}</span>
                   </p>
                 </div>
                 <div className="rounded-2xl bg-black/25 border border-brand-info/20 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">Odd nights kept</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">{t('ramadanAnalytics.oddNightsKept')}</p>
                   <p className="text-brand-info font-black text-xl mt-0.5">
                     {model.oddNightsTarawih}<span className="text-white/25 text-sm">/{model.oddNightsTotal}</span>
                   </p>
@@ -247,7 +248,7 @@ export default function RamadanAnalytics() {
 
             {/* Day strip */}
             <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-              <h2 className="text-white font-black mb-3">Every day at a glance</h2>
+              <h2 className="text-white font-black mb-3">{t('ramadanAnalytics.everyDay')}</h2>
               <div className="grid grid-cols-10 gap-1">
                 {model.days.map((d) => {
                   let cls = 'bg-white/[0.05]';
@@ -258,7 +259,7 @@ export default function RamadanAnalytics() {
                   return (
                     <div
                       key={d.date}
-                      title={`Ramadan ${d.dayNumber}${d.fasted ? ' · fasted' : d.broken ? ' · broken' : d.excused ? ' · excused' : d.unlogged ? ' · not logged' : ''}${d.tarawih ? ' · tarawih' : ''}`}
+                      title={`${t('ramadanAnalytics.ramadanDayTitle', { day: d.dayNumber })}${d.fasted ? ` · ${t('ramadanAnalytics.fasted')}` : d.broken ? ` · ${t('ramadanAnalytics.broken')}` : d.excused ? ` · ${t('ramadanAnalytics.excused')}` : d.unlogged ? ` · ${t('ramadanAnalytics.notLoggedShort')}` : ''}${d.tarawih ? ` · ${t('ramadanAnalytics.tarawih')}` : ''}`}
                       className={`relative aspect-square rounded ${cls}`}
                     >
                       {d.tarawih && <span className="absolute inset-0 grid place-items-center text-[7px]">🕌</span>}
@@ -267,16 +268,16 @@ export default function RamadanAnalytics() {
                 })}
               </div>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[10px] text-white/30">
-                <span>🟩 fasted</span><span>🟥 broken</span><span>🌸 excused</span>
-                <span>⬜ not logged</span><span>🕌 tarawih</span>
+                <span>🟩 {t('ramadanAnalytics.fasted')}</span><span>🟥 {t('ramadanAnalytics.broken')}</span><span>🌸 {t('ramadanAnalytics.excused')}</span>
+                <span>⬜ {t('ramadanAnalytics.notLoggedShort')}</span><span>🕌 {t('ramadanAnalytics.tarawih')}</span>
               </div>
             </div>
 
             <p className="text-white/30 text-[11px] leading-relaxed">
-              Excused days never count against your rate — they are added to your qaḍā instead
+              {t('ramadanAnalytics.excusedFootnote')}{' '}
               (<a className="underline hover:text-white/50" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>).
-              Something look wrong?{' '}
-              <Link to="/feedback" className="text-brand-emerald/70 hover:text-brand-emerald underline underline-offset-2">Tell us</Link>.
+              {t('ramadanAnalytics.somethingWrong')}{' '}
+              <Link to="/feedback" className="text-brand-emerald/70 hover:text-brand-emerald underline underline-offset-2">{t('ramadanAnalytics.tellUs')}</Link>.
             </p>
           </>
         )}

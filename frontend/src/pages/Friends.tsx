@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import { streakVisual } from '../components/StatusBadges.js';
 import { ClipboardDocumentIcon, CheckIcon, XMarkIcon, ChevronDownIcon, UserPlusIcon, UsersIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useSocialSummary, useUnfriend, useFriendsList } from '../hooks/useSocial.js';
+import { formatLocaleDate } from '../utils/localeDate.js';
 
 const RANK_BADGE = ['🥇', '🥈', '🥉'];
 
@@ -22,14 +24,15 @@ function Avatar({ name, photoUrl, size = 'w-10 h-10' }: { name: string; photoUrl
   );
 }
 
-function formatConnectedSince(iso: string | null): string {
-  if (!iso) return 'Connected a while ago';
+function formatConnectedSince(iso: string | null, translate: (key: string, opts?: Record<string, unknown>) => string): string {
+  if (!iso) return translate('friends.connectedAWhileAgo');
   const d = new Date(iso);
-  return `Connected since ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  return translate('friends.connectedSince', { date: formatLocaleDate(d, { month: 'short', day: 'numeric', year: 'numeric' }) });
 }
 
 /** Manage-friends modal: full list, connected-since date, two-step confirm delete. */
 function ManageFriendsModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   const { data: friends, isLoading } = useFriendsList(true);
   const unfriend = useUnfriend();
   // Two-step confirm: null → "confirm-1" (Remove?) → "confirm-2" (Are you sure?) → delete
@@ -58,13 +61,13 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
           <div className="flex items-center gap-2.5">
             <span className="text-3xl">👥</span>
             <div>
-              <h3 className="text-lg font-black text-white leading-tight">Your friends</h3>
+              <h3 className="text-lg font-black text-white leading-tight">{t('friends.yourFriends')}</h3>
               <p className="text-white/30 text-[11px]">
-                {friends ? `${friends.length} connected` : 'Loading…'}
+                {friends ? t('friends.connectedCount', { count: friends.length }) : t('common.loading')}
               </p>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="text-white/30 hover:text-white p-1">
+          <button onClick={onClose} aria-label={t('common.close')} className="text-white/30 hover:text-white p-1">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
@@ -76,7 +79,7 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
         ) : !friends || friends.length === 0 ? (
           <div className="text-center py-6 space-y-1.5">
             <p className="text-3xl">🌱</p>
-            <p className="text-white/50 text-sm">No friends connected yet.</p>
+            <p className="text-white/50 text-sm">{t('friends.noFriendsYet')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -93,13 +96,13 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
                     <Avatar name={f.displayName} photoUrl={f.photoUrl} />
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-bold text-sm truncate">{f.displayName}</p>
-                      <p className="text-white/30 text-[11px]">{formatConnectedSince(f.connectedSince)}</p>
+                      <p className="text-white/30 text-[11px]">{formatConnectedSince(f.connectedSince, t)}</p>
                     </div>
                     {!confirming && (
                       <button
                         onClick={() => startConfirm(f.uid)}
-                        aria-label={`Remove ${f.displayName}`}
-                        title="Remove friend"
+                        aria-label={t('friends.removeFriendAria', { name: f.displayName })}
+                        title={t('friends.removeFriendTooltip')}
                         className="p-2 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 shrink-0"
                       >
                         <TrashIcon className="w-4 h-4" />
@@ -114,13 +117,13 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
                         className="overflow-hidden"
                       >
                         <div className="mt-3 pt-3 border-t border-brand-emerald/10 flex items-center justify-between gap-2">
-                          <p className="text-white/60 text-xs">Remove {f.displayName} from your friends?</p>
+                          <p className="text-white/60 text-xs">{t('friends.removeConfirm', { name: f.displayName })}</p>
                           <div className="flex gap-1.5 shrink-0">
-                            <button onClick={cancelConfirm} className="btn btn-xs btn-ghost text-white/50">Cancel</button>
+                            <button onClick={cancelConfirm} className="btn btn-xs btn-ghost text-white/50">{t('common.cancel')}</button>
                             <button
                               onClick={() => advanceConfirm(f.uid)}
                               className="btn btn-xs bg-red-500/80 hover:bg-red-500 text-white border-0"
-                            >Remove</button>
+                            >{t('common.remove')}</button>
                           </div>
                         </div>
                       </motion.div>
@@ -132,17 +135,16 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
                       >
                         <div className="mt-3 pt-3 border-t border-red-500/20 space-y-2">
                           <p className="text-red-300/90 text-xs font-semibold">
-                            Are you sure? This removes the connection for both of you — {f.displayName} won't see your
-                            stats anymore, and you'll need a new invite link to reconnect.
+                            {t('friends.removeWarning', { name: f.displayName })}
                           </p>
                           <div className="flex gap-1.5 justify-end">
-                            <button onClick={cancelConfirm} className="btn btn-xs btn-ghost text-white/50">Cancel</button>
+                            <button onClick={cancelConfirm} className="btn btn-xs btn-ghost text-white/50">{t('common.cancel')}</button>
                             <button
                               onClick={() => finalizeRemove(f.uid)}
                               disabled={unfriend.isPending}
                               className="btn btn-xs bg-red-500 hover:bg-red-600 text-white border-0"
                             >
-                              {unfriend.isPending ? <span className="loading loading-spinner loading-xs" /> : 'Yes, remove'}
+                              {unfriend.isPending ? <span className="loading loading-spinner loading-xs" /> : t('friends.yesRemove')}
                             </button>
                           </div>
                         </div>
@@ -160,6 +162,7 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function Friends() {
+  const { t } = useTranslation();
   const { data, isLoading, isError, refetch } = useSocialSummary();
   const [searchParams, setSearchParams] = useSearchParams();
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -182,14 +185,13 @@ export default function Friends() {
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(
-        `"So compete with one another in doing good." — Quran 2:148\n` +
-        `Join me on Ihsan and let's encourage each other in worship 🌙\n${inviteLink}`
+        t('friends.shareMessage', { link: inviteLink })
       );
       setCopied(true);
-      toast.success('Invite copied — send it to a friend!', { id: 'invite-copy' });
+      toast.success(t('friends.inviteCopied'), { id: 'invite-copy' });
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error('Could not copy — long-press the link to copy it manually.');
+      toast.error(t('friends.copyError'));
     }
   };
 
@@ -199,7 +201,7 @@ export default function Friends() {
 
   return (
     <AnimatedBackground variant="dark">
-      <h1 className="sr-only">Friends — Share Activities</h1>
+      <h1 className="sr-only">{t('friends.srTitle')}</h1>
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-xl mx-auto space-y-4">
 
@@ -214,11 +216,11 @@ export default function Friends() {
               transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
               style={{ backgroundSize: '200% 100%' }}
             >
-              “So compete with one another in doing good.”
+              {t('friends.verseCompete')}
             </motion.p>
             <a href="https://quran.com/2/148" target="_blank" rel="noopener noreferrer"
               className="text-brand-gold/60 text-xs underline underline-offset-4 hover:text-brand-gold/90">
-              Quran 2:148 ↗
+              {t('friends.quranRef')}
             </a>
           </motion.div>
 
@@ -233,41 +235,40 @@ export default function Friends() {
               className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-8 text-center space-y-3"
             >
               <p className="text-4xl">🌱</p>
-              <p className="text-white/70 font-bold text-sm">No friends connected yet</p>
+              <p className="text-white/70 font-bold text-sm">{t('friends.noFriendsTitle')}</p>
               <p className="text-white/30 text-xs max-w-xs mx-auto leading-relaxed">
-                Invite a friend who uses Ihsan — the moment they open your link,
-                you'll both appear here and can gently push each other toward good.
+                {t('friends.noFriendsDesc')}
               </p>
               <button
                 onClick={() => setInviteOpen(true)}
                 className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 gap-1.5"
               >
-                <UserPlusIcon className="w-4 h-4" /> Connect a friend
+                <UserPlusIcon className="w-4 h-4" /> {t('friends.connectFriend')}
               </button>
             </motion.div>
           ) : (
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
                 <p className="text-white/30 text-xs font-semibold uppercase tracking-wide">
-                  Today's circle <span className="normal-case font-normal">— you + {friendsCount} friend{friendsCount === 1 ? '' : 's'}</span>
+                  {t('friends.todaysCircle')} <span className="normal-case font-normal">— {t(friendsCount === 1 ? 'friends.circleCount' : 'friends.circleCountPlural', { count: friendsCount })}</span>
                 </p>
                 <div className="flex items-center gap-3 shrink-0">
                   <button
                     onClick={() => setManageOpen(true)}
                     className="flex items-center gap-1 text-white/40 hover:text-white text-xs font-bold"
                   >
-                    <UsersIcon className="w-3.5 h-3.5" /> See friends
+                    <UsersIcon className="w-3.5 h-3.5" /> {t('friends.seeFriends')}
                   </button>
                   <button
                     onClick={() => setInviteOpen(true)}
                     className="flex items-center gap-1 text-brand-emerald/70 hover:text-brand-emerald text-xs font-bold"
                   >
-                    <UserPlusIcon className="w-3.5 h-3.5" /> Invite a friend
+                    <UserPlusIcon className="w-3.5 h-3.5" /> {t('friends.inviteFriend')}
                   </button>
                 </div>
               </div>
               {leaderboard.map((f, i) => {
-                const sv = streakVisual(f.zikrState, f.zikrStreak);
+                const sv = streakVisual(f.zikrState, f.zikrStreak, t);
                 return (
                   <motion.div
                     key={f.uid}
@@ -288,7 +289,7 @@ export default function Friends() {
                       <div className="flex-1 min-w-0">
                         <p className="text-white font-bold text-sm truncate">
                           {f.displayName}
-                          {f.isMe && <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-brand-emerald/25 text-brand-emerald align-middle">you</span>}
+                          {f.isMe && <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-brand-emerald/25 text-brand-emerald align-middle">{t('friends.you')}</span>}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex-1 bg-white/10 rounded-full h-1.5 overflow-hidden">
@@ -306,23 +307,23 @@ export default function Friends() {
                     {/* Stat chips — prayer, zikr streak, today's zikr, fasted today, quran pages */}
                     <div className="flex flex-wrap gap-1.5 mt-2.5 pl-10">
                       <span className="px-2 py-0.5 rounded-full bg-white/10 border border-brand-emerald/10 text-[10px] font-bold text-white/60">
-                        🕌 {f.salatToday}/5 prayers
+                        🕌 {t('friends.prayersStat', { count: f.salatToday })}
                       </span>
                       <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold text-white/70 ${sv.cls}`}>
-                        <span className={sv.iconCls}>{sv.icon}</span> {f.zikrStreak}d zikr streak
+                        <span className={sv.iconCls}>{sv.icon}</span> {t('friends.zikrStreakStat', { count: f.zikrStreak })}
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-white/10 border border-brand-emerald/10 text-[10px] font-bold text-white/60">
-                        📿 {f.zikrToday.toLocaleString()} zikr today
+                        📿 {t('friends.zikrTodayStat', { count: f.zikrToday.toLocaleString() })}
                       </span>
                       <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
                         f.fastedToday
                           ? 'bg-brand-gold/15 border-brand-gold/40 text-brand-gold'
                           : 'bg-white/10 border-brand-emerald/10 text-white/30'
                       }`}>
-                        🌙 {f.fastedToday ? 'fasting today' : 'not fasting'}
+                        🌙 {f.fastedToday ? t('friends.fastingToday') : t('friends.notFasting')}
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-white/10 border border-brand-emerald/10 text-[10px] font-bold text-white/60">
-                        📖 {f.quranPagesToday}/{f.quranGoal} pages
+                        📖 {t('friends.quranPagesStat', { current: f.quranPagesToday, goal: f.quranGoal })}
                       </span>
                     </div>
                   </motion.div>
@@ -338,7 +339,7 @@ export default function Friends() {
               className="w-full px-4 py-3 flex items-center justify-between text-left"
               aria-expanded={howOpen}
             >
-              <p className="text-white/60 font-bold text-sm">✨ What is Noor?</p>
+              <p className="text-white/60 font-bold text-sm">✨ {t('friends.whatIsNoor')}</p>
               <motion.span animate={{ rotate: howOpen ? 180 : 0 }} className="text-white/30">
                 <ChevronDownIcon className="w-4 h-4" />
               </motion.span>
@@ -351,25 +352,21 @@ export default function Friends() {
                 >
                   <div className="px-4 pb-4 pt-1 space-y-1.5 text-xs text-white/40 border-t border-brand-emerald/5">
                     <p>
-                      Noor (<span className="text-white/60">نور</span>, "light") is a gentle daily measure of
-                      your worship — out of <b className="text-white/70">100</b>:
+                      {t('friends.noorPrefix')}<span className="text-white/60">نور</span>{t('friends.noorSuffix')}<b className="text-white/70">100</b>:
                     </p>
-                    <p>🕌 <b className="text-white/60">50</b> — today's five prayers (10 each)</p>
-                    <p>🔥 <b className="text-white/60">20</b> — your zikr streak (2 per day, up to 10 days)</p>
-                    <p>📖 <b className="text-white/60">20</b> — today's Quran reading vs your daily goal</p>
-                    <p>🌙 <b className="text-white/60">10</b> — fasting today</p>
+                    <p>🕌 <b className="text-white/60">50</b> — {t('friends.noorPrayers')}</p>
+                    <p>🔥 <b className="text-white/60">20</b> — {t('friends.noorZikr')}</p>
+                    <p>📖 <b className="text-white/60">20</b> — {t('friends.noorQuran')}</p>
+                    <p>🌙 <b className="text-white/60">10</b> — {t('friends.noorFasting')}</p>
                     <p className="pt-1">
-                      🌸 On days when Allah Himself excuses a believer from salat or fasting — as He decreed
-                      for our sisters — Noor flows from what remains open: dhikr, Quran, and ṣalawāt. The
-                      maximum stays 100 for everyone, and no one can tell whose day was excused.
+                      🌸 {t('friends.noorExcused')}
                     </p>
                     <p className="pt-1">
-                      <b className="text-white/60">Today's Noor</b> starts fresh every day at Fajr.{' '}
-                      <b className="text-white/60">All-time Noor</b> gathers each day's light and never resets.
+                      <b className="text-white/60">{t('friends.noorTodayLabel')}</b> {t('friends.noorTodayDesc')}{' '}
+                      <b className="text-white/60">{t('friends.noorAllTimeLabel')}</b> {t('friends.noorAllTimeDesc')}
                     </p>
                     <p className="text-white/25 pt-1 italic">
-                      Only Allah knows the worth of any deed — this is friendly encouragement,
-                      never judgement.
+                      {t('friends.noorDisclaimer')}
                     </p>
                   </div>
                 </motion.div>
@@ -396,30 +393,30 @@ export default function Friends() {
                 <div className="flex items-center gap-2.5">
                   <span className="text-3xl">🤝</span>
                   <div>
-                    <h3 className="text-lg font-black text-white leading-tight">Connect a friend</h3>
-                    <p className="text-white/30 text-[11px]">One link — they open it, you're connected</p>
+                    <h3 className="text-lg font-black text-white leading-tight">{t('friends.connectFriend')}</h3>
+                    <p className="text-white/30 text-[11px]">{t('friends.inviteSubtitle')}</p>
                   </div>
                 </div>
-                <button onClick={() => setInviteOpen(false)} aria-label="Close" className="text-white/30 hover:text-white p-1">
+                <button onClick={() => setInviteOpen(false)} aria-label={t('common.close')} className="text-white/30 hover:text-white p-1">
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               </div>
 
               <p className="text-center text-sm font-bold text-brand-emerald/90 italic px-2">
-                “So compete with one another in doing good.”
+                {t('friends.verseCompete')}
                 <a href="https://quran.com/2/148" target="_blank" rel="noopener noreferrer"
-                  className="block text-brand-gold/60 text-[10px] underline not-italic mt-1">Quran 2:148 ↗</a>
+                  className="block text-brand-gold/60 text-[10px] underline not-italic mt-1">{t('friends.quranRef')}</a>
               </p>
 
               {isError ? (
                 <div className="text-center space-y-3 py-2">
                   <p className="text-brand-gold/80 text-sm">
-                    Couldn't load your invite link — the server may still be waking up.
+                    {t('friends.inviteError')}
                   </p>
                   <button
                     onClick={() => void refetch()}
                     className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0"
-                  >Try again</button>
+                  >{t('friends.tryAgain')}</button>
                 </div>
               ) : inviteLink ? (
                 <>
@@ -433,13 +430,13 @@ export default function Friends() {
                       className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 gap-1.5 shrink-0 h-auto"
                     >
                       {copied ? <CheckIcon className="w-4 h-4" /> : <ClipboardDocumentIcon className="w-4 h-4" />}
-                      {copied ? 'Copied!' : 'Copy'}
+                      {copied ? t('friends.copied') : t('friends.copy')}
                     </motion.button>
                   </div>
                   <div className="space-y-1.5 text-[11px] text-white/40 leading-relaxed">
-                    <p>📤 Send it over WhatsApp, Messenger — anywhere.</p>
-                    <p>🔗 The link stays the same — one link works for all your friends.</p>
-                    <p>🔒 Friends see your streaks and daily worship — never your logs or notes. Remove anyone anytime from "See friends".</p>
+                    <p>📤 {t('friends.inviteShareTip')}</p>
+                    <p>🔗 {t('friends.inviteLinkTip')}</p>
+                    <p>🔒 {t('friends.invitePrivacy')}</p>
                   </div>
                 </>
               ) : (

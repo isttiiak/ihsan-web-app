@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
@@ -12,6 +13,7 @@ import { loadSurahList, locateGlobalAyah, juzOf, type SurahMeta } from '../utils
  * this tab owns that journey while the Read tab stays free for any surah.
  */
 export default function QuranKhatam() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: summary, isLoading } = useQuranSummary();
   const startKhatam = useStartKhatam();
@@ -35,7 +37,7 @@ export default function QuranKhatam() {
 
   return (
     <AnimatedBackground variant="dark">
-      <h1 className="sr-only">Khatam Journey</h1>
+      <h1 className="sr-only">{t('quranKhatam.title')}</h1>
       <div className="max-w-2xl mx-auto px-4 pt-3 pb-16 space-y-4">
         <QuranTabNav active="khatam" />
 
@@ -49,9 +51,9 @@ export default function QuranKhatam() {
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               className="rounded-3xl p-6 sm:p-8 border border-brand-emerald/25 bg-gradient-to-br from-brand-emerald/15 via-brand-info/10 to-brand-deep relative overflow-hidden"
             >
-              <p className="text-brand-emerald/80 text-xs font-bold uppercase tracking-widest">🕋 Khatam journey</p>
+              <p className="text-brand-emerald/80 text-xs font-bold uppercase tracking-widest">{t('quranKhatam.journeyLabel')}</p>
               <h2 className="text-2xl font-black text-white mt-1">
-                {pos && posMeta ? <>{posMeta.englishName} <span className="text-white/40 text-base">· āyah {pos.ayah} of {posMeta.numberOfAyahs} · Juz {juzOf(pos.surah, pos.ayah)}</span></> : 'Bismillah — begin your journey'}
+                {pos && posMeta ? <>{posMeta.englishName} <span className="text-white/40 text-base">· {t('quranKhatam.ayahOfTotal', { ayah: pos.ayah, total: posMeta.numberOfAyahs })} · Juz {juzOf(pos.surah, pos.ayah)}</span></> : t('quranKhatam.beginJourneyHeading')}
               </h2>
 
               <div className="mt-4 h-3 rounded-full bg-white/10 overflow-hidden">
@@ -61,8 +63,8 @@ export default function QuranKhatam() {
                 />
               </div>
               <div className="flex justify-between text-[11px] text-white/40 mt-1.5">
-                <span>{summary.profile.currentAyah} / {QURAN_TOTAL_AYAT} āyāt · {pct.toFixed(1)}%</span>
-                <span>{summary.estDaysToKhatm ? `≈ ${summary.estDaysToKhatm} days at your pace` : 'read a few days to see your pace'}</span>
+                <span>{summary.profile.currentAyah} / {QURAN_TOTAL_AYAT} {t('quranKhatam.ayatLabel')} · {pct.toFixed(1)}%</span>
+                <span>{summary.estDaysToKhatm ? t('quranKhatam.estDays', { days: summary.estDaysToKhatm }) : t('quranKhatam.readFewDays')}</span>
               </div>
 
               {khatamStarted ? (
@@ -72,10 +74,10 @@ export default function QuranKhatam() {
                     onClick={() => { if (pos) navigate(`/quran/read/${pos.surah}?start=${pos.ayah}&mode=khatam`); }}
                     disabled={!pos}
                   >
-                    ▶ Continue from {pos ? `${pos.surah}:${pos.ayah}` : '…'}
+                    {t('quranKhatam.continueFrom', { ref: pos ? `${pos.surah}:${pos.ayah}` : '…' })}
                   </button>
                   <p className="text-white/30 text-[11px] text-center mt-2">
-                    Every āyah you pass moves the bookmark — read at your own calm pace.
+                    {t('quranKhatam.calmPace')}
                   </p>
                 </>
               ) : (
@@ -87,11 +89,10 @@ export default function QuranKhatam() {
                       onSuccess: () => navigate('/quran/read/1?start=1&mode=khatam'),
                     })}
                   >
-                    🕋 Begin my khatam journey
+                    {t('quranKhatam.beginButton')}
                   </button>
                   <p className="text-white/30 text-[11px] text-center mt-2">
-                    Entirely your choice, at your pace — start whenever your heart is ready.
-                    You can reset it anytime from ⚙️ settings.
+                    {t('quranKhatam.yourChoice')}
                   </p>
                 </>
               )}
@@ -100,23 +101,21 @@ export default function QuranKhatam() {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                 <p className="text-2xl font-black text-brand-gold">⭐ {summary.profile.khatmCount}</p>
-                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">khatm completed</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('quranKhatam.khatmCompleted')}</p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                 <p className="text-2xl font-black text-brand-emerald">{summary.pace ?? '—'}</p>
-                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">āyāt / day (7-day avg)</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('quranKhatam.ayatPerDay')}</p>
               </div>
             </div>
 
             <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-              <h3 className="text-white font-black text-sm mb-2">Why read in order?</h3>
+              <h3 className="text-white font-black text-sm mb-2">{t('quranKhatam.whyOrderTitle')}</h3>
               <p className="text-white/40 text-xs leading-relaxed">
-                A khatam moves through the Book the way it was compiled — every surah in its place, nothing
-                skipped, nothing forgotten. Keep this journey serial, and use the <b className="text-white/70">Read</b> tab
-                whenever your heart needs a specific surah — both count toward your daily goal and streak.
+                {t('quranKhatam.whyOrderBody')}
               </p>
               <p className="text-white/30 text-[11px] mt-2">
-                "…and recite the Quran with measured recitation." —{' '}
+                {t('quranKhatam.reciteQuote')} —{' '}
                 <a className="underline" href="https://quran.com/73/4" target="_blank" rel="noreferrer">Quran 73:4</a>
               </p>
             </div>

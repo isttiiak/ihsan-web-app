@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { StreakState } from '../types/api.js';
 
 /**
@@ -8,20 +9,20 @@ import type { StreakState } from '../types/api.js';
  * Goal:   🎯 with % while in progress · 🏆 when completed.
  */
 
-export function streakVisual(state: StreakState | undefined, streak: number): {
+export function streakVisual(state: StreakState | undefined, streak: number, t: (key: string, fallback: string, opts?: Record<string, unknown>) => string): {
   icon: string;
   cls: string;
   tip: string;
   iconCls?: string;
 } {
   if (state === 'paused') {
-    return { icon: '⏸️', cls: 'bg-brand-pink/15 border-brand-pink/40', tip: 'Streak paused — resume from analytics' };
+    return { icon: '⏸️', cls: 'bg-brand-pink/15 border-brand-pink/40', tip: t('statusBadges.streakPaused', 'Streak paused — resume from analytics') };
   }
   if (state === 'grace') {
     return {
       icon: '🧊',
       cls: 'bg-brand-info/15 border-brand-info/50',
-      tip: `Streak frozen! Complete today's goal to keep your ${streak}-day streak alive`,
+      tip: t('statusBadges.streakFrozen', "Streak frozen! Complete today's goal to keep your {{streak}}-day streak alive", { streak }),
     };
   }
   if (streak <= 0 || state === 'none') {
@@ -29,10 +30,10 @@ export function streakVisual(state: StreakState | undefined, streak: number): {
       icon: '🔥',
       iconCls: 'grayscale opacity-70',
       cls: 'bg-red-500/15 border-red-400/50',
-      tip: 'No streak yet — meet your daily goal to light the fire',
+      tip: t('statusBadges.noStreak', 'No streak yet — meet your daily goal to light the fire'),
     };
   }
-  return { icon: '🔥', cls: 'bg-brand-gold/20 border-brand-gold/40', tip: `${streak}-day streak — keep it burning!` };
+  return { icon: '🔥', cls: 'bg-brand-gold/20 border-brand-gold/40', tip: t('statusBadges.streakActive', '{{streak}}-day streak — keep it burning!', { streak }) };
 }
 
 export function StreakBadge({ streak, state, size = 'sm' }: {
@@ -40,7 +41,8 @@ export function StreakBadge({ streak, state, size = 'sm' }: {
   state?: StreakState;
   size?: 'sm' | 'md';
 }) {
-  const v = streakVisual(state, streak);
+  const { t } = useTranslation();
+  const v = streakVisual(state, streak, t);
   const dead = streak <= 0 || state === 'none';
   return (
     <div className="tooltip tooltip-bottom" data-tip={v.tip}>
@@ -61,9 +63,10 @@ export function GoalBadge({ pct, met, size = 'sm' }: {
   met: boolean;
   size?: 'sm' | 'md';
 }) {
+  const { t } = useTranslation();
   if (pct === null) return null;
   return (
-    <div className="tooltip tooltip-bottom" data-tip={met ? 'Daily goal achieved — māshā’Allāh! 🏆' : `${pct}% of today's goal`}>
+    <div className="tooltip tooltip-bottom" data-tip={met ? t('statusBadges.goalAchieved', 'Daily goal achieved — māshā’Allāh! 🏆') : t('statusBadges.goalPct', "{{pct}}% of today's goal", { pct })}>
       <span
         className={`rounded-full border font-bold flex items-center gap-1 text-white ${
           met ? 'bg-brand-emerald/25 border-brand-emerald/50' : 'bg-white/10 border-brand-emerald/20'

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,6 +44,7 @@ import {
 } from '../utils/fastingRules.js';
 import { calcPrayerTimes, formatTime } from '../utils/prayerTimes.js';
 import { isPostMaghrib, getHijriToday } from '../utils/islamicCalendar.js';
+import { formatLocaleDate } from '../utils/localeDate.js';
 
 // ─── date helpers ─────────────────────────────────────────────────────────────
 
@@ -52,12 +54,13 @@ function offsetDate(base: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function friendlyDate(dateStr: string): string {
+function friendlyDate(dateStr: string, translate?: (key: string, fallback: string) => string): string {
+  const tr = translate ?? ((_k: string, fb: string) => fb);
   const today = localTodayStr();
-  if (dateStr === today) return 'Today';
-  if (dateStr === offsetDate(today, -1)) return 'Yesterday';
-  if (dateStr === offsetDate(today, 1)) return 'Tomorrow';
-  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  if (dateStr === today) return tr('common.today', 'Today');
+  if (dateStr === offsetDate(today, -1)) return tr('common.yesterday', 'Yesterday');
+  if (dateStr === offsetDate(today, 1)) return tr('common.tomorrow', 'Tomorrow');
+  return formatLocaleDate(new Date(dateStr + 'T12:00:00'), { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 // ─── tiny pieces ──────────────────────────────────────────────────────────────
@@ -86,6 +89,7 @@ function ManageProgress({ done, target, color, doneLabel, extra }: {
   doneLabel: string;
   extra?: string;
 }) {
+  const { t } = useTranslation();
   const pct = Math.min(100, Math.round((done / Math.max(1, target)) * 100));
   const remaining = Math.max(0, target - done);
   const finish = new Date();
@@ -108,7 +112,7 @@ function ManageProgress({ done, target, color, doneLabel, extra }: {
         <span>{extra ?? ''}</span>
         {remaining > 0 && (
           <span>
-            1 fast/day → done {finish.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, in shā&apos; Allāh
+            {t('fasting.estimateFinish', '1 fast/day → done {{date}}, in sha\' Allah', { date: formatLocaleDate(finish, { month: 'short', day: 'numeric' }) })}
           </span>
         )}
       </div>
@@ -139,6 +143,7 @@ const SPARKLES = [
 // ─── component ────────────────────────────────────────────────────────────────
 
 export default function FastingTracker() {
+  const { t } = useTranslation();
   const cycleActive = useCycleActive();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -202,8 +207,8 @@ export default function FastingTracker() {
       const stored = localStorage.getItem('ihsan_location');
       if (!stored) return null;
       const loc = JSON.parse(stored) as { latitude: number; longitude: number };
-      const t = calcPrayerTimes(loc.latitude, loc.longitude, dateObj);
-      return { fajr: t.fajr, maghrib: t.maghrib };
+      const times = calcPrayerTimes(loc.latitude, loc.longitude, dateObj);
+      return { fajr: times.fajr, maghrib: times.maghrib };
     } catch { return null; }
   }, [dateObj]);
 
@@ -349,14 +354,14 @@ export default function FastingTracker() {
     : 'from-brand-info/20 via-brand-deep to-brand-deep';
 
   const currentTypeChip = category === 'voluntary'
-    ? `${VOLUNTARY_BY_ID[effectiveKind]?.emoji ?? '💚'} ${VOLUNTARY_BY_ID[effectiveKind]?.label ?? 'Voluntary'}`
+    ? `${VOLUNTARY_BY_ID[effectiveKind]?.emoji ?? '💚'} ${VOLUNTARY_BY_ID[effectiveKind]?.label ?? t('fasting.voluntary', 'Voluntary')}`
     : category === 'nadhr'
-    ? `🤝 ${vows.find((v) => v.id === vowId)?.title ?? 'Vow'}`
-    : `${CATEGORY_LABEL[category].emoji} ${CATEGORY_LABEL[category].label}`;
+    ? `🤝 ${vows.find((v) => v.id === vowId)?.title ?? t('fasting.nadhr', 'Vow')}`
+    : `${CATEGORY_LABEL[category].emoji} ${t(`fasting.${category}`, CATEGORY_LABEL[category].label)}`;
 
   return (
     <AnimatedBackground variant="dark">
-      <h1 className="sr-only">Fasting Tracker</h1>
+      <h1 className="sr-only">{t('fasting.title', 'Fasting Tracker')}</h1>
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-xl mx-auto space-y-4">
 
@@ -364,15 +369,15 @@ export default function FastingTracker() {
           <div className="flex items-center justify-between gap-2">
             <TabNav
               items={[
-                { label: '🌙 Tracker', to: '/fasting', active: true },
-                { label: '📊 Analytics', to: '/fasting/analytics' },
+                { label: `🌙 ${t('fasting.tracker', 'Tracker')}`, to: '/fasting', active: true },
+                { label: `📊 ${t('fasting.analytics', 'Analytics')}`, to: '/fasting/analytics' },
               ]}
             />
             <button
               onClick={() => setCalendarOpen((o) => !o)}
-              aria-label="Open month calendar"
+              aria-label={t('fasting.openCalendarAriaLabel', 'Open month calendar')}
               aria-expanded={calendarOpen}
-              title="Pick any day from the calendar"
+              title={t('fasting.pickDay', 'Pick any day from the calendar')}
               className={`p-2 rounded-xl border transition-all ${
                 calendarOpen
                   ? 'bg-brand-emerald/20 border-brand-emerald/50 text-brand-emerald'
@@ -398,11 +403,11 @@ export default function FastingTracker() {
                         const d = new Date(y!, m! - 2, 1);
                         setCalMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
                       }}
-                      aria-label="Previous month"
+                      aria-label={t('fasting.previousMonth', 'Previous month')}
                       className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10"
                     ><ChevronLeftIcon className="w-4 h-4" /></button>
                     <p className="text-white font-bold text-sm">
-                      {new Date(calMonth + '-15T12:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      {formatLocaleDate(new Date(calMonth + '-15T12:00:00'), { month: 'long', year: 'numeric' })}
                     </p>
                     <button
                       onClick={() => {
@@ -411,12 +416,12 @@ export default function FastingTracker() {
                         setCalMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
                       }}
                       disabled={calMonth >= today.substring(0, 7)}
-                      aria-label="Next month"
+                      aria-label={t('fasting.nextMonth', 'Next month')}
                       className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-20"
                     ><ChevronRightIcon className="w-4 h-4" /></button>
                   </div>
                   <div className="grid grid-cols-7 gap-1 text-center">
-                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                    {t('fasting.weekdayInitials', 'SMTWTFS').split('').map((d, i) => (
                       <span key={i} className="text-white/25 text-[9px] font-bold uppercase">{d}</span>
                     ))}
                     {(() => {
@@ -441,7 +446,7 @@ export default function FastingTracker() {
                             key={dateStr}
                             disabled={disabled}
                             onClick={() => { setSelectedDate(dateStr); setCalendarOpen(false); }}
-                            aria-label={`Select ${dateStr}`}
+                            aria-label={t('fasting.selectDate', 'Select {{date}}', { date: dateStr })}
                             className={`relative h-8 rounded-lg text-xs font-semibold transition-all ${
                               isSel ? 'bg-brand-emerald/25 text-brand-emerald border border-brand-emerald/50'
                               : isTod ? 'bg-white/10 text-white border border-brand-emerald/20'
@@ -461,7 +466,7 @@ export default function FastingTracker() {
                     })()}
                   </div>
                   <p className="text-white/25 text-[10px] mt-2">
-                    Tap any past day to view or log it — 🟢 fasted · 🔵 intended · 🔴 broken
+                    {t('fasting.calendarLegend', 'Tap any past day to view or log it — 🟢 fasted · 🔵 intended · 🔴 broken')}
                   </p>
                 </div>
               </motion.div>
@@ -483,7 +488,7 @@ export default function FastingTracker() {
                   key={d}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setSelectedDate(d)}
-                  aria-label={`Select ${friendlyDate(d)}`}
+                  aria-label={t('fasting.selectDay', 'Select {{day}}', { day: friendlyDate(d, t) })}
                   className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border transition-all ${
                     isSel
                       ? 'bg-white/10 border-brand-emerald/30'
@@ -491,7 +496,7 @@ export default function FastingTracker() {
                   }`}
                 >
                   <span className={`text-[9px] uppercase font-bold ${isTod ? 'text-brand-emerald' : 'text-white/30'}`}>
-                    {d === tomorrow ? '+1' : new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'narrow' })}
+                    {d === tomorrow ? '+1' : formatLocaleDate(new Date(d + 'T12:00:00'), { weekday: 'narrow' })}
                   </span>
                   <span className={`text-xs font-bold ${isSel ? 'text-white' : 'text-white/50'}`}>
                     {parseInt(d.slice(8), 10)}
@@ -527,9 +532,9 @@ export default function FastingTracker() {
             <div className="relative p-5 sm:p-6 text-center space-y-3">
               {/* Date */}
               <div>
-                <p className="text-white font-black text-xl leading-tight">{friendlyDate(selectedDate)}</p>
+                <p className="text-white font-black text-xl leading-tight">{friendlyDate(selectedDate, t)}</p>
                 <p className="text-white/30 text-xs">
-                  {dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  {formatLocaleDate(dateObj, { weekday: 'long', month: 'long', day: 'numeric' })}
                   {ruling.hijriLabel && <span className="text-brand-gold/50"> · {ruling.hijriLabel}</span>}
                 </p>
               </div>
@@ -547,13 +552,13 @@ export default function FastingTracker() {
                         onClick={() => {
                           if (!user) { setShowGuestDialog(true); return; }
                           if (log) {
-                            toast(`This day is already logged — remove it (🗑) to change its type.`, { id: 'fasting-capsule', icon: 'ℹ️' });
+                            toast(t('fasting.alreadyLogged', 'This day is already logged — remove it (🗑) to change its type.'), { id: 'fasting-capsule', icon: 'ℹ️' });
                             return;
                           }
                           if (c.id === 'qada') setCategory('qada');
                           else if (c.id === 'kaffarah') setCategory('kaffarah');
                           else { setCategory('nadhr'); setVowId(c.id.replace('vow-', '')); }
-                          toast.success(`Fast type set to ${c.label} — now tap "I fasted"`, { id: 'fasting-capsule', duration: 2500 });
+                          toast.success(t('fasting.typeSet', 'Fast type set to {{label}} — now tap "I fasted"', { label: c.label }), { id: 'fasting-capsule', duration: 2500 });
                         }}
                         title={`${c.label}: ${c.done}/${c.target} done — tap to log this day as ${c.label}`}
                         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all ${
@@ -568,7 +573,7 @@ export default function FastingTracker() {
                         <span aria-hidden>{c.emoji}</span>
                         <span className="max-w-[90px] truncate">{c.label}</span>
                         <span className="tabular-nums text-white/80">{c.done}/{c.target}</span>
-                        <span className="text-white/40 font-semibold">· {remaining} left</span>
+                        <span className="text-white/40 font-semibold">· {t('fasting.nLeft', '{{count}} left', { count: remaining })}</span>
                       </motion.button>
                     );
                   })}
@@ -588,20 +593,19 @@ export default function FastingTracker() {
                   <div className="flex justify-center gap-2 flex-wrap">
                     {ruling.haram.refs.map((r) => <RefLink key={r.url} r={r} />)}
                   </div>
-                  <p className="text-white/40 text-xs pt-1">Enjoy the blessing — today is for eating and celebrating! 🎉</p>
+                  <p className="text-white/40 text-xs pt-1">{t('fasting.enjoyBlessing', 'Enjoy the blessing — today is for eating and celebrating!')} 🎉</p>
                 </motion.div>
               ) : ruling.level === 'ramadan' ? (
                 <div className="space-y-3 py-2">
                   <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity }} className="text-6xl">🌙</motion.div>
-                  <p className="text-brand-gold font-black text-lg">Ramaḍān Mubārak!</p>
+                  <p className="text-brand-gold font-black text-lg">{t('fasting.ramadanMubarak', 'Ramaḍān Mubārak!')}</p>
                   <p className="text-white/50 text-xs leading-relaxed max-w-sm mx-auto">
-                    This blessed month has its own home — the 30-day tracker with suhoor &
-                    iftar times, tarawih nights and Laylat al-Qadr.
+                    {t('fasting.ramadanHomeDesc', 'This blessed month has its own home — the 30-day tracker with suhoor & iftar times, tarawih nights and Laylat al-Qadr.')}
                   </p>
                   <button
                     className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-gold to-brand-gold"
                     onClick={() => navigate('/ramadan')}
-                  >🌙 Open the Ramadan tracker →</button>
+                  >🌙 {t('fasting.openRamadanTracker', 'Open the Ramadan tracker')} →</button>
                   <a href="https://quran.com/2/185" target="_blank" rel="noopener noreferrer"
                     className="block text-brand-gold/60 text-[10px] underline">Quran 2:185 ↗</a>
                 </div>
@@ -639,16 +643,16 @@ export default function FastingTracker() {
                       </AnimatePresence>
                     </div>
                     <p className="font-black text-lg" style={{ color: STATUS_META[log.status].color }}>
-                      {STATUS_META[log.status].label}
-                      {log.status === 'completed' && <span className="text-white/50 font-semibold text-sm"> — may Allah accept it! 🤲</span>}
+                      {t(`fasting.status.${log.status}`, STATUS_META[log.status].label)}
+                      {log.status === 'completed' && <span className="text-white/50 font-semibold text-sm"> — {t('fasting.mayAllahAccept', 'may Allah accept it!')} 🤲</span>}
                     </p>
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-brand-emerald/15 text-white/60 text-xs font-semibold">
                       {CATEGORY_LABEL[log.category as FastingCategory]?.emoji}{' '}
                       {log.category === 'voluntary' && log.voluntaryKind
-                        ? VOLUNTARY_BY_ID[log.voluntaryKind]?.label ?? 'Voluntary'
+                        ? VOLUNTARY_BY_ID[log.voluntaryKind]?.label ?? t('fasting.voluntary', 'Voluntary')
                         : log.category === 'nadhr'
-                        ? (vows.find((v) => v.id === log.vowId)?.title ?? 'Vow')
-                        : CATEGORY_LABEL[log.category as FastingCategory]?.label}
+                        ? (vows.find((v) => v.id === log.vowId)?.title ?? t('fasting.nadhr', 'Vow'))
+                        : t(`fasting.${log.category}`, CATEGORY_LABEL[log.category as FastingCategory]?.label ?? '')}
                     </div>
 
                     <div className="flex justify-center gap-2 pt-1">
@@ -657,17 +661,17 @@ export default function FastingTracker() {
                           whileTap={{ scale: 0.94 }}
                           onClick={() => submitLog({ date: selectedDate, category: log.category as FastingCategory, voluntaryKind: log.voluntaryKind, vowId: log.vowId, status: 'completed', hijri: log.hijri })}
                           className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold px-6"
-                        >✅ I completed it!</motion.button>
+                        >✅ {t('fasting.completedIt', 'I completed it!')}</motion.button>
                       )}
                       {!isFuture && log.status !== 'broken' && (
                         <button
                           onClick={() => submitLog({ date: selectedDate, category: log.category as FastingCategory, voluntaryKind: log.voluntaryKind, vowId: log.vowId, status: 'broken', hijri: log.hijri })}
                           className="btn btn-sm btn-ghost text-white/40 hover:text-red-300 text-xs"
-                        >I broke the fast</button>
+                        >{t('fasting.brokeFast', 'I broke the fast')}</button>
                       )}
                       <button
                         onClick={handleClear}
-                        aria-label="Remove this fast log"
+                        aria-label={t('fasting.removeLogAriaLabel', 'Remove this fast log')}
                         className="btn btn-sm btn-ghost text-white/30 hover:text-red-400 px-2"
                       ><TrashIcon className="w-4 h-4" /></button>
                     </div>
@@ -700,7 +704,7 @@ export default function FastingTracker() {
                         disabled={upsert.isPending || (category === 'nadhr' && !vowId)}
                         className="w-full max-w-xs h-14 rounded-2xl bg-brand-emerald hover:bg-brand-emerald-dim text-white font-black text-lg border-0 shadow-[0_8px_30px_rgba(16,185,129,0.35)] transition-colors"
                       >
-                        ✅ I fasted {friendlyDate(selectedDate).toLowerCase()}
+                        ✅ {t('fasting.iFasted', 'I fasted {{day}}', { day: friendlyDate(selectedDate, t).toLowerCase() })}
                       </motion.button>
                     )}
                     {(selectedDate === today || isFuture) && (
@@ -709,7 +713,7 @@ export default function FastingTracker() {
                         disabled={upsert.isPending || (category === 'nadhr' && !vowId)}
                         className="text-brand-info/80 hover:text-brand-info text-xs font-semibold underline underline-offset-4"
                       >
-                        🌅 {isFuture ? 'I intend to fast tomorrow' : "I'm fasting today (mark intention)"}
+                        🌅 {isFuture ? t('fasting.intendTomorrow', 'I intend to fast tomorrow') : t('fasting.fastingToday', "I'm fasting today (mark intention)")}
                       </button>
                     )}
                   </div>
@@ -719,8 +723,8 @@ export default function FastingTracker() {
               {/* Suhoor / iftar strip */}
               {dayTimes && ruling.level !== 'haram' && (
                 <div className="flex items-center justify-center gap-4 pt-2 border-t border-brand-emerald/10 text-xs">
-                  <span className="text-white/40">🌌 Suḥūr ends <span className="text-white/80 font-bold tabular-nums">{formatTime(dayTimes.fajr)}</span></span>
-                  <span className="text-white/40">🌇 Ifṭār <span className="text-brand-gold font-bold tabular-nums">{formatTime(dayTimes.maghrib)}</span></span>
+                  <span className="text-white/40">🌌 {t('fasting.suhoorEnds', 'Suhur ends')} <span className="text-white/80 font-bold tabular-nums">{formatTime(dayTimes.fajr)}</span></span>
+                  <span className="text-white/40">🌇 {t('fasting.iftar', 'Iftar')} <span className="text-brand-gold font-bold tabular-nums">{formatTime(dayTimes.maghrib)}</span></span>
                 </div>
               )}
             </div>
@@ -754,7 +758,7 @@ export default function FastingTracker() {
                   >{r.emoji}</motion.span>
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-sm leading-tight" style={{ color: r.color }}>
-                      {r.label} <span className="text-white/40 font-normal text-[11px]">— sunnah fast!</span>
+                      {r.label} <span className="text-white/40 font-normal text-[11px]">— {t('fasting.sunnahFast', 'sunnah fast!')}</span>
                     </p>
                     <p className="text-white/40 text-[11px] leading-snug">{r.virtue}</p>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -763,7 +767,7 @@ export default function FastingTracker() {
                         <Link to={`/special-day/${r.specialDayId}`}
                           className="text-[10px] font-bold underline underline-offset-2 hover:opacity-80"
                           style={{ color: r.color }}>
-                          Learn more →
+                          {t('fasting.learnMore', 'Learn more')} →
                         </Link>
                       )}
                     </div>
@@ -776,7 +780,7 @@ export default function FastingTracker() {
           {/* Caution note (full warning shows at log time) */}
           {ruling.level === 'normal' && ruling.cautions.length > 0 && !log && (
             <p className="text-brand-gold/60 text-[11px] px-2 leading-relaxed">
-              ⚠️ {ruling.cautions.map((c) => c.info.label).join(' · ')} — we'll remind you before logging.
+              ⚠️ {ruling.cautions.map((c) => c.info.label).join(' · ')} — {t('fasting.remindBeforeLogging', "we'll remind you before logging.")}
             </p>
           )}
 
@@ -787,13 +791,13 @@ export default function FastingTracker() {
           <div className="flex items-stretch gap-2">
             <div className="flex-1 grid grid-cols-3 gap-2">
               {[
-                { label: 'This month', value: summary?.stats.thisMonth ?? 0, color: '#7a9e6e' },
+                { label: t('fasting.thisMonth', 'This month'), value: summary?.stats.thisMonth ?? 0, color: '#7a9e6e' },
                 ...(qadaOwed > 0
-                  ? [{ label: 'Qaḍā left', value: qadaRemaining, color: '#c9a96e' }]
-                  : [{ label: 'Last 30d', value: summary?.stats.last30 ?? 0, color: '#5a9e8e' }]),
+                  ? [{ label: t('fasting.qadaLeft', 'Qada left'), value: qadaRemaining, color: '#c9a96e' }]
+                  : [{ label: t('fasting.last30d', 'Last 30d'), value: summary?.stats.last30 ?? 0, color: '#5a9e8e' }]),
                 ...(kaffarahActive
-                  ? [{ label: 'Kaffārah run', value: summary?.kaffarah.currentRun ?? 0, color: '#c4825a' }]
-                  : [{ label: 'All time', value: summary?.stats.total ?? 0, color: '#5a9e8e' }]),
+                  ? [{ label: t('fasting.kaffarahRun', 'Kaffarah run'), value: summary?.kaffarah.currentRun ?? 0, color: '#c4825a' }]
+                  : [{ label: t('fasting.allTime', 'All time'), value: summary?.stats.total ?? 0, color: '#5a9e8e' }]),
               ].map((s) => (
                 <div key={s.label} className="rounded-xl border border-brand-emerald/10 bg-white/[0.04] px-2 py-2 text-center">
                   <p className="font-black text-lg tabular-nums leading-none" style={{ color: s.color }}>{s.value}</p>
@@ -809,12 +813,12 @@ export default function FastingTracker() {
                 setQadaInput(String(qadaOwed));
                 setShowManage(true);
               }}
-              aria-label="Manage make-up fasts and vows"
-              title="Make-up fasts, kaffārah & vows"
+              aria-label={t('fasting.manageAriaLabel', 'Manage make-up fasts and vows')}
+              title={t('fasting.manageTitle', 'Make-up fasts, kaffarah & vows')}
               className="rounded-xl border border-brand-emerald/10 bg-white/[0.04] hover:bg-white/10 px-3 flex flex-col items-center justify-center gap-1 text-white/40 hover:text-white transition-all"
             >
               <Cog6ToothIcon className="w-4 h-4" />
-              <span className="text-[9px] font-bold uppercase">Manage</span>
+              <span className="text-[9px] font-bold uppercase">{t('fasting.manage', 'Manage')}</span>
             </button>
           </div>
 
@@ -844,8 +848,7 @@ export default function FastingTracker() {
           {/* Kaffarah broken-chain warning */}
           {kaffarahActive && summary?.kaffarah.runStale && (summary?.kaffarah.completed ?? 0) > 0 && (
             <p className="text-red-400/80 text-[11px] px-2">
-              ⚠️ Kaffārah chain broken — the {summary?.profile.kaffarah.targetDays ?? 60} days must be consecutive.
-              An unexcused gap restarts the count (open Manage for details).
+              ⚠️ {t('fasting.kaffarahChainBroken', 'Kaffarah chain broken — the {{days}} days must be consecutive. An unexcused gap restarts the count (open Manage for details).', { days: summary?.profile.kaffarah.targetDays ?? 60 })}
             </p>
           )}
 
@@ -856,7 +859,7 @@ export default function FastingTracker() {
               className="w-full px-4 py-3 flex items-center justify-between text-left"
               aria-expanded={learnOpen}
             >
-              <p className="text-white/70 font-bold text-sm">📚 New to fasting? Start here</p>
+              <p className="text-white/70 font-bold text-sm">📚 {t('fasting.newToFasting', 'New to fasting? Start here')}</p>
               <motion.span animate={{ rotate: learnOpen ? 180 : 0 }} className="text-white/30">
                 <ChevronDownIcon className="w-4 h-4" />
               </motion.span>
@@ -871,11 +874,9 @@ export default function FastingTracker() {
 
                     {/* The basics */}
                     <div className="space-y-1.5">
-                      <p className="text-brand-emerald text-[10px] uppercase tracking-widest font-bold">🌱 The basics</p>
+                      <p className="text-brand-emerald text-[10px] uppercase tracking-widest font-bold">🌱 {t('fasting.theBasics', 'The basics')}</p>
                       <p className="text-white/50 text-xs leading-relaxed">
-                        A fast runs from dawn (Fajr) to sunset (Maghrib): no food, drink, or intimacy.
-                        Make the intention in your heart, eat suḥūr before dawn, and break your fast
-                        promptly at sunset — dates and water are the sunnah.
+                        {t('fasting.basicsDesc', 'A fast runs from dawn (Fajr) to sunset (Maghrib): no food, drink, or intimacy. Make the intention in your heart, eat suhur before dawn, and break your fast promptly at sunset — dates and water are the sunnah.')}
                       </p>
                       {FASTING_SUNNAH.map((r) => (
                         <div key={r.url} className="pl-2 border-l-2 border-brand-emerald/30">
@@ -887,7 +888,7 @@ export default function FastingTracker() {
 
                     {/* Best days */}
                     <div className="space-y-2">
-                      <p className="text-brand-gold text-[10px] uppercase tracking-widest font-bold">⭐ The best days to fast</p>
+                      <p className="text-brand-gold text-[10px] uppercase tracking-widest font-bold">⭐ {t('fasting.bestDays', 'The best days to fast')}</p>
                       <div className="grid grid-cols-2 gap-1.5">
                         {VOLUNTARY_META.filter((m) => m.id !== 'general').map((m) => (
                           <div key={m.id} className="rounded-xl border px-2.5 py-2"
@@ -902,7 +903,7 @@ export default function FastingTracker() {
 
                     {/* Never fast on */}
                     <div className="space-y-1.5">
-                      <p className="text-red-400 text-[10px] uppercase tracking-widest font-bold">🚫 Never fast on</p>
+                      <p className="text-red-400 text-[10px] uppercase tracking-widest font-bold">🚫 {t('fasting.neverFastOn', 'Never fast on')}</p>
                       {PROHIBITED_INFO.map((p) => (
                         <div key={p.id} className="rounded-xl bg-red-500/10 border border-red-500/25 px-3 py-2">
                           <p className="text-red-300 text-[11px] font-bold">{p.emoji} {p.label}</p>
@@ -914,7 +915,7 @@ export default function FastingTracker() {
 
                     {/* Better to avoid */}
                     <div className="space-y-1.5">
-                      <p className="text-brand-gold/80 text-[10px] uppercase tracking-widest font-bold">⚠️ Better to avoid</p>
+                      <p className="text-brand-gold/80 text-[10px] uppercase tracking-widest font-bold">⚠️ {t('fasting.betterToAvoid', 'Better to avoid')}</p>
                       {DISLIKED_INFO.map((p) => (
                         <div key={p.id} className="rounded-xl bg-brand-gold/10 border border-brand-gold/20 px-3 py-2">
                           <p className="text-brand-gold/90 text-[11px] font-bold">{p.emoji} {p.label}</p>
@@ -926,12 +927,14 @@ export default function FastingTracker() {
 
                     {/* Owe fasts? */}
                     <div className="space-y-1.5">
-                      <p className="text-white/50 text-[10px] uppercase tracking-widest font-bold">🔄 Missed Ramaḍān days?</p>
+                      <p className="text-white/50 text-[10px] uppercase tracking-widest font-bold">🔄 {t('fasting.missedRamadan', 'Missed Ramadan days?')}</p>
                       <p className="text-white/40 text-[11px] leading-relaxed">
-                        Days missed for a valid reason are made up as <b className="text-white/60">Qaḍā</b> (Quran 2:184).
-                        Broke a fast deliberately? That may need <b className="text-white/60">Kaffārah</b>.
-                        Made a vow to fast? That's <b className="text-white/60">Nadhr</b>. Track all three
-                        from the <b className="text-white/60">Manage</b> button above.
+                        <Trans i18nKey="fasting.missedRamadanDesc" defaults="Days missed for a valid reason are made up as <1>Qada</1> (Quran 2:184). Broke a fast deliberately? That may need <3>Kaffarah</3>. Made a vow to fast? That's <5>Nadhr</5>. Track all three from the <7>Manage</7> button above.">
+                          Days missed for a valid reason are made up as <b className="text-white/60">Qada</b> (Quran 2:184).
+                          Broke a fast deliberately? That may need <b className="text-white/60">Kaffarah</b>.
+                          Made a vow to fast? That&apos;s <b className="text-white/60">Nadhr</b>. Track all three
+                          from the <b className="text-white/60">Manage</b> button above.
+                        </Trans>
                       </p>
                     </div>
                   </div>
@@ -956,8 +959,8 @@ export default function FastingTracker() {
               className="bg-brand-surface rounded-3xl p-5 w-full max-w-md shadow-2xl border border-brand-border max-h-[80vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-black text-white">What kind of fast?</h3>
-                <button onClick={() => setShowTypeSheet(false)} aria-label="Close" className="text-white/30 hover:text-white p-1">
+                <h3 className="text-base font-black text-white">{t('fasting.whatKindOfFast', 'What kind of fast?')}</h3>
+                <button onClick={() => setShowTypeSheet(false)} aria-label={t('common.close')} className="text-white/30 hover:text-white p-1">
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               </div>
@@ -979,7 +982,7 @@ export default function FastingTracker() {
                       <p className="text-xs font-bold" style={{ color: m.color }}>
                         {m.label}
                         {ruling.recommended.some((r) => r.id === m.id) && (
-                          <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-brand-emerald/20 text-brand-emerald">today ✓</span>
+                          <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-brand-emerald/20 text-brand-emerald">{t('fasting.todayTag', 'today ✓')}</span>
                         )}
                       </p>
                       <p className="text-white/30 text-[10px] leading-snug">{m.when}</p>
@@ -988,17 +991,17 @@ export default function FastingTracker() {
                 ))}
 
                 {/* Obligatory categories */}
-                <p className="text-white/30 text-[10px] uppercase tracking-widest font-bold pt-2">Obligatory make-ups</p>
+                <p className="text-white/30 text-[10px] uppercase tracking-widest font-bold pt-2">{t('fasting.obligatoryMakeups', 'Obligatory make-ups')}</p>
                 <button
                   onClick={() => { setCategory('qada'); setShowTypeSheet(false); }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border text-left ${category === 'qada' ? 'border-brand-emerald/40 bg-white/10' : 'border-brand-emerald/10 bg-white/[0.03] hover:bg-white/[0.07]'}`}
                 >
                   <span className="text-xl">🔄</span>
                   <div>
-                    <p className="text-xs font-bold text-brand-gold">Qaḍā — make-up day
-                      {qadaRemaining > 0 && <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-brand-gold/20">{qadaRemaining} left</span>}
+                    <p className="text-xs font-bold text-brand-gold">{t('fasting.qadaMakeupDay', 'Qaḍā — make-up day')}
+                      {qadaRemaining > 0 && <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-brand-gold/20">{t('fasting.nLeft', '{{count}} left', { count: qadaRemaining })}</span>}
                     </p>
-                    <p className="text-white/30 text-[10px]">Making up a missed Ramaḍān day</p>
+                    <p className="text-white/30 text-[10px]">{t('fasting.qadaMakeupDesc', 'Making up a missed Ramaḍān day')}</p>
                   </div>
                 </button>
                 {kaffarahActive && (
@@ -1008,8 +1011,8 @@ export default function FastingTracker() {
                   >
                     <span className="text-xl">⚖️</span>
                     <div>
-                      <p className="text-xs font-bold text-brand-warm">Kaffārah — expiation day</p>
-                      <p className="text-white/30 text-[10px]">Consecutive run: {summary?.kaffarah.currentRun ?? 0}/{summary?.profile.kaffarah.targetDays ?? 60}</p>
+                      <p className="text-xs font-bold text-brand-warm">{t('fasting.kaffarahExpiationDay', 'Kaffārah — expiation day')}</p>
+                      <p className="text-white/30 text-[10px]">{t('fasting.consecutiveRun', 'Consecutive run: {{run}}/{{target}}', { run: summary?.kaffarah.currentRun ?? 0, target: summary?.profile.kaffarah.targetDays ?? 60 })}</p>
                     </div>
                   </button>
                 )}
@@ -1021,8 +1024,8 @@ export default function FastingTracker() {
                   >
                     <span className="text-xl">🤝</span>
                     <div>
-                      <p className="text-xs font-bold text-brand-info">Vow: {v.title}</p>
-                      <p className="text-white/30 text-[10px]">{v.completed}/{v.targetDays} days done</p>
+                      <p className="text-xs font-bold text-brand-info">{t('fasting.vowLabel', 'Vow: {{title}}', { title: v.title })}</p>
+                      <p className="text-white/30 text-[10px]">{t('fasting.daysDone', '{{completed}}/{{target}} days done', { completed: v.completed, target: v.targetDays })}</p>
                     </div>
                   </button>
                 ))}
@@ -1046,14 +1049,14 @@ export default function FastingTracker() {
             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 260 }}
             className="fixed right-0 top-0 bottom-0 z-[65] w-full max-w-sm bg-brand-deep border-l border-brand-border overflow-y-auto"
-            role="dialog" aria-label="Fasting settings"
+            role="dialog" aria-label={t('fasting.settingsAriaLabel', 'Fasting settings')}
           >
               <div className="sticky top-0 bg-brand-deep/95 backdrop-blur px-5 py-4 flex items-center justify-between border-b border-brand-emerald/5 z-10">
                 <div>
-                  <h3 className="text-lg font-black text-white">⚙️ Fasting settings</h3>
-                  <p className="text-white/30 text-[11px]">Obligations & vows — a countdown capsule appears on the main card</p>
+                  <h3 className="text-lg font-black text-white">⚙️ {t('fasting.settingsTitle', 'Fasting settings')}</h3>
+                  <p className="text-white/30 text-[11px]">{t('fasting.settingsSubtitle', 'Obligations & vows — a countdown capsule appears on the main card')}</p>
                 </div>
-                <button onClick={() => setShowManage(false)} aria-label="Close" className="text-white/30 hover:text-white p-1">
+                <button onClick={() => setShowManage(false)} aria-label={t('common.close')} className="text-white/30 hover:text-white p-1">
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               </div>
@@ -1064,27 +1067,27 @@ export default function FastingTracker() {
                   <div className="flex items-center gap-2.5">
                     <span className="w-9 h-9 rounded-xl bg-brand-gold/15 grid place-items-center text-lg shrink-0">🔄</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-brand-gold font-bold text-sm leading-tight">Qaḍā — missed Ramaḍān days</p>
-                      <p className="text-white/30 text-[10px]">Quran 2:184 — make them up day by day</p>
+                      <p className="text-brand-gold font-bold text-sm leading-tight">{t('fasting.qadaMissedDays', 'Qaḍā — missed Ramaḍān days')}</p>
+                      <p className="text-white/30 text-[10px]">{t('fasting.qadaMakeupNote', 'Quran 2:184 — make them up day by day')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-white/40 text-xs">I owe</span>
+                    <span className="text-white/40 text-xs">{t('fasting.iOwe', 'I owe')}</span>
                     <input
                       type="number" min="0" value={qadaInput}
                       onChange={(e) => setQadaInput(e.target.value)}
-                      aria-label="Days owed"
+                      aria-label={t('fasting.daysOwedAriaLabel', 'Days owed')}
                       className="input input-sm w-20 bg-brand-deep border-brand-border text-white text-center font-bold"
                     />
-                    <span className="text-white/40 text-xs">days</span>
-                    <button onClick={saveQadaOwed} className="btn btn-xs bg-brand-emerald text-white border-0 ml-auto">Save</button>
+                    <span className="text-white/40 text-xs">{t('common.days')}</span>
+                    <button onClick={saveQadaOwed} className="btn btn-xs bg-brand-emerald text-white border-0 ml-auto">{t('common.save')}</button>
                   </div>
                   {qadaOwed > 0 && (
                     <ManageProgress
                       done={qadaDone}
                       target={qadaOwed}
                       color="#c9a96e"
-                      doneLabel={qadaRemaining === 0 ? "All made up — māshā'Allāh! 🎉" : `${qadaRemaining} day${qadaRemaining === 1 ? '' : 's'} remaining`}
+                      doneLabel={qadaRemaining === 0 ? t('fasting.allMadeUp', "All made up — māshā'Allāh! 🎉") : t('fasting.daysRemaining', '{{count}} days remaining', { count: qadaRemaining })}
                     />
                   )}
                   <div className="flex gap-2 flex-wrap">
@@ -1097,24 +1100,24 @@ export default function FastingTracker() {
                   <div className="flex items-center gap-2.5">
                     <span className="w-9 h-9 rounded-xl bg-brand-warm/15 grid place-items-center text-lg shrink-0">⚖️</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-brand-warm font-bold text-sm leading-tight">Kaffārah — expiation</p>
-                      <p className="text-white/30 text-[10px]">Consecutive days required (Bukhārī 1936)</p>
+                      <p className="text-brand-warm font-bold text-sm leading-tight">{t('fasting.kaffarahExpiation', 'Kaffārah — expiation')}</p>
+                      <p className="text-white/30 text-[10px]">{t('fasting.kaffarahConsecutiveNote', 'Consecutive days required (Bukhārī 1936)')}</p>
                     </div>
                     <button
                       onClick={() => updateProfile.mutate({ kaffarah: { active: !kaffarahActive, targetDays: summary?.profile.kaffarah.targetDays ?? 60 } })}
                       className={`btn btn-xs border-0 shrink-0 ${kaffarahActive ? 'bg-white/10 text-white/50' : 'bg-brand-warm text-white'}`}
-                    >{kaffarahActive ? 'Stop' : 'Start'}</button>
+                    >{kaffarahActive ? t('fasting.stop', 'Stop') : t('fasting.start', 'Start')}</button>
                   </div>
                   {kaffarahActive ? (
                     <>
                       <select
                         value={summary?.profile.kaffarah.targetDays ?? 60}
                         onChange={(e) => updateProfile.mutate({ kaffarah: { active: true, targetDays: parseInt(e.target.value, 10) } })}
-                        aria-label="Kaffarah target"
+                        aria-label={t('fasting.kaffarahTargetAriaLabel', 'Kaffarah target')}
                         className="select select-xs w-full bg-brand-deep border-brand-border text-white"
                       >
-                        <option value={60}>60 consecutive days (Ramaḍān violation)</option>
-                        <option value={3}>3 days (broken oath)</option>
+                        <option value={60}>{t('fasting.kaffarah60Days', '60 consecutive days (Ramaḍān violation)')}</option>
+                        <option value={3}>{t('fasting.kaffarah3Days', '3 days (broken oath)')}</option>
                       </select>
                       <ManageProgress
                         done={summary?.kaffarah.currentRun ?? 0}
@@ -1122,24 +1125,22 @@ export default function FastingTracker() {
                         color="#a855f7"
                         doneLabel={
                           (summary?.kaffarah.currentRun ?? 0) >= (summary?.profile.kaffarah.targetDays ?? 60)
-                            ? 'Complete — māshā\'Allāh! 🎉'
-                            : `${Math.max(0, (summary?.profile.kaffarah.targetDays ?? 60) - (summary?.kaffarah.currentRun ?? 0))} consecutive days to go`
+                            ? t('fasting.kaffarahComplete', "Complete — māshā'Allāh! 🎉")
+                            : t('fasting.kaffarahDaysToGo', '{{count}} consecutive days to go', { count: Math.max(0, (summary?.profile.kaffarah.targetDays ?? 60) - (summary?.kaffarah.currentRun ?? 0)) })
                         }
-                        extra={`current run: ${summary?.kaffarah.currentRun ?? 0} · lifetime total: ${summary?.kaffarah.completed ?? 0}`}
+                        extra={t('fasting.kaffarahExtra', 'current run: {{run}} · lifetime total: {{total}}', { run: summary?.kaffarah.currentRun ?? 0, total: summary?.kaffarah.completed ?? 0 })}
                       />
                       {summary?.kaffarah.runStale && (summary?.kaffarah.completed ?? 0) > 0 && (
                         <p className="text-red-400/90 text-[11px] rounded-lg bg-red-500/10 border border-red-500/25 px-2.5 py-1.5">
-                          ⚠️ Chain broken — an unexcused gap restarts the consecutive count.
-                          Log a fast today to start a new run. Consult a scholar about valid excuses.
+                          ⚠️ {t('fasting.chainBrokenWarning', 'Chain broken — an unexcused gap restarts the consecutive count. Log a fast today to start a new run. Consult a scholar about valid excuses.')}
                         </p>
                       )}
                       <p className="text-white/25 text-[10px] leading-relaxed">
-                        For a broken oath, feeding/clothing ten poor people comes first — fasting
-                        3 days only if unable (Quran 5:89).
+                        {t('fasting.kaffarahAlternative', 'For a broken oath, feeding/clothing ten poor people comes first — fasting 3 days only if unable (Quran 5:89).')}
                       </p>
                     </>
                   ) : (
-                    <p className="text-white/30 text-[11px]">Only activate if this applies to you.</p>
+                    <p className="text-white/30 text-[11px]">{t('fasting.onlyIfApplies', 'Only activate if this applies to you.')}</p>
                   )}
                   <div className="flex gap-2 flex-wrap">
                     {OBLIGATORY_META[1]!.refs.map((r) => <RefLink key={r.url} r={r} />)}
@@ -1151,18 +1152,18 @@ export default function FastingTracker() {
                   <div className="flex items-center gap-2.5">
                     <span className="w-9 h-9 rounded-xl bg-brand-info/15 grid place-items-center text-lg shrink-0">🤝</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-brand-info font-bold text-sm leading-tight">Nadhr — vowed fasts</p>
-                      <p className="text-white/30 text-[10px]">"Whoever vows to obey Allah, let him obey Him" (Bukhārī 6696)</p>
+                      <p className="text-brand-info font-bold text-sm leading-tight">{t('fasting.nadhrVowedFasts', 'Nadhr — vowed fasts')}</p>
+                      <p className="text-white/30 text-[10px]">{t('fasting.nadhrHadith', '"Whoever vows to obey Allah, let him obey Him" (Bukhārī 6696)')}</p>
                     </div>
                   </div>
                   {vows.length === 0 && (
-                    <p className="text-white/30 text-[11px]">No vows yet. Add one below and it gets its own countdown.</p>
+                    <p className="text-white/30 text-[11px]">{t('fasting.noVowsYet', 'No vows yet. Add one below and it gets its own countdown.')}</p>
                   )}
                   {vows.map((v) => (
                     <div key={v.id} className="rounded-xl bg-white/[0.04] border border-brand-emerald/10 p-2.5 space-y-1.5">
                       <div className="flex items-center gap-2">
                         <p className="text-white/70 text-xs font-bold flex-1 truncate">{v.title}</p>
-                        <button onClick={() => setConfirmVowDelete({ id: v.id, title: v.title })} aria-label={`Delete vow ${v.title}`}
+                        <button onClick={() => setConfirmVowDelete({ id: v.id, title: v.title })} aria-label={t('fasting.deleteVowAriaLabel', 'Delete vow {{title}}', { title: v.title })}
                           className="p-1 text-white/25 hover:text-red-400 shrink-0">
                           <TrashIcon className="w-3.5 h-3.5" />
                         </button>
@@ -1171,24 +1172,24 @@ export default function FastingTracker() {
                         done={v.completed}
                         target={v.targetDays}
                         color="#5a9e8e"
-                        doneLabel={v.completed >= v.targetDays ? 'Fulfilled ✓' : `${v.targetDays - v.completed} day${v.targetDays - v.completed === 1 ? '' : 's'} remaining`}
+                        doneLabel={v.completed >= v.targetDays ? t('fasting.vowFulfilled', 'Fulfilled ✓') : t('fasting.daysRemaining', '{{count}} days remaining', { count: v.targetDays - v.completed })}
                       />
                     </div>
                   ))}
                   <div className="flex gap-1.5 pt-1">
                     <input
                       value={vowTitle} onChange={(e) => setVowTitle(e.target.value)}
-                      placeholder="e.g. 3 days for shifa"
-                      aria-label="Vow description"
+                      placeholder={t('fasting.vowPlaceholder', 'e.g. 3 days for shifa')}
+                      aria-label={t('fasting.vowDescriptionAriaLabel', 'Vow description')}
                       className="input input-xs flex-1 bg-brand-deep border-brand-border text-white placeholder-white/20"
                     />
                     <input
                       type="number" min="1" value={vowDays} onChange={(e) => setVowDays(e.target.value)}
-                      placeholder="days" aria-label="Vow days"
+                      placeholder={t('common.days')} aria-label={t('fasting.vowDaysAriaLabel', 'Vow days')}
                       className="input input-xs w-14 bg-brand-deep border-brand-border text-white placeholder-white/20 text-center"
                     />
                     <button onClick={submitVow} disabled={!vowTitle.trim() || !vowDays || addVow.isPending}
-                      className="btn btn-xs bg-brand-info text-white border-0 disabled:opacity-30">Add</button>
+                      className="btn btn-xs bg-brand-info text-white border-0 disabled:opacity-30">{t('common.add')}</button>
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {OBLIGATORY_META[2]!.refs.map((r) => <RefLink key={r.url} r={r} />)}
@@ -1200,7 +1201,7 @@ export default function FastingTracker() {
                   onClick={() => setShowManage(false)}
                   className="block text-center text-white/25 hover:text-red-400 text-xs underline underline-offset-2 pt-4 pb-2 transition-colors"
                 >
-                  Delete fasting data →
+                  {t('fasting.deleteFastingData', 'Delete fasting data →')}
                 </Link>
               </div>
           </motion.aside>
@@ -1226,9 +1227,9 @@ export default function FastingTracker() {
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
                   <motion.span animate={{ rotate: [0, -8, 8, 0] }} transition={{ duration: 0.5 }} className="text-3xl">⚠️</motion.span>
-                  <h3 className="text-lg font-black text-brand-gold">One moment…</h3>
+                  <h3 className="text-lg font-black text-brand-gold">{t('fasting.oneMoment', 'One moment…')}</h3>
                 </div>
-                <button onClick={() => setWarnState(null)} aria-label="Close warning" className="text-white/30 hover:text-white p-1">
+                <button onClick={() => setWarnState(null)} aria-label={t('fasting.closeWarningAriaLabel', 'Close warning')} className="text-white/30 hover:text-white p-1">
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               </div>
@@ -1247,17 +1248,17 @@ export default function FastingTracker() {
                 ))}
                 {warnState.cautions.some((c) => c.id === 'friday_alone' || c.id === 'saturday_alone') && (
                   <p className="text-white/40 text-xs">
-                    💡 Easy fix: also fast the day before or after — then there's no dislike at all.
+                    💡 {t('fasting.easyFixTip', "Easy fix: also fast the day before or after — then there's no dislike at all.")}
                   </p>
                 )}
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setWarnState(null)} className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold">
-                  I'll reconsider
+                  {t('fasting.illReconsider', "I'll reconsider")}
                 </button>
                 <button onClick={() => submitLog(warnState.vars)}
                   className="btn flex-1 btn-ghost text-white/50 hover:text-white border border-brand-border">
-                  Log anyway
+                  {t('fasting.logAnyway', 'Log anyway')}
                 </button>
               </div>
             </motion.div>
@@ -1279,22 +1280,21 @@ export default function FastingTracker() {
               className="bg-brand-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-border text-center"
             >
               <div className="text-5xl mb-4">🌙</div>
-              <h3 className="text-xl font-black text-white mb-2">Sign in to track fasting</h3>
+              <h3 className="text-xl font-black text-white mb-2">{t('fasting.signInToTrack', 'Sign in to track fasting')}</h3>
               <p className="text-white/50 text-sm mb-6 leading-relaxed">
-                Your fasting record — make-up days, vows, and sunnah fasts — is saved to your
-                account so it syncs across devices.
+                {t('fasting.signInDesc', 'Your fasting record — make-up days, vows, and sunnah fasts — is saved to your account so it syncs across devices.')}
               </p>
               <div className="flex flex-col gap-3">
                 <button
                   className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 w-full"
                   onClick={() => { sessionStorage.setItem('ihsan_redirect', '/fasting'); navigate('/login'); }}
-                >Sign In</button>
+                >{t('common.signIn')}</button>
                 <button
                   className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
                   onClick={() => { sessionStorage.setItem('ihsan_redirect', '/fasting'); navigate('/signup'); }}
-                >Create Free Account</button>
+                >{t('fasting.createFreeAccount', 'Create Free Account')}</button>
                 <button className="btn btn-ghost text-white/50 text-sm w-full" onClick={() => setShowGuestDialog(false)}>
-                  Just looking around
+                  {t('fasting.justLooking', 'Just looking around')}
                 </button>
               </div>
             </motion.div>
@@ -1304,8 +1304,8 @@ export default function FastingTracker() {
       {/* Second confirmation for deletes (app-wide rule) */}
       <ConfirmDialog
         open={!!confirmVowDelete}
-        title="Delete this vow?"
-        message={confirmVowDelete ? `"${confirmVowDelete.title}" and its countdown will be removed. Logged fasts stay in your history.` : ''}
+        title={t('fasting.deleteVowTitle', 'Delete this vow?')}
+        message={confirmVowDelete ? t('fasting.deleteVowMessage', '"{{title}}" and its countdown will be removed. Logged fasts stay in your history.', { title: confirmVowDelete.title }) : ''}
         onConfirm={() => { if (confirmVowDelete) deleteVow.mutate(confirmVowDelete.id); setConfirmVowDelete(null); }}
         onCancel={() => setConfirmVowDelete(null)}
       />

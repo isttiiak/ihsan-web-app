@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import type { CycleSummary } from '../hooks/useCycle.js';
+import { formatLocaleDate } from '../utils/localeDate.js';
 
 /**
  * Month calendar for Rayhanah Cycle:
@@ -27,6 +29,7 @@ const FLOW_DOT: Record<string, string> = {
 };
 
 export default function CycleCalendar({ summary, today }: { summary: CycleSummary; today: string }) {
+  const { t } = useTranslation();
   const [month, setMonth] = useState(today.substring(0, 7)); // YYYY-MM
 
   const inLoggedCycle = (day: string): 'hayd' | 'nifas' | null => {
@@ -67,21 +70,21 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
   const first = new Date(y!, m! - 1, 1);
   const daysInMonth = new Date(y!, m!, 0).getDate();
   const blanks = first.getDay();
-  const monthLabel = first.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const monthLabel = formatLocaleDate(first, { month: 'long', year: 'numeric' });
 
   return (
     <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-white font-black">🌸 Cycle calendar</h2>
+        <h2 className="text-white font-black">{t('cycleCalendar.title')}</h2>
         <div className="flex items-center gap-1">
           <button
-            aria-label="Previous month"
+            aria-label={t('cycleCalendar.prevMonth', 'Previous month')}
             className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10"
             onClick={() => { const d = new Date(y!, m! - 2, 1); setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`); }}
           ><ChevronLeftIcon className="w-4 h-4" /></button>
           <span className="text-white/70 text-sm font-bold w-32 text-center">{monthLabel}</span>
           <button
-            aria-label="Next month"
+            aria-label={t('cycleCalendar.nextMonth', 'Next month')}
             className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10"
             onClick={() => { const d = new Date(y!, m!, 1); setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`); }}
           ><ChevronRightIcon className="w-4 h-4" /></button>
@@ -89,7 +92,7 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
       </div>
 
       <div className="grid grid-cols-7 gap-1 text-center">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+        {(t('cycleCalendar.weekdays', { returnObjects: true }) as string[]).map((d, i) => (
           <span key={i} className="text-white/25 text-[9px] font-bold uppercase py-1">{d}</span>
         ))}
         {Array.from({ length: blanks }).map((_, i) => <span key={`b${i}`} />)}
@@ -107,11 +110,11 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
             <div
               key={day}
               title={
-                cycleType ? (cycleType === 'nifas' ? 'Nifās day' : 'Period day')
-                : predicted ? 'Expected period'
-                : isOvulation ? 'Estimated ovulation'
-                : isFertile ? 'Fertile window'
-                : isPms ? 'PMS window'
+                cycleType ? (cycleType === 'nifas' ? t('cycleCalendar.nifasDay') : t('cycleCalendar.periodDay'))
+                : predicted ? t('cycleCalendar.expectedPeriod')
+                : isOvulation ? t('cycleCalendar.estimatedOvulation')
+                : isFertile ? t('cycleCalendar.fertileWindow')
+                : isPms ? t('cycleCalendar.pmsWindow')
                 : undefined
               }
               className={[
@@ -139,18 +142,18 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[10px] text-white/30">
-        <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-pink/50 align-middle mr-1" />period</span>
-        <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-warm/50 align-middle mr-1" />nifās</span>
-        <span><span className="inline-block w-2.5 h-2.5 rounded border border-dashed border-brand-pink/60 align-middle mr-1" />expected</span>
-        <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-info/30 align-middle mr-1" />fertile</span>
-        <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-gold/15 align-middle mr-1" />PMS</span>
-        <span><span className="inline-block w-2.5 h-2.5 rounded ring-2 ring-white/70 align-middle mr-1" />today</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-pink/50 align-middle mr-1" />{t('cycleCalendar.legendPeriod')}</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-warm/50 align-middle mr-1" />{t('cycleCalendar.legendNifas')}</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded border border-dashed border-brand-pink/60 align-middle mr-1" />{t('cycleCalendar.legendExpected')}</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-info/30 align-middle mr-1" />{t('cycleCalendar.legendFertile')}</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded bg-brand-gold/15 align-middle mr-1" />{t('cycleCalendar.legendPms')}</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded ring-2 ring-white/70 align-middle mr-1" />{t('common.today')}</span>
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-[10px] text-white/30">
-        <span className="text-white/25">flow notes:</span>
-        <span><span className="inline-block w-1.5 h-1.5 rounded-full align-middle mr-1" style={{ background: FLOW_DOT.light }} />light</span>
-        <span><span className="inline-block w-1.5 h-1.5 rounded-full align-middle mr-1" style={{ background: FLOW_DOT.medium }} />medium</span>
-        <span><span className="inline-block w-1.5 h-1.5 rounded-full align-middle mr-1" style={{ background: FLOW_DOT.heavy }} />heavy</span>
+        <span className="text-white/25">{t('cycleCalendar.flowNotes')}:</span>
+        <span><span className="inline-block w-1.5 h-1.5 rounded-full align-middle mr-1" style={{ background: FLOW_DOT.light }} />{t('cycleCalendar.flowLight')}</span>
+        <span><span className="inline-block w-1.5 h-1.5 rounded-full align-middle mr-1" style={{ background: FLOW_DOT.medium }} />{t('cycleCalendar.flowMedium')}</span>
+        <span><span className="inline-block w-1.5 h-1.5 rounded-full align-middle mr-1" style={{ background: FLOW_DOT.heavy }} />{t('cycleCalendar.flowHeavy')}</span>
       </div>
     </div>
   );

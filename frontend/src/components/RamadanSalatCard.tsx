@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -55,6 +56,7 @@ export default function RamadanSalatCard({
   tarawih?: boolean;
   onToggleTarawih?: () => void;
 }) {
+  const { t } = useTranslation();
   const { data: log } = useSalatLog(date);
   const updatePrayer = useUpdatePrayer();
   const updateNafl = useUpdateNafl();
@@ -120,10 +122,10 @@ export default function RamadanSalatCard({
     if (kind === 'tasbeeh') {
       const meta = tasbihModeMeta(getTasbihMode());
       addCounts(tasbihDeltas(meta.id, sign));
-      toast.success(on ? `${meta.label} added to your dhikr` : `${meta.label} removed`, { icon: '📿', duration: 2000 });
+      toast.success(on ? t('ramadanSalat.tasbeehAdded', { label: meta.label }) : t('ramadanSalat.tasbeehRemoved', { label: meta.label }), { icon: '📿', duration: 2000 });
     } else {
       addCounts({ [AYATUL_KURSI_ZIKR]: sign });
-      toast.success(on ? 'Ayatul Kursi counted' : 'Ayatul Kursi removed', { icon: '📖', duration: 1800 });
+      toast.success(on ? t('ramadanSalat.ayatulKursiCounted') : t('ramadanSalat.ayatulKursiRemoved'), { icon: '📖', duration: 1800 });
     }
     void (async () => {
       await flushZikr();
@@ -152,14 +154,13 @@ export default function RamadanSalatCard({
   return (
     <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
       <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="text-white font-black">🕌 Today's salat</h2>
+        <h2 className="text-white font-black">{t('ramadanSalat.todaysSalat')}</h2>
         <span className="text-white/40 text-xs font-bold tabular-nums">{doneCount}/5</span>
       </div>
 
       {excused ? (
         <p className="text-brand-pink/70 text-xs leading-relaxed">
-          🌸 Salat is fully excused today and is never made up (Muslim 335). Rest with a clear heart —
-          dhikr and duʿā remain open to you.
+          {t('ramadanSalat.excusedMessage')}
         </p>
       ) : (
         <>
@@ -214,7 +215,7 @@ export default function RamadanSalatCard({
                         transition={{ duration: 0.18 }}
                         className="px-2.5 pb-2.5 flex items-center gap-2 flex-wrap"
                       >
-                        <span className="text-white/25 text-[11px]">After salat:</span>
+                        <span className="text-white/25 text-[11px]">{t('ramadanSalat.afterSalat')}:</span>
                         <button
                           onClick={() => toggleTag(p.id, 'tasbeeh')}
                           className={`px-2 py-1 rounded-lg text-[11px] font-semibold border transition-colors ${
@@ -254,15 +255,15 @@ export default function RamadanSalatCard({
             >
               <span className="text-base shrink-0">🕌</span>
               <span className={`flex-1 min-w-0 text-sm font-bold ${tarawih ? 'text-brand-info' : 'text-white/55'}`}>
-                Tarawih
-                <span className="block text-[10px] font-semibold text-white/25">after Isha, through the night</span>
+                {t('ramadanSalat.tarawih')}
+                <span className="block text-[10px] font-semibold text-white/25">{t('ramadanSalat.tarawihSub')}</span>
               </span>
               <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 ${
                 tarawih
                   ? 'bg-brand-info/25 border-brand-info/50 text-brand-info'
                   : 'bg-brand-deep border-brand-border text-white/40'
               }`}>
-                {tarawih ? '✅ Prayed' : 'Mark done'}
+                {tarawih ? t('ramadanSalat.prayed') : t('ramadanSalat.markDone')}
               </span>
             </button>
           )}
@@ -274,8 +275,8 @@ export default function RamadanSalatCard({
             <div className="flex items-center gap-2">
               <span className="text-base shrink-0">🌙</span>
               <span className={`flex-1 min-w-0 text-sm font-bold ${nafl.completed ? 'text-brand-info' : 'text-white/55'}`}>
-                Nafl
-                {nafl.completed && <span className="text-white/30 font-semibold"> · {nafl.rakat ?? MIN_RAKAT} rakʿah</span>}
+                {t('ramadanSalat.nafl')}
+                {nafl.completed && <span className="text-white/30 font-semibold"> · {nafl.rakat ?? MIN_RAKAT} {t('ramadanSalat.rakah')}</span>}
               </span>
               <button
                 onClick={toggleNaflDone}
@@ -284,11 +285,11 @@ export default function RamadanSalatCard({
                     ? 'bg-brand-info/25 border-brand-info/50 text-brand-info'
                     : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                 }`}
-              >{nafl.completed ? '✅ Done' : 'Mark done'}</button>
+              >{nafl.completed ? t('ramadanSalat.done') : t('ramadanSalat.markDone')}</button>
               {nafl.completed && (
                 <button
                   onClick={() => setNaflOpen((v) => !v)}
-                  aria-label="Nafl details"
+                  aria-label={t('ramadanSalat.naflDetails', 'Nafl details')}
                   className="px-2 py-1 rounded-lg text-[11px] border bg-brand-deep border-brand-border text-white/30 hover:text-white/60 shrink-0"
                 >{naflOpen ? '▲' : '▾'}</button>
               )}
@@ -318,7 +319,7 @@ export default function RamadanSalatCard({
                     })}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-white/25 text-[11px]">Rakʿahs:</span>
+                    <span className="text-white/25 text-[11px]">{t('ramadanSalat.rakahs')}:</span>
                     <button
                       onClick={() => stepRakat(-1)}
                       disabled={(nafl.rakat ?? MIN_RAKAT) <= MIN_RAKAT}

@@ -1,72 +1,42 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import FeedbackForm, { type FormType } from '../components/FeedbackForm.js';
 
-const TYPES: FormType[] = [
-  {
-    id: 'bug', label: 'Something is broken', emoji: '🐛',
-    active: 'bg-red-500/15 border-red-400/40 text-red-100',
-    hint: 'A bug, wrong number, or a screen that misbehaves',
-  },
-  {
-    id: 'idea', label: 'I have an idea', emoji: '💡',
-    active: 'bg-brand-gold/15 border-brand-gold/40 text-brand-gold',
-    hint: 'A feature that would help your worship',
-  },
-  {
-    id: 'design', label: 'Design & usability', emoji: '🎨',
-    active: 'bg-brand-pink/15 border-brand-pink/40 text-brand-pink',
-    hint: 'Hard to read, hard to reach, confusing flow',
-  },
-  {
-    id: 'reference', label: 'A reference needs fixing', emoji: '📖',
-    active: 'bg-brand-emerald/15 border-brand-emerald/40 text-brand-emerald',
-    hint: 'A verse, hadith or grading you believe is inaccurate',
-  },
-  {
-    id: 'question', label: 'A question', emoji: '❓',
-    active: 'bg-brand-info/15 border-brand-info/40 text-brand-info',
-    hint: 'How something works, or where to find it',
-  },
-  {
-    id: 'account', label: 'Account help', emoji: '🔑',
-    active: 'bg-brand-info/15 border-brand-info/40 text-brand-info',
-    hint: 'Sign-in trouble, or data that looks wrong',
-  },
-  {
-    id: 'privacy', label: 'Privacy & my data', emoji: '🔒',
-    active: 'bg-brand-emerald/15 border-brand-emerald/40 text-brand-emerald',
-    hint: 'Export, deletion, or a privacy question',
-  },
-  {
-    id: 'collab', label: 'Collaborate', emoji: '🤝',
-    active: 'bg-brand-gold/15 border-brand-gold/40 text-brand-gold',
-    hint: 'Scholars, translators, designers, developers',
-  },
-  {
-    id: 'appreciation', label: 'Just to say salam', emoji: '💚',
-    active: 'bg-brand-info/15 border-brand-info/40 text-brand-info',
-    hint: 'Encouragement, du\'a, or what you love',
-  },
-  {
-    id: 'report', label: 'Report a concern', emoji: '⚠️',
-    active: 'bg-red-500/15 border-red-400/40 text-red-100',
-    hint: 'Misuse, security, or anything serious',
-  },
-  {
-    id: 'other', label: 'Something else', emoji: '✨',
-    active: 'bg-brand-info/15 border-brand-info/40 text-brand-info',
-    hint: "Anything that doesn't fit above",
-  },
+const TYPE_KEYS = [
+  { id: 'bug', emoji: '🐛', active: 'bg-red-500/15 border-red-400/40 text-red-100', key: 'bug' },
+  { id: 'idea', emoji: '💡', active: 'bg-brand-gold/15 border-brand-gold/40 text-brand-gold', key: 'idea' },
+  { id: 'design', emoji: '🎨', active: 'bg-brand-pink/15 border-brand-pink/40 text-brand-pink', key: 'design' },
+  { id: 'reference', emoji: '📖', active: 'bg-brand-emerald/15 border-brand-emerald/40 text-brand-emerald', key: 'reference' },
+  { id: 'question', emoji: '❓', active: 'bg-brand-info/15 border-brand-info/40 text-brand-info', key: 'question' },
+  { id: 'account', emoji: '🔑', active: 'bg-brand-info/15 border-brand-info/40 text-brand-info', key: 'account' },
+  { id: 'privacy', emoji: '🔒', active: 'bg-brand-emerald/15 border-brand-emerald/40 text-brand-emerald', key: 'privacy' },
+  { id: 'collab', emoji: '🤝', active: 'bg-brand-gold/15 border-brand-gold/40 text-brand-gold', key: 'collab' },
+  { id: 'appreciation', emoji: '💚', active: 'bg-brand-info/15 border-brand-info/40 text-brand-info', key: 'appreciation' },
+  { id: 'report', emoji: '⚠️', active: 'bg-red-500/15 border-red-400/40 text-red-100', key: 'report' },
+  { id: 'other', emoji: '✨', active: 'bg-brand-info/15 border-brand-info/40 text-brand-info', key: 'other' },
 ];
 
-const PROMISES = [
-  { emoji: '📬', title: 'A real reply', text: 'Written by a human, usually within a few days.' },
-  { emoji: '🔒', title: 'Kept private', text: 'Your message is only used to answer you.' },
-  { emoji: '🕌', title: 'Built for the ummah', text: 'Free, ad-free, and always will be.' },
-];
+const PROMISE_KEYS = ['realReply', 'keptPrivate', 'builtForUmmah'] as const;
+const PROMISE_EMOJIS = ['📬', '🔒', '🕌'] as const;
 
 export default function Feedback() {
+  const { t } = useTranslation();
+
+  const types: FormType[] = TYPE_KEYS.map((tk) => ({
+    id: tk.id,
+    label: t(`feedback.type.${tk.key}.label`),
+    emoji: tk.emoji,
+    active: tk.active,
+    hint: t(`feedback.type.${tk.key}.hint`),
+  }));
+
+  const promises = PROMISE_KEYS.map((k, i) => ({
+    emoji: PROMISE_EMOJIS[i],
+    title: t(`feedback.promise.${k}.title`),
+    text: t(`feedback.promise.${k}.text`),
+  }));
+
   return (
     <AnimatedBackground variant="dark">
       <div className="max-w-2xl mx-auto px-4 py-8 sm:py-12 space-y-6">
@@ -88,25 +58,21 @@ export default function Feedback() {
               animate={{ rotate: [0, -5, 5, 0] }}
               transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
             >💬</motion.div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white">Your voice shapes Ihsan</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-white">{t('feedback.heroTitle')}</h1>
             <p className="text-white/50 text-sm sm:text-base mt-2.5 leading-relaxed">
-              Ihsan is built quietly by one developer for the sake of Allah — which means there's no big team
-              testing every screen. <b className="text-white/80">You are the testers.</b> If something broke,
-              felt confusing, or you wished a feature existed — tell us. It genuinely gets read, and it
-              genuinely changes what gets built next.
+              {t('feedback.heroDesc1')} <b className="text-white/80">{t('feedback.heroDesc2')}</b> {t('feedback.heroDesc3')}
             </p>
             <p className="text-brand-emerald/75 text-xs mt-3 leading-relaxed">
-              📖 Found a verse, hadith or grading you believe is inaccurate? Please report it — authenticity is
-              the one thing we will never compromise, and corrections are treated as urgent.
+              📖 {t('feedback.referenceNote')}
             </p>
           </div>
         </motion.div>
 
         {/* promises */}
         <div className="grid sm:grid-cols-3 gap-3">
-          {PROMISES.map((p, i) => (
+          {promises.map((p, i) => (
             <motion.div
-              key={p.title}
+              key={i}
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 * i }}
               className="rounded-2xl border border-brand-emerald/10 bg-white/[0.03] p-4"
             >
@@ -122,11 +88,11 @@ export default function Feedback() {
           initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="rounded-3xl border border-brand-border bg-brand-surface p-5 sm:p-7"
         >
-          <FeedbackForm kind="feedback" types={TYPES} submitLabel="Send message" />
+          <FeedbackForm kind="feedback" types={types} submitLabel={t('feedback.submitLabel')} />
         </motion.div>
 
         <p className="text-center text-white/25 text-[11px]">
-          We only use what you send here to reply and improve Ihsan — never for anything else.
+          {t('feedback.disclaimer')}
         </p>
       </div>
     </AnimatedBackground>

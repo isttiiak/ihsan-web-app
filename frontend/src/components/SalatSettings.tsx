@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api.js';
 import ConfirmDialog from './ConfirmDialog.js';
 import {
@@ -23,6 +24,7 @@ import {
  * Both are stored locally (utils/salatPrefs.ts) — no server round-trip.
  */
 export default function SalatSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [tasbih, setTasbih] = useState<TasbihMode>(() => getTasbihMode());
   const [madhab, setMadhab] = useState<AsrMadhab>(() => getAsrMadhab());
@@ -36,11 +38,11 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
       const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       await api.post('/api/salat/reset', { today });
       queryClient.invalidateQueries({ queryKey: ['salat'] });
-      toast.success('Salat tracking reset — your history is preserved', { icon: '🕌' });
+      toast.success(t('salatSettings.resetDone', 'Salat tracking reset — your history is preserved'), { icon: '🕌' });
       setConfirmReset(false);
       onClose();
     } catch {
-      toast.error('Could not reset — try again');
+      toast.error(t('salatSettings.resetFail', 'Could not reset — try again'));
     } finally {
       setResetting(false);
     }
@@ -49,13 +51,13 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
   const chooseTasbih = (m: TasbihMode) => {
     setTasbih(m);
     setTasbihMode(m);
-    toast.success('Tasbīḥ counting updated', { icon: '📿', duration: 1800 });
+    toast.success(t('salatSettings.tasbihUpdated', 'Tasbīḥ counting updated'), { icon: '📿', duration: 1800 });
   };
 
   const chooseMadhab = (m: AsrMadhab) => {
     setMadhab(m);
     setAsrMadhab(m);
-    toast.success('Prayer times updated', { icon: '🕌', duration: 1800 });
+    toast.success(t('salatSettings.timesUpdated', 'Prayer times updated'), { icon: '🕌', duration: 1800 });
   };
 
   return createPortal(
@@ -73,13 +75,13 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
             className="fixed right-0 top-0 bottom-0 z-[70] w-full max-w-sm bg-brand-deep border-l border-brand-border overflow-y-auto"
             role="dialog"
             aria-modal="true"
-            aria-label="Salat settings"
+            aria-label={t('salatSettings.title', 'Salat settings')}
           >
             <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-brand-deep/95 backdrop-blur border-b border-brand-emerald/10">
-              <h2 className="text-brand-emerald font-black text-lg">Salat settings</h2>
+              <h2 className="text-brand-emerald font-black text-lg">{t('salatSettings.title', 'Salat settings')}</h2>
               <button
                 onClick={onClose}
-                aria-label="Close salat settings"
+                aria-label={t('salatSettings.close', 'Close salat settings')}
                 className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10"
               >
                 <XMarkIcon className="w-5 h-5" />
@@ -90,10 +92,9 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
 
               {/* ── after-salah tasbih ─────────────────────────────────── */}
               <section>
-                <h3 className="text-white font-bold text-sm">📿 After-ṣalāh tasbīḥ</h3>
+                <h3 className="text-white font-bold text-sm">{t('salatSettings.tasbihTitle', '📿 After-ṣalāh tasbīḥ')}</h3>
                 <p className="text-white/40 text-xs mt-1 leading-relaxed">
-                  Both ways of reaching a hundred are authentic. Pick the one you actually
-                  pray — tapping “Tasbīḥ” on a prayer adds exactly these counts to your dhikr.
+                  {t('salatSettings.tasbihDesc', 'Both ways of reaching a hundred are authentic. Pick the one you actually pray — tapping "Tasbīḥ" on a prayer adds exactly these counts to your dhikr.')}
                 </p>
 
                 <div className="mt-3 space-y-2.5">
@@ -114,7 +115,7 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
                           <span className={`font-black text-sm ${active ? 'text-brand-emerald' : 'text-white/80'}`}>
                             {m.label}
                           </span>
-                          {active && <span className="text-brand-emerald text-xs font-bold shrink-0">✓ Using</span>}
+                          {active && <span className="text-brand-emerald text-xs font-bold shrink-0">{t('salatSettings.using', '✓ Using')}</span>}
                         </div>
                         <p className="text-white/50 text-xs mt-1">{m.summary}</p>
 
@@ -147,11 +148,11 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
 
               {/* ── Ayatul Kursi note ──────────────────────────────────── */}
               <section className="p-3.5 rounded-2xl border border-brand-gold/20 bg-brand-gold/[0.06]">
-                <h3 className="text-brand-gold font-bold text-sm">📖 Ayatul Kursi</h3>
+                <h3 className="text-brand-gold font-bold text-sm">{t('salatSettings.ayatulKursiTitle', '📖 Ayatul Kursi')}</h3>
                 <p className="text-white/50 text-xs mt-1 leading-relaxed">
-                  Tapping “Ayatul Kursi” on a prayer adds one count to that dhikr.
+                  {t('salatSettings.ayatulKursiDesc', 'Tapping "Ayatul Kursi" on a prayer adds one count to that dhikr.')}
                 </p>
-                <p className="text-brand-gold/60 text-[11px] mt-2 italic">“{AYATUL_KURSI_REF.virtue}”</p>
+                <p className="text-brand-gold/60 text-[11px] mt-2 italic">"{AYATUL_KURSI_REF.virtue}"</p>
                 <p className="text-white/30 text-[11px] mt-1">
                   {AYATUL_KURSI_REF.source} · {AYATUL_KURSI_REF.grade}
                 </p>
@@ -159,10 +160,9 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
 
               {/* ── Asr madhab ─────────────────────────────────────────── */}
               <section>
-                <h3 className="text-white font-bold text-sm">🕌 ʿAṣr timing (madhab)</h3>
+                <h3 className="text-white font-bold text-sm">{t('salatSettings.asrTitle', '🕌 ʿAṣr timing (madhab)')}</h3>
                 <p className="text-white/40 text-xs mt-1 leading-relaxed">
-                  Madhabs differ on when ʿAṣr begins. Because Ẓuhr lasts until ʿAṣr starts,
-                  this moves both. Follow your local mosque.
+                  {t('salatSettings.asrDesc', "Madhabs differ on when ʿAṣr begins. Because Ẓuhr lasts until ʿAṣr starts, this moves both. Follow your local mosque.")}
                 </p>
 
                 <div className="mt-3 space-y-2.5">
@@ -183,7 +183,7 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
                           <span className={`font-black text-sm ${active ? 'text-brand-info' : 'text-white/80'}`}>
                             {m.label}
                           </span>
-                          {active && <span className="text-brand-info text-xs font-bold shrink-0">✓ Using</span>}
+                          {active && <span className="text-brand-info text-xs font-bold shrink-0">{t('salatSettings.using', '✓ Using')}</span>}
                         </div>
                         <p className="text-white/50 text-xs mt-1 leading-relaxed">{m.detail}</p>
                       </button>
@@ -191,7 +191,7 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
                   })}
                 </div>
                 <p className="text-white/25 text-[11px] mt-2.5 leading-relaxed">
-                  Your saved location never leaves this device — prayer times are computed here.
+                  {t('salatSettings.locationNote', 'Your saved location never leaves this device — prayer times are computed here.')}
                 </p>
               </section>
 
@@ -199,24 +199,23 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
               <section className="rounded-2xl border border-brand-gold/20 bg-brand-gold/[0.06] p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <ArrowPathIcon className="w-4 h-4 text-brand-gold" />
-                  <h3 className="text-brand-gold font-bold text-sm">Start fresh</h3>
+                  <h3 className="text-brand-gold font-bold text-sm">{t('salatSettings.startFresh', 'Start fresh')}</h3>
                 </div>
                 <p className="text-white/40 text-xs leading-relaxed mb-3">
-                  Analytics and streaks will count from today. All past prayer logs stay
-                  intact — you can still view them, but they won't affect your new stats.
+                  {t('salatSettings.startFreshDesc', "Analytics and streaks will count from today. All past prayer logs stay intact — you can still view them, but they won't affect your new stats.")}
                 </p>
                 <button
                   onClick={() => setConfirmReset(true)}
                   className="btn btn-sm border border-brand-gold/30 bg-brand-gold/10 text-brand-gold hover:bg-brand-gold/20 gap-1.5"
                 >
-                  <ArrowPathIcon className="w-3.5 h-3.5" /> Reset tracking
+                  <ArrowPathIcon className="w-3.5 h-3.5" /> {t('salatSettings.resetTracking', 'Reset tracking')}
                 </button>
               </section>
 
               <p className="text-white/25 text-[11px] leading-relaxed border-t border-brand-emerald/10 pt-4">
-                Looking for data deletion? Everything lives in{' '}
+                {t('salatSettings.dangerZoneHint', 'Looking for data deletion? Everything lives in')}{' '}
                 <a href="/settings" className="text-brand-emerald/70 hover:text-brand-emerald underline underline-offset-2">
-                  Settings
+                  {t('nav.settings', 'Settings')}
                 </a>.
               </p>
             </div>
@@ -224,9 +223,9 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
 
           <ConfirmDialog
             open={confirmReset}
-            title="Reset salat tracking?"
-            message="Your streak and analytics will start fresh from today. All past prayer logs will be preserved — they just won't count toward the new stats."
-            confirmLabel={resetting ? 'Resetting…' : 'Yes, start fresh'}
+            title={t('salatSettings.resetConfirmTitle', 'Reset salat tracking?')}
+            message={t('salatSettings.resetConfirmMsg', "Your streak and analytics will start fresh from today. All past prayer logs will be preserved — they just won't count toward the new stats.")}
+            confirmLabel={resetting ? t('salatSettings.resetting', 'Resetting…') : t('salatSettings.resetConfirm', 'Yes, start fresh')}
             onConfirm={() => void handleReset()}
             onCancel={() => setConfirmReset(false)}
           />

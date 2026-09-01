@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
@@ -13,6 +14,7 @@ import { SPECIAL_SURAHS, AYAH_BUNDLES, QURANIC_DUAS } from '../utils/quranMeta.j
  * the Listen tab, and everything flows into ONE daily ayat goal + streak.
  */
 export default function QuranHabit() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: summary, isLoading } = useQuranSummary();
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
@@ -46,7 +48,7 @@ export default function QuranHabit() {
 
   return (
     <AnimatedBackground variant="dark">
-      <h1 className="sr-only">Quran Habit</h1>
+      <h1 className="sr-only">{t('quranHabit.title')}</h1>
       <div className="max-w-2xl mx-auto px-4 pt-3 pb-16 space-y-4">
         <QuranTabNav active="home" />
 
@@ -70,33 +72,33 @@ export default function QuranHabit() {
               <div className="absolute inset-0 grid place-items-center text-center">
                 <div>
                   <p className="text-xl font-black text-white leading-none">{isLoading ? '…' : today}</p>
-                  <p className="text-[9px] text-white/40 font-bold">{goal > 0 ? `of ${goal} ayat` : 'āyāt today'}</p>
+                  <p className="text-[9px] text-white/40 font-bold">{goal > 0 ? t('quranHabit.ofGoal', { goal }) : t('quranHabit.ayatToday')}</p>
                 </div>
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white font-black">{summary?.goalMet ? 'Goal reached — ma sha Allah! 🌟' : "Today's reading"}</p>
+              <p className="text-white font-black">{summary?.goalMet ? t('quranHabit.goalReached') : t('quranHabit.todaysReading')}</p>
               <p className="text-white/40 text-xs mt-1 leading-relaxed">
                 {goal > 0
-                  ? 'Ayat from khatam, free reading, special selections and listening all count as one.'
-                  : 'No daily goal yet — reading still counts. Set one in ⚙️ settings whenever you’re ready.'}
+                  ? t('quranHabit.allCountAsOne')
+                  : t('quranHabit.noGoalYet')}
               </p>
               {/* stacked on phones — these two buttons were overflowing the card */}
               <div className="flex flex-col sm:flex-row gap-2 mt-3">
                 {khatamStarted ? (
                   <button className="btn btn-sm w-full sm:w-auto rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-info"
                     onClick={() => { if (pos) navigate(`/quran/read/${pos.surah}?start=${pos.ayah}&mode=khatam`); else navigate('/quran/khatam'); }}>
-                    ▶ Continue khatam
+                    {t('quranHabit.continueKhatam')}
                   </button>
                 ) : (
                   <button className="btn btn-sm w-full sm:w-auto rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-info"
                     disabled={startKhatam.isPending}
                     onClick={() => startKhatam.mutate(undefined, { onSuccess: () => navigate('/quran/khatam') })}>
-                    🕋 Begin khatam journey
+                    {t('quranHabit.beginKhatam')}
                   </button>
                 )}
                 <Link to="/quran/browse" className="btn btn-sm w-full sm:w-auto rounded-xl bg-white/5 border-brand-emerald/10 text-white/70 font-bold">
-                  Pick a surah
+                  {t('quranHabit.pickSurah')}
                 </Link>
               </div>
             </div>
@@ -107,7 +109,7 @@ export default function QuranHabit() {
                are recognizable at a glance (Istiak's spec) ── */}
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl border border-brand-warm/25 bg-brand-warm/[0.05] p-4">
-            <p className="text-white font-black text-sm">🔥 {summary?.streak ?? 0}-day streak</p>
+            <p className="text-white font-black text-sm">{t('quranHabit.dayStreak', { count: summary?.streak ?? 0 })}</p>
             <div className="flex items-end gap-1 h-10 mt-2">
               {(summary?.last7 ?? []).map((d) => (
                 <div key={d.date} title={`${d.date}: ${d.units} ayat`}
@@ -115,15 +117,15 @@ export default function QuranHabit() {
                   style={{ height: `${Math.max(10, (d.units / maxLast7) * 100)}%` }} />
               ))}
             </div>
-            <p className="text-white/25 text-[10px] mt-1">best: {summary?.bestStreak ?? 0} days</p>
+            <p className="text-white/25 text-[10px] mt-1">{t('quranHabit.bestStreak', { count: summary?.bestStreak ?? 0 })}</p>
           </div>
           <Link to="/quran/khatam" className="rounded-2xl border border-brand-emerald/25 bg-brand-emerald/[0.05] p-4 hover:border-brand-emerald/50 transition-all">
-            <p className="text-white font-black text-sm">🕋 Khatam · {khatmPct.toFixed(1)}%</p>
+            <p className="text-white font-black text-sm">{t('quranHabit.khatamPct', { pct: khatmPct.toFixed(1) })}</p>
             <div className="h-2 rounded-full bg-white/10 overflow-hidden mt-2.5">
               <div className="h-full rounded-full bg-gradient-to-r from-brand-emerald to-brand-info" style={{ width: `${khatmPct}%` }} />
             </div>
             <p className="text-white/25 text-[10px] mt-1.5">
-              {pos ? `at ${nameOf(pos.surah)} ${pos.surah}:${pos.ayah}` : 'begin your journey'} · ⭐ {summary?.profile.khatmCount ?? 0} completed
+              {pos ? t('quranHabit.khatamAt', { name: nameOf(pos.surah), ref: `${pos.surah}:${pos.ayah}` }) : t('quranHabit.beginYourJourney')} · {t('quranHabit.completed', { count: summary?.profile.khatmCount ?? 0 })}
             </p>
           </Link>
         </div>
@@ -133,7 +135,7 @@ export default function QuranHabit() {
 
         {/* ── special surahs ── */}
         <div className="rounded-3xl border border-brand-info/25 bg-brand-info/[0.05] p-5">
-          <h2 className="text-white font-black text-sm mb-3">🌟 Beloved surahs</h2>
+          <h2 className="text-white font-black text-sm mb-3">{t('quranHabit.belovedSurahs')}</h2>
           <div className="grid sm:grid-cols-2 gap-2">
             {SPECIAL_SURAHS.map((sp) => (
               <button key={sp.surah}
@@ -153,8 +155,8 @@ export default function QuranHabit() {
 
         {/* ── ayah bundles ── */}
         <div className="rounded-3xl border border-brand-info/25 bg-brand-info/[0.05] p-5">
-          <h2 className="text-white font-black text-sm mb-1">🛡️ Protection & light — ayah selections</h2>
-          <p className="text-white/30 text-[11px] mb-3">Short, authentic selections the Prophet ﷺ taught us to hold onto.</p>
+          <h2 className="text-white font-black text-sm mb-1">{t('quranHabit.protectionTitle')}</h2>
+          <p className="text-white/30 text-[11px] mb-3">{t('quranHabit.protectionSubtitle')}</p>
           <div className="grid sm:grid-cols-2 gap-2">
             {AYAH_BUNDLES.map((b) => (
               <button key={b.id}
@@ -172,8 +174,8 @@ export default function QuranHabit() {
 
         {/* ── duas from the Quran — the prophets' own words, each with its story ── */}
         <div id="duas" className="rounded-3xl border border-brand-gold/25 bg-brand-gold/[0.05] p-5 scroll-mt-20">
-          <h2 className="text-white font-black text-sm mb-1">🤲 Duas from the Quran</h2>
-          <p className="text-white/30 text-[11px] mb-3">Supplications Allah Himself relates — open one to read it with its story and reference.</p>
+          <h2 className="text-white font-black text-sm mb-1">{t('quranHabit.duasTitle')}</h2>
+          <p className="text-white/30 text-[11px] mb-3">{t('quranHabit.duasSubtitle')}</p>
           <div className="grid sm:grid-cols-2 gap-1.5">
             {QURANIC_DUAS.map((d) => {
               const saved = savedDuas.includes(d.id);
@@ -188,7 +190,7 @@ export default function QuranHabit() {
                   <span className="flex-1 text-white/60 group-hover:text-white/80 text-xs transition-colors">{d.title}</span>
                   <span className="text-white/25 text-[10px]">{d.surah}:{d.fromAyah}</span>
                   <button
-                    aria-label={saved ? `Remove ${d.title} from saved duas` : `Save ${d.title}`}
+                    aria-label={saved ? t('quranHabit.removeDuaAriaLabel', { title: d.title }) : t('quranHabit.saveDuaAriaLabel', { title: d.title })}
                     className={`text-base p-1.5 -m-1 rounded-lg hover:bg-white/10 transition-all ${saved ? 'text-brand-gold' : 'text-white/20 hover:text-brand-gold/70'}`}
                     onClick={(e) => { e.stopPropagation(); toggleDua.mutate(d.id); }}
                   >{saved ? '🔖' : '🏷️'}</button>
@@ -200,14 +202,13 @@ export default function QuranHabit() {
 
         {/* Browse all surahs lives on the dedicated Read tab (no duplicate list here). */}
         <Link to="/quran/browse" className="block rounded-3xl border border-brand-info/25 bg-brand-info/[0.05] p-4 text-center hover:border-brand-info/50 transition-all">
-          <span className="text-white/70 text-sm font-bold">📚 Browse all 114 surahs →</span>
+          <span className="text-white/70 text-sm font-bold">{t('quranHabit.browseAll')}</span>
         </Link>
 
         {/* virtue footer */}
         <p className="text-white/30 text-[11px] leading-relaxed px-1">
-          "Whoever recites a letter from the Book of Allah will have a reward, and the reward is multiplied
-          by ten." — <a className="underline" href="https://sunnah.com/tirmidhi:2910" target="_blank" rel="noreferrer">Tirmidhi 2910 (sahih)</a>.
-          "The best among you are those who learn the Quran and teach it." —{' '}
+          {t('quranHabit.hadithReward')} — <a className="underline" href="https://sunnah.com/tirmidhi:2910" target="_blank" rel="noreferrer">Tirmidhi 2910 (sahih)</a>.
+          {' '}{t('quranHabit.hadithBest')} —{' '}
           <a className="underline" href="https://sunnah.com/bukhari:5027" target="_blank" rel="noreferrer">Bukhari 5027</a>.
         </p>
       </div>

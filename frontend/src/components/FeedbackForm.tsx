@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PaperAirplaneIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { celebrateSmall } from '../utils/celebrate.js';
 
@@ -32,14 +33,16 @@ const DEFAULT_ACCESS_KEY = '9ea1dea7-c9e9-428f-ad38-4dc061d2e057';
 export default function FeedbackForm({
   kind,
   types,
-  submitLabel = 'Send',
+  submitLabel,
 }: {
   kind: 'feedback' | 'contact';
   types: FormType[];
   submitLabel?: string;
 }) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const accessKey = (import.meta.env.VITE_WEB3FORMS_ACCESS_KEY as string | undefined) || DEFAULT_ACCESS_KEY;
+  const resolvedSubmitLabel = submitLabel ?? t('feedbackForm.send', 'Send');
 
   const [name, setName] = useState(user?.displayName ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
@@ -52,14 +55,14 @@ export default function FeedbackForm({
 
   const toggleType = (id: string) =>
     setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-  const selectedLabels = selectedIds.map((id) => types.find((t) => t.id === id)?.label).filter(Boolean);
+  const selectedLabels = selectedIds.map((id) => types.find((ty) => ty.id === id)?.label).filter(Boolean);
   const canSend = !!name.trim() && !!email.trim() && selectedIds.length > 0 && message.trim().length >= 10 && !sending;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSend) return;
     if (!accessKey) {
-      setError('The form isn\'t connected yet — please email us directly for now.');
+      setError(t('feedbackForm.notConnected', "The form isn't connected yet — please email us directly for now."));
       return;
     }
     setSending(true);
@@ -85,7 +88,7 @@ export default function FeedbackForm({
       setSent(true);
       celebrateSmall();
     } catch {
-      setError('Could not send right now — please check your connection and try again.');
+      setError(t('feedbackForm.sendFail', 'Could not send right now — please check your connection and try again.'));
     } finally {
       setSending(false);
     }
@@ -102,16 +105,18 @@ export default function FeedbackForm({
         >
           <CheckCircleIcon className="w-16 h-16 text-brand-emerald mx-auto" />
         </motion.div>
-        <h2 className="text-white font-black text-xl mt-3">JazākAllāhu khayran! 💚</h2>
+        <h2 className="text-white font-black text-xl mt-3">{t('feedbackForm.thanks', 'JazākAllāhu khayran! 💚')}</h2>
         <p className="text-white/50 text-sm mt-2 leading-relaxed max-w-md mx-auto">
-          Your {kind === 'feedback' ? 'feedback' : 'message'} reached us. Every note genuinely shapes what
-          Ihsan becomes next — and if it needs a reply, we'll write back to <b className="text-white/75">{email}</b>.
+          {kind === 'feedback'
+            ? t('feedbackForm.receivedFeedback', "Your feedback reached us. Every note genuinely shapes what Ihsan becomes next — and if it needs a reply, we'll write back to")
+            : t('feedbackForm.receivedMessage', "Your message reached us. Every note genuinely shapes what Ihsan becomes next — and if it needs a reply, we'll write back to")}{' '}
+          <b className="text-white/75">{email}</b>.
         </p>
         <button
           className="btn btn-sm mt-5 rounded-xl bg-white/5 border-brand-emerald/15 text-white/70"
           onClick={() => { setSent(false); setMessage(''); setSelectedIds([]); }}
         >
-          Send another
+          {t('feedbackForm.sendAnother', 'Send another')}
         </button>
       </motion.div>
     );
@@ -128,27 +133,27 @@ export default function FeedbackForm({
       {/* ── Type (multi-select — becomes the subject) ── */}
       <div>
         <label className="text-white/70 text-sm font-bold">
-          What's this about? <span className="text-red-400">*</span>
+          {t('feedbackForm.aboutLabel', "What's this about?")} <span className="text-red-400">*</span>
         </label>
-        <p className="text-white/30 text-xs mt-0.5 mb-2.5">Select all that apply — you can pick more than one.</p>
+        <p className="text-white/30 text-xs mt-0.5 mb-2.5">{t('feedbackForm.aboutHint', 'Select all that apply — you can pick more than one.')}</p>
         <div className="grid sm:grid-cols-2 gap-2">
-          {types.map((t, i) => {
-            const on = selectedIds.includes(t.id);
+          {types.map((ty, i) => {
+            const on = selectedIds.includes(ty.id);
             return (
               <motion.button
-                key={t.id}
+                key={ty.id}
                 type="button"
                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => toggleType(t.id)}
+                onClick={() => toggleType(ty.id)}
                 className={`rounded-2xl border p-3 text-left transition-all ${
-                  on ? t.active : 'bg-white/[0.03] border-brand-emerald/10 text-white/60 hover:border-brand-emerald/25 hover:text-white/80'
+                  on ? ty.active : 'bg-white/[0.03] border-brand-emerald/10 text-white/60 hover:border-brand-emerald/25 hover:text-white/80'
                 }`}
               >
-                <span className="text-lg">{t.emoji}</span>
-                <p className="font-bold text-sm mt-0.5">{t.label}</p>
-                <p className={`text-[11px] mt-0.5 leading-snug ${on ? 'opacity-80' : 'text-white/30'}`}>{t.hint}</p>
+                <span className="text-lg">{ty.emoji}</span>
+                <p className="font-bold text-sm mt-0.5">{ty.label}</p>
+                <p className={`text-[11px] mt-0.5 leading-snug ${on ? 'opacity-80' : 'text-white/30'}`}>{ty.hint}</p>
               </motion.button>
             );
           })}
@@ -159,18 +164,18 @@ export default function FeedbackForm({
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
           <label className="text-white/70 text-sm font-bold" htmlFor="fb-name">
-            Your name <span className="text-red-400">*</span>
+            {t('feedbackForm.nameLabel', 'Your name')} <span className="text-red-400">*</span>
           </label>
           <input
             id="fb-name" type="text" required value={name} readOnly={!!user?.displayName}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Abdullah"
+            placeholder={t('feedbackForm.namePlaceholder', 'e.g. Abdullah')}
             className={`input input-bordered w-full mt-1.5 bg-white/5 border-brand-emerald/15 text-white ${user?.displayName ? 'opacity-70 cursor-not-allowed' : ''}`}
           />
         </div>
         <div>
           <label className="text-white/70 text-sm font-bold" htmlFor="fb-email">
-            Email <span className="text-red-400">*</span>
+            {t('feedbackForm.emailLabel', 'Email')} <span className="text-red-400">*</span>
           </label>
           <input
             id="fb-email" type="email" required value={email} readOnly={!!user?.email}
@@ -182,7 +187,7 @@ export default function FeedbackForm({
       </div>
       {user && (
         <p className="text-white/25 text-[11px] -mt-2">
-          Filled in from your account so we can reply to the right person.
+          {t('feedbackForm.autofilled', 'Filled in from your account so we can reply to the right person.')}
         </p>
       )}
 
@@ -190,10 +195,12 @@ export default function FeedbackForm({
       <div>
         <div className="flex items-end justify-between">
           <label className="text-white/70 text-sm font-bold" htmlFor="fb-msg">
-            Tell us more <span className="text-red-400">*</span>
+            {t('feedbackForm.messageLabel', 'Tell us more')} <span className="text-red-400">*</span>
           </label>
           <span className={`text-[11px] ${message.trim().length >= 10 ? 'text-white/25' : 'text-brand-gold/60'}`}>
-            {message.trim().length < 10 ? `${10 - message.trim().length} more characters` : `${message.length} characters`}
+            {message.trim().length < 10
+              ? t('feedbackForm.moreChars', '{{count}} more characters', { count: 10 - message.trim().length })
+              : t('feedbackForm.charCount', '{{count}} characters', { count: message.length })}
           </span>
         </div>
         <textarea
@@ -202,10 +209,10 @@ export default function FeedbackForm({
           maxLength={4000}
           placeholder={
             selectedIds.length > 1
-              ? "Please separate each topic in its own paragraph — one issue per paragraph makes it easier for us to track and fix."
+              ? t('feedbackForm.multiTopicPlaceholder', 'Please separate each topic in its own paragraph — one issue per paragraph makes it easier for us to track and fix.')
               : kind === 'feedback'
-                ? "What happened, or what would make Ihsan better for you? Steps to reproduce a bug are gold."
-                : 'How can we help?'
+                ? t('feedbackForm.feedbackPlaceholder', 'What happened, or what would make Ihsan better for you? Steps to reproduce a bug are gold.')
+                : t('feedbackForm.contactPlaceholder', 'How can we help?')
           }
           className="textarea textarea-bordered w-full mt-1.5 bg-white/5 border-brand-emerald/15 text-white leading-relaxed"
         />
@@ -222,7 +229,7 @@ export default function FeedbackForm({
 
       {!accessKey && (
         <p className="text-brand-gold/70 text-xs rounded-xl border border-brand-gold/25 bg-brand-gold/5 p-3">
-          ⚠️ This form needs <code className="text-white/70">VITE_WEB3FORMS_ACCESS_KEY</code> set before it can send.
+          ⚠️ {t('feedbackForm.notConfigured', 'This form needs')} <code className="text-white/70">VITE_WEB3FORMS_ACCESS_KEY</code> {t('feedbackForm.notConfiguredSuffix', 'set before it can send.')}
         </p>
       )}
 
@@ -233,10 +240,10 @@ export default function FeedbackForm({
         className="w-full btn h-12 rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-emerald via-brand-info to-brand-info hover:opacity-90 disabled:opacity-40 gap-2"
       >
         {sending ? <span className="loading loading-spinner loading-sm" /> : <PaperAirplaneIcon className="w-5 h-5" />}
-        {sending ? 'Sending…' : submitLabel}
+        {sending ? t('feedbackForm.sending', 'Sending…') : resolvedSubmitLabel}
       </motion.button>
       <p className="text-white/25 text-[11px] text-center">
-        We only use what you send here to reply and improve Ihsan — never for anything else.
+        {t('feedbackForm.privacyNote', 'We only use what you send here to reply and improve Ihsan — never for anything else.')}
       </p>
     </form>
   );

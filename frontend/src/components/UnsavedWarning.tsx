@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useZikrStore } from '../store/useZikrStore.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 
 export default function UnsavedWarning() {
+  const { t } = useTranslation();
   const { counts } = useZikrStore();
   const { user, authLoading } = useAuthStore();
   const [visible, setVisible] = useState(false);
@@ -32,9 +34,9 @@ export default function UnsavedWarning() {
     <div className="toast toast-center z-50">
       <div className="alert alert-warning items-start">
         <div className="flex-1">
-          <h3 className="font-bold">Unsaved counts</h3>
+          <h3 className="font-bold">{t('unsavedWarning.title')}</h3>
           <div className="text-sm">
-            You're not signed in. Your tasbeeh counts will be lost on reload. Log in to save your progress.
+            {t('unsavedWarning.message')}
           </div>
         </div>
         <div className="flex gap-2 ml-4">
@@ -45,7 +47,7 @@ export default function UnsavedWarning() {
               navigate('/signup');
             }}
           >
-            Sign up
+            {t('unsavedWarning.signUp')}
           </button>
           <button
             className="btn btn-sm btn-primary"
@@ -54,7 +56,7 @@ export default function UnsavedWarning() {
               navigate('/login');
             }}
           >
-            Log in
+            {t('unsavedWarning.logIn')}
           </button>
           <button
             className="btn btn-sm btn-ghost"
@@ -63,7 +65,7 @@ export default function UnsavedWarning() {
               setVisible(false);
             }}
           >
-            Dismiss
+            {t('unsavedWarning.dismiss')}
           </button>
         </div>
       </div>

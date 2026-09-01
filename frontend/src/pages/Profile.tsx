@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Swal from 'sweetalert2';
 import { API_BASE, getIdToken } from '../lib/api.js';
 import { useQueryClient } from '@tanstack/react-query';
@@ -23,6 +24,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useZikrStore } from '../store/useZikrStore.js';
+import { formatLocaleDate } from '../utils/localeDate.js';
 
 // ── Country → Cities data ─────────────────────────────────────────────────────
 const COUNTRIES_CITIES: Record<string, string[]> = {
@@ -172,7 +174,7 @@ function calcFullAge(birthDate: string): { years: number; months: number } | nul
 
 function formatFullDate(iso: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+  return formatLocaleDate(new Date(iso), { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 // Animated sparkle dots for the profile card header
@@ -240,6 +242,7 @@ function GoogleLogo({ className = 'w-4 h-4' }: { className?: string }) {
 }
 
 export default function Profile() {
+  const { t } = useTranslation();
   const { user, setUser } = useAuthStore();
   const { data: analyticsData } = useAnalytics(1);
   const { resetAll: resetZikrStore } = useZikrStore();
@@ -389,10 +392,10 @@ export default function Profile() {
         if (saveSuccessTimeout.current) clearTimeout(saveSuccessTimeout.current);
         saveSuccessTimeout.current = setTimeout(() => setSaveSuccess(false), 4000);
       } else {
-        setSaveError('Save failed. Please try again.');
+        setSaveError(t('profile.saveFailed', 'Save failed. Please try again.'));
       }
     } catch {
-      setSaveError('Failed to save. Please check your connection.');
+      setSaveError(t('profile.saveFailedConnection', 'Failed to save. Please check your connection.'));
     }
     setSaving(false);
   };
@@ -430,7 +433,7 @@ export default function Profile() {
       setPhotoPreviewUrl(URL.createObjectURL(blob));
       setPhotoModalOpen(true);
     } catch {
-      setSaveError('Could not process image. Try a different file.');
+      setSaveError(t('profile.imageProcessError', 'Could not process image. Try a different file.'));
     }
   };
 
@@ -467,11 +470,11 @@ export default function Profile() {
           setUser(updated);
           localStorage.setItem('ihsan_user', JSON.stringify({ ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'), photoUrl: dataUrl }));
         } else {
-          setSaveError('Uploaded but could not save — click "Save Changes" to retry.');
+          setSaveError(t('profile.uploadedNotSaved', 'Uploaded but could not save — click "Save Changes" to retry.'));
         }
       }
     } catch {
-      setSaveError('Upload failed. Check your connection and try again.');
+      setSaveError(t('profile.uploadFailed', 'Upload failed. Check your connection and try again.'));
     } finally {
       setUploading(false);
     }
@@ -555,16 +558,16 @@ export default function Profile() {
         setDbUser(data.user);
       } else {
         const msg = res.status === 409
-          ? 'This Google account is already linked to another Ihsan account.'
-          : (data.error ?? 'Failed to save linked account. Please try again.');
-        await Swal.fire({ title: 'Error', text: msg, icon: 'error', background: '#1a1812', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#3a3425]' } });
+          ? t('profile.googleAlreadyLinkedOther', 'This Google account is already linked to another Ihsan account.')
+          : (data.error ?? t('profile.linkSaveFailed', 'Failed to save linked account. Please try again.'));
+        await Swal.fire({ title: t('profile.errorTitle', 'Error'), text: msg, icon: 'error', background: '#1a1812', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#3a3425]' } });
       }
     } catch (err) {
       const code = (err as AuthError).code ?? '';
       if (code === 'auth/credential-already-in-use') {
-        await Swal.fire({ title: 'Already linked', text: 'This Google account is already connected to a different Ihsan account.', icon: 'warning', background: '#1a1812', color: '#f1f5f9', confirmButtonColor: '#c9a96e', customClass: { popup: 'rounded-3xl border border-[#3a3425]' } });
+        await Swal.fire({ title: t('profile.alreadyLinkedTitle', 'Already linked'), text: t('profile.googleAlreadyConnectedDifferent', 'This Google account is already connected to a different Ihsan account.'), icon: 'warning', background: '#1a1812', color: '#f1f5f9', confirmButtonColor: '#c9a96e', customClass: { popup: 'rounded-3xl border border-[#3a3425]' } });
       } else if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-        await Swal.fire({ title: 'Error', text: 'Could not connect Google account. Please try again.', icon: 'error', background: '#1a1812', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#3a3425]' } });
+        await Swal.fire({ title: t('profile.errorTitle', 'Error'), text: t('profile.googleConnectFailed', 'Could not connect Google account. Please try again.'), icon: 'error', background: '#1a1812', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#3a3425]' } });
       }
     }
     setLinkingGoogle(false);
@@ -572,12 +575,12 @@ export default function Profile() {
 
   const unlinkGoogle = async (providerUid: string) => {
     const confirm = await Swal.fire({
-      title: 'Disconnect Google account?',
-      text: 'You will no longer be able to sign in with this Google account.',
+      title: t('profile.disconnectGoogleTitle', 'Disconnect Google account?'),
+      text: t('profile.disconnectGoogleText', 'You will no longer be able to sign in with this Google account.'),
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Disconnect',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: t('profile.disconnect', 'Disconnect'),
+      cancelButtonText: t('common.cancel'),
       background: '#1a1812',
       color: '#f1f5f9',
       confirmButtonColor: '#ef4444',
@@ -654,8 +657,8 @@ export default function Profile() {
 
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="text-center">
-            <h1 className="text-3xl sm:text-4xl font-black text-brand-emerald mb-1">My Profile</h1>
-            <p className="text-white/40 text-sm">Manage your personal information</p>
+            <h1 className="text-3xl sm:text-4xl font-black text-brand-emerald mb-1">{t('profile.title', 'My Profile')}</h1>
+            <p className="text-white/40 text-sm">{t('profile.subtitle', 'Manage your personal information')}</p>
           </motion.div>
 
           {/* ── Avatar + summary card ─── gradient with star animation */}
@@ -704,7 +707,7 @@ export default function Profile() {
                   >
                     <CameraIcon className="w-4 h-4" />
                     <span className="absolute -top-7 right-0 bg-brand-deep border border-brand-border text-white/70 text-[10px] px-2 py-0.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      Change Photo
+                      {t('profile.changePhoto', 'Change Photo')}
                     </span>
                   </button>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
@@ -713,7 +716,7 @@ export default function Profile() {
                 {/* Info */}
                 <div className="flex-1 min-w-0 text-center sm:text-left space-y-1">
                   <p className="text-xl font-black text-white leading-tight flex items-center gap-2 flex-wrap justify-center sm:justify-start">
-                    {profile.displayName || profile.firstName || user?.email?.split('@')[0] || 'Anonymous'}
+                    {profile.displayName || profile.firstName || user?.email?.split('@')[0] || t('profile.anonymous', 'Anonymous')}
                     {profile.country && <CountryFlag countryName={profile.country} />}
                   </p>
                   {(profile.city || profile.country) && (
@@ -737,25 +740,25 @@ export default function Profile() {
               <div className="grid grid-cols-4 gap-2 mt-5 pt-5 border-t border-brand-emerald/15">
                 <div className="text-center">
                   <p className="text-brand-emerald font-black text-base tabular-nums">{totalZikr}</p>
-                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">Total Zikr</p>
+                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">{t('profile.totalZikr', 'Total Zikr')}</p>
                 </div>
                 <div className="text-center border-x border-brand-emerald/10">
                   <p className="text-brand-gold font-black text-base">
                     {longestStreak !== null ? longestStreak : '—'}
                   </p>
-                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">Best Streak</p>
+                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">{t('profile.bestStreak', 'Best Streak')}</p>
                 </div>
                 <div className="text-center border-r border-brand-emerald/10">
                   <p className="text-white/70 font-black text-base leading-tight">
                     {ageInfo ? `${ageInfo.years}y ${ageInfo.months}m` : '—'}
                   </p>
-                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">Age</p>
+                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">{t('profile.age', 'Age')}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-white/50 font-bold text-xs leading-tight">
                     {memberSince ?? '—'}
                   </p>
-                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">Member Since</p>
+                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">{t('profile.memberSince', 'Member Since')}</p>
                 </div>
               </div>
             </div>
@@ -767,8 +770,8 @@ export default function Profile() {
           >
             <div className="card-body p-5 sm:p-6 space-y-4">
               <div>
-                <p className="text-white/30 text-xs font-bold uppercase tracking-widest mb-1">Account & Linked Accounts</p>
-                <p className="text-white/25 text-xs">Primary email is used for password reset and notifications.</p>
+                <p className="text-white/30 text-xs font-bold uppercase tracking-widest mb-1">{t('profile.accountLinked', 'Account & Linked Accounts')}</p>
+                <p className="text-white/25 text-xs">{t('profile.primaryEmailNote', 'Primary email is used for password reset and notifications.')}</p>
               </div>
 
               <div className="space-y-2.5">
@@ -783,10 +786,10 @@ export default function Profile() {
                           ? 'bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald'
                           : 'bg-white/5 border border-brand-border text-white/30'
                       }`}>
-                        {!googleIsPrimary ? 'PRIMARY' : 'SECONDARY'}
+                        {!googleIsPrimary ? t('profile.primary', 'PRIMARY') : t('profile.secondary', 'SECONDARY')}
                       </span>
                     </div>
-                    <p className="text-white/25 text-xs">Email / Password</p>
+                    <p className="text-white/25 text-xs">{t('profile.emailPassword', 'Email / Password')}</p>
                   </div>
                   {/* Make Primary — only when password is secondary */}
                   {googleIsPrimary && user?.email && (
@@ -795,7 +798,7 @@ export default function Profile() {
                       disabled={primaryEmailLoading}
                       className="text-xs px-2.5 py-1 rounded-lg bg-brand-emerald/10 border border-brand-emerald/30 text-brand-emerald/80 hover:bg-brand-emerald/20 hover:text-brand-emerald transition-all shrink-0 font-medium whitespace-nowrap disabled:opacity-50"
                     >
-                      {primaryEmailLoading ? <span className="loading loading-spinner loading-xs" /> : 'Make Primary'}
+                      {primaryEmailLoading ? <span className="loading loading-spinner loading-xs" /> : t('profile.makePrimary', 'Make Primary')}
                     </button>
                   )}
                 </div>
@@ -812,10 +815,10 @@ export default function Profile() {
                             ? 'bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald'
                             : 'bg-white/5 border border-brand-border text-white/30'
                         }`}>
-                          {googleIsPrimary ? 'PRIMARY' : 'SECONDARY'}
+                          {googleIsPrimary ? t('profile.primary', 'PRIMARY') : t('profile.secondary', 'SECONDARY')}
                         </span>
                       </div>
-                      <p className="text-white/25 text-xs">Google Account</p>
+                      <p className="text-white/25 text-xs">{t('profile.googleAccount', 'Google Account')}</p>
                     </div>
 
                     {/* Action buttons */}
@@ -827,7 +830,7 @@ export default function Profile() {
                           disabled={primaryEmailLoading}
                           className="text-xs px-2.5 py-1 rounded-lg bg-white/5 border border-brand-border text-white/40 hover:bg-white/10 hover:text-white/70 transition-all font-medium whitespace-nowrap disabled:opacity-50"
                         >
-                          {primaryEmailLoading ? <span className="loading loading-spinner loading-xs" /> : 'Make Secondary'}
+                          {primaryEmailLoading ? <span className="loading loading-spinner loading-xs" /> : t('profile.makeSecondary', 'Make Secondary')}
                         </button>
                       ) : (
                         <button
@@ -835,7 +838,7 @@ export default function Profile() {
                           disabled={primaryEmailLoading}
                           className="text-xs px-2.5 py-1 rounded-lg bg-brand-emerald/10 border border-brand-emerald/30 text-brand-emerald/80 hover:bg-brand-emerald/20 hover:text-brand-emerald transition-all font-medium whitespace-nowrap disabled:opacity-50"
                         >
-                          {primaryEmailLoading ? <span className="loading loading-spinner loading-xs" /> : 'Make Primary'}
+                          {primaryEmailLoading ? <span className="loading loading-spinner loading-xs" /> : t('profile.makePrimary', 'Make Primary')}
                         </button>
                       )}
 
@@ -850,11 +853,11 @@ export default function Profile() {
                               : 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/60'
                           }`}
                         >
-                          {unlinkingGoogle ? <span className="loading loading-spinner loading-xs" /> : 'Disconnect'}
+                          {unlinkingGoogle ? <span className="loading loading-spinner loading-xs" /> : t('profile.disconnect', 'Disconnect')}
                         </button>
                         {googleIsPrimary && (
                           <div className="absolute -top-9 right-0 bg-brand-deep border border-brand-border text-white/60 text-[10px] px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover/dis:opacity-100 transition-opacity pointer-events-none z-10">
-                            Make secondary first to disconnect
+                            {t('profile.makeSecondaryFirst', 'Make secondary first to disconnect')}
                           </div>
                         )}
                       </div>
@@ -866,14 +869,14 @@ export default function Profile() {
                     <GoogleLogo className="w-4 h-4 shrink-0" />
                     <div className="text-left min-w-0 flex-1">
                       <p className="text-sm font-medium leading-tight text-white/70">
-                        {auth.currentUser?.email ?? 'Google Account'}
+                        {auth.currentUser?.email ?? t('profile.googleAccountFallback', 'Google Account')}
                       </p>
                       <p className="text-xs text-white/30 leading-tight mt-0.5">
-                        You're signed in with Google — this is your primary account
+                        {t('profile.signedInGoogle', "You're signed in with Google — this is your primary account")}
                       </p>
                     </div>
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald font-bold shrink-0">
-                      PRIMARY
+                      {t('profile.primary', 'PRIMARY')}
                     </span>
                   </div>
                 ) : (
@@ -889,8 +892,8 @@ export default function Profile() {
                       <LinkIcon className="w-4 h-4 shrink-0 group-hover:text-brand-emerald transition-colors" />
                     )}
                     <div className="text-left min-w-0 flex-1">
-                      <p className="text-sm font-medium leading-tight">Connect Google Account</p>
-                      <p className="text-xs text-white/25 leading-tight mt-0.5">Sign in with Google &amp; sync your profile photo</p>
+                      <p className="text-sm font-medium leading-tight">{t('profile.connectGoogle', 'Connect Google Account')}</p>
+                      <p className="text-xs text-white/25 leading-tight mt-0.5">{t('profile.connectGoogleDesc', 'Sign in with Google & sync your profile photo')}</p>
                     </div>
                     <GoogleLogo className="w-4 h-4 ml-auto shrink-0 opacity-50" />
                   </button>
@@ -904,7 +907,7 @@ export default function Profile() {
             className="card bg-brand-surface border border-brand-border rounded-2xl"
           >
             <div className="card-body p-5 sm:p-6 space-y-4">
-              <p className="text-white/30 text-xs font-bold uppercase tracking-widest">Edit Details</p>
+              <p className="text-white/30 text-xs font-bold uppercase tracking-widest">{t('profile.editDetails', 'Edit Details')}</p>
 
               <AnimatePresence>
                 {saveSuccess && (
@@ -916,18 +919,18 @@ export default function Profile() {
                     className="flex items-center gap-2 py-2.5 px-4 rounded-xl bg-brand-emerald/15 border border-brand-emerald/40"
                   >
                     <CheckCircleIcon className="w-4 h-4 text-brand-emerald shrink-0" />
-                    <span className="text-brand-emerald text-sm font-semibold">Profile saved successfully!</span>
+                    <span className="text-brand-emerald text-sm font-semibold">{t('profile.savedSuccess', 'Profile saved successfully!')}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {/* Display name */}
               <div className="form-control">
-                <label className="label py-1"><span className="label-text text-white/60 text-sm">Display Name</span></label>
+                <label className="label py-1"><span className="label-text text-white/60 text-sm">{t('profile.displayName', 'Display Name')}</span></label>
                 <input
                   type="text"
                   className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                  placeholder="How you appear in the app"
+                  placeholder={t('profile.displayNamePlaceholder', 'How you appear in the app')}
                   value={profile.displayName}
                   onChange={(e) => setProfile((p) => ({ ...p, displayName: e.target.value }))}
                 />
@@ -936,15 +939,15 @@ export default function Profile() {
               {/* First / Last name */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="form-control">
-                  <label className="label py-1"><span className="label-text text-white/60 text-sm">First Name</span></label>
+                  <label className="label py-1"><span className="label-text text-white/60 text-sm">{t('profile.firstName', 'First Name')}</span></label>
                   <input type="text" className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                    placeholder={googleFirstName || 'First'} value={profile.firstName}
+                    placeholder={googleFirstName || t('profile.first', 'First')} value={profile.firstName}
                     onChange={(e) => setProfile((p) => ({ ...p, firstName: e.target.value }))} />
                 </div>
                 <div className="form-control">
-                  <label className="label py-1"><span className="label-text text-white/60 text-sm">Last Name</span></label>
+                  <label className="label py-1"><span className="label-text text-white/60 text-sm">{t('profile.lastName', 'Last Name')}</span></label>
                   <input type="text" className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                    placeholder={googleLastName || 'Last'} value={profile.lastName}
+                    placeholder={googleLastName || t('profile.last', 'Last')} value={profile.lastName}
                     onChange={(e) => setProfile((p) => ({ ...p, lastName: e.target.value }))} />
                 </div>
               </div>
@@ -952,12 +955,12 @@ export default function Profile() {
               {/* Bio */}
               <div className="form-control">
                 <label className="label py-1">
-                  <span className="label-text text-white/60 text-sm">Bio</span>
+                  <span className="label-text text-white/60 text-sm">{t('profile.bio', 'Bio')}</span>
                   <span className="label-text-alt text-white/20 text-xs">{profile.bio.length}/250</span>
                 </label>
                 <textarea
                   className="textarea textarea-bordered bg-brand-deep border-brand-border text-white text-sm focus:border-brand-emerald focus:outline-none resize-none transition-colors"
-                  placeholder="A short sentence about yourself…"
+                  placeholder={t('profile.bioPlaceholder', 'A short sentence about yourself…')}
                   rows={2}
                   maxLength={250}
                   value={profile.bio}
@@ -970,7 +973,7 @@ export default function Profile() {
                 <div className="form-control">
                   <label className="label py-1">
                     <span className="label-text text-white/60 text-sm flex items-center gap-1">
-                      <MapPinIcon className="w-3.5 h-3.5" /> Country
+                      <MapPinIcon className="w-3.5 h-3.5" /> {t('profile.country', 'Country')}
                     </span>
                   </label>
                   <select
@@ -978,7 +981,7 @@ export default function Profile() {
                     value={profile.country}
                     onChange={(e) => handleCountryChange(e.target.value)}
                   >
-                    <option value="">Select country</option>
+                    <option value="">{t('profile.selectCountry', 'Select country')}</option>
                     {SORTED_COUNTRIES.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
@@ -986,7 +989,7 @@ export default function Profile() {
                 </div>
                 <div className="form-control">
                   <label className="label py-1">
-                    <span className="label-text text-white/60 text-sm">City</span>
+                    <span className="label-text text-white/60 text-sm">{t('profile.city', 'City')}</span>
                   </label>
                   {cityOptions.length > 0 ? (
                     <select
@@ -994,7 +997,7 @@ export default function Profile() {
                       value={profile.city}
                       onChange={(e) => setProfile((p) => ({ ...p, city: e.target.value }))}
                     >
-                      <option value="">Select city</option>
+                      <option value="">{t('profile.selectCity', 'Select city')}</option>
                       {cityOptions.map((c) => (
                         <option key={c} value={c}>{c}</option>
                       ))}
@@ -1003,7 +1006,7 @@ export default function Profile() {
                     <input
                       type="text"
                       className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                      placeholder={profile.country ? 'Enter city' : 'Select country first'}
+                      placeholder={profile.country ? t('profile.enterCity', 'Enter city') : t('profile.selectCountryFirst', 'Select country first')}
                       value={profile.city}
                       onChange={(e) => setProfile((p) => ({ ...p, city: e.target.value }))}
                     />
@@ -1015,13 +1018,13 @@ export default function Profile() {
               <div className="form-control">
                 <label className="label py-1">
                   <span className="label-text text-white/60 text-sm flex items-center gap-1">
-                    <BriefcaseIcon className="w-3.5 h-3.5" /> Occupation
+                    <BriefcaseIcon className="w-3.5 h-3.5" /> {t('profile.occupation', 'Occupation')}
                   </span>
                 </label>
                 <input
                   type="text"
                   className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                  placeholder="Your profession or field"
+                  placeholder={t('profile.occupationPlaceholder', 'Your profession or field')}
                   value={profile.occupation}
                   onChange={(e) => setProfile((p) => ({ ...p, occupation: e.target.value }))}
                 />
@@ -1030,31 +1033,31 @@ export default function Profile() {
               {/* Gender / Birth date */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="form-control">
-                  <label className="label py-1"><span className="label-text text-white/60 text-sm">Gender</span></label>
+                  <label className="label py-1"><span className="label-text text-white/60 text-sm">{t('profile.gender', 'Gender')}</span></label>
                   <select
                     className="select select-sm select-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
                     value={profile.gender}
                     onChange={(e) => setProfile((p) => ({ ...p, gender: e.target.value }))}
                   >
-                    <option value="">Not set</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
+                    <option value="">{t('profile.notSet', 'Not set')}</option>
+                    <option value="male">{t('profile.male', 'Male')}</option>
+                    <option value="female">{t('profile.female', 'Female')}</option>
                   </select>
                 </div>
 
                 <div className="form-control">
                   <label className="label py-1">
                     <span className="label-text text-white/60 text-sm flex items-center gap-1">
-                      <CalendarDaysIcon className="w-3.5 h-3.5" /> Birth Date
+                      <CalendarDaysIcon className="w-3.5 h-3.5" /> {t('profile.birthDate', 'Birth Date')}
                     </span>
                     {profile.birthDate && (
                       <button
                         type="button"
                         className="label-text-alt flex items-center gap-0.5 text-white/30 hover:text-red-400 text-xs transition-colors"
                         onClick={() => setProfile((p) => ({ ...p, birthDate: '' }))}
-                        title="Clear birth date"
+                        title={t('profile.clearBirthDate', 'Clear birth date')}
                       >
-                        <XMarkIcon className="w-3 h-3" /> Clear
+                        <XMarkIcon className="w-3 h-3" /> {t('profile.clear', 'Clear')}
                       </button>
                     )}
                   </label>
@@ -1067,7 +1070,7 @@ export default function Profile() {
                   />
                   {ageInfo && (
                     <p className="text-white/30 text-xs mt-1">
-                      Age: {ageInfo.years} years, {ageInfo.months} month{ageInfo.months !== 1 ? 's' : ''}
+                      {t('profile.ageDisplay', 'Age: {{years}} years, {{months}} month{{suffix}}', { years: ageInfo.years, months: ageInfo.months, suffix: ageInfo.months !== 1 ? 's' : '' })}
                     </p>
                   )}
                 </div>
@@ -1085,11 +1088,11 @@ export default function Profile() {
                 disabled={!isDirty || saving}
               >
                 {saving ? (
-                  <><span className="loading loading-spinner loading-xs" /> Saving…</>
+                  <><span className="loading loading-spinner loading-xs" /> {t('profile.saving', 'Saving…')}</>
                 ) : isDirty ? (
-                  'Save Changes'
+                  t('profile.saveChanges', 'Save Changes')
                 ) : (
-                  'No changes'
+                  t('profile.noChanges', 'No changes')
                 )}
               </button>
             </div>
@@ -1118,8 +1121,8 @@ export default function Profile() {
           >
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h3 className="text-lg font-black text-white">Change Profile Photo</h3>
-                <p className="text-white/30 text-xs mt-0.5">How would you like to update?</p>
+                <h3 className="text-lg font-black text-white">{t('profile.changeProfilePhoto', 'Change Profile Photo')}</h3>
+                <p className="text-white/30 text-xs mt-0.5">{t('profile.howUpdate', 'How would you like to update?')}</p>
               </div>
               <button onClick={() => setShowPhotoChoice(false)} className="text-white/40 hover:text-white p-1 transition-colors">
                 <XMarkIcon className="w-5 h-5" />
@@ -1134,8 +1137,8 @@ export default function Profile() {
                   <CameraIcon className="w-5 h-5 text-brand-emerald" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">Upload Photo</p>
-                  <p className="text-white/30 text-xs">From your device</p>
+                  <p className="text-sm font-semibold">{t('profile.uploadPhoto', 'Upload Photo')}</p>
+                  <p className="text-white/30 text-xs">{t('profile.fromDevice', 'From your device')}</p>
                 </div>
               </button>
 
@@ -1147,8 +1150,8 @@ export default function Profile() {
                   <PhotoIcon className="w-5 h-5 text-brand-warm" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">Choose Avatar</p>
-                  <p className="text-white/30 text-xs">Themed emoji icons</p>
+                  <p className="text-sm font-semibold">{t('profile.chooseAvatar', 'Choose Avatar')}</p>
+                  <p className="text-white/30 text-xs">{t('profile.themedIcons', 'Themed emoji icons')}</p>
                 </div>
               </button>
 
@@ -1162,7 +1165,7 @@ export default function Profile() {
                     <img src={googlePhotoUrl} alt="Google" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">Use Google Account Photo</p>
+                    <p className="text-sm font-semibold">{t('profile.useGooglePhoto', 'Use Google Account Photo')}</p>
                     <p className="text-white/30 text-xs">{googleLinked?.email}</p>
                   </div>
                   {uploading && <span className="loading loading-spinner loading-xs ml-auto" />}
@@ -1192,8 +1195,8 @@ export default function Profile() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-black text-white">Choose Avatar</h3>
-                <p className="text-white/30 text-xs mt-0.5">Nature-themed icons — no upload required</p>
+                <h3 className="text-lg font-black text-white">{t('profile.chooseAvatar', 'Choose Avatar')}</h3>
+                <p className="text-white/30 text-xs mt-0.5">{t('profile.natureIcons', 'Nature-themed icons — no upload required')}</p>
               </div>
               <button onClick={() => setAvatarModalOpen(false)} className="text-white/40 hover:text-white transition-colors p-1">
                 <XMarkIcon className="w-5 h-5" />
@@ -1206,7 +1209,7 @@ export default function Profile() {
                   onClick={() => void selectAvatar(av)}
                   disabled={uploading}
                   className="flex flex-col items-center gap-1 group disabled:opacity-50"
-                  title={av.label}
+                  title={t(`profile.avatar.${av.id}`, av.label)}
                 >
                   <div
                     className="w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all group-hover:scale-110 group-hover:ring-2 ring-brand-emerald/60 ring-offset-2 ring-offset-brand-surface shadow-md"
@@ -1214,13 +1217,13 @@ export default function Profile() {
                   >
                     {av.emoji}
                   </div>
-                  <span className="text-white/30 text-[9px] leading-none group-hover:text-white/60 transition-colors">{av.label}</span>
+                  <span className="text-white/30 text-[9px] leading-none group-hover:text-white/60 transition-colors">{t(`profile.avatar.${av.id}`, av.label)}</span>
                 </button>
               ))}
             </div>
             {uploading && (
               <div className="flex items-center justify-center gap-2 text-brand-emerald text-sm">
-                <span className="loading loading-spinner loading-sm" /> Saving…
+                <span className="loading loading-spinner loading-sm" /> {t('profile.saving', 'Saving…')}
               </div>
             )}
           </motion.div>
@@ -1244,7 +1247,7 @@ export default function Profile() {
             transition={{ type: 'spring', damping: 22 }}
             className="bg-brand-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-border text-center space-y-4"
           >
-            <h3 className="text-lg font-black text-white">Upload Profile Photo</h3>
+            <h3 className="text-lg font-black text-white">{t('profile.uploadProfilePhoto', 'Upload Profile Photo')}</h3>
 
             <div className="flex justify-center">
               <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-brand-emerald/40">
@@ -1253,7 +1256,7 @@ export default function Profile() {
             </div>
 
             <p className="text-white/30 text-xs leading-relaxed px-2">
-              Compressed to 400px JPEG. Stored securely in your account.
+              {t('profile.compressedNote', 'Compressed to 400px JPEG. Stored securely in your account.')}
             </p>
 
             <div className="flex gap-3">
@@ -1262,14 +1265,14 @@ export default function Profile() {
                 disabled={uploading}
                 className="btn flex-1 btn-ghost text-white/60 border-brand-border disabled:opacity-40"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={uploadPhoto}
                 disabled={uploading}
                 className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold"
               >
-                {uploading ? <span className="loading loading-spinner loading-sm" /> : 'Use This Photo'}
+                {uploading ? <span className="loading loading-spinner loading-sm" /> : t('profile.useThisPhoto', 'Use This Photo')}
               </button>
             </div>
           </motion.div>

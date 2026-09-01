@@ -1,5 +1,6 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { onAuthStateChanged, sendEmailVerification } from 'firebase/auth';
@@ -77,6 +78,7 @@ function RouteFallback() {
 }
 
 function VerifyEmailGate({ email }: { email: string | null }) {
+  const { t } = useTranslation();
   const [resent, setResent] = useState(false);
   const [resending, setResending] = useState(false);
 
@@ -94,21 +96,21 @@ function VerifyEmailGate({ email }: { email: string | null }) {
     <div className="min-h-[60vh] flex items-center justify-center px-4">
       <div className="text-center space-y-5 max-w-sm w-full">
         <div className="text-6xl">📧</div>
-        <h2 className="text-2xl font-black text-white">Verify your email</h2>
+        <h2 className="text-2xl font-black text-white">{t('app.verifyEmailTitle', 'Verify your email')}</h2>
         <p className="text-white/50 text-sm leading-relaxed">
-          A verification link was sent to{' '}
+          {t('app.verifyEmailSentTo', 'A verification link was sent to')}{' '}
           <span className="text-brand-emerald font-medium">{email}</span>.
-          Check your inbox (and spam folder) and click the link to unlock this page.
+          {' '}{t('app.verifyEmailCheckInbox', 'Check your inbox (and spam folder) and click the link to unlock this page.')}
         </p>
         {resent ? (
-          <p className="text-brand-emerald text-sm font-medium">Email resent! Check your inbox.</p>
+          <p className="text-brand-emerald text-sm font-medium">{t('app.verifyEmailResent', 'Email resent! Check your inbox.')}</p>
         ) : (
           <button
             className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
             onClick={() => void resend()}
             disabled={resending}
           >
-            {resending ? <span className="loading loading-spinner loading-xs" /> : 'Resend verification email'}
+            {resending ? <span className="loading loading-spinner loading-xs" /> : t('app.resendVerification', 'Resend verification email')}
           </button>
         )}
       </div>
@@ -133,6 +135,7 @@ interface ProtectedProps {
 }
 
 const Protected = ({ children }: ProtectedProps) => {
+  const { t } = useTranslation();
   const { user, authLoading } = useAuthStore();
   const location = useLocation();
   const nav = useNavigate();
@@ -152,9 +155,9 @@ const Protected = ({ children }: ProtectedProps) => {
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="text-center space-y-5 max-w-sm w-full">
           <div className="text-6xl">🔐</div>
-          <h2 className="text-2xl font-black text-white">Sign in required</h2>
+          <h2 className="text-2xl font-black text-white">{t('app.signInRequired', 'Sign in required')}</h2>
           <p className="text-white/50 text-sm leading-relaxed">
-            This page is only available to signed-in users. Create a free account to track your progress and access analytics.
+            {t('app.signInRequiredDesc', 'This page is only available to signed-in users. Create a free account to track your progress and access analytics.')}
           </p>
           <div className="flex flex-col gap-3">
             <button
@@ -164,7 +167,7 @@ const Protected = ({ children }: ProtectedProps) => {
                 nav('/login');
               }}
             >
-              Sign In
+              {t('app.signIn', 'Sign In')}
             </button>
             <button
               className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
@@ -173,7 +176,7 @@ const Protected = ({ children }: ProtectedProps) => {
                 nav('/signup');
               }}
             >
-              Create Free Account
+              {t('app.createFreeAccount', 'Create Free Account')}
             </button>
           </div>
         </div>

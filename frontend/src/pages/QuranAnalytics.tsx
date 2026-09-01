@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
 import { useQuranSummary, useQuranHistory, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
@@ -6,6 +7,7 @@ import { loadSurahList, type SurahMeta } from '../utils/quranData.js';
 
 /** The whole Quran journey in numbers — reading, listening, khatam, favourites. */
 export default function QuranAnalytics() {
+  const { t } = useTranslation();
   const { data: summary } = useQuranSummary();
   const { data: history } = useQuranHistory(30, true);
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
@@ -38,7 +40,7 @@ export default function QuranAnalytics() {
 
   return (
     <AnimatedBackground variant="dark">
-      <h1 className="sr-only">Quran Analytics</h1>
+      <h1 className="sr-only">{t('quranAnalytics.title')}</h1>
       <div className="max-w-2xl mx-auto px-4 pt-3 pb-16 space-y-4">
         <QuranTabNav active="analytics" />
 
@@ -46,27 +48,27 @@ export default function QuranAnalytics() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
             <p className="text-2xl font-black text-brand-emerald">{summary?.stats.allTimeUnits ?? '—'}</p>
-            <p className="text-white/30 text-[10px] font-bold uppercase mt-1">āyāt all-time</p>
+            <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('quranAnalytics.ayatAllTime')}</p>
           </div>
           <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
             <p className="text-2xl font-black text-brand-gold">🔥 {summary?.streak ?? 0}</p>
-            <p className="text-white/30 text-[10px] font-bold uppercase mt-1">day streak (best {summary?.bestStreak ?? 0})</p>
+            <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('quranAnalytics.dayStreak', { best: summary?.bestStreak ?? 0 })}</p>
           </div>
           <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
             <p className="text-2xl font-black text-brand-info">{summary?.stats.last30Units ?? 0}</p>
-            <p className="text-white/30 text-[10px] font-bold uppercase mt-1">āyāt · last 30 days</p>
+            <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('quranAnalytics.ayatLast30')}</p>
           </div>
           <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
             <p className="text-2xl font-black text-brand-info">⭐ {summary?.profile.khatmCount ?? 0}</p>
-            <p className="text-white/30 text-[10px] font-bold uppercase mt-1">khatm · now {khatmPct.toFixed(0)}%</p>
+            <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('quranAnalytics.khatmNow', { pct: khatmPct.toFixed(0) })}</p>
           </div>
         </div>
 
         {/* 30-day chart */}
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-white font-black">📈 Last 30 days</h2>
-            <span className="text-white/30 text-xs">{chart.activeDays}/30 days with Quran</span>
+            <h2 className="text-white font-black">{t('quranAnalytics.last30Title')}</h2>
+            <span className="text-white/30 text-xs">{t('quranAnalytics.daysWithQuran', { active: chart.activeDays })}</span>
           </div>
           <div className="flex items-end gap-[3px] h-28">
             {chart.days.map((d) => (
@@ -80,15 +82,15 @@ export default function QuranAnalytics() {
           </div>
           <div className="flex justify-between text-[9px] text-white/25 mt-1">
             <span>{chart.days[0]?.date.slice(5)}</span>
-            <span>today</span>
+            <span>{t('common.today')}</span>
           </div>
         </div>
 
         {/* top surahs */}
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-          <h2 className="text-white font-black mb-3">💚 Your most-completed surahs</h2>
+          <h2 className="text-white font-black mb-3">{t('quranAnalytics.topSurahsTitle')}</h2>
           {(summary?.topSurahs ?? []).length === 0 ? (
-            <p className="text-white/30 text-xs">Finish a surah in the āyah reader and your favourites appear here.</p>
+            <p className="text-white/30 text-xs">{t('quranAnalytics.topSurahsEmpty')}</p>
           ) : (
             <div className="space-y-1.5">
               {(summary?.topSurahs ?? []).map((t, i) => (
@@ -107,14 +109,14 @@ export default function QuranAnalytics() {
 
         {/* khatam projection */}
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-          <h2 className="text-white font-black mb-2">🕋 Khatam projection</h2>
+          <h2 className="text-white font-black mb-2">{t('quranAnalytics.khatamProjectionTitle')}</h2>
           <div className="h-2.5 rounded-full bg-white/10 overflow-hidden">
             <div className="h-full rounded-full bg-gradient-to-r from-brand-emerald to-brand-info" style={{ width: `${khatmPct}%` }} />
           </div>
           <p className="text-white/40 text-xs mt-2">
             {summary?.estDaysToKhatm
-              ? <>At your 7-day pace ({summary.pace} āyāt/day) you finish in <b className="text-brand-emerald">≈ {summary.estDaysToKhatm} days</b>, in shāʾ Allāh.</>
-              : 'Read a few days in a row and your finish estimate appears here.'}
+              ? <>{t('quranAnalytics.paceEstimate', { pace: summary.pace })} <b className="text-brand-emerald">{t('quranAnalytics.finishIn', { days: summary.estDaysToKhatm })}</b></>
+              : t('quranAnalytics.paceEmpty')}
           </p>
         </div>
       </div>

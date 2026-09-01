@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { useTranslation, Trans } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
@@ -36,6 +37,7 @@ import {
 } from '../utils/salatPrefs.js';
 import { recitationsFor, recitationHref } from '../utils/postSalatQuran.js';
 import { getFridayHour, FRIDAY_HOUR_REF } from '../utils/fridayHour.js';
+import { formatLocaleDate } from '../utils/localeDate.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -87,12 +89,12 @@ function isFuturePrayer(prayerId: string, todayTimes: Record<string, Date> | nul
 function isCurrentPrayer(prayerId: string, currentId: string | undefined): boolean {
   return prayerId === currentId;
 }
-function friendlyDate(dateStr: string): string {
+function friendlyDate(dateStr: string, tr?: (key: string, fallback: string) => string): string {
   const today = todayStr();
   const yesterday = offsetDate(today, -1);
-  if (dateStr === today) return 'Today';
-  if (dateStr === yesterday) return 'Yesterday';
-  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  if (dateStr === today) return tr ? tr('common.today', 'Today') : 'Today';
+  if (dateStr === yesterday) return tr ? tr('salat.yesterday', 'Yesterday') : 'Yesterday';
+  return formatLocaleDate(new Date(dateStr + 'T12:00:00'), { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 // ─── types ───────────────────────────────────────────────────────────────────
@@ -126,6 +128,7 @@ function getDefaultDate(): string {
 }
 
 export default function SalatTracker() {
+  const { t } = useTranslation();
   const cycleActive = useCycleActive();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -147,8 +150,8 @@ export default function SalatTracker() {
   // go stale when the tab stays open across a prayer-time boundary.
   const [minuteNow, setMinuteNow] = useState(new Date());
   useEffect(() => {
-    const t = setInterval(() => setMinuteNow(new Date()), 60_000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setMinuteNow(new Date()), 60_000);
+    return () => clearInterval(timer);
   }, []);
 
   // Prayer times for current-prayer detection (only needed for today)
@@ -225,7 +228,7 @@ export default function SalatTracker() {
     return meta?.defaultRakat ?? MIN_RAKAT;
   };
 
-  const naflTotalRakat = (naflEntry.types ?? []).reduce((s, t) => s + getTypeRakat(t), 0);
+  const naflTotalRakat = (naflEntry.types ?? []).reduce((s, nt) => s + getTypeRakat(nt), 0);
 
   const handleNaflToggle = () => {
     if (!user) { setShowGuestDialog(true); return; }
@@ -235,7 +238,7 @@ export default function SalatTracker() {
     updateNafl.mutate({
       completed: newCompleted,
       types: keptTypes,
-      rakat: newCompleted ? (keptTypes.length > 0 ? keptTypes.reduce((s, t) => s + getTypeRakat(t), 0) : MIN_RAKAT) : MIN_RAKAT,
+      rakat: newCompleted ? (keptTypes.length > 0 ? keptTypes.reduce((s, nt) => s + getTypeRakat(nt), 0) : MIN_RAKAT) : MIN_RAKAT,
       date: selectedDate,
     });
     if (newCompleted) setNaflExpanded(true);
@@ -248,11 +251,11 @@ export default function SalatTracker() {
     const adding = !currentTypes.includes(type);
     const next = adding
       ? [...currentTypes, type]
-      : currentTypes.filter((t) => t !== type);
+      : currentTypes.filter((nt) => nt !== type);
     if (!adding) {
       setRakatOverrides((prev) => { const n = { ...prev }; delete n[type]; return n; });
     }
-    const newTotal = next.reduce((s, t) => s + getTypeRakat(t), 0);
+    const newTotal = next.reduce((s, nt) => s + getTypeRakat(nt), 0);
     updateNafl.mutate({
       completed: naflEntry.completed,
       types: next,
@@ -267,13 +270,24 @@ export default function SalatTracker() {
     const next = Math.max(MIN_RAKAT, current + delta * 2);
     setRakatOverrides((prev) => ({ ...prev, [type]: next }));
     const types = naflEntry.types ?? [];
-    const newTotal = types.reduce((s, t) => s + (t === type ? next : getTypeRakat(t)), 0);
+    const newTotal = types.reduce((s, nt) => s + (nt === type ? next : getTypeRakat(nt)), 0);
     updateNafl.mutate({
       completed: naflEntry.completed,
       types,
       rakat: newTotal,
       date: selectedDate,
     });
+  };
+
+  // Location-tag copy is defined outside the component (module scope), so it
+  // can't call the i18n hook directly — this maps each tag's value to its
+  // translated label/note at render time.
+  const locationTagText = (value: PrayerLocation): { label: string; note: string } => {
+    switch (value) {
+      case 'mosque': return { label: t('salatTracker.locMosque', 'At Mosque'), note: t('salatTracker.locMosqueNote', 'in jamat') };
+      case 'jamat':  return { label: t('salatTracker.locJamat', 'In Jamat'), note: t('salatTracker.locJamatNote', 'not at mosque') };
+      default:       return { label: t('salatTracker.locHome', 'At Home'), note: t('salatTracker.locHomeNote', 'alone') };
+    }
   };
 
   const trackablePrayers = PRAYER_META.filter((p) => p.isTrackable);
@@ -300,7 +314,7 @@ export default function SalatTracker() {
     // cannot be logged in any state — the row is visually locked, and this
     // guard closes every other code path.
     if (selectedDate === todayStr() && isFuturePrayer(prayer, todayPrayerTimes?.times)) {
-      toast.error("This prayer's time hasn't arrived yet.", { id: 'salat-early', icon: '🔒' });
+      toast.error(t('salatTracker.tooEarly', "This prayer's time hasn't arrived yet."), { id: 'salat-early', icon: '🔒' });
       return;
     }
     const current = log?.prayers[prayer];
@@ -364,7 +378,7 @@ export default function SalatTracker() {
     if (type === 'location') {
       if (value === 'mosque') {
         toast.success(
-          'Prayer in congregation is 27 times superior — Bukhari 645',
+          t('salatTracker.congregationReward', 'Prayer in congregation is 27 times superior — Bukhari 645'),
           { icon: '🕌', duration: 3500, id: 'masjid-reward' },
         );
       }
@@ -390,7 +404,7 @@ export default function SalatTracker() {
     if (was === turnedOn) return; // not an actual change — never double-count
     if (selectedDate !== todayStr()) {
       if (turnedOn) {
-        toast('Saved. Dhikr counts are only added for today.', { icon: '🗓️', duration: 2600 });
+        toast(t('salatTracker.dhikrTodayOnly', 'Saved. Dhikr counts are only added for today.'), { icon: '🗓️', duration: 2600 });
       }
       return;
     }
@@ -400,15 +414,19 @@ export default function SalatTracker() {
       const meta = tasbihModeMeta(getTasbihMode());
       addCounts(tasbihDeltas(meta.id, sign));
       toast.success(
-        turnedOn ? `${meta.label} added to your dhikr` : `${meta.label} removed`,
+        turnedOn
+          ? t('salatTracker.dhikrAdded', '{{label}} added to your dhikr', { label: meta.label })
+          : t('salatTracker.dhikrRemoved', '{{label}} removed', { label: meta.label }),
         { icon: '📿', duration: 2200 },
       );
     } else {
       addCounts({ [AYATUL_KURSI_ZIKR]: sign });
-      toast.success(turnedOn ? 'Ayatul Kursi counted' : 'Ayatul Kursi removed', {
-        icon: '📖',
-        duration: 2000,
-      });
+      toast.success(
+        turnedOn
+          ? t('salatTracker.ayatulKursiCounted', 'Ayatul Kursi counted')
+          : t('salatTracker.ayatulKursiRemoved', 'Ayatul Kursi removed'),
+        { icon: '📖', duration: 2000 },
+      );
     }
 
     // Push to the server NOW rather than waiting out the debounce, then
@@ -425,20 +443,20 @@ export default function SalatTracker() {
   return (
     <AnimatedBackground variant="dark">
       {/* ── Tab navigation ── */}
-      <h1 className="sr-only">Salat Tracker</h1>
+      <h1 className="sr-only">{t('salatTracker.title', 'Salat Tracker')}</h1>
       <div className="px-4 pt-3 pb-0 flex items-center gap-2">
         <div className="flex-1 min-w-0">
           <TabNav
             items={[
-              { label: '🕌 Tracker', to: '/salat', active: true },
-              { label: '📊 Analytics', to: '/salat/analytics' },
+              { label: `🕌 ${t('salatTracker.tabTracker', 'Tracker')}`, to: '/salat', active: true },
+              { label: `📊 ${t('salatTracker.tabAnalytics', 'Analytics')}`, to: '/salat/analytics' },
             ]}
           />
         </div>
         <button
           onClick={() => setShowSettings(true)}
-          aria-label="Salat settings"
-          title="Salat settings"
+          aria-label={t('salatTracker.settingsAria', 'Salat settings')}
+          title={t('salatTracker.settingsAria', 'Salat settings')}
           className="shrink-0 p-2 rounded-xl border border-brand-emerald/20 bg-white/5 text-white/50 hover:text-brand-emerald hover:border-brand-emerald/40 transition-colors"
         >
           <Cog6ToothIcon className="w-5 h-5" />
@@ -468,15 +486,20 @@ export default function SalatTracker() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <h3 className="text-brand-gold font-black text-sm">
-                      {fridayHour.isFinalStretch ? 'The hour of response — now' : 'Friday: the hour of response'}
+                      {fridayHour.isFinalStretch
+                        ? t('salatTracker.hourOfResponseNow', 'The hour of response — now')
+                        : t('salatTracker.hourOfResponse', 'Friday: the hour of response')}
                     </h3>
                     <span className="text-brand-gold/70 text-xs font-bold tabular-nums">
-                      {fridayHour.countdown} to Maghrib
+                      {t('salatTracker.toMaghrib', '{{countdown}} to Maghrib', { countdown: fridayHour.countdown })}
                     </span>
                   </div>
                   <p className="text-white/60 text-xs mt-1.5 leading-relaxed">
-                    “{FRIDAY_HOUR_REF.text}” Keep asking until the sun sets — for yourself,
-                    your parents, and the ummah.
+                    {t(
+                      'salatTracker.hourOfResponseQuote',
+                      '"{{text}}" Keep asking until the sun sets — for yourself, your parents, and the ummah.',
+                      { text: FRIDAY_HOUR_REF.text },
+                    )}
                   </p>
                   <div className="flex items-center gap-2 flex-wrap mt-2.5">
                     <a
@@ -501,14 +524,14 @@ export default function SalatTracker() {
               whileTap={isAtStartDate ? {} : { scale: 0.97 }}
               onClick={() => { if (!isAtStartDate) { setSelectedDate((d) => offsetDate(d, -1)); setExpandedPrayer(null); } }}
               disabled={isAtStartDate}
-              title={isAtStartDate ? 'No logs before this date' : 'Previous day'}
+              title={isAtStartDate ? t('salatTracker.noLogsBefore', 'No logs before this date') : t('salatTracker.previousDay', 'Previous day')}
               className="p-2 rounded-xl bg-brand-surface border border-brand-border text-white/60 hover:text-white hover:border-brand-emerald/40 disabled:opacity-20 disabled:cursor-not-allowed"
             >
               <ChevronLeftIcon className="w-5 h-5" />
             </motion.button>
             <div className="text-center">
-              <p className="text-white font-bold text-base">{friendlyDate(selectedDate)}</p>
-              <p className="text-white/30 text-xs">{new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+              <p className="text-white font-bold text-base">{friendlyDate(selectedDate, t)}</p>
+              <p className="text-white/30 text-xs">{formatLocaleDate(new Date(selectedDate + 'T12:00:00'), { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
               {(() => { const h = getHijriDate(new Date(selectedDate + 'T12:00:00')); return h ? <p className="text-brand-gold/40 text-[10px] mt-0.5">{formatHijriDate(h)}</p> : null; })()}
             </div>
             <motion.button
@@ -531,7 +554,7 @@ export default function SalatTracker() {
             <div className="card-body p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-white/60 text-xs font-semibold uppercase tracking-wide">
-                  {friendlyDate(selectedDate)}'s Prayers
+                  {t('salatTracker.datePrayers', "{{date}}'s Prayers", { date: friendlyDate(selectedDate, t) })}
                 </span>
                 <span className="text-xl font-black text-brand-emerald">
                   {completedCount}<span className="text-white/30 font-normal text-base">/5</span>
@@ -546,7 +569,7 @@ export default function SalatTracker() {
                 />
               </div>
               {completedCount === 5 && (
-                <p className="text-brand-emerald text-xs mt-1 font-semibold">🎉 All prayers completed — MashaAllah!</p>
+                <p className="text-brand-emerald text-xs mt-1 font-semibold">{t('salatTracker.allCompleted', '🎉 All prayers completed — MashaAllah!')}</p>
               )}
             </div>
           </div>
@@ -619,7 +642,7 @@ export default function SalatTracker() {
                       {isFuture ? (
                         <div className="flex items-center gap-1.5">
                           <span className="text-white/20 text-xs font-medium px-2 py-1 rounded-lg border border-brand-emerald/10">
-                            🔒 not yet
+                            {t('salatTracker.notYet', '🔒 not yet')}
                           </span>
                         </div>
                       ) : (
@@ -634,7 +657,7 @@ export default function SalatTracker() {
                                 : 'bg-brand-deep border-brand-border text-white/50 hover:border-brand-emerald/50 hover:text-white/80'
                             }`}
                           >
-                            ✅ Done
+                            {t('salatTracker.done', '✅ Done')}
                           </motion.button>
                           {/* Kaza */}
                           <motion.button
@@ -646,7 +669,7 @@ export default function SalatTracker() {
                                 : 'bg-brand-deep border-brand-border text-white/50 hover:border-brand-gold/50 hover:text-white/80'
                             }`}
                           >
-                            ⏰ Kaza
+                            {t('salatTracker.kaza', '⏰ Kaza')}
                           </motion.button>
                           {/* Missed */}
                           <motion.button
@@ -658,7 +681,7 @@ export default function SalatTracker() {
                                 : 'bg-brand-deep border-brand-border text-white/50 hover:border-red-400/50 hover:text-white/80'
                             }`}
                           >
-                            ❌ Miss
+                            {t('salatTracker.miss', '❌ Miss')}
                           </motion.button>
                         </div>
                       )}
@@ -678,27 +701,30 @@ export default function SalatTracker() {
                             {/* Location tags — only for completed (kaza is always prayed alone) */}
                             {status === 'completed' && (
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-white/30 text-[11px] sm:text-xs">Where:</span>
-                                {LOCATION_TAGS.map((tag) => (
-                                  <motion.button
-                                    key={tag.value}
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={() => handleSubTag(prayerId, 'location', tag.value)}
-                                    className={`flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold border transition-all ${
-                                      entry?.location === tag.value || (!entry?.location && tag.value === 'home')
-                                        ? 'bg-brand-emerald/20 border-brand-emerald/60 text-brand-emerald'
-                                        : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
-                                    }`}
-                                  >
-                                    <span>{tag.emoji}</span> {tag.label}
-                                    <span className="text-white/25 text-xs hidden sm:inline">({tag.note})</span>
-                                  </motion.button>
-                                ))}
+                                <span className="text-white/30 text-[11px] sm:text-xs">{t('salatTracker.whereLabel', 'Where:')}</span>
+                                {LOCATION_TAGS.map((tag) => {
+                                  const { label, note } = locationTagText(tag.value);
+                                  return (
+                                    <motion.button
+                                      key={tag.value}
+                                      whileTap={{ scale: 0.9 }}
+                                      onClick={() => handleSubTag(prayerId, 'location', tag.value)}
+                                      className={`flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold border transition-all ${
+                                        entry?.location === tag.value || (!entry?.location && tag.value === 'home')
+                                          ? 'bg-brand-emerald/20 border-brand-emerald/60 text-brand-emerald'
+                                          : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
+                                      }`}
+                                    >
+                                      <span>{tag.emoji}</span> {label}
+                                      <span className="text-white/25 text-xs hidden sm:inline">({note})</span>
+                                    </motion.button>
+                                  );
+                                })}
                               </div>
                             )}
                             {/* After-salat toggles */}
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-white/30 text-xs shrink-0">After salat:</span>
+                              <span className="text-white/30 text-xs shrink-0">{t('salatTracker.afterSalat', 'After salat:')}</span>
                               <motion.button
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => handleSubTag(prayerId, 'tasbeeh', !(entry?.tasbeeh ?? false))}
@@ -708,7 +734,7 @@ export default function SalatTracker() {
                                     : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                                 }`}
                               >
-                                📿 Tasbeeh
+                                {t('salatTracker.tasbeeh', '📿 Tasbeeh')}
                               </motion.button>
                               <motion.button
                                 whileTap={{ scale: 0.9 }}
@@ -719,7 +745,7 @@ export default function SalatTracker() {
                                     : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                                 }`}
                               >
-                                📖 Ayatul Kursi
+                                {t('salatTracker.ayatulKursi', '📖 Ayatul Kursi')}
                               </motion.button>
                             </div>
 
@@ -735,7 +761,7 @@ export default function SalatTracker() {
                               return (
                                 <div className="pt-1.5 border-t border-brand-emerald/5">
                                   <p className="text-white/25 text-[11px] leading-relaxed">
-                                    <span className="text-white/20">Optional · </span>
+                                    <span className="text-white/20">{t('salatTracker.optionalPrefix', 'Optional')} · </span>
                                     {recs.map((r, i) => (
                                       <span key={r.id}>
                                         {i > 0 && <span className="text-white/15"> · </span>}
@@ -761,7 +787,7 @@ export default function SalatTracker() {
                                             title={r.caveat}
                                             className="ml-1 text-[9px] uppercase tracking-wide text-brand-gold/50 border border-brand-gold/25 rounded px-1 py-px align-middle"
                                           >
-                                            ḍaʿīf
+                                            {t('salatTracker.daif', 'ḍaʿīf')}
                                           </span>
                                         )}
                                       </span>
@@ -781,9 +807,9 @@ export default function SalatTracker() {
                         onClick={() => setExpandedPrayer(isExpanded ? null : prayerId)}
                         className="w-full flex items-center justify-center gap-1 py-1 border-t border-brand-emerald/5 text-white/20 hover:text-white/50 text-xs transition-colors"
                       >
-                        {isExpanded ? '▲ Less' : '▾ Details'}
+                        {isExpanded ? t('salatTracker.less', '▲ Less') : t('salatTracker.details', '▾ Details')}
                         {status === 'completed' && entry?.location && entry.location !== 'home' && (
-                          <span className="text-brand-emerald/60">{LOCATION_TAGS.find((t) => t.value === entry.location)?.emoji}</span>
+                          <span className="text-brand-emerald/60">{LOCATION_TAGS.find((loc) => loc.value === entry.location)?.emoji}</span>
                         )}
                         {entry?.tasbeeh && <span className="text-brand-info/60">📿</span>}
                         {entry?.ayatulKursi && <span className="text-brand-gold/60">📖</span>}
@@ -806,10 +832,10 @@ export default function SalatTracker() {
                         <span className="text-base shrink-0">🕌</span>
                         <span className="flex-1 min-w-0">
                           <span className={`block font-bold text-xs ${ramadanTodayLog?.tarawih ? 'text-brand-info' : 'text-brand-info/70'}`}>
-                            Tarawih tonight
+                            {t('salatTracker.tarawihTonight', 'Tarawih tonight')}
                           </span>
                           <span className="block text-white/30 text-[11px]">
-                            Ramadan nights — prayed after Isha
+                            {t('salatTracker.tarawihDesc', 'Ramadan nights — prayed after Isha')}
                           </span>
                         </span>
                         <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 ${
@@ -817,7 +843,7 @@ export default function SalatTracker() {
                             ? 'bg-brand-info/25 border-brand-info/50 text-brand-info'
                             : 'bg-brand-deep border-brand-border text-white/40'
                         }`}>
-                          {ramadanTodayLog?.tarawih ? '✅ Prayed' : 'Mark done'}
+                          {ramadanTodayLog?.tarawih ? t('salatTracker.prayed', '✅ Prayed') : t('salatTracker.markDone', 'Mark done')}
                         </span>
                       </button>
                     )}
@@ -827,9 +853,9 @@ export default function SalatTracker() {
                       <div className="px-3 py-2.5 border-t border-brand-gold/20 flex items-start gap-2 bg-brand-gold/5">
                         <span className="text-base shrink-0">🕯️</span>
                         <div className="min-w-0">
-                          <p className="text-brand-gold font-bold text-xs leading-tight">Don't forget Witr — it's wājib!</p>
+                          <p className="text-brand-gold font-bold text-xs leading-tight">{t('salatTracker.witrReminderTitle', "Don't forget Witr — it's wājib!")}</p>
                           <p className="text-white/30 text-xs leading-relaxed mt-0.5">
-                            Pray Witr after Isha before Fajr — usually 3 rak'ahs with Qunūt du'ā. The Prophet ﷺ never abandoned it, even while travelling.
+                            {t('salatTracker.witrReminderDesc', "Pray Witr after Isha before Fajr — usually 3 rak'ahs with Qunūt du'ā. The Prophet ﷺ never abandoned it, even while travelling.")}
                           </p>
                           <a
                             href="https://sunnah.com/bukhari:998"
@@ -868,19 +894,19 @@ export default function SalatTracker() {
                   <span className="text-2xl shrink-0">📿</span>
                   <div className="min-w-0">
                     <p className={`font-bold text-sm leading-none ${naflEntry.completed ? 'text-brand-info' : 'text-white/60'}`}>
-                      Nafl Prayer
+                      {t('salatTracker.naflPrayer', 'Nafl Prayer')}
                     </p>
                     <p className="text-white/25 text-xs mt-0.5">
                       {naflEntry.completed && (naflEntry.types?.length ?? 0) > 0
-                        ? naflEntry.types.map((t) => NAFL_TYPE_META.find((m) => m.id === t)?.label).filter(Boolean).join(', ')
-                        : 'voluntary prayers'}
+                        ? naflEntry.types.map((nt) => NAFL_TYPE_META.find((m) => m.id === nt)?.label).filter(Boolean).join(', ')
+                        : t('salatTracker.voluntaryPrayers', 'voluntary prayers')}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {naflEntry.completed && naflTotalRakat > 0 && (
                     <span className="px-2.5 py-1 rounded-lg bg-brand-info/15 text-brand-info text-xs font-black tabular-nums">
-                      {naflTotalRakat} rak'ah
+                      {t('salatTracker.rakatCount', "{{count}} rak'ah", { count: naflTotalRakat })}
                     </span>
                   )}
                   <motion.button
@@ -892,7 +918,7 @@ export default function SalatTracker() {
                         : 'bg-brand-deep border-brand-border text-white/50 hover:border-brand-info/50 hover:text-white/80'
                     }`}
                   >
-                    {naflEntry.completed ? '✅ Done' : 'Mark Done'}
+                    {naflEntry.completed ? t('salatTracker.done', '✅ Done') : t('salatTracker.markDoneBtn', 'Mark Done')}
                   </motion.button>
                 </div>
               </div>
@@ -908,22 +934,22 @@ export default function SalatTracker() {
                     className="overflow-hidden border-t border-brand-emerald/10"
                   >
                     <div className="px-3 py-3 space-y-3">
-                      <p className="text-white/30 text-[11px] font-bold uppercase tracking-wider">Select what you prayed</p>
+                      <p className="text-white/30 text-[11px] font-bold uppercase tracking-wider">{t('salatTracker.selectWhatYouPrayed', 'Select what you prayed')}</p>
 
                       {/* Tile grid — 2 columns on mobile, 3 on wider */}
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {SELECTABLE_NAFL_TYPES.filter((t) => (
-                          t.id === 'tarawih' ? isRamadanNow() : true
-                        )).map((t) => {
-                          const selected = (naflEntry.types ?? []).includes(t.id);
-                          const infoOpen = naflInfoExpanded === t.id;
-                          const typeRak = getTypeRakat(t.id);
-                          const isFixed = t.id === 'awwabin';
+                        {SELECTABLE_NAFL_TYPES.filter((nt) => (
+                          nt.id === 'tarawih' ? isRamadanNow() : true
+                        )).map((nt) => {
+                          const selected = (naflEntry.types ?? []).includes(nt.id);
+                          const infoOpen = naflInfoExpanded === nt.id;
+                          const typeRak = getTypeRakat(nt.id);
+                          const isFixed = nt.id === 'awwabin';
                           return (
-                            <motion.div key={t.id} layout className="flex flex-col">
+                            <motion.div key={nt.id} layout className="flex flex-col">
                               <motion.button
                                 whileTap={{ scale: 0.94 }}
-                                onClick={() => handleNaflTypeToggle(t.id)}
+                                onClick={() => handleNaflTypeToggle(nt.id)}
                                 className={`relative rounded-xl p-2.5 text-left border transition-all ${
                                   selected
                                     ? 'bg-brand-info/15 border-brand-info/50 shadow-[0_0_10px_rgba(90,158,142,0.15)]'
@@ -931,7 +957,7 @@ export default function SalatTracker() {
                                 }`}
                               >
                                 <div className="flex items-start justify-between gap-1">
-                                  <span className="text-lg leading-none">{t.emoji}</span>
+                                  <span className="text-lg leading-none">{nt.emoji}</span>
                                   {selected && (
                                     <motion.span
                                       initial={{ scale: 0 }} animate={{ scale: 1 }}
@@ -940,9 +966,9 @@ export default function SalatTracker() {
                                   )}
                                 </div>
                                 <p className={`text-xs font-bold mt-1.5 leading-tight ${selected ? 'text-brand-info' : 'text-white/70'}`}>
-                                  {t.label}
+                                  {nt.label}
                                 </p>
-                                <p className="text-white/20 text-[10px] mt-0.5 leading-snug">{t.shortNote}</p>
+                                <p className="text-white/20 text-[10px] mt-0.5 leading-snug">{nt.shortNote}</p>
                               </motion.button>
 
                               {/* Per-type rak'ah counter (only when selected) */}
@@ -954,19 +980,19 @@ export default function SalatTracker() {
                                 >
                                   <div className="mt-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-brand-info/[0.06] border border-brand-info/15">
                                     {isFixed ? (
-                                      <span className="text-brand-info/70 text-[11px] font-bold tabular-nums">{t.defaultRakat} rak'ah</span>
+                                      <span className="text-brand-info/70 text-[11px] font-bold tabular-nums">{t('salatTracker.rakatCount', "{{count}} rak'ah", { count: nt.defaultRakat })}</span>
                                     ) : (
                                       <>
                                         <motion.button
                                           whileTap={{ scale: 0.85 }}
-                                          onClick={(e) => { e.stopPropagation(); handleTypeRakat(t.id, -1); }}
+                                          onClick={(e) => { e.stopPropagation(); handleTypeRakat(nt.id, -1); }}
                                           disabled={typeRak <= MIN_RAKAT}
                                           className="w-6 h-6 rounded-md bg-brand-deep border border-brand-border text-white/50 font-bold text-sm flex items-center justify-center disabled:opacity-20 hover:border-brand-info/40 transition-all"
                                         >−</motion.button>
                                         <span className="text-brand-info font-black text-sm tabular-nums w-6 text-center">{typeRak}</span>
                                         <motion.button
                                           whileTap={{ scale: 0.85 }}
-                                          onClick={(e) => { e.stopPropagation(); handleTypeRakat(t.id, 1); }}
+                                          onClick={(e) => { e.stopPropagation(); handleTypeRakat(nt.id, 1); }}
                                           className="w-6 h-6 rounded-md bg-brand-deep border border-brand-border text-white/50 font-bold text-sm flex items-center justify-center hover:border-brand-info/40 transition-all"
                                         >+</motion.button>
                                       </>
@@ -977,10 +1003,10 @@ export default function SalatTracker() {
 
                               {/* Info toggle */}
                               <button
-                                onClick={() => setNaflInfoExpanded(infoOpen ? null : t.id)}
+                                onClick={() => setNaflInfoExpanded(infoOpen ? null : nt.id)}
                                 className="mt-0.5 text-white/15 hover:text-white/40 text-[10px] text-center transition-colors"
                               >
-                                {infoOpen ? '▲ hide' : 'ⓘ about'}
+                                {infoOpen ? t('salatTracker.hide', '▲ hide') : t('salatTracker.about', 'ⓘ about')}
                               </button>
                               <AnimatePresence>
                                 {infoOpen && (
@@ -992,10 +1018,10 @@ export default function SalatTracker() {
                                     className="overflow-hidden"
                                   >
                                     <div className="mt-1 p-2.5 rounded-xl bg-brand-deep border border-brand-emerald/10 space-y-1">
-                                      <p className="text-white/50 text-[11px] leading-relaxed">{t.fullNote}</p>
-                                      <p className="text-white/25 text-[11px] italic">{t.hadith}</p>
+                                      <p className="text-white/50 text-[11px] leading-relaxed">{nt.fullNote}</p>
+                                      <p className="text-white/25 text-[11px] italic">{nt.hadith}</p>
                                       <a
-                                        href={t.hadithUrl}
+                                        href={nt.hadithUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-brand-info/50 text-[11px] underline hover:text-brand-info/80"
@@ -1021,10 +1047,10 @@ export default function SalatTracker() {
                   onClick={() => setNaflExpanded(!naflExpanded)}
                   className="w-full flex items-center justify-center gap-1.5 py-1.5 border-t border-brand-emerald/5 text-white/20 hover:text-white/50 text-xs transition-colors"
                 >
-                  {naflExpanded ? '▲ Less' : '▾ Details'}
+                  {naflExpanded ? t('salatTracker.less', '▲ Less') : t('salatTracker.details', '▾ Details')}
                   {!naflExpanded && (naflEntry.types?.length ?? 0) > 0 && (
                     <span className="text-brand-info/50 text-xs">
-                      {naflEntry.types.map((t) => NAFL_TYPE_META.find((m) => m.id === t)?.emoji).join(' ')}
+                      {naflEntry.types.map((nt) => NAFL_TYPE_META.find((m) => m.id === nt)?.emoji).join(' ')}
                     </span>
                   )}
                 </button>
@@ -1035,36 +1061,56 @@ export default function SalatTracker() {
           {/* Legend */}
           <div className="card bg-brand-surface border border-brand-border rounded-2xl">
             <div className="card-body p-4">
-              <p className="text-white/30 text-xs font-semibold uppercase tracking-wide mb-3">How it works</p>
+              <p className="text-white/30 text-xs font-semibold uppercase tracking-wide mb-3">{t('salatTracker.howItWorks', 'How it works')}</p>
               <div className="space-y-1.5 text-xs text-white/50">
-                <p>✅ <span className="text-white/70 font-medium">Done</span> — prayed on time</p>
-                <p>⏰ <span className="text-white/70 font-medium">Kaza</span> — prayed late (still counts as prayed)</p>
-                <p>❌ <span className="text-white/70 font-medium">Missed</span> — not prayed</p>
-                <p>🕌 <span className="text-white/70 font-medium">Mosque</span> or 👥 <span className="text-white/70 font-medium">Jamat</span> — tap ▾ Details after marking done</p>
-                <p>🔒 Future prayers are locked until their time begins</p>
-                <p>📖 <span className="text-white/70 font-medium">Ayatul Kursi</span> — toggle after marking Done/Kaza (tap ▾ Details)</p>
-                <p>📿 <span className="text-white/70 font-medium">Nafl</span> — mark voluntary prayers and pick type + rak'ahs</p>
+                <p>✅ <span className="text-white/70 font-medium">{t('salatTracker.legendDone', 'Done')}</span> — {t('salatTracker.legendDoneDesc', 'prayed on time')}</p>
+                <p>⏰ <span className="text-white/70 font-medium">{t('salatTracker.legendKaza', 'Kaza')}</span> — {t('salatTracker.legendKazaDesc', 'prayed late (still counts as prayed)')}</p>
+                <p>❌ <span className="text-white/70 font-medium">{t('salatTracker.legendMissed', 'Missed')}</span> — {t('salatTracker.legendMissedDesc', 'not prayed')}</p>
+                <p>🕌 <span className="text-white/70 font-medium">{t('salatTracker.legendMosque', 'Mosque')}</span> {t('salatTracker.legendOr', 'or')} 👥 <span className="text-white/70 font-medium">{t('salatTracker.legendJamat', 'Jamat')}</span> — {t('salatTracker.legendLocationDesc', 'tap ▾ Details after marking done')}</p>
+                <p>{t('salatTracker.legendFutureLocked', '🔒 Future prayers are locked until their time begins')}</p>
+                <p>📖 <span className="text-white/70 font-medium">{t('salatTracker.ayatulKursiWord', 'Ayatul Kursi')}</span> — {t('salatTracker.legendAyatulKursiDesc', 'toggle after marking Done/Kaza (tap ▾ Details)')}</p>
+                <p>📿 <span className="text-white/70 font-medium">{t('salatTracker.legendNafl', 'Nafl')}</span> — {t('salatTracker.legendNaflDesc', "mark voluntary prayers and pick type + rak'ahs")}</p>
 
                 <div className="pt-2.5 mt-1 border-t border-brand-emerald/10 space-y-1.5">
-                  <p className="text-brand-emerald/70 font-semibold">Counts itself now</p>
+                  <p className="text-brand-emerald/70 font-semibold">{t('salatTracker.countsItselfNow', 'Counts itself now')}</p>
                   <p>
-                    📿 Tapping <span className="text-white/70 font-medium">Tasbeeh</span> adds the full
-                    after-ṣalāh count to your dhikr automatically — no more logging 33s by hand.
-                    Ayatul Kursi adds one. Un-tap to undo.
+                    <Trans
+                      i18nKey="salatTracker.legendTasbeehInfo"
+                      defaults="📿 Tapping <1>Tasbeeh</1> adds the full after-ṣalāh count to your dhikr automatically — no more logging 33s by hand. Ayatul Kursi adds one. Un-tap to undo."
+                    >
+                      📿 Tapping <span className="text-white/70 font-medium">Tasbeeh</span> adds the full
+                      after-ṣalāh count to your dhikr automatically — no more logging 33s by hand.
+                      Ayatul Kursi adds one. Un-tap to undo.
+                    </Trans>
                   </p>
                   <p>
-                    ⚙️ Choose <span className="text-white/70 font-medium">33·33·33 + tahlīl</span> (Muslim
-                    597a) or <span className="text-white/70 font-medium">33·33·34</span> (Muslim 596a) in
-                    salat settings — both are authentic. Your ʿAṣr school lives there too.
+                    <Trans
+                      i18nKey="salatTracker.legendTasbihModeInfo"
+                      defaults="⚙️ Choose <1>33·33·33 + tahlīl</1> (Muslim 597a) or <3>33·33·34</3> (Muslim 596a) in salat settings — both are authentic. Your ʿAṣr school lives there too."
+                    >
+                      ⚙️ Choose <span className="text-white/70 font-medium">33·33·33 + tahlīl</span> (Muslim
+                      597a) or <span className="text-white/70 font-medium">33·33·34</span> (Muslim 596a) in
+                      salat settings — both are authentic. Your ʿAṣr school lives there too.
+                    </Trans>
                   </p>
                   <p>
-                    📖 <span className="text-white/70 font-medium">Read now</span> under each prayer opens
-                    Ayatul Kursi and the three Quls straight in the reader (Abū Dāwūd 1523, ṣaḥīḥ).
+                    <Trans
+                      i18nKey="salatTracker.legendReadNowInfo"
+                      defaults="📖 <1>Read now</1> under each prayer opens Ayatul Kursi and the three Quls straight in the reader (Abū Dāwūd 1523, ṣaḥīḥ)."
+                    >
+                      📖 <span className="text-white/70 font-medium">Read now</span> under each prayer opens
+                      Ayatul Kursi and the three Quls straight in the reader (Abū Dāwūd 1523, ṣaḥīḥ).
+                    </Trans>
                   </p>
                   <p>
-                    🌟 On <span className="text-white/70 font-medium">Friday</span> you'll see Sūrat
-                    al-Kahf, and a live reminder for the hour of response between ʿAṣr and Maghrib
-                    (Abū Dāwūd 1048, ṣaḥīḥ).
+                    <Trans
+                      i18nKey="salatTracker.legendFridayInfo"
+                      defaults="🌟 On <1>Friday</1> you'll see Sūrat al-Kahf, and a live reminder for the hour of response between ʿAṣr and Maghrib (Abū Dāwūd 1048, ṣaḥīḥ)."
+                    >
+                      🌟 On <span className="text-white/70 font-medium">Friday</span> you'll see Sūrat
+                      al-Kahf, and a live reminder for the hour of response between ʿAṣr and Maghrib
+                      (Abū Dāwūd 1048, ṣaḥīḥ).
+                    </Trans>
                   </p>
                 </div>
               </div>
@@ -1094,10 +1140,9 @@ export default function SalatTracker() {
               className="bg-brand-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-border text-center"
             >
               <div className="text-5xl mb-4">🕌</div>
-              <h3 className="text-xl font-black text-white mb-2">Sign in to track prayers</h3>
+              <h3 className="text-xl font-black text-white mb-2">{t('salatTracker.signInToTrack', 'Sign in to track prayers')}</h3>
               <p className="text-white/50 text-sm mb-6 leading-relaxed">
-                Your salat log is saved to your account so it syncs across devices.
-                Create a free account to start tracking.
+                {t('salatTracker.signInDesc', 'Your salat log is saved to your account so it syncs across devices. Create a free account to start tracking.')}
               </p>
               <div className="flex flex-col gap-3">
                 <button
@@ -1107,7 +1152,7 @@ export default function SalatTracker() {
                     navigate('/login');
                   }}
                 >
-                  Sign In
+                  {t('common.signIn')}
                 </button>
                 <button
                   className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
@@ -1116,13 +1161,13 @@ export default function SalatTracker() {
                     navigate('/signup');
                   }}
                 >
-                  Create Free Account
+                  {t('salatTracker.createFreeAccount', 'Create Free Account')}
                 </button>
                 <button
                   className="btn btn-ghost text-white/50 text-sm w-full"
                   onClick={() => setShowGuestDialog(false)}
                 >
-                  Just looking around
+                  {t('salatTracker.justLooking', 'Just looking around')}
                 </button>
               </div>
             </motion.div>

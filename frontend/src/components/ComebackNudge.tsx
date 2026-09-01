@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuranSummary } from '../hooks/useQuran.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useAiComeback } from '../hooks/useAi.js';
@@ -30,6 +31,7 @@ function writeCache(day: string, message: string): void {
 }
 
 export default function ComebackNudge() {
+  const { t } = useTranslation();
   const { data: summary } = useQuranSummary();
   const { data: zikrData } = useAnalytics(7);
   const comeback = useAiComeback();
@@ -73,20 +75,20 @@ export default function ComebackNudge() {
       <AiPanel>
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <AiBadge label="Welcome back" />
+            <AiBadge label={t('comebackNudge.welcomeBack')} />
             <button
               className="text-white/30 hover:text-white text-xs"
               onClick={() => setDismissed(true)}
-              aria-label="Dismiss"
-            >Dismiss</button>
+              aria-label={t('comebackNudge.dismiss')}
+            >{t('comebackNudge.dismiss')}</button>
           </div>
           <p className="text-white/80 text-sm leading-relaxed">{message}</p>
           <div className="flex flex-wrap gap-2 mt-3">
             <Link to="/quran/browse" className="btn btn-xs rounded-xl border-0 text-white font-bold bg-brand-emerald hover:bg-brand-emerald-dim">
-              📖 Read one āyah
+              {t('comebackNudge.readOneAyah')}
             </Link>
             <Link to="/zikr" className="btn btn-xs rounded-xl bg-white/5 border-brand-emerald/15 text-white/70">
-              📿 One dhikr
+              {t('comebackNudge.oneDhikr')}
             </Link>
           </div>
           <AiDisclaimer />

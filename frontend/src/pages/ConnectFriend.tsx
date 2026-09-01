@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import { useAuthStore } from '../store/useAuthStore.js';
@@ -16,6 +17,7 @@ export default function ConnectFriend() {
   const navigate = useNavigate();
   const { user, authLoading } = useAuthStore();
   const connect = useConnectFriend();
+  const { t } = useTranslation();
 
   const firedRef = useRef(false);
   const [result, setResult] = useState<{ ok: boolean; message: string; friendName?: string } | null>(null);
@@ -31,7 +33,7 @@ export default function ConnectFriend() {
       onError: (err: unknown) => {
         const msg =
           (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-          ?? 'This invite link is not valid.';
+          ?? t('connectFriend.invalidLink');
         setResult({ ok: false, message: msg });
       },
     });
@@ -40,7 +42,7 @@ export default function ConnectFriend() {
 
   return (
     <AnimatedBackground variant="dark">
-      <h1 className="sr-only">Connect with a friend</h1>
+      <h1 className="sr-only">{t('connectFriend.srTitle')}</h1>
       <div className="min-h-[70vh] grid place-items-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 12 }}
@@ -50,16 +52,15 @@ export default function ConnectFriend() {
           {authLoading ? (
             <>
               <span className="loading loading-spinner loading-lg text-brand-emerald" />
-              <p className="text-white/40 text-sm">Preparing your session…</p>
+              <p className="text-white/40 text-sm">{t('connectFriend.preparing')}</p>
             </>
           ) : !user ? (
             /* Guest — sign in first, then we finish the connection */
             <>
               <div className="text-5xl">🤝</div>
-              <h2 className="text-xl font-black text-white">A friend invited you!</h2>
+              <h2 className="text-xl font-black text-white">{t('connectFriend.invited')}</h2>
               <p className="text-white/50 text-sm leading-relaxed">
-                Sign in to Ihsan to connect — you'll see each other's streaks and daily
-                worship, and race each other to good deeds.
+                {t('connectFriend.signInPrompt')}
               </p>
               <div className="flex flex-col gap-2.5">
                 <button
@@ -68,22 +69,22 @@ export default function ConnectFriend() {
                     sessionStorage.setItem('ihsan_redirect', `/connect/${code}`);
                     navigate('/login');
                   }}
-                >Sign In</button>
+                >{t('common.signIn')}</button>
                 <button
                   className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
                   onClick={() => {
                     sessionStorage.setItem('ihsan_redirect', `/connect/${code}`);
                     navigate('/signup');
                   }}
-                >Create Free Account</button>
+                >{t('connectFriend.createAccount')}</button>
               </div>
             </>
           ) : connect.isPending || !result ? (
             <>
               <span className="loading loading-spinner loading-lg text-brand-emerald" />
-              <p className="text-white/40 text-sm">Connecting you…</p>
+              <p className="text-white/40 text-sm">{t('connectFriend.connecting')}</p>
               <p className="text-white/25 text-xs">
-                First visit can take a little while as the app wakes up — please keep this page open.
+                {t('connectFriend.firstVisitNote')}
               </p>
             </>
           ) : result.ok ? (
@@ -94,23 +95,22 @@ export default function ConnectFriend() {
                 className="text-6xl"
               >🎉</motion.div>
               <h2 className="text-xl font-black text-brand-emerald">
-                {result.message === 'You are already connected!' ? 'Already connected!' : 'Connected!'}
+                {result.message === 'You are already connected!' ? t('connectFriend.alreadyConnected') : t('connectFriend.connected')}
               </h2>
               <p className="text-white/50 text-sm leading-relaxed">
-                You and <b className="text-white/80">{result.friendName ?? 'your friend'}</b> can now
-                see each other on the leaderboard. May you push each other toward good, in shā' Allāh!
+                {t('connectFriend.connectedPre')} <b className="text-white/80">{result.friendName ?? t('connectFriend.yourFriend')}</b> {t('connectFriend.connectedPost')}
               </p>
               <Link to="/friends" className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 w-full">
-                🏁 See the leaderboard
+                🏁 {t('connectFriend.seeLeaderboard')}
               </Link>
             </>
           ) : (
             <>
               <div className="text-5xl">🔗</div>
-              <h2 className="text-xl font-black text-white">Couldn't connect</h2>
+              <h2 className="text-xl font-black text-white">{t('connectFriend.couldntConnect')}</h2>
               <p className="text-brand-gold/80 text-sm leading-relaxed">{result.message}</p>
               <Link to="/friends" className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full">
-                Go to Friends
+                {t('connectFriend.goToFriends')}
               </Link>
             </>
           )}

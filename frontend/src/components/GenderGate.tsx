@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/useAuthStore.js';
 import api from '../lib/api.js';
 import type { AuthUser } from '../types/api.js';
@@ -13,6 +14,7 @@ import type { AuthUser } from '../types/api.js';
  * preference once and persists it in localStorage.
  */
 export default function GenderGate() {
+  const { t } = useTranslation();
   const { user, setUser } = useAuthStore();
   const [selected, setSelected] = useState<'male' | 'female' | ''>('');
   const [saving, setSaving] = useState(false);
@@ -37,7 +39,7 @@ export default function GenderGate() {
         localStorage.setItem('ihsan_user', JSON.stringify(updated));
         setUser(updated);
       } catch {
-        setError('Something went wrong. Please try again.');
+        setError(t('genderGate.error', 'Something went wrong. Please try again.'));
         setSaving(false);
       }
     };
@@ -59,10 +61,9 @@ export default function GenderGate() {
             <div className="text-5xl">🌙</div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl font-black text-white">As-salamu alaykum!</h2>
+              <h2 className="text-2xl font-black text-white">{t('genderGate.greeting', 'As-salamu alaykum!')}</h2>
               <p className="text-white/50 text-sm leading-relaxed">
-                To personalise your experience — including content, greetings, and access to{' '}
-                <span className="text-brand-emerald font-medium">Rayhanah</span> (cycle tracking for sisters) — please let us know:
+                {t('genderGate.prompt', 'To personalise your experience — including content, greetings, and access to Rayhanah (cycle tracking for sisters) — please let us know:')}
               </p>
             </div>
 
@@ -78,7 +79,7 @@ export default function GenderGate() {
                   }`}
                 >
                   <div className="text-2xl mb-1">{g === 'male' ? '🧔' : '🧕'}</div>
-                  {g === 'male' ? 'Brother' : 'Sister'}
+                  {g === 'male' ? t('genderGate.brother', 'Brother') : t('genderGate.sister', 'Sister')}
                 </button>
               ))}
             </div>
@@ -90,7 +91,7 @@ export default function GenderGate() {
               disabled={!selected || saving}
               className="w-full py-3 bg-brand-emerald hover:bg-brand-emerald-dim text-white rounded-xl font-semibold shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {saving ? <span className="loading loading-spinner loading-sm" /> : 'Continue'}
+              {saving ? <span className="loading loading-spinner loading-sm" /> : t('genderGate.continue', 'Continue')}
             </button>
 
             <div className="border-t border-brand-border/40 pt-4 space-y-2">
@@ -98,12 +99,12 @@ export default function GenderGate() {
                 onClick={skip}
                 className="text-white/40 hover:text-white/60 text-xs font-medium transition-colors"
               >
-                I'll decide later
+                {t('genderGate.decideLater', "I'll decide later")}
               </button>
               <p className="text-white/25 text-[11px] leading-relaxed">
-                You can set this anytime in{' '}
+                {t('genderGate.settingsHint', 'You can set this anytime in')}{' '}
                 <Link to="/settings" onClick={skip} className="underline text-white/40 hover:text-white/60">
-                  Settings
+                  {t('nav.settings', 'Settings')}
                 </Link>
               </p>
             </div>
@@ -131,20 +132,20 @@ export default function GenderGate() {
         >
           <div className="bg-brand-surface/95 backdrop-blur-xl border border-brand-border/60 rounded-2xl shadow-2xl p-5 max-w-sm w-full pointer-events-auto space-y-3">
             <p className="text-white/70 text-sm font-semibold text-center">
-              How would you like to explore?
+              {t('genderGate.guestPrompt', 'How would you like to explore?')}
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => pickGuest('male')}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-white/5 border border-brand-border text-white/60 hover:bg-brand-emerald/10 hover:border-brand-emerald/40 hover:text-brand-emerald transition-all"
               >
-                🧔 As a brother
+                🧔 {t('genderGate.asBrother', 'As a brother')}
               </button>
               <button
                 onClick={() => pickGuest('female')}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-white/5 border border-brand-border text-white/60 hover:bg-brand-emerald/10 hover:border-brand-emerald/40 hover:text-brand-emerald transition-all"
               >
-                🧕 As a sister
+                🧕 {t('genderGate.asSister', 'As a sister')}
               </button>
             </div>
           </div>

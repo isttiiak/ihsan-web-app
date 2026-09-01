@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import { MapPinIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
@@ -12,6 +13,7 @@ import {
   PrayerKey,
 } from '../utils/prayerTimes.js';
 import { getHijriToday, formatHijriDate } from '../utils/islamicCalendar.js';
+import { formatLocaleDate } from '../utils/localeDate.js';
 
 // ─── Timeline types ───────────────────────────────────────────────────────────
 
@@ -57,7 +59,7 @@ function entryTime(e: TLEntry): number {
   return e.kind === 'prayer' || e.kind === 'event' ? e.time.getTime() : e.start.getTime();
 }
 
-function buildTimeline(times: PrayerTimesResult): TLEntry[] {
+function buildTimeline(times: PrayerTimesResult, t: (k: string, fallback: string) => string): TLEntry[] {
   const MIN = 60_000;
   const fajrNext = new Date(times.fajr.getTime() + 24 * 60 * MIN);
   const nightDuration = fajrNext.getTime() - times.isha.getTime();
@@ -67,16 +69,16 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     // ── Fajr ──────────────────────────────────────────────────────────────
     {
       kind: 'prayer',
-      id: 'fajr', name: 'Fajr', icon: '🌅', isTrackable: true,
+      id: 'fajr', name: t('prayerTimes.fajr', 'Fajr'), icon: '🌅', isTrackable: true,
       time: times.fajr, endTime: getPrayerEndTime('fajr' as PrayerKey, times),
     },
 
     // ── Forbidden: Around Sunrise ─────────────────────────────────────────
     {
       kind: 'forbidden',
-      label: 'Forbidden — Around Sunrise',
-      note: 'Prayer is not allowed from sunrise until ~20 min after the sun has fully cleared the horizon.',
-      hadith: '"There is no prayer after the morning prayer until the sun rises." — Ṣaḥīḥ al-Bukhārī 581; "At three times the Prophet ﷺ forbade us to pray: when the sun begins to rise … when it is at its zenith … and when it is about to set." — Ṣaḥīḥ Muslim 831',
+      label: t('prayerTimes.forbiddenSunrise', 'Forbidden — Around Sunrise'),
+      note: t('prayerTimes.forbiddenSunriseNote', 'Prayer is not allowed from sunrise until ~20 min after the sun has fully cleared the horizon.'),
+      hadith: t('prayerTimes.forbiddenSunriseHadith', '"There is no prayer after the morning prayer until the sun rises." — Sahih al-Bukhari 581; "At three times the Prophet ﷺ forbade us to pray: when the sun begins to rise ... when it is at its zenith ... and when it is about to set." — Sahih Muslim 831'),
       hadithUrl: 'https://sunnah.com/bukhari:581',
       start: times.sunrise,
       end: new Date(times.sunrise.getTime() + 20 * MIN),
@@ -85,10 +87,10 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     // ── Nafl: Ishraq / Duha ──────────────────────────────────────────────
     {
       kind: 'nafl',
-      label: 'Ṣalāt al-Ishrāq / Ḍuḥā',
+      label: t('prayerTimes.ishraqDuha', 'Salat al-Ishraq / Duha'),
       arabicName: 'صلاة الإشراق / صلاة الضحى',
-      note: '2–8 voluntary rak\'ahs. Best time is when the sun has risen well (Ishraq ≈ 20 min after sunrise). Duha can continue until just before the solar zenith. Immense reward equivalent to Ḥajj and \'Umrah.',
-      hadith: '"Whoever prays Fajr in congregation, then sits remembering Allah until the sun rises, then prays two rak\'ahs — he will have a reward like that of Ḥajj and \'Umrah, complete, complete, complete." — Tirmidhī 586; Duha: "The Prophet ﷺ used to pray Duha four rak\'ahs and would add more as Allah willed." — Ṣaḥīḥ Muslim 717',
+      note: t('prayerTimes.ishraqDuhaNote', '2–8 voluntary rak\'ahs. Best time is when the sun has risen well (Ishraq = 20 min after sunrise). Duha can continue until just before the solar zenith. Immense reward equivalent to Hajj and \'Umrah.'),
+      hadith: t('prayerTimes.ishraqDuhaHadith', '"Whoever prays Fajr in congregation, then sits remembering Allah until the sun rises, then prays two rak\'ahs — he will have a reward like that of Hajj and \'Umrah, complete, complete, complete." — Tirmidhi 586; Duha: "The Prophet ﷺ used to pray Duha four rak\'ahs and would add more as Allah willed." — Sahih Muslim 717'),
       hadithUrl: 'https://sunnah.com/tirmidhi:586',
       icon: '🌤️',
       start: new Date(times.sunrise.getTime() + 20 * MIN),
@@ -98,9 +100,9 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     // ── Forbidden: Istiwa (Solar Zenith) ──────────────────────────────────
     {
       kind: 'forbidden',
-      label: 'Forbidden — Istiwa\' (Solar Zenith)',
-      note: 'The sun is directly overhead (~10 min before Dhuhr). Prayer is forbidden until Dhuhr time begins.',
-      hadith: '"At three times the Prophet ﷺ forbade us to pray … when it is at its zenith." — Ṣaḥīḥ Muslim 831; Ibn \'Umar: "Do not pray when the sun is rising, nor when it is setting, nor when it is at its peak (zenith)." — Ṣaḥīḥ al-Bukhārī 585',
+      label: t('prayerTimes.forbiddenZenith', 'Forbidden — Istiwa\' (Solar Zenith)'),
+      note: t('prayerTimes.forbiddenZenithNote', 'The sun is directly overhead (~10 min before Dhuhr). Prayer is forbidden until Dhuhr time begins.'),
+      hadith: t('prayerTimes.forbiddenZenithHadith', '"At three times the Prophet ﷺ forbade us to pray ... when it is at its zenith." — Sahih Muslim 831; Ibn \'Umar: "Do not pray when the sun is rising, nor when it is setting, nor when it is at its peak (zenith)." — Sahih al-Bukhari 585'),
       hadithUrl: 'https://sunnah.com/muslim:831',
       start: new Date(times.dhuhr.getTime() - 10 * MIN),
       end: times.dhuhr,
@@ -109,14 +111,14 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     // ── Dhuhr ─────────────────────────────────────────────────────────────
     {
       kind: 'prayer',
-      id: 'dhuhr', name: 'Dhuhr', icon: '☀️', isTrackable: true,
+      id: 'dhuhr', name: t('prayerTimes.dhuhr', 'Dhuhr'), icon: '☀️', isTrackable: true,
       time: times.dhuhr, endTime: getPrayerEndTime('dhuhr' as PrayerKey, times),
     },
 
     // ── Asr ───────────────────────────────────────────────────────────────
     {
       kind: 'prayer',
-      id: 'asr', name: 'Asr', icon: '🌤️', isTrackable: true,
+      id: 'asr', name: t('prayerTimes.asr', 'Asr'), icon: '🌤️', isTrackable: true,
       time: times.asr, endTime: getPrayerEndTime('asr' as PrayerKey, times),
     },
 
@@ -126,9 +128,9 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     // Between Asr and this window, nafl prayer is permitted.
     {
       kind: 'forbidden',
-      label: 'Forbidden — At Sunset',
-      note: 'Prayer is forbidden during the ~17 minutes the sun visibly sets (turns yellow and descends to the horizon). This is the "time of sunset" mentioned in the hadith. Nafl is allowed between Asr and this window. Obligatory (qaḍā) make-up prayers are permitted. Maghrib begins shortly after sunset.',
-      hadith: '"At three times the Prophet ﷺ forbade us to pray: … when it is about to set." — Ṣaḥīḥ Muslim 831; Ṣaḥīḥ al-Bukhārī 586',
+      label: t('prayerTimes.forbiddenSunset', 'Forbidden — At Sunset'),
+      note: t('prayerTimes.forbiddenSunsetNote', 'Prayer is forbidden during the ~17 minutes the sun visibly sets (turns yellow and descends to the horizon). This is the "time of sunset" mentioned in the hadith. Nafl is allowed between Asr and this window. Obligatory (qada) make-up prayers are permitted. Maghrib begins shortly after sunset.'),
+      hadith: t('prayerTimes.forbiddenSunsetHadith', '"At three times the Prophet ﷺ forbade us to pray: ... when it is about to set." — Sahih Muslim 831; Sahih al-Bukhari 586'),
       hadithUrl: 'https://sunnah.com/muslim:831',
       start: new Date(times.sunset.getTime() - 17 * MIN),
       end: times.sunset,
@@ -137,26 +139,26 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     // ── Sunset ────────────────────────────────────────────────────────────
     {
       kind: 'event',
-      label: 'Sunset — Forbidden Window Ends',
+      label: t('prayerTimes.sunsetEvent', 'Sunset — Forbidden Window Ends'),
       icon: '🌇',
       time: times.sunset,
-      note: 'Sun sets. The sunset forbidden window ends. Maghrib begins shortly after.',
+      note: t('prayerTimes.sunsetEventNote', 'Sun sets. The sunset forbidden window ends. Maghrib begins shortly after.'),
     },
 
     // ── Maghrib ───────────────────────────────────────────────────────────
     {
       kind: 'prayer',
-      id: 'maghrib', name: 'Maghrib', icon: '🌆', isTrackable: true,
+      id: 'maghrib', name: t('prayerTimes.maghrib', 'Maghrib'), icon: '🌆', isTrackable: true,
       time: times.maghrib, endTime: getPrayerEndTime('maghrib' as PrayerKey, times),
     },
 
     // ── Nafl: Awwabin ─────────────────────────────────────────────────────
     {
       kind: 'nafl',
-      label: 'Ṣalāt al-Awwābīn',
+      label: t('prayerTimes.awwabin', 'Salat al-Awwabin'),
       arabicName: 'صلاة الأوابين',
-      note: '2–6 voluntary rak\'ahs between Maghrib and Isha. Recommended for those who often return (awwab) to Allah with remembrance and repentance.',
-      hadith: '"Whoever prays six rak\'ahs after Maghrib without speaking anything bad between them, those six rak\'ahs will be counted for him as equivalent to twelve years of worship." — Sunan Ibn Mājah 1167; Abu Hurayrah (RA): "My close friend advised me to pray two rak\'ahs of Duha and not to sleep before praying Witr." — Ṣaḥīḥ al-Bukhārī 1981',
+      note: t('prayerTimes.awwabinNote', '2–6 voluntary rak\'ahs between Maghrib and Isha. Recommended for those who often return (awwab) to Allah with remembrance and repentance.'),
+      hadith: t('prayerTimes.awwabinHadith', '"Whoever prays six rak\'ahs after Maghrib without speaking anything bad between them, those six rak\'ahs will be counted for him as equivalent to twelve years of worship." — Sunan Ibn Majah 1167; Abu Hurayrah (RA): "My close friend advised me to pray two rak\'ahs of Duha and not to sleep before praying Witr." — Sahih al-Bukhari 1981'),
       hadithUrl: 'https://sunnah.com/ibnmajah:1167',
       icon: '⭐',
       start: times.maghrib,
@@ -166,17 +168,17 @@ function buildTimeline(times: PrayerTimesResult): TLEntry[] {
     // ── Isha ──────────────────────────────────────────────────────────────
     {
       kind: 'prayer',
-      id: 'isha', name: 'Isha', icon: '🌙', isTrackable: true,
+      id: 'isha', name: t('prayerTimes.isha', 'Isha'), icon: '🌙', isTrackable: true,
       time: times.isha, endTime: getPrayerEndTime('isha' as PrayerKey, times),
     },
 
     // ── Nafl: Tahajjud (last third of night) ─────────────────────────────
     {
       kind: 'nafl',
-      label: 'Tahajjud',
+      label: t('prayerTimes.tahajjud', 'Tahajjud'),
       arabicName: 'صلاة التهجد',
-      note: 'Night prayer in the last third of the night. The most virtuous voluntary prayer after the obligatory ones. 2–12 rak\'ahs; finish with Witr.',
-      hadith: '"Our Lord, Blessed and Exalted, descends to the lowest heaven every night in the last third of it, saying: Who is calling upon Me so that I may answer him?" — Ṣaḥīḥ al-Bukhārī 1145, Ṣaḥīḥ Muslim 758. "The best prayer after the obligatory prayers is the night prayer (Tahajjud)." — Ṣaḥīḥ Muslim 1163',
+      note: t('prayerTimes.tahajjudNote', 'Night prayer in the last third of the night. The most virtuous voluntary prayer after the obligatory ones. 2–12 rak\'ahs; finish with Witr.'),
+      hadith: t('prayerTimes.tahajjudHadith', '"Our Lord, Blessed and Exalted, descends to the lowest heaven every night in the last third of it, saying: Who is calling upon Me so that I may answer him?" — Sahih al-Bukhari 1145, Sahih Muslim 758. "The best prayer after the obligatory prayers is the night prayer (Tahajjud)." — Sahih Muslim 1163'),
       hadithUrl: 'https://sunnah.com/bukhari:1145',
       icon: '🌙',
       start: tahajjudStart,
@@ -212,10 +214,11 @@ function LiveClockCard({ times, timeline, hasLocation }: {
   timeline: TLEntry[];
   hasLocation: boolean;
 }) {
+  const { t } = useTranslation();
   const [now, setNow] = useState(new Date());
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
+    const iv = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(iv);
   }, []);
 
   const info = times ? getCurrentAndNextPrayer(times, now) : null;
@@ -255,7 +258,7 @@ function LiveClockCard({ times, timeline, hasLocation }: {
                 <span className="text-xl">{currentMeta.icon}</span>
                 <div className="text-left">
                   <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">
-                    {currentMeta.isTrackable ? 'Current' : 'After'}
+                    {currentMeta.isTrackable ? t('prayerTimes.current', 'Current') : t('prayerTimes.after', 'After')}
                   </p>
                   <p className="text-white font-bold text-base leading-none">{currentMeta.name}</p>
                 </div>
@@ -263,14 +266,14 @@ function LiveClockCard({ times, timeline, hasLocation }: {
               <div className="text-right">
                 {endMs !== null && endMs > 0 ? (
                   <>
-                    <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">Ends in</p>
+                    <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">{t('prayerTimes.endsIn', 'Ends in')}</p>
                     <p className="text-brand-gold font-black text-lg tabular-nums leading-none">
                       {formatCountdown(endMs)}
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">Next in</p>
+                    <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">{t('prayerTimes.nextIn', 'Next in')}</p>
                     <p className="text-brand-gold font-black text-lg tabular-nums leading-none">
                       {formatCountdown(info.nextTime.getTime() - now.getTime())}
                     </p>
@@ -286,12 +289,12 @@ function LiveClockCard({ times, timeline, hasLocation }: {
               <div className="flex items-center gap-2">
                 <span className="text-xl">{nextMeta.icon}</span>
                 <div className="text-left">
-                  <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">Next</p>
+                  <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">{t('prayerTimes.next', 'Next')}</p>
                   <p className="text-brand-emerald/80 font-bold text-base leading-none">{nextMeta.name}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-white/30 text-xs leading-none mb-0.5">starts at</p>
+                <p className="text-white/30 text-xs leading-none mb-0.5">{t('prayerTimes.startsAt', 'starts at')}</p>
                 <p className="text-white/60 font-semibold text-sm tabular-nums">{formatTime(info.nextTime)}</p>
               </div>
             </div>
@@ -307,7 +310,7 @@ function LiveClockCard({ times, timeline, hasLocation }: {
             <span className="text-base shrink-0">🚫</span>
             <div>
               <p className="text-red-400 font-bold text-xs">{activeForbidden.label}</p>
-              <p className="text-red-300/60 text-xs">Ends at {formatTime(activeForbidden.end)}</p>
+              <p className="text-red-300/60 text-xs">{t('prayerTimes.endsAt', 'Ends at')} {formatTime(activeForbidden.end)}</p>
             </div>
           </motion.div>
         )}
@@ -318,15 +321,15 @@ function LiveClockCard({ times, timeline, hasLocation }: {
           >
             <span className="text-base shrink-0">{activeNafl.icon}</span>
             <div>
-              <p className="text-brand-info font-bold text-xs">{activeNafl.label} time</p>
-              <p className="text-brand-info/50 text-xs">Until {formatTime(activeNafl.end)}</p>
+              <p className="text-brand-info font-bold text-xs">{activeNafl.label} {t('prayerTimes.time', 'time')}</p>
+              <p className="text-brand-info/50 text-xs">{t('prayerTimes.until', 'Until')} {formatTime(activeNafl.end)}</p>
             </div>
           </motion.div>
         )}
 
         {!hasLocation && (
           <p className="text-white/40 text-sm mt-4">
-            ↑ Set your location above to calculate prayer times
+            {t('prayerTimes.setLocationHint', 'Set your location above to calculate prayer times')}
           </p>
         )}
       </div>
@@ -337,6 +340,7 @@ function LiveClockCard({ times, timeline, hasLocation }: {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function PrayerTimes() {
+  const { t } = useTranslation();
   const [now, setNow] = useState(new Date());
   const [location, setLocation] = useState<StoredLocation | null>(() => {
     const s = localStorage.getItem('ihsan_location');
@@ -380,7 +384,7 @@ export default function PrayerTimes() {
     setLocLoading(true);
     setLocError('');
     if (!('geolocation' in navigator)) {
-      setLocError('Geolocation not supported — use city search instead.');
+      setLocError(t('prayerTimes.geoNotSupported', 'Geolocation not supported — use city search instead.'));
       setLocLoading(false);
       return;
     }
@@ -402,13 +406,13 @@ export default function PrayerTimes() {
       },
       (err) => {
         // GPS denied — nudge city search
-        setLocError(`GPS denied (${err.message}). Type your city below.`);
+        setLocError(t('prayerTimes.gpsDenied', 'GPS denied. Type your city below.'));
         setShowCitySearch(true);
         setLocLoading(false);
       },
       { timeout: 10000 }
     );
-  }, [saveLocation]);
+  }, [saveLocation, t]);
 
   const searchByCity = useCallback(async () => {
     if (!cityInput.trim()) return;
@@ -421,7 +425,7 @@ export default function PrayerTimes() {
       );
       const results = await r.json() as Array<{ lat: string; lon: string; display_name: string }>;
       if (!results.length) {
-        setCityError('City not found. Try a different name.');
+        setCityError(t('prayerTimes.cityNotFound', 'City not found. Try a different name.'));
         setCitySearching(false);
         return;
       }
@@ -433,10 +437,10 @@ export default function PrayerTimes() {
         setCitySuggestions(results);
       }
     } catch {
-      setCityError('Search failed. Check your internet connection.');
+      setCityError(t('prayerTimes.searchFailed', 'Search failed. Check your internet connection.'));
     }
     setCitySearching(false);
-  }, [cityInput, saveLocation]);
+  }, [cityInput, saveLocation, t]);
 
   const pickSuggestion = useCallback((s: { lat: string; lon: string; display_name: string }) => {
     const shortName = s.display_name.split(',').slice(0, 2).join(',').trim();
@@ -446,7 +450,7 @@ export default function PrayerTimes() {
 
   const info = times ? getCurrentAndNextPrayer(times, now) : null;
 
-  const timeline = useMemo(() => (times ? buildTimeline(times) : []), [times]);
+  const timeline = useMemo(() => (times ? buildTimeline(times, t) : []), [times, t]);
 
   return (
     <AnimatedBackground variant="dark">
@@ -466,7 +470,7 @@ export default function PrayerTimes() {
                 onClick={() => { setShowCitySearch(!showCitySearch); setLocError(''); }}
                 className="btn btn-xs bg-brand-surface border border-brand-border text-white/50 hover:text-white shrink-0"
               >
-                <MapPinIcon className="w-3 h-3" /> {location ? 'Change' : '📍 Set Location'}
+                <MapPinIcon className="w-3 h-3" /> {location ? t('prayerTimes.change', 'Change') : t('prayerTimes.setLocation', 'Set Location')}
               </button>
             </div>
           </div>
@@ -484,7 +488,7 @@ export default function PrayerTimes() {
                 <div className="card bg-brand-surface border border-brand-border rounded-2xl">
                   <div className="card-body p-4 space-y-3">
                     <p className="text-white/60 text-sm font-semibold">
-                      {!location ? '📍 Set your location to see prayer times' : '📍 Update location'}
+                      {!location ? t('prayerTimes.setLocationPrompt', 'Set your location to see prayer times') : t('prayerTimes.updateLocation', 'Update location')}
                     </p>
 
                     {/* Option 1: GPS */}
@@ -498,8 +502,8 @@ export default function PrayerTimes() {
                         : <span className="text-lg">📡</span>
                       }
                       <div>
-                        <p className="text-brand-emerald font-semibold text-sm">Use GPS (recommended)</p>
-                        <p className="text-white/30 text-xs">Most accurate. Requires browser location permission.</p>
+                        <p className="text-brand-emerald font-semibold text-sm">{t('prayerTimes.useGps', 'Use GPS (recommended)')}</p>
+                        <p className="text-white/30 text-xs">{t('prayerTimes.gpsDesc', 'Most accurate. Requires browser location permission.')}</p>
                       </div>
                     </button>
                     {locError && <p className="text-red-400 text-xs">{locError}</p>}
@@ -507,14 +511,14 @@ export default function PrayerTimes() {
                     {/* Divider */}
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-px bg-brand-border" />
-                      <span className="text-white/20 text-xs">or</span>
+                      <span className="text-white/20 text-xs">{t('prayerTimes.or', 'or')}</span>
                       <div className="flex-1 h-px bg-brand-border" />
                     </div>
 
                     {/* Option 2: City search */}
                     <div>
                       <p className="text-white/40 text-xs mb-2">
-                        Search by city — no GPS needed, times are still accurate
+                        {t('prayerTimes.citySearchDesc', 'Search by city — no GPS needed, times are still accurate')}
                       </p>
                       <div className="flex gap-2">
                         <input
@@ -522,7 +526,7 @@ export default function PrayerTimes() {
                           value={cityInput}
                           onChange={(e) => setCityInput(e.target.value)}
                           onKeyDown={(e) => { if (e.key === 'Enter') void searchByCity(); }}
-                          placeholder="e.g. Dhaka, London, Karachi…"
+                          placeholder={t('prayerTimes.cityPlaceholder', 'e.g. Dhaka, London, Karachi...')}
                           className="input input-sm flex-1 bg-brand-deep border border-brand-border text-white placeholder-white/20 focus:border-brand-emerald/40 focus:outline-none"
                         />
                         <button
@@ -530,13 +534,13 @@ export default function PrayerTimes() {
                           disabled={citySearching || !cityInput.trim()}
                           className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim text-white border-none"
                         >
-                          {citySearching ? <span className="loading loading-spinner loading-xs" /> : 'Search'}
+                          {citySearching ? <span className="loading loading-spinner loading-xs" /> : t('prayerTimes.search', 'Search')}
                         </button>
                       </div>
                       {cityError && <p className="text-red-400 text-xs mt-1">{cityError}</p>}
                       {citySuggestions.length > 0 && (
                         <div className="mt-2 space-y-1">
-                          <p className="text-white/40 text-[11px]">Pick your city:</p>
+                          <p className="text-white/40 text-[11px]">{t('prayerTimes.pickCity', 'Pick your city:')}</p>
                           {citySuggestions.map((s, i) => (
                             <button
                               key={i}
@@ -551,7 +555,7 @@ export default function PrayerTimes() {
                     </div>
 
                     <p className="text-white/15 text-xs">
-                      Your location is stored only in this browser and never sent to our servers.
+                      {t('prayerTimes.locationPrivacy', 'Your location is stored only in this browser and never sent to our servers.')}
                     </p>
                   </div>
                 </div>
@@ -561,9 +565,9 @@ export default function PrayerTimes() {
 
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
-            <h1 className="text-3xl sm:text-4xl font-black text-brand-emerald mb-1">Prayer Times</h1>
+            <h1 className="text-3xl sm:text-4xl font-black text-brand-emerald mb-1">{t('prayerTimes.title', 'Prayer Times')}</h1>
             <p className="text-white/50 text-sm">
-              {now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {formatLocaleDate(now, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
             {(() => { const h = getHijriToday(); return h ? (
               <p className="text-brand-gold/50 text-xs mt-0.5">{formatHijriDate(h)}</p>
@@ -619,12 +623,12 @@ export default function PrayerTimes() {
                               }`}>
                                 {entry.name}
                               </p>
-                              {isActiveNow && <span className="text-xs text-brand-emerald/60 font-semibold uppercase tracking-wide">● Current</span>}
-                              {isNext && <span className="text-xs text-brand-emerald/40 font-semibold uppercase tracking-wide">Next</span>}
+                              {isActiveNow && <span className="text-xs text-brand-emerald/60 font-semibold uppercase tracking-wide">{t('prayerTimes.currentBadge', '● Current')}</span>}
+                              {isNext && <span className="text-xs text-brand-emerald/40 font-semibold uppercase tracking-wide">{t('prayerTimes.next', 'Next')}</span>}
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-white/30 text-xs leading-none mb-0.5">starts at</p>
+                            <p className="text-white/30 text-xs leading-none mb-0.5">{t('prayerTimes.startsAt', 'starts at')}</p>
                             <p className={`text-xl font-black tabular-nums ${
                               isActiveNow ? 'text-brand-emerald' : isNext ? 'text-brand-emerald/60' : 'text-white/80'
                             }`}>
@@ -690,9 +694,9 @@ export default function PrayerTimes() {
                             <div className="min-w-0">
                               <p className={`font-bold text-sm ${isActiveNow ? 'text-red-400' : 'text-red-400/70'}`}>
                                 {entry.label}
-                                {isActiveNow && <span className="ml-2 text-xs font-normal text-red-400/60">● now</span>}
+                                {isActiveNow && <span className="ml-2 text-xs font-normal text-red-400/60">{t('prayerTimes.nowBadge', '● now')}</span>}
                               </p>
-                              <p className="text-red-300/40 text-xs">{entry.note.slice(0, 60)}…</p>
+                              <p className="text-red-300/40 text-xs">{entry.note.slice(0, 60)}...</p>
                             </div>
                           </div>
                           <div className="text-right shrink-0">

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUiStore } from '../../store/useUiStore.js';
+import { formatLocaleDate } from '../../utils/localeDate.js';
 
 /**
  * Daily-total trend, drawn as plain SVG.
@@ -66,7 +67,7 @@ export default function TrendChart({ data, period }: TrendChartProps) {
 
   const model = useMemo(() => {
     const rows = (data ?? []).map((d) => ({
-      label: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      label: formatLocaleDate(new Date(d.date), { month: 'short', day: 'numeric' }),
       value: d.total,
     }));
     if (rows.length === 0) return null;

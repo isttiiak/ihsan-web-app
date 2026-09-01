@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
 import { loadSurahList, type SurahMeta } from '../utils/quranData.js';
@@ -11,6 +12,7 @@ import { ArrowUpIcon } from '@heroicons/react/24/solid';
  * Everything read here still counts toward the daily goal and streak.
  */
 export default function QuranBrowse() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [q, setQ] = useState('');
@@ -43,15 +45,15 @@ export default function QuranBrowse() {
 
   return (
     <AnimatedBackground variant="dark">
-      <h1 className="sr-only">Read the Quran</h1>
+      <h1 className="sr-only">{t('quranBrowse.title')}</h1>
       <div className="max-w-2xl mx-auto px-4 pt-3 pb-16 space-y-4">
         <QuranTabNav active="read" />
 
         <div className="sticky top-14 z-10 -mx-4 px-4 py-2 bg-[#0e0d0a]/90 backdrop-blur-md">
           <input
             type="search"
-            placeholder="Search surah by name or number…"
-            aria-label="Search surahs"
+            placeholder={t('quranBrowse.searchPlaceholder')}
+            aria-label={t('quranBrowse.searchAriaLabel')}
             className="input input-bordered w-full bg-white/5 border-brand-emerald/10 text-white rounded-2xl"
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -59,7 +61,7 @@ export default function QuranBrowse() {
         </div>
 
         {error ? (
-          <p className="text-white/40 text-sm text-center py-8">Couldn't load the surah list — check your connection.</p>
+          <p className="text-white/40 text-sm text-center py-8">{t('quranBrowse.loadError')}</p>
         ) : surahs.length === 0 ? (
           <div className="grid place-items-center py-10"><span className="loading loading-spinner loading-lg text-brand-emerald" /></div>
         ) : (
@@ -80,7 +82,7 @@ export default function QuranBrowse() {
                 <span className="text-xl text-white/70 font-serif" dir="rtl">{s.name}</span>
               </button>
             ))}
-            {filtered.length === 0 && <p className="text-white/30 text-sm text-center py-6">No surah matches "{q}"</p>}
+            {filtered.length === 0 && <p className="text-white/30 text-sm text-center py-6">{t('quranBrowse.noMatch', { query: q })}</p>}
           </div>
         )}
       </div>
@@ -89,7 +91,7 @@ export default function QuranBrowse() {
         <button
           onClick={scrollToTop}
           className="fixed bottom-20 right-4 z-30 w-10 h-10 rounded-full bg-brand-emerald/80 text-white shadow-lg grid place-items-center hover:bg-brand-emerald transition-colors"
-          aria-label="Scroll to top"
+          aria-label={t('quranBrowse.scrollToTop')}
         >
           <ArrowUpIcon className="w-5 h-5" />
         </button>

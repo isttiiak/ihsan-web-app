@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
@@ -14,6 +15,7 @@ import { QURANIC_DUAS } from '../utils/quranMeta.js';
  * curated list. Each entry opens straight in the reader.
  */
 export default function QuranBookmarks() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: summary, isLoading } = useQuranSummary();
   const toggleBookmark = useToggleBookmark();
@@ -68,13 +70,13 @@ export default function QuranBookmarks() {
 
   return (
     <AnimatedBackground variant="dark">
-      <h1 className="sr-only">Saved Ayat</h1>
+      <h1 className="sr-only">{t('quranBookmarks.title')}</h1>
       <div className="max-w-2xl mx-auto px-4 pt-3 pb-16 space-y-4">
         <QuranTabNav active="bookmarks" />
 
         {/* sub-tabs: saved āyāt vs saved duʿās */}
         <div className="flex gap-1 bg-white/5 rounded-xl p-1 border border-brand-emerald/10">
-          {([['ayat', `🔖 Āyāt${(summary?.bookmarks?.length ?? 0) > 0 ? ` · ${summary?.bookmarks?.length}` : ''}`], ['duas', `🤲 Duas${savedDuas.length > 0 ? ` · ${savedDuas.length}` : ''}`]] as const).map(([id, label]) => (
+          {([['ayat', `${t('quranBookmarks.tabAyat')}${(summary?.bookmarks?.length ?? 0) > 0 ? ` · ${summary?.bookmarks?.length}` : ''}`], ['duas', `${t('quranBookmarks.tabDuas')}${savedDuas.length > 0 ? ` · ${savedDuas.length}` : ''}`]] as const).map(([id, label]) => (
             <button key={id}
               onClick={() => setTab(id)}
               className={`flex-1 text-center text-xs font-bold py-1.5 rounded-lg transition-all ${tab === id ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'}`}
@@ -88,12 +90,12 @@ export default function QuranBookmarks() {
           ) : savedDuas.length === 0 ? (
             <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-10 text-center space-y-3">
               <div className="text-5xl">🤲</div>
-              <p className="text-white font-black">No saved duʿās yet</p>
+              <p className="text-white font-black">{t('quranBookmarks.noDuasYet', 'No saved duʿās yet')}</p>
               <p className="text-white/40 text-sm max-w-sm mx-auto leading-relaxed">
-                On the Quran page, tap the 🏷️ tag on any duʿā from the Quran to keep it here.
+                {t('quranBookmarks.noDuasHint', 'On the Quran page, tap the 🏷️ tag on any duʿā from the Quran to keep it here.')}
               </p>
               <button className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-info"
-                onClick={() => navigate('/quran')}>Browse duas →</button>
+                onClick={() => navigate('/quran')}>{t('quranBookmarks.browseDuas', 'Browse duas →')}</button>
             </div>
           ) : (
             <div className="space-y-2">
@@ -104,10 +106,10 @@ export default function QuranBookmarks() {
                 >
                   <button className="w-full text-left" onClick={() => navigate(`/quran/read/${d.surah}?start=${d.fromAyah}&end=${d.toAyah}&mode=bundle&dua=${d.id}`)}>
                     <p className="text-white/80 text-sm font-bold">{d.emoji} {d.title}</p>
-                    <p className="text-brand-gold/50 text-[11px] mt-1">Quran {d.surah}:{d.fromAyah}{d.toAyah !== d.fromAyah ? `–${d.toAyah}` : ''} · read with its story →</p>
+                    <p className="text-brand-gold/50 text-[11px] mt-1">{t('quranBookmarks.duaRef', 'Quran {{ref}} · read with its story →', { ref: `${d.surah}:${d.fromAyah}${d.toAyah !== d.fromAyah ? `–${d.toAyah}` : ''}` })}</p>
                   </button>
                   <div className="flex justify-end mt-1">
-                    <button className="text-white/25 hover:text-red-300 text-xs" onClick={() => setPendingRemoveDua(d.id)}>🗑 remove</button>
+                    <button className="text-white/25 hover:text-red-300 text-xs" onClick={() => setPendingRemoveDua(d.id)}>🗑 {t('quranBookmarks.remove', 'remove')}</button>
                   </div>
                 </motion.div>
               ))}
@@ -118,13 +120,12 @@ export default function QuranBookmarks() {
         ) : groups.length === 0 ? (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-10 text-center space-y-3">
             <div className="text-5xl">🔖</div>
-            <p className="text-white font-black">No saved āyāt yet</p>
+            <p className="text-white font-black">{t('quranBookmarks.noAyatYet', 'No saved āyāt yet')}</p>
             <p className="text-white/40 text-sm max-w-sm mx-auto leading-relaxed">
-              While reading, tap the bookmark icon on any āyah that touches your heart — it will wait for
-              you here, organized by surah.
+              {t('quranBookmarks.noAyatHint', 'While reading, tap the bookmark icon on any āyah that touches your heart — it will wait for you here, organized by surah.')}
             </p>
             <button className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-info"
-              onClick={() => navigate('/quran/browse')}>Start reading →</button>
+              onClick={() => navigate('/quran/browse')}>{t('quranBookmarks.startReading', 'Start reading →')}</button>
           </div>
         ) : (
           groups.map((g, gi) => {
@@ -138,7 +139,7 @@ export default function QuranBookmarks() {
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-white font-black text-sm">
                     {g.surah}. {meta?.englishName ?? `Surah ${g.surah}`}
-                    <span className="text-white/30 font-normal"> · {g.items.length} saved</span>
+                    <span className="text-white/30 font-normal"> · {t('quranBookmarks.savedCount', '{{count}} saved', { count: g.items.length })}</span>
                   </h2>
                   <span className="text-lg text-white/60 font-serif" dir="rtl">{meta?.name}</span>
                 </div>
@@ -148,7 +149,7 @@ export default function QuranBookmarks() {
                     return (
                       <div key={`${b.surah}:${b.ayah}`} className="rounded-2xl bg-white/5 border border-brand-emerald/10 p-3.5 hover:border-brand-emerald/30 transition-all">
                         <button className="w-full text-left" onClick={() => navigate(`/quran/read/${b.surah}?start=${b.ayah}`)}>
-                          <p className="text-brand-emerald text-[11px] font-black mb-1.5">Āyah {b.ayah} →</p>
+                          <p className="text-brand-emerald text-[11px] font-black mb-1.5">{t('quranBookmarks.ayahNo', 'Āyah {{n}} →', { n: b.ayah })}</p>
                           {a ? (
                             <p dir="rtl" lang="ar" className="text-white/80 font-serif leading-[1.9] text-lg line-clamp-2">{a.arabic}</p>
                           ) : (
@@ -160,10 +161,10 @@ export default function QuranBookmarks() {
                         </button>
                         <div className="flex justify-end mt-1">
                           <button
-                            aria-label={`Remove bookmark ${b.surah}:${b.ayah}`}
+                            aria-label={t('quranBookmarks.removeBookmarkAria', 'Remove bookmark {{ref}}', { ref: `${b.surah}:${b.ayah}` })}
                             className="text-white/25 hover:text-red-300 text-xs"
                             onClick={() => setPendingRemove(b)}
-                          >🗑 remove</button>
+                          >🗑 {t('quranBookmarks.remove', 'remove')}</button>
                         </div>
                       </div>
                     );
@@ -177,18 +178,18 @@ export default function QuranBookmarks() {
 
       <ConfirmDialog
         open={!!pendingRemove}
-        title="Remove this saved āyah?"
-        message={pendingRemove ? `Surah ${pendingRemove.surah}, āyah ${pendingRemove.ayah} will be removed from your saved list.` : ''}
-        confirmLabel="Yes, remove"
+        title={t('quranBookmarks.removeAyahTitle', 'Remove this saved āyah?')}
+        message={pendingRemove ? t('quranBookmarks.removeAyahMsg', 'Surah {{surah}}, āyah {{ayah}} will be removed from your saved list.', { surah: pendingRemove.surah, ayah: pendingRemove.ayah }) : ''}
+        confirmLabel={t('quranBookmarks.yesRemove', 'Yes, remove')}
         onConfirm={() => { if (pendingRemove) toggleBookmark.mutate(pendingRemove); setPendingRemove(null); }}
         onCancel={() => setPendingRemove(null)}
       />
 
       <ConfirmDialog
         open={!!pendingRemoveDua}
-        title="Remove this saved duʿā?"
-        message="It stays in the Duas list on the Quran page — only your saved tag is removed."
-        confirmLabel="Yes, remove"
+        title={t('quranBookmarks.removeDuaTitle', 'Remove this saved duʿā?')}
+        message={t('quranBookmarks.removeDuaMsg', 'It stays in the Duas list on the Quran page — only your saved tag is removed.')}
+        confirmLabel={t('quranBookmarks.yesRemove', 'Yes, remove')}
         onConfirm={() => { if (pendingRemoveDua) toggleDua.mutate(pendingRemoveDua); setPendingRemoveDua(null); }}
         onCancel={() => setPendingRemoveDua(null)}
       />

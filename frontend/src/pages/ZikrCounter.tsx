@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation, Trans } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useZikrStore } from '../store/useZikrStore.js';
 import type { CustomMeaning } from '../store/useZikrStore.js';
@@ -22,118 +23,130 @@ import ReportReference from '../components/ReportReference.js';
 import ZikrSettings from '../components/ZikrSettings.js';
 import { PlusIcon, MinusIcon, ArrowPathIcon, ArrowsPointingOutIcon, XMarkIcon, TrashIcon, PencilSquareIcon, ChevronDownIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 
-// Meanings for all built-in dhikr
-const DEFAULT_MEANINGS: Record<string, { arabic: string; transliteration: string; meaning: string }> = {
+// Meanings for all built-in dhikr — transliteration/meaning are i18n KEYS with
+// their English fallback carried alongside, resolved with t(key, fallback) at
+// render time. Library/custom items store raw text (no key), rendered as-is.
+const DEFAULT_MEANINGS: Record<string, { arabic: string; translitKey: string; translitFallback: string; meaningKey: string; meaningFallback: string }> = {
   SubhanAllah: {
     arabic: 'سُبْحَانَ اللَّهِ',
-    transliteration: 'Subḥāna-llāh',
-    meaning: 'Glory be to Allah — praising His perfection above all imperfections',
+    translitKey: 'zikr.translit.subhanallah', translitFallback: 'Subḥāna-llāh',
+    meaningKey: 'zikr.meanings.subhanallah', meaningFallback: 'Glory be to Allah — praising His perfection above all imperfections',
   },
   Alhamdulillah: {
     arabic: 'الْحَمْدُ لِلَّهِ',
-    transliteration: 'Al-ḥamdu li-llāh',
-    meaning: 'All praise belongs to Allah — gratitude for every blessing, seen and unseen',
+    translitKey: 'zikr.translit.alhamdulillah', translitFallback: 'Al-ḥamdu li-llāh',
+    meaningKey: 'zikr.meanings.alhamdulillah', meaningFallback: 'All praise belongs to Allah — gratitude for every blessing, seen and unseen',
   },
   'Allahu Akbar': {
     arabic: 'اللَّهُ أَكْبَرُ',
-    transliteration: 'Allāhu Akbar',
-    meaning: 'Allah is the Greatest — His greatness transcends all of creation',
+    translitKey: 'zikr.translit.allahuAkbar', translitFallback: 'Allāhu Akbar',
+    meaningKey: 'zikr.meanings.allahuAkbar', meaningFallback: 'Allah is the Greatest — His greatness transcends all of creation',
   },
   'La ilaha illallah': {
     arabic: 'لَا إِلَهَ إِلَّا اللَّهُ',
-    transliteration: 'Lā ilāha illā-llāh',
-    meaning: 'There is no god but Allah — the declaration of Tawhid, key to Jannah',
+    translitKey: 'zikr.translit.laIlahaIllallah', translitFallback: 'Lā ilāha illā-llāh',
+    meaningKey: 'zikr.meanings.laIlahaIllallah', meaningFallback: 'There is no god but Allah — the declaration of Tawhid, key to Jannah',
   },
   Astaghfirullah: {
     arabic: 'أَسْتَغْفِرُ اللَّهَ',
-    transliteration: 'Astaghfiru-llāh',
-    meaning: 'I seek forgiveness from Allah — the Prophet ﷺ sought forgiveness 70–100 times a day',
+    translitKey: 'zikr.translit.astaghfirullah', translitFallback: 'Astaghfiru-llāh',
+    meaningKey: 'zikr.meanings.astaghfirullah', meaningFallback: 'I seek forgiveness from Allah — the Prophet ﷺ sought forgiveness 70–100 times a day',
   },
   'SubhanAllah wa bihamdihi': {
     arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',
-    transliteration: 'Subḥāna-llāhi wa bi-ḥamdih',
-    meaning: 'Glory be to Allah and all praise is His — light on the tongue, heavy on the scales, beloved to the Most Merciful',
+    translitKey: 'zikr.translit.subhanallahWaBihamdihi', translitFallback: 'Subḥāna-llāhi wa bi-ḥamdih',
+    meaningKey: 'zikr.meanings.subhanallahWaBihamdihi', meaningFallback: 'Glory be to Allah and all praise is His — light on the tongue, heavy on the scales, beloved to the Most Merciful',
   },
   'La hawla wa la quwwata illa billah': {
     arabic: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
-    transliteration: 'Lā ḥawla wa lā quwwata illā bi-llāh',
-    meaning: 'There is no power and no strength except with Allah — a treasure from the treasures of Jannah',
+    translitKey: 'zikr.translit.laHawla', translitFallback: 'Lā ḥawla wa lā quwwata illā bi-llāh',
+    meaningKey: 'zikr.meanings.laHawla', meaningFallback: 'There is no power and no strength except with Allah — a treasure from the treasures of Jannah',
   },
   'SubhanAllah wal hamdulillah wa la ilaha illAllah wa Allahu akbar': {
     arabic: 'سُبْحَانَ اللَّهِ وَالْحَمْدُ لِلَّهِ وَلَا إِلَهَ إِلَّا اللَّهُ وَاللَّهُ أَكْبَرُ',
-    transliteration: 'Subḥāna-llāhi wal-ḥamdu li-llāhi wa lā ilāha illā-llāhu wa-llāhu akbar',
-    meaning: 'The four most beloved words to Allah — whoever says them, sins fall as leaves fall from a dry tree',
+    translitKey: 'zikr.translit.fourBeloved', translitFallback: 'Subḥāna-llāhi wal-ḥamdu li-llāhi wa lā ilāha illā-llāhu wa-llāhu akbar',
+    meaningKey: 'zikr.meanings.fourBeloved', meaningFallback: 'The four most beloved words to Allah — whoever says them, sins fall as leaves fall from a dry tree',
   },
   'Ayatul Kursi': {
     arabic: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ',
-    transliteration: "Allāhu lā ilāha illā huwal-ḥayyul-qayyūm... (Quran 2:255)",
-    meaning: "The Verse of the Throne — the greatest verse in the Quran. Recite after every prayer; nothing prevents entry to Jannah except death",
+    translitKey: 'zikr.translit.ayatulKursi', translitFallback: "Allāhu lā ilāha illā huwal-ḥayyul-qayyūm... (Quran 2:255)",
+    meaningKey: 'zikr.meanings.ayatulKursi', meaningFallback: "The Verse of the Throne — the greatest verse in the Quran. Recite after every prayer; nothing prevents entry to Jannah except death",
   },
   'Durud Ibrahim': {
     arabic: 'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ',
-    transliteration: "Allāhumma ṣalli ʿalā Muḥammadin wa ʿalā āli Muḥammad...",
-    meaning: 'Salutations upon the Prophet ﷺ and his family — Allah sends tenfold blessings upon the one who sends one salutation',
+    translitKey: 'zikr.translit.durudIbrahim', translitFallback: "Allāhumma ṣalli ʿalā Muḥammadin wa ʿalā āli Muḥammad...",
+    meaningKey: 'zikr.meanings.durudIbrahim', meaningFallback: 'Salutations upon the Prophet ﷺ and his family — Allah sends tenfold blessings upon the one who sends one salutation',
   },
 };
 
 // Hadith references for built-in dhikr (shown at bottom of counter)
-const DHIKR_HADITHS: Record<string, { text: string; source: string; url: string; grade?: string }> = {
+const DHIKR_HADITHS: Record<string, { textKey: string; textFallback: string; source: string; url: string; grade?: string }> = {
   SubhanAllah: {
-    text: '"Two words are light on the tongue, heavy on the scale, beloved to the Most Merciful: SubhanAllah wa bihamdihi, SubhanAllah al-Azim."',
+    textKey: 'zikr.hadith.subhanallah',
+    textFallback: '"Two words are light on the tongue, heavy on the scale, beloved to the Most Merciful: SubhanAllah wa bihamdihi, SubhanAllah al-Azim."',
     source: 'Ṣaḥīḥ al-Bukhārī 6682',
     url: 'https://sunnah.com/bukhari:6682',
     grade: 'Ṣaḥīḥ',
   },
   Alhamdulillah: {
-    text: '"Al-ḥamdu li-llāh fills the scale."',
+    textKey: 'zikr.hadith.alhamdulillah',
+    textFallback: '"Al-ḥamdu li-llāh fills the scale."',
     source: 'Ṣaḥīḥ Muslim 223',
     url: 'https://sunnah.com/muslim:223',
     grade: 'Ṣaḥīḥ',
   },
   'Allahu Akbar': {
-    text: '"The best dhikr is Lā ilāha illā-llāh, and the best supplication is Al-ḥamdu li-llāh."',
+    textKey: 'zikr.hadith.allahuAkbar',
+    textFallback: '"The best dhikr is Lā ilāha illā-llāh, and the best supplication is Al-ḥamdu li-llāh."',
     source: 'Sunan al-Tirmidhī 3383',
     url: 'https://sunnah.com/tirmidhi:3383',
     grade: 'Ḥasan',
   },
   'La ilaha illallah': {
-    text: '"Renew your faith." They asked: "How?" He said: "Say: Lā ilāha illā-llāh frequently."',
+    textKey: 'zikr.hadith.laIlahaIllallah',
+    textFallback: '"Renew your faith." They asked: "How?" He said: "Say: Lā ilāha illā-llāh frequently."',
     source: 'Musnad Aḥmad 8695',
     url: 'https://sunnah.com/ahmad:8695',
     grade: 'Ḥasan',
   },
   Astaghfirullah: {
-    text: '"I seek forgiveness from Allah and turn to Him in repentance more than seventy times a day."',
+    textKey: 'zikr.hadith.astaghfirullah',
+    textFallback: '"I seek forgiveness from Allah and turn to Him in repentance more than seventy times a day."',
     source: 'Ṣaḥīḥ al-Bukhārī 6307',
     url: 'https://sunnah.com/bukhari:6307',
     grade: 'Ṣaḥīḥ',
   },
   'SubhanAllah wa bihamdihi': {
-    text: '"Whoever says \'SubhanAllahi wa bihamdihi\' 100 times, his sins will be forgiven even if they were as much as the foam of the sea."',
+    textKey: 'zikr.hadith.subhanallahWaBihamdihi',
+    textFallback: '"Whoever says \'SubhanAllahi wa bihamdihi\' 100 times, his sins will be forgiven even if they were as much as the foam of the sea."',
     source: 'Ṣaḥīḥ al-Bukhārī 6405',
     url: 'https://sunnah.com/bukhari:6405',
     grade: 'Ṣaḥīḥ',
   },
   'La hawla wa la quwwata illa billah': {
-    text: '"Shall I not guide you to a treasure from the treasures of Paradise? Say: Lā ḥawla wa lā quwwata illā bi-llāh."',
+    textKey: 'zikr.hadith.laHawla',
+    textFallback: '"Shall I not guide you to a treasure from the treasures of Paradise? Say: Lā ḥawla wa lā quwwata illā bi-llāh."',
     source: 'Ṣaḥīḥ al-Bukhārī 4205',
     url: 'https://sunnah.com/bukhari:4205',
     grade: 'Ṣaḥīḥ',
   },
   'SubhanAllah wal hamdulillah wa la ilaha illAllah wa Allahu akbar': {
-    text: '"The most beloved words to Allah are four: SubhanAllah, Alhamdulillah, La ilaha illallah, Allahu Akbar — it does not matter which you begin with."',
+    textKey: 'zikr.hadith.fourBeloved',
+    textFallback: '"The most beloved words to Allah are four: SubhanAllah, Alhamdulillah, La ilaha illallah, Allahu Akbar — it does not matter which you begin with."',
     source: 'Ṣaḥīḥ Muslim 2137',
     url: 'https://sunnah.com/muslim:2137',
     grade: 'Ṣaḥīḥ',
   },
   'Ayatul Kursi': {
-    text: '"Whoever recites Āyat al-Kursī after every obligatory prayer, nothing prevents him from entering Jannah except death."',
+    textKey: 'zikr.hadith.ayatulKursi',
+    textFallback: '"Whoever recites Āyat al-Kursī after every obligatory prayer, nothing prevents him from entering Jannah except death."',
     source: 'al-Nasā\'ī (al-Sunan al-Kubrā) — Ṣaḥīḥ by al-Albānī',
     url: 'https://sunnah.com/nasai:9928',
     grade: 'Ṣaḥīḥ',
   },
   'Durud Ibrahim': {
-    text: '"Whoever sends blessings upon me once, Allah will send blessings upon him tenfold, and erase ten sins, and raise him ten degrees."',
+    textKey: 'zikr.hadith.durudIbrahim',
+    textFallback: '"Whoever sends blessings upon me once, Allah will send blessings upon him tenfold, and erase ten sins, and raise him ten degrees."',
     source: 'al-Nasā\'ī 1297',
     url: 'https://sunnah.com/nasai:1297',
     grade: 'Ṣaḥīḥ',
@@ -142,11 +155,12 @@ const DHIKR_HADITHS: Record<string, { text: string; source: string; url: string;
 
 // Full texts for predefined dhikr that aren't in the curated library —
 // shown in the expandable "Full text & reference" card, never truncated.
-const FULL_PREDEFINED: Record<string, { arabic: string; transliteration?: string; meaning: string; source?: string; sourceUrl?: string }> = {
+const FULL_PREDEFINED: Record<string, { arabic: string; meaningKey: string; meaningFallback: string; source?: string; sourceUrl?: string }> = {
   'Ayatul Kursi': {
     arabic:
       'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ',
-    meaning:
+    meaningKey: 'zikr.meanings.ayatulKursiFull',
+    meaningFallback:
       'Allah — there is no deity except Him, the Ever-Living, the Sustainer of existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is before them and what will be after them, and they encompass not a thing of His knowledge except for what He wills. His Kursī extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great. (Quran 2:255)',
     source: 'Quran 2:255',
     sourceUrl: 'https://quran.com/2/255',
@@ -164,6 +178,7 @@ const GLOW_PALETTE = [
 
 
 export default function ZikrCounter() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
@@ -271,8 +286,10 @@ export default function ZikrCounter() {
 
   // Resolve the COMPACT card display: built-in → library (short form) → custom
   const libItem = findLibraryZikr(selected);
-  const meaning = DEFAULT_MEANINGS[selected]
-    ?? (libItem
+  const defaultMeaning = DEFAULT_MEANINGS[selected];
+  const meaning = defaultMeaning
+    ? { arabic: defaultMeaning.arabic, transliteration: t(defaultMeaning.translitKey, defaultMeaning.translitFallback), meaning: t(defaultMeaning.meaningKey, defaultMeaning.meaningFallback) }
+    : (libItem
       ? { arabic: libItem.shortArabic ?? libItem.arabic, transliteration: libItem.transliteration ?? '', meaning: libItem.shortMeaning ?? libItem.meaning }
       : customMeanings[selected]
         ? { arabic: customMeanings[selected].arabic ?? '', transliteration: customMeanings[selected].transliteration ?? '', meaning: customMeanings[selected].meaning }
@@ -280,15 +297,15 @@ export default function ZikrCounter() {
 
   // Merge predefined + server types into local store
   useEffect(() => {
-    const serverNames = (fetchedTypes ?? []).map((t) => t.name).filter(Boolean);
+    const serverNames = (fetchedTypes ?? []).map((item) => item.name).filter(Boolean);
     // Deleted names (hiddenTypes) must never re-appear even though they live in
     // the predefined/server lists — EXCEPT the core dhikr, which the salat
     // tracker writes into. Anyone who hid one before it became core gets it
     // back here, otherwise their tasbīḥ taps would post to a missing counter.
     const hidden = new Set(hiddenTypes);
     const merged = [...new Set([...PREDEFINED_TYPES, ...serverNames, ...types])]
-      .filter((t) => !hidden.has(t) || isCoreZikr(t));
-    if (merged.length !== types.length || merged.some((t, i) => t !== types[i])) {
+      .filter((name) => !hidden.has(name) || isCoreZikr(name));
+    if (merged.length !== types.length || merged.some((name, i) => name !== types[i])) {
       setTypes(merged);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -326,19 +343,19 @@ export default function ZikrCounter() {
   const onReset = () => {
     if (currentCount === 0) return;
     toast(
-      (t) => (
+      (toastObj) => (
         <div className="flex flex-col gap-3">
           <p className="font-semibold text-brand-deep text-sm">
-            Reset <span className="font-bold text-brand-emerald">{selected}</span> counter?
+            {t('zikr.resetConfirmTitle', { name: selected })}
             <br />
-            <span className="text-white text-xs">Server-confirmed analytics won't be affected.</span>
+            <span className="text-white text-xs">{t('zikr.resetConfirmNote')}</span>
           </p>
           <div className="flex gap-2">
             <button
-              onClick={() => { reset(); toast.dismiss(t.id); toast.success('Counter reset.', { icon: '🔄', duration: 2000 }); }}
+              onClick={() => { reset(); toast.dismiss(toastObj.id); toast.success(t('zikr.counterReset'), { icon: '🔄', duration: 2000 }); }}
               className="btn btn-sm bg-red-500 hover:bg-red-600 text-white border-0"
-            >Reset</button>
-            <button onClick={() => toast.dismiss(t.id)} className="btn btn-sm btn-ghost">Cancel</button>
+            >{t('zikr.resetBtn')}</button>
+            <button onClick={() => toast.dismiss(toastObj.id)} className="btn btn-sm btn-ghost">{t('common.cancel')}</button>
           </div>
         </div>
       ),
@@ -364,9 +381,9 @@ export default function ZikrCounter() {
         setCustomName(''); setCustomArabic(''); setCustomTranslit(''); setCustomMeaningText('');
         setCustomSource(''); setCustomSourceUrl('');
         setShowAddCustom(false);
-        toast.success(`${name} added!`, { icon: '✨', duration: 3000 });
+        toast.success(t('zikr.toast.added', { name }), { icon: '✨', duration: 3000 });
       },
-      onError: () => toast.error('Failed to add dhikr', { duration: 3000 }),
+      onError: () => toast.error(t('zikr.toast.addFailed'), { duration: 3000 }),
     });
   };
 
@@ -376,25 +393,25 @@ export default function ZikrCounter() {
     // Core dhikr are structural — the salat tracker writes counts into them.
     // The UI hides their Remove button; this closes every other path.
     if (isCoreZikr(name)) {
-      toast.error('This dhikr is linked to your salat tracker and stays in your list.', { icon: '🔒' });
+      toast.error(t('zikr.toast.coreLinked'), { icon: '🔒' });
       setConfirmDelete(null);
       return;
     }
-    const isServerType = (fetchedTypes ?? []).some((t) => t.name?.toLowerCase() === name.toLowerCase());
+    const isServerType = (fetchedTypes ?? []).some((item) => item.name?.toLowerCase() === name.toLowerCase());
     setHiddenTypes(hideZikr(name)); // durable (survives predefined re-merge)
     removeType(name);
     if (isServerType) {
       deleteZikrType.mutate(name, {
-        onError: () => toast.error('Could not sync removal — try again.', { duration: 2500 }),
+        onError: () => toast.error(t('zikr.toast.syncFailed'), { duration: 2500 }),
       });
     }
-    toast.success(`"${name}" removed from your list`, { icon: '🗑️', duration: 2000 });
+    toast.success(t('zikr.toast.removed', { name }), { icon: '🗑️', duration: 2000 });
     setConfirmDelete(null);
   };
 
   return (
     <AnimatedBackground variant="dark">
-      <h1 className="sr-only">Zikr Counter</h1>
+      <h1 className="sr-only">{t('zikr.pageTitle')}</h1>
 
       <div className="max-w-2xl mx-auto px-4 pb-10 pt-4 space-y-5">
 
@@ -403,9 +420,9 @@ export default function ZikrCounter() {
           <div className="flex-1">
             <TabNav
               items={[
-                { label: '📿 Counter', to: '/zikr', active: true },
+                { label: `📿 ${t('zikr.counter')}`, to: '/zikr', active: true },
                 {
-                  label: '📊 Analytics',
+                  label: `📊 ${t('zikr.analytics')}`,
                   to: '/zikr/analytics',
                   ...(!user && Object.values(pending ?? {}).reduce((a, b) => a + b, 0) > 0
                     ? { onClick: () => setShowGuestDialog(true) }
@@ -417,8 +434,8 @@ export default function ZikrCounter() {
           {user && (
             <button
               onClick={() => setShowSettings(true)}
-              aria-label="Zikr settings"
-              title="Zikr settings"
+              aria-label={t('zikr.a11y.settings')}
+              title={t('zikr.a11y.settings')}
               className="shrink-0 p-2 rounded-xl border border-brand-emerald/20 bg-white/5 text-white/50 hover:text-brand-emerald hover:border-brand-emerald/40 transition-colors"
             >
               <Cog6ToothIcon className="w-5 h-5" />
@@ -433,7 +450,7 @@ export default function ZikrCounter() {
           animate={{ opacity: 1 }}
           className="text-center text-white/50 text-sm tracking-wide"
         >
-          Every count is an act of worship — keep going 🌙
+          {t('zikr.motivational')}
         </motion.p>
 
         {/* ── Type selector: name | change dropdown | + ── */}
@@ -463,9 +480,9 @@ export default function ZikrCounter() {
             className="flex-1 min-w-0 bg-transparent border-none text-white/60 text-xs focus:outline-none cursor-pointer appearance-none"
             style={{ backgroundImage: 'none' }}
           >
-            <option value="" disabled className="bg-brand-deep text-white/40">Change…</option>
-            {types.filter((t) => t !== selected).map((t) => (
-              <option key={t} value={t} className="bg-brand-deep text-white">{t}</option>
+            <option value="" disabled className="bg-brand-deep text-white/40">{t('zikr.change')}</option>
+            {types.filter((typ) => typ !== selected).map((typ) => (
+              <option key={typ} value={typ} className="bg-brand-deep text-white">{typ}</option>
             ))}
           </select>
           {/* Custom caret */}
@@ -477,8 +494,8 @@ export default function ZikrCounter() {
           <button
             onClick={() => setShowManage(true)}
             className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-brand-emerald/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
-            title="Manage my zikr list"
-            aria-label="Manage my zikr list"
+            title={t('zikr.manageList')}
+            aria-label={t('zikr.manageList')}
           >
             <PencilSquareIcon className="w-3.5 h-3.5" />
           </button>
@@ -487,8 +504,8 @@ export default function ZikrCounter() {
           <button
             onClick={() => setShowAddCustom(true)}
             className="flex-shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-brand-emerald/20 text-white/70 hover:text-white flex items-center justify-center transition-all"
-            title="Add custom dhikr"
-            aria-label="Add custom dhikr"
+            title={t('zikr.addCustom', 'Add custom dhikr')}
+            aria-label={t('zikr.addCustom', 'Add custom dhikr')}
           >
             <PlusIcon className="w-3.5 h-3.5" />
           </button>
@@ -506,8 +523,8 @@ export default function ZikrCounter() {
           <button
             onClick={() => setFullScreen(true)}
             className="absolute top-3 right-3 p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/40 hover:text-white/80 transition-all z-10"
-            title="Focus mode (full screen)"
-            aria-label="Enter full-screen focus mode"
+            title={t('zikr.focusMode', 'Focus mode (full screen)')}
+            aria-label={t('zikr.enterFocusMode', 'Enter full-screen focus mode')}
           >
             <ArrowsPointingOutIcon className="w-4 h-4" />
           </button>
@@ -568,7 +585,7 @@ export default function ZikrCounter() {
                     <p className="text-sm text-white/75 leading-relaxed">{meaning.meaning}</p>
                   </>
                 ) : (
-                  <p className="text-sm text-white/40 italic">Custom dhikr — remember Allah sincerely with every count.</p>
+                  <p className="text-sm text-white/40 italic">{t('zikr.customDhikrHint', 'Custom dhikr — remember Allah sincerely with every count.')}</p>
                 )}
               </motion.div>
             </AnimatePresence>
@@ -580,8 +597,8 @@ export default function ZikrCounter() {
               {dailyGoal !== null && !goalMet && (
                 <>
                   <div className="flex justify-between text-xs text-white/40 mb-1.5">
-                    <span>Today: {effectiveTotal}{pendingTotal > 0 ? <span className="text-brand-gold/60"> (+{pendingTotal} syncing)</span> : ''}</span>
-                    <span>Goal: {dailyGoal}</span>
+                    <span>{t('zikr.todayCount', 'Today')}: {effectiveTotal}{pendingTotal > 0 ? <span className="text-brand-gold/60"> (+{pendingTotal} {t('zikr.syncing', 'syncing')})</span> : ''}</span>
+                    <span>{t('zikr.goalLabel', 'Goal')}: {dailyGoal}</span>
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
                     <motion.div
@@ -593,7 +610,7 @@ export default function ZikrCounter() {
                 </>
               )}
               {goalMet && (
-                <p className="text-sm text-brand-emerald font-bold text-center py-1">🏆 Goal Achieved!</p>
+                <p className="text-sm text-brand-emerald font-bold text-center py-1">{t('zikr.goalAchieved', 'Goal Achieved!')} 🏆</p>
               )}
               <div className="flex items-center justify-between mt-2.5">
                 {streakCount !== null ? (
@@ -617,7 +634,7 @@ export default function ZikrCounter() {
             whileTap={{ scale: 0.96 }}
             onClick={onDecrement}
             disabled={currentCount === 0}
-            aria-label="Decrease count by one"
+            aria-label={t('zikr.decreaseAriaLabel', 'Decrease count by one')}
             className="btn btn-circle bg-white/15 hover:bg-white/25 border-brand-emerald/20 text-white backdrop-blur-sm disabled:opacity-25"
           >
             <MinusIcon className="w-6 h-6" />
@@ -631,7 +648,7 @@ export default function ZikrCounter() {
             style={{ backgroundColor: 'white', boxShadow: `0 8px 32px ${color.glow}50` }}
           >
             <PlusIcon className="w-6 h-6" />
-            Count
+            {t('zikr.countBtn', 'Count')}
           </motion.button>
 
           <motion.button
@@ -639,7 +656,7 @@ export default function ZikrCounter() {
             whileTap={{ scale: 0.96 }}
             onClick={onReset}
             disabled={currentCount === 0}
-            aria-label="Reset counter"
+            aria-label={t('zikr.resetAriaLabel', 'Reset counter')}
             className="btn btn-circle bg-white/15 hover:bg-red-500/70 border-brand-emerald/20 text-white backdrop-blur-sm disabled:opacity-25 transition-colors"
           >
             <ArrowPathIcon className="w-6 h-6" />
@@ -648,7 +665,9 @@ export default function ZikrCounter() {
 
         {/* Keyboard hint */}
         <p className="text-center text-white/30 text-xs">
-          Press <kbd className="kbd kbd-xs bg-white/15 text-white border-brand-emerald/20">Space</kbd> to count
+          <Trans i18nKey="zikr.spaceToCountKbd" defaults="Press <1>Space</1> to count">
+            Press <kbd className="kbd kbd-xs bg-white/15 text-white border-brand-emerald/20">Space</kbd> to count
+          </Trans>
         </p>
 
         {/* ── Expandable full text & reference for the selected dhikr ──
@@ -662,7 +681,7 @@ export default function ZikrCounter() {
           const full = libItem
             ? { arabic: libItem.arabic, transliteration: libItem.transliteration, meaning: libItem.meaning, virtue: libItem.virtue, source: libItem.source, sourceUrl: libItem.sourceUrl, grade: libItem.grade }
             : predef
-              ? { arabic: predef.arabic, transliteration: predef.transliteration, meaning: predef.meaning, virtue: undefined, source: predef.source, sourceUrl: predef.sourceUrl, grade: undefined }
+              ? { arabic: predef.arabic, transliteration: undefined, meaning: t(predef.meaningKey, predef.meaningFallback), virtue: undefined, source: predef.source, sourceUrl: predef.sourceUrl, grade: undefined }
               : custom
                 ? { arabic: custom.fullArabic ?? custom.arabic, transliteration: custom.transliteration, meaning: custom.fullMeaning ?? custom.meaning, virtue: custom.virtue, source: custom.source, sourceUrl: custom.sourceUrl, grade: custom.grade }
                 : null;
@@ -680,7 +699,7 @@ export default function ZikrCounter() {
                 aria-expanded={refExpanded}
                 className="w-full px-4 py-3 flex items-center justify-between text-left"
               >
-                <span className="text-white/40 text-[11px] uppercase tracking-widest font-bold">📖 Full text & reference</span>
+                <span className="text-white/40 text-[11px] uppercase tracking-widest font-bold">📖 {t('zikr.fullTextRef', 'Full text & reference')}</span>
                 <ChevronDownIcon className={`w-4 h-4 text-white/30 transition-transform ${refExpanded ? 'rotate-180' : ''}`} />
               </button>
               <AnimatePresence>
@@ -715,7 +734,7 @@ export default function ZikrCounter() {
                         <p className="text-brand-gold/60 text-xs leading-relaxed">✨ {full.virtue}</p>
                       )}
                       {builtin && (
-                        <p className="text-white/50 text-xs italic leading-relaxed border-l-2 border-brand-emerald/25 pl-3">{builtin.text}</p>
+                        <p className="text-white/50 text-xs italic leading-relaxed border-l-2 border-brand-emerald/25 pl-3">{t(builtin.textKey, builtin.textFallback)}</p>
                       )}
                       <ReportReference what={selected} className="pt-1" />
                       {(builtin || full?.source) && (
@@ -812,16 +831,16 @@ export default function ZikrCounter() {
                 onChange={(e) => { if (e.target.value) selectType(e.target.value); }}
                 className="absolute left-0 top-0 w-1 h-1 opacity-0 pointer-events-none"
               >
-                <option value="" disabled>Switch zikr…</option>
-                {types.filter((t) => t !== selected).map((t) => (
-                  <option key={t} value={t} className="bg-[#0e0d0a] text-white">{t}</option>
+                <option value="" disabled>{t('zikr.switchZikr', 'Switch zikr...')}</option>
+                {types.filter((typ) => typ !== selected).map((typ) => (
+                  <option key={typ} value={typ} className="bg-[#0e0d0a] text-white">{typ}</option>
                 ))}
               </select>
               <button
                 onClick={() => setFullScreen(false)}
                 className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/40 hover:text-white transition-all"
-                title="Exit focus mode (Esc)"
-                aria-label="Exit full-screen focus mode"
+                title={t('zikr.exitFocus', 'Exit focus mode (Esc)')}
+                aria-label={t('zikr.exitFocusAriaLabel', 'Exit full-screen focus mode')}
               >
                 <XMarkIcon className="w-6 h-6" />
               </button>
@@ -901,7 +920,7 @@ export default function ZikrCounter() {
                   }}
                 >
                   <PlusIcon className="w-10 h-10 sm:w-11 sm:h-11" />
-                  Count
+                  {t('zikr.countBtn', 'Count')}
                 </motion.button>
               </div>
 
@@ -909,7 +928,7 @@ export default function ZikrCounter() {
               {!goalMet && (streakCount !== null || goalProgress !== null) && (
                 <div className="flex items-center gap-6 opacity-35">
                   {streakCount !== null && (
-                    <span className="text-brand-gold text-xs font-bold">🔥 {streakCount} day</span>
+                    <span className="text-brand-gold text-xs font-bold">🔥 {t('zikr.streakDay', '{{count}} day', { count: streakCount })}</span>
                   )}
                   {goalProgress !== null && (
                     <span className="text-white/60 text-xs font-bold">🎯 {goalProgress}%</span>
@@ -921,7 +940,7 @@ export default function ZikrCounter() {
             {/* Bottom: keyboard hint on desktop */}
             <div className="relative z-10 flex flex-col items-center gap-3 pb-6 flex-shrink-0">
               <p className="hidden sm:block text-white/20 text-[11px] tracking-wider">
-                SPACE to count · ESC to exit
+                {t('zikr.spaceCount', 'SPACE to count · ESC to exit')}
               </p>
             </div>
           </motion.div>
@@ -949,26 +968,26 @@ export default function ZikrCounter() {
               transition={{ type: 'spring', damping: 25 }}
               className="bg-brand-surface rounded-3xl p-6 w-full max-w-md shadow-2xl border border-brand-border"
             >
-              <h3 className="text-xl font-bold text-brand-emerald mb-1">Add Custom Dhikr</h3>
-              <p className="text-white/40 text-xs mb-2">Name and meaning are required. Arabic is optional but recommended.</p>
+              <h3 className="text-xl font-bold text-brand-emerald mb-1">{t('zikr.addCustom', 'Add Custom Dhikr')}</h3>
+              <p className="text-white/40 text-xs mb-2">{t('zikr.addCustomNote', 'Name and meaning are required. Arabic is optional but recommended.')}</p>
               <p className="text-xs mb-4">
                 <button
                   className="text-brand-gold/80 underline"
                   onClick={() => { setShowAddCustom(false); navigate('/settings'); }}
-                >📿 First check the zikr library in Settings</button>
-                <span className="text-white/30"> — ṣalawāt, istighfār & more, already verified with references.</span>
+                >📿 {t('zikr.checkLibrary', 'First check the zikr library in Settings')}</button>
+                <span className="text-white/30"> — {t('zikr.checkLibraryNote', 'ṣalawāt, istighfār & more, already verified with references.')}</span>
               </p>
 
               <div className="space-y-3">
                 {/* Name */}
                 <div>
                   <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
-                    Dhikr Name <span className="text-red-400">*</span>
+                    {t('zikr.dhikrName', 'Dhikr Name')} <span className="text-red-400">{t('zikr.required', '*')}</span>
                   </label>
                   <input
                     value={customName}
                     onChange={(e) => setCustomName(e.target.value)}
-                    placeholder="e.g. Astaghfirullah"
+                    placeholder={t('zikr.dhikrNamePlaceholder', 'e.g. Astaghfirullah')}
                     className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm"
                     autoFocus
                   />
@@ -977,7 +996,7 @@ export default function ZikrCounter() {
                 {/* Arabic */}
                 <div>
                   <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
-                    Arabic Text <span className="text-white/30">(optional)</span>
+                    {t('zikr.arabicText', 'Arabic Text')} <span className="text-white/30">({t('zikr.optional', 'optional')})</span>
                   </label>
                   <input
                     value={customArabic}
@@ -992,7 +1011,7 @@ export default function ZikrCounter() {
                 {/* Transliteration */}
                 <div>
                   <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
-                    Pronunciation <span className="text-white/30">(optional)</span>
+                    {t('zikr.pronunciation', 'Pronunciation')} <span className="text-white/30">({t('zikr.optional', 'optional')})</span>
                   </label>
                   <input
                     value={customTranslit}
@@ -1005,20 +1024,20 @@ export default function ZikrCounter() {
                 {/* Meaning */}
                 <div>
                   <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
-                    English Meaning <span className="text-red-400">*</span>
+                    {t('zikr.englishMeaning', 'English Meaning')} <span className="text-red-400">{t('zikr.required', '*')}</span>
                   </label>
                   <input
                     value={customMeaningText}
                     onChange={(e) => setCustomMeaningText(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') submitCustomZikr(); if (e.key === 'Escape') setShowAddCustom(false); }}
-                    placeholder="e.g. I seek forgiveness from Allah"
+                    placeholder={t('zikr.meaningPlaceholder', 'e.g. I seek forgiveness from Allah')}
                     className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm"
                   />
                 </div>
 
                 {/* Hadith reference (optional) */}
                 <div className="border-t border-brand-border/60 pt-3 space-y-2">
-                  <p className="text-white/30 text-[10px] uppercase tracking-wider">Hadith Reference <span className="normal-case text-white/20">(optional)</span></p>
+                  <p className="text-white/30 text-[10px] uppercase tracking-wider">{t('zikr.hadithRef', 'Hadith Reference')} <span className="normal-case text-white/20">({t('zikr.optional', 'optional')})</span></p>
                   <input
                     value={customSource}
                     onChange={(e) => setCustomSource(e.target.value)}
@@ -1039,14 +1058,14 @@ export default function ZikrCounter() {
                   onClick={() => { setShowAddCustom(false); setCustomName(''); setCustomArabic(''); setCustomTranslit(''); setCustomMeaningText(''); }}
                   className="btn flex-1 btn-ghost text-white/60 border-brand-border"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={submitCustomZikr}
                   disabled={!customName.trim() || !customMeaningText.trim() || addZikrType.isPending}
                   className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold"
                 >
-                  {addZikrType.isPending ? <span className="loading loading-spinner loading-sm" /> : 'Add Dhikr'}
+                  {addZikrType.isPending ? <span className="loading loading-spinner loading-sm" /> : t('zikr.addDhikr', 'Add Dhikr')}
                 </button>
               </div>
             </motion.div>
@@ -1073,11 +1092,9 @@ export default function ZikrCounter() {
               className="bg-brand-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-border text-center"
             >
               <div className="text-5xl mb-4">📿</div>
-              <h3 className="text-xl font-black text-white mb-2">Don't lose your counts</h3>
+              <h3 className="text-xl font-black text-white mb-2">{t('zikr.dontLoseCounts', "Don't lose your counts")}</h3>
               <p className="text-white/50 text-sm mb-6 leading-relaxed">
-                You have <span className="text-brand-gold font-bold">
-                  {Object.values(pending ?? {}).reduce((a, b) => a + b, 0)}
-                </span> unsaved zikr counts. Sign in to save your progress and track your streaks.
+                {t('zikr.unsavedCounts', 'You have {{count}} unsaved zikr counts. Sign in to save your progress and track your streaks.', { count: Object.values(pending ?? {}).reduce((a, b) => a + b, 0) })}
               </p>
               <div className="flex flex-col gap-3">
                 <button
@@ -1087,19 +1104,19 @@ export default function ZikrCounter() {
                     navigate('/login');
                   }}
                 >
-                  Sign In to Save
+                  {t('zikr.signInToSave', 'Sign In to Save')}
                 </button>
                 <button
                   className="btn btn-ghost text-white/50 hover:text-white w-full"
                   onClick={() => { setShowGuestDialog(false); navigate('/'); }}
                 >
-                  Leave without saving
+                  {t('zikr.leaveWithout', 'Leave without saving')}
                 </button>
                 <button
                   className="btn btn-ghost text-brand-emerald text-sm w-full"
                   onClick={() => setShowGuestDialog(false)}
                 >
-                  Keep counting
+                  {t('zikr.keepCounting', 'Keep counting')}
                 </button>
               </div>
             </motion.div>
@@ -1122,43 +1139,43 @@ export default function ZikrCounter() {
               className="bg-brand-surface rounded-3xl p-6 w-full max-w-md shadow-2xl border border-brand-border max-h-[80vh] flex flex-col"
             >
               <div className="flex items-center justify-between mb-1">
-                <h3 className="text-xl font-bold text-brand-emerald">My zikr list</h3>
+                <h3 className="text-xl font-bold text-brand-emerald">{t('zikr.myZikrList', 'My zikr list')}</h3>
                 <button onClick={() => setShowManage(false)} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10">
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-white/40 text-xs mb-4">Custom zikr can be edited (✏️) — renaming keeps all your counts. Removing only takes it out of your dropdown; saved counts stay in analytics.</p>
+              <p className="text-white/40 text-xs mb-4">{t('zikr.manageNote', 'Custom zikr can be edited (✏️) — renaming keeps all your counts. Removing only takes it out of your dropdown; saved counts stay in analytics.')}</p>
               <div className="space-y-1.5 overflow-y-auto pr-1">
-                {types.length === 0 && <p className="text-white/40 text-sm text-center py-6">Your list is empty. Add one with ＋.</p>}
-                {types.map((t) => {
-                  const isCustom = !PREDEFINED_TYPES.some((p) => p.toLowerCase() === t.toLowerCase()) && !findLibraryZikr(t);
-                  const locked = isCoreZikr(t);
+                {types.length === 0 && <p className="text-white/40 text-sm text-center py-6">{t('zikr.emptyList', 'Your list is empty. Add one with ＋.')}</p>}
+                {types.map((typ) => {
+                  const isCustom = !PREDEFINED_TYPES.some((p) => p.toLowerCase() === typ.toLowerCase()) && !findLibraryZikr(typ);
+                  const locked = isCoreZikr(typ);
                   return (
-                    <div key={t} className="flex items-center gap-2 p-2.5 rounded-xl border border-brand-border bg-brand-deep/50">
-                      <span className="flex-1 min-w-0 truncate text-white/80 text-sm font-semibold">{t}</span>
+                    <div key={typ} className="flex items-center gap-2 p-2.5 rounded-xl border border-brand-border bg-brand-deep/50">
+                      <span className="flex-1 min-w-0 truncate text-white/80 text-sm font-semibold">{typ}</span>
                       {isCustom && (
                         <button
-                          onClick={() => { setShowManage(false); setEditZikr(t); }}
-                          aria-label={`Edit ${t}`}
+                          onClick={() => { setShowManage(false); setEditZikr(typ); }}
+                          aria-label={t('zikr.editAriaLabel', 'Edit {{name}}', { name: typ })}
                           className="btn btn-xs btn-ghost text-brand-emerald/70 hover:text-brand-emerald hover:bg-brand-emerald/10 gap-1 shrink-0"
                         >
-                          <PencilSquareIcon className="w-3.5 h-3.5" /> Edit
+                          <PencilSquareIcon className="w-3.5 h-3.5" /> {t('zikr.editBtn', 'Edit')}
                         </button>
                       )}
                       {locked ? (
                         <span
-                          title="Your salat tracker adds counts to this dhikr, so it stays in your list."
+                          title={t('zikr.lockedTitle', 'Your salat tracker adds counts to this dhikr, so it stays in your list.')}
                           className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold text-brand-gold/70 bg-brand-gold/10 border border-brand-gold/20"
                         >
-                          🔒 Always on
+                          {t('zikr.alwaysOn', 'Always on')}
                         </span>
                       ) : (
                         <button
-                          onClick={() => setConfirmDelete(t)}
-                          aria-label={`Remove ${t}`}
+                          onClick={() => setConfirmDelete(typ)}
+                          aria-label={t('zikr.removeAriaLabel', 'Remove {{name}}', { name: typ })}
                           className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10 gap-1 shrink-0"
                         >
-                          <TrashIcon className="w-3.5 h-3.5" /> Remove
+                          <TrashIcon className="w-3.5 h-3.5" /> {t('zikr.removeBtn', 'Remove')}
                         </button>
                       )}
                     </div>
@@ -1169,7 +1186,7 @@ export default function ZikrCounter() {
                 onClick={() => { setShowManage(false); setShowAddCustom(true); }}
                 className="btn btn-sm mt-4 bg-brand-emerald/15 border border-brand-emerald/30 text-brand-emerald hover:bg-brand-emerald/25 gap-1.5"
               >
-                <PlusIcon className="w-4 h-4" /> Add a new zikr
+                <PlusIcon className="w-4 h-4" /> {t('zikr.addNewZikr', 'Add a new zikr')}
               </button>
             </motion.div>
           </motion.div>
@@ -1180,9 +1197,9 @@ export default function ZikrCounter() {
 
       <ConfirmDialog
         open={!!confirmDelete}
-        title={`Remove "${confirmDelete ?? ''}"?`}
-        message="This takes it out of your counter list. You can always add it back later. Your saved counts are not affected."
-        confirmLabel="Yes, remove"
+        title={t('zikr.removeConfirmTitle', 'Remove "{{name}}"?', { name: confirmDelete ?? '' })}
+        message={t('zikr.removeConfirmMsg', 'This takes it out of your counter list. You can always add it back later. Your saved counts are not affected.')}
+        confirmLabel={t('zikr.yesRemove', 'Yes, remove')}
         onConfirm={() => confirmDelete && handleDeleteType(confirmDelete)}
         onCancel={() => setConfirmDelete(null)}
       />

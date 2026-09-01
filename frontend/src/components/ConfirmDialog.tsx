@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Small app-wide confirmation dialog — the SECOND "are you sure?" for every
@@ -15,7 +16,7 @@ export default function ConfirmDialog({
   open,
   title,
   message,
-  confirmLabel = 'Yes, delete',
+  confirmLabel,
   onConfirm,
   onCancel,
 }: {
@@ -26,6 +27,7 @@ export default function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   return createPortal(
     <AnimatePresence>
       {open && (
@@ -47,13 +49,13 @@ export default function ConfirmDialog({
             <p className="text-white/50 text-xs mt-1.5 leading-relaxed">{message}</p>
             <div className="flex gap-2 mt-4">
               <button className="flex-1 btn btn-sm rounded-xl bg-white/5 border-brand-emerald/10 text-white/70" onClick={onCancel}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-red-500/80 hover:bg-red-500"
                 onClick={onConfirm}
               >
-                {confirmLabel}
+                {confirmLabel ?? t('confirmDialog.yesDelete')}
               </button>
             </div>
           </motion.div>

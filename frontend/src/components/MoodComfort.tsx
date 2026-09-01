@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useAiComfort } from '../hooks/useAi.js';
 import { AiBadge } from './ai/AiFlair.js';
 
@@ -28,6 +29,7 @@ function writeCache(key: string, message: string): void {
 export default function MoodComfort({
   day, moods, symptoms,
 }: { day: string; moods: string[]; symptoms?: string[] }) {
+  const { t } = useTranslation();
   const comfort = useAiComfort();
   const [message, setMessage] = useState<string | null>(null);
   const key = sig(day, moods);
@@ -51,7 +53,7 @@ export default function MoodComfort({
       initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl border border-brand-pink/25 bg-brand-pink/[0.07] p-3.5"
     >
-      <AiBadge label="Naseeh · for you today" />
+      <AiBadge label={t('naseeh.forYouToday', 'Naseeh · for you today')} />
       {comfort.isPending && !message ? (
         <div className="flex items-center gap-2 mt-2">
           {['#c4825a', '#c4825a', '#5a9e8e'].map((c, i) => (
@@ -61,13 +63,13 @@ export default function MoodComfort({
               transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.15 }}
             />
           ))}
-          <span className="text-white/40 text-xs">finding the right words…</span>
+          <span className="text-white/40 text-xs">{t('naseeh.findingWords')}</span>
         </div>
       ) : (
         <p className="text-brand-pink/80 text-sm leading-relaxed mt-2">{message}</p>
       )}
       <p className="text-white/30 text-[10px] mt-2">
-        ✨ A companion's words — not medical or religious advice.
+        {t('naseeh.disclaimer', "✨ A companion's words — not medical or religious advice.")}
       </p>
     </motion.div>
   );

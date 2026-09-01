@@ -13,6 +13,7 @@ import { useUiStore } from '../store/useUiStore.js';
 import { StreakBadge, GoalBadge } from './StatusBadges.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
 import { getHijriToday, formatHijriDate } from '../utils/islamicCalendar.js';
+import { formatLocaleDate } from '../utils/localeDate.js';
 import {
   Cog6ToothIcon,
   UserCircleIcon,
@@ -25,6 +26,7 @@ import {
   GlobeAltIcon,
 } from '@heroicons/react/24/outline';
 import i18n from '../i18n.js';
+import { syncQuranTranslationWithLang } from '../utils/quranData.js';
 
 // ── Page metadata ─────────────────────────────────────────────────────────────
 // i18n keys for the translatable page titles (fallback = the English title)
@@ -172,7 +174,7 @@ export default function Navbar() {
   const hijriToday = (() => { const h = getHijriToday(); return h ? formatHijriDate(h) : null; })();
 
   const todayEnglish = (() => {
-    return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return formatLocaleDate(new Date(), { month: 'short', day: 'numeric', year: 'numeric' });
   })();
 
   const centerContent = (() => {
@@ -270,7 +272,7 @@ export default function Navbar() {
           <div className="flex items-center gap-0.5 flex-shrink-0">
             {/* Language toggle — cycles en ↔ bn */}
             <button
-              onClick={() => { void i18n.changeLanguage(i18n.resolvedLanguage === 'bn' ? 'en' : 'bn'); }}
+              onClick={() => { const next = i18n.resolvedLanguage === 'bn' ? 'en' : 'bn'; void i18n.changeLanguage(next); syncQuranTranslationWithLang(next); }}
               aria-label={t('nav.switchLang')}
               className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all mr-0.5"
             >
@@ -307,7 +309,7 @@ export default function Navbar() {
               <div className="relative ml-0.5" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen((o) => !o)}
-                  aria-label="Open account menu"
+                  aria-label={t('navbar.openAccountMenu', 'Open account menu')}
                   aria-expanded={dropdownOpen}
                   className={`flex items-center justify-center w-8 h-8 rounded-full transition-all ring-2 ${dropdownOpen ? 'ring-brand-emerald scale-105' : 'ring-brand-emerald/30 hover:ring-brand-emerald/70'}`}
                 >

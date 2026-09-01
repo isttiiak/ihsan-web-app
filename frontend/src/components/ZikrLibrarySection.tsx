@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { ChevronDownIcon, TrashIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { useTranslation } from 'react-i18next';
 import { useZikrStore } from '../store/useZikrStore.js';
 import { useAddZikrType, useDeleteZikrType, useZikrTypes } from '../hooks/useZikrTypes.js';
 import { ZIKR_LIBRARY, PREDEFINED_TYPES, LEGACY_LIBRARY_NAMES, type LibraryZikr } from '../utils/zikrLibrary.js';
@@ -27,6 +28,7 @@ const APP_OWNED_NAMES = new Set(
 );
 
 export default function ZikrLibrarySection() {
+  const { t } = useTranslation();
   const { types, setTypes, setCustomMeaning, removeType } = useZikrStore();
   const addZikrType = useAddZikrType();
   const deleteZikrType = useDeleteZikrType();
@@ -45,13 +47,13 @@ export default function ZikrLibrarySection() {
   const [customSource, setCustomSource] = useState('');
   const [customSourceUrl, setCustomSourceUrl] = useState('');
 
-  const inList = (name: string) => types.some((t) => t.toLowerCase() === name.toLowerCase());
+  const inList = (name: string) => types.some((n) => n.toLowerCase() === name.toLowerCase());
 
   // "Custom" = server-stored types the user typed themselves — NOT the
   // counter's predefined defaults and NOT curated library items.
   const customTypes = useMemo(
     () => (fetchedTypes ?? [])
-      .map((t) => t.name)
+      .map((ft) => ft.name)
       .filter((n): n is string => !!n && !APP_OWNED_NAMES.has(n.toLowerCase())),
     [fetchedTypes]
   );
@@ -59,9 +61,9 @@ export default function ZikrLibrarySection() {
   const deleteCustom = (name: string) => {
     removeType(name);
     deleteZikrType.mutate(name, {
-      onError: () => toast.error('Could not remove — try again.', { id: 'lib-del' }),
+      onError: () => toast.error(t('zikrLibrary.removeFail', 'Could not remove — try again.'), { id: 'lib-del' }),
     });
-    toast.success(`"${name}" removed`, { id: 'lib-del', icon: '🗑️' });
+    toast.success(t('zikrLibrary.removed', '"{{name}}" removed', { name }), { id: 'lib-del', icon: '🗑️' });
     setConfirmDelete(null);
   };
 
@@ -81,10 +83,10 @@ export default function ZikrLibrarySection() {
           grade: item.grade,
           virtue: item.virtue,
         });
-        toast.success(`"${item.name}" added to your counter 📿`, { id: 'lib-add' });
+        toast.success(t('zikrLibrary.added', '"{{name}}" added to your counter 📿', { name: item.name }), { id: 'lib-add' });
         setAdding(null);
       },
-      onError: () => { toast.error('Could not add — try again.', { id: 'lib-add' }); setAdding(null); },
+      onError: () => { toast.error(t('zikrLibrary.addFail', 'Could not add — try again.'), { id: 'lib-add' }); setAdding(null); },
     });
   };
 
@@ -92,8 +94,8 @@ export default function ZikrLibrarySection() {
     const name = customName.trim();
     const meaningText = customMeaningText.trim();
     if (!name || !meaningText) return;
-    if (name.includes('.') || name.startsWith('$')) { toast.error('Name may not contain "." or start with "$"'); return; }
-    if (inList(name)) { toast('Already in your list ✓', { id: 'lib-custom' }); return; }
+    if (name.includes('.') || name.startsWith('$')) { toast.error(t('zikrLibrary.invalidName', 'Name may not contain "." or start with "$"')); return; }
+    if (inList(name)) { toast(t('zikrLibrary.alreadyInList', 'Already in your list ✓'), { id: 'lib-custom' }); return; }
     setAdding(name);
     addZikrType.mutate(name, {
       onSuccess: () => {
@@ -104,20 +106,19 @@ export default function ZikrLibrarySection() {
           source: customSource.trim() || undefined,
           sourceUrl: customSourceUrl.trim() || undefined,
         });
-        toast.success(`"${name}" added 📿`, { id: 'lib-custom' });
+        toast.success(t('zikrLibrary.customAdded', '"{{name}}" added 📿', { name }), { id: 'lib-custom' });
         setCustomName(''); setCustomArabic(''); setCustomMeaningText('');
         setCustomSource(''); setCustomSourceUrl('');
         setAdding(null);
       },
-      onError: () => { toast.error('Could not add — try again.', { id: 'lib-custom' }); setAdding(null); },
+      onError: () => { toast.error(t('zikrLibrary.addFail', 'Could not add — try again.'), { id: 'lib-custom' }); setAdding(null); },
     });
   };
 
   return (
     <div className="space-y-3">
       <p className="text-white/40 text-xs leading-relaxed">
-        Add any of these to your counter's dropdown — every reference is verified. Your existing
-        list stays exactly as it is.
+        {t('zikrLibrary.intro', "Add any of these to your counter's dropdown — every reference is verified. Your existing list stays exactly as it is.")}
       </p>
 
       {ZIKR_LIBRARY.map((cat) => (
@@ -166,7 +167,7 @@ export default function ZikrLibrarySection() {
                             disabled={added || adding === item.name}
                             onClick={() => addFromLibrary(item)}
                           >
-                            {added ? '✓ In your list' : adding === item.name ? '…' : '＋ Add to list'}
+                            {added ? t('zikrLibrary.inList', '✓ In your list') : adding === item.name ? '…' : t('zikrLibrary.addToList', '＋ Add to list')}
                           </button>
                         </div>
                       </div>
@@ -181,13 +182,13 @@ export default function ZikrLibrarySection() {
 
       {/* custom add — full form, same fields as the counter's modal */}
       <div className="rounded-2xl border border-brand-emerald/10 bg-white/5 p-4">
-        <p className="text-white/60 text-xs font-bold mb-1">➕ Add your own zikr</p>
-        <p className="text-white/30 text-[11px] mb-3">Name and meaning are required — Arabic and a reference make it complete.</p>
+        <p className="text-white/60 text-xs font-bold mb-1">{t('zikrLibrary.addOwn', '➕ Add your own zikr')}</p>
+        <p className="text-white/30 text-[11px] mb-3">{t('zikrLibrary.addOwnHint', 'Name and meaning are required — Arabic and a reference make it complete.')}</p>
         <div className="space-y-2">
           <input
             type="text"
-            placeholder="Name — e.g. Rabbi zidni ilma *"
-            aria-label="Custom zikr name"
+            placeholder={t('zikrLibrary.namePlaceholder', 'Name — e.g. Rabbi zidni ilma *')}
+            aria-label={t('zikrLibrary.nameLabel', 'Custom zikr name')}
             className="input input-sm w-full bg-white/5 border-brand-emerald/15 text-white rounded-xl"
             value={customName}
             maxLength={100}
@@ -196,16 +197,16 @@ export default function ZikrLibrarySection() {
           <input
             type="text"
             dir="rtl"
-            placeholder="Arabic — رَبِّ زِدْنِي عِلْمًا"
-            aria-label="Custom zikr Arabic text"
+            placeholder={t('zikrLibrary.arabicPlaceholder', 'Arabic — رَبِّ زِدْنِي عِلْمًا')}
+            aria-label={t('zikrLibrary.arabicLabel', 'Custom zikr Arabic text')}
             className="input input-sm w-full bg-white/5 border-brand-emerald/15 text-white rounded-xl font-serif"
             value={customArabic}
             onChange={(e) => setCustomArabic(e.target.value)}
           />
           <input
             type="text"
-            placeholder="Meaning — e.g. My Lord, increase me in knowledge *"
-            aria-label="Custom zikr meaning"
+            placeholder={t('zikrLibrary.meaningPlaceholder', 'Meaning — e.g. My Lord, increase me in knowledge *')}
+            aria-label={t('zikrLibrary.meaningLabel', 'Custom zikr meaning')}
             className="input input-sm w-full bg-white/5 border-brand-emerald/15 text-white rounded-xl"
             value={customMeaningText}
             onChange={(e) => setCustomMeaningText(e.target.value)}
@@ -213,45 +214,45 @@ export default function ZikrLibrarySection() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input
               type="text"
-              placeholder="Reference — e.g. Quran 20:114"
-              aria-label="Custom zikr reference"
+              placeholder={t('zikrLibrary.refPlaceholder', 'Reference — e.g. Quran 20:114')}
+              aria-label={t('zikrLibrary.refLabel', 'Custom zikr reference')}
               className="input input-sm w-full bg-white/5 border-brand-emerald/15 text-white rounded-xl text-xs"
               value={customSource}
               onChange={(e) => setCustomSource(e.target.value)}
             />
             <input
               type="text"
-              placeholder="Link — https://quran.com/20/114"
-              aria-label="Custom zikr reference link"
+              placeholder={t('zikrLibrary.linkPlaceholder', 'Link — https://quran.com/20/114')}
+              aria-label={t('zikrLibrary.linkLabel', 'Custom zikr reference link')}
               className="input input-sm w-full bg-white/5 border-brand-emerald/15 text-white rounded-xl text-xs"
               value={customSourceUrl}
               onChange={(e) => setCustomSourceUrl(e.target.value)}
             />
           </div>
           <button className="btn btn-sm w-full rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-info"
-            disabled={!customName.trim() || !customMeaningText.trim() || !!adding} onClick={addCustom}>Add to my counter</button>
+            disabled={!customName.trim() || !customMeaningText.trim() || !!adding} onClick={addCustom}>{t('zikrLibrary.addToCounter', 'Add to my counter')}</button>
         </div>
 
         {/* Your custom additions — editable (incl. rename) and deletable */}
         {customTypes.length > 0 && (
           <div className="mt-4 space-y-1.5">
-            <p className="text-white/40 text-[11px] font-bold">Your custom additions</p>
+            <p className="text-white/40 text-[11px] font-bold">{t('zikrLibrary.customAdditions', 'Your custom additions')}</p>
             {customTypes.map((name) => (
               <div key={name} className="flex items-center gap-1.5 rounded-xl bg-white/5 border border-brand-emerald/10 px-3 py-2">
                 <span className="flex-1 min-w-0 truncate text-white/75 text-xs">{name}</span>
                 <button
                   onClick={() => setEditZikr(name)}
-                  aria-label={`Edit ${name}`}
+                  aria-label={t('zikrLibrary.editAria', 'Edit {{name}}', { name })}
                   className="btn btn-xs btn-ghost text-brand-emerald/70 hover:text-brand-emerald hover:bg-brand-emerald/10 gap-1 shrink-0"
                 >
-                  <PencilSquareIcon className="w-3.5 h-3.5" /> Edit
+                  <PencilSquareIcon className="w-3.5 h-3.5" /> {t('zikrLibrary.edit', 'Edit')}
                 </button>
                 <button
                   onClick={() => setConfirmDelete(name)}
-                  aria-label={`Delete ${name}`}
+                  aria-label={t('zikrLibrary.deleteAria', 'Delete {{name}}', { name })}
                   className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10 gap-1 shrink-0"
                 >
-                  <TrashIcon className="w-3.5 h-3.5" /> Delete
+                  <TrashIcon className="w-3.5 h-3.5" /> {t('zikrLibrary.delete', 'Delete')}
                 </button>
               </div>
             ))}
@@ -261,9 +262,9 @@ export default function ZikrLibrarySection() {
 
       <ConfirmDialog
         open={!!confirmDelete}
-        title={`Delete "${confirmDelete ?? ''}"?`}
-        message="This removes your custom zikr from the list and the server. Curated library items can't be deleted — only added or left out."
-        confirmLabel="Yes, delete"
+        title={t('zikrLibrary.deleteConfirmTitle', 'Delete "{{name}}"?', { name: confirmDelete ?? '' })}
+        message={t('zikrLibrary.deleteConfirmMsg', "This removes your custom zikr from the list and the server. Curated library items can't be deleted — only added or left out.")}
+        confirmLabel={t('zikrLibrary.yesDelete', 'Yes, delete')}
         onConfirm={() => confirmDelete && deleteCustom(confirmDelete)}
         onCancel={() => setConfirmDelete(null)}
       />

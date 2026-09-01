@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 /**
  * "Think this reference is wrong? Tell us."
@@ -22,6 +23,7 @@ export default function ReportReference({
   variant?: 'inline' | 'card';
   className?: string;
 }) {
+  const { t } = useTranslation();
   const to = what
     ? `/feedback?topic=reference&about=${encodeURIComponent(what)}`
     : '/feedback?topic=reference';
@@ -30,11 +32,10 @@ export default function ReportReference({
     return (
       <div className={`rounded-2xl border border-brand-emerald/10 bg-white/[0.03] px-4 py-3 ${className}`}>
         <p className="text-white/35 text-[11px] leading-relaxed">
-          <span className="text-white/50 font-semibold">Spotted a mistake?</span>{' '}
-          Every reference here is checked against quran.com or sunnah.com, but we are human —
-          if a verse, a hadith number or a grading looks wrong,{' '}
+          <span className="text-white/50 font-semibold">{t('reportRef.spottedMistake')}</span>{' '}
+          {t('reportRef.cardBody')}{' '}
           <Link to={to} className="text-brand-emerald/75 hover:text-brand-emerald underline underline-offset-2">
-            tell us and we will fix it
+            {t('reportRef.tellUs')}
           </Link>.
         </p>
       </div>
@@ -43,9 +44,9 @@ export default function ReportReference({
 
   return (
     <p className={`text-white/25 text-[11px] leading-relaxed ${className}`}>
-      Reference look wrong?{' '}
+      {t('reportRef.inlineQuestion')}{' '}
       <Link to={to} className="text-brand-emerald/60 hover:text-brand-emerald underline underline-offset-2">
-        Report it
+        {t('reportRef.reportIt')}
       </Link>
     </p>
   );

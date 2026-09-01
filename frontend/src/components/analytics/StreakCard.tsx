@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { FireIcon, TrophyIcon, LockClosedIcon } from '@heroicons/react/24/solid';
 import { PauseIcon, PlayIcon, BoltIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import type { ChartDataPoint } from '../../types/api.js';
+import { formatLocaleDate } from '../../utils/localeDate.js';
 
 interface StreakData {
   currentStreak?: number;
@@ -33,7 +34,7 @@ function heatmapColor(total: number, goal: number | null | undefined): string {
 
 function formatShortDate(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00');
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return formatLocaleDate(d, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 export default function StreakCard({ streak, onPause, onResume, isLoading, chartData, dailyGoal, todayTotal = 0 }: StreakCardProps) {
@@ -232,7 +233,7 @@ export default function StreakCard({ streak, onPause, onResume, isLoading, chart
                       className={`w-full rounded-t-sm ${isToday ? 'ring-1 ring-white/30' : ''}`}
                     />
                     <p className={`text-[9px] text-center mt-0.5 ${isToday ? 'text-white/60 font-bold' : 'text-white/20'}`}>
-                      {new Date(day.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'narrow' })}
+                      {formatLocaleDate(new Date(day.date + 'T12:00:00'), { weekday: 'narrow' })}
                     </p>
                   </div>
                 );

@@ -29,6 +29,11 @@ export const TRANSLATIONS = [
   { id: 'bn.bengali', label: 'Bengali — মুহিউদ্দীন খান' },
 ] as const;
 
+const LANG_TO_TRANSLATION: Record<string, string> = {
+  en: 'en.sahih',
+  bn: 'bn.bengali',
+};
+
 export function selectedTranslations(): string[] {
   try {
     const raw = JSON.parse(localStorage.getItem('ihsan_quran_translations') ?? '["en.sahih"]') as string[];
@@ -37,6 +42,17 @@ export function selectedTranslations(): string[] {
   } catch {
     return ['en.sahih'];
   }
+}
+
+/** When the app language changes, update the Quran primary translation to match. */
+export function syncQuranTranslationWithLang(lang: string): void {
+  const target = LANG_TO_TRANSLATION[lang];
+  if (!target) return;
+  const current = selectedTranslations();
+  if (current[0] === target) return;
+  const secondary = current[1] && current[1] !== target ? current[1] : undefined;
+  const next = secondary ? [target, secondary] : [target];
+  localStorage.setItem('ihsan_quran_translations', JSON.stringify(next));
 }
 
 const SURAH_META_KEY = 'ihsan_surah_meta_v1';
