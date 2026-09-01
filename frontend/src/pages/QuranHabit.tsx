@@ -6,6 +6,7 @@ import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
 import { useQuranSummary, useStartKhatam, useToggleDuaBookmark, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
 import { loadSurahList, locateGlobalAyah, surahDisplayName, type SurahMeta } from '../utils/quranData.js';
+import { formatLocaleNumber } from '../utils/localeDate.js';
 import { SPECIAL_SURAHS, AYAH_BUNDLES, QURANIC_DUAS } from '../utils/quranMeta.js';
 
 /**
@@ -74,8 +75,8 @@ export default function QuranHabit() {
               </svg>
               <div className="absolute inset-0 grid place-items-center text-center">
                 <div>
-                  <p className="text-xl font-black text-white leading-none">{isLoading ? '…' : today}</p>
-                  <p className="text-[9px] text-white/40 font-bold">{goal > 0 ? t('quranHabit.ofGoal', { goal }) : t('quranHabit.ayatToday')}</p>
+                  <p className="text-xl font-black text-white leading-none">{isLoading ? '…' : formatLocaleNumber(today)}</p>
+                  <p className="text-[9px] text-white/40 font-bold">{goal > 0 ? t('quranHabit.ofGoal', { goal: formatLocaleNumber(goal) }) : t('quranHabit.ayatToday')}</p>
                 </div>
               </div>
             </div>
@@ -112,7 +113,7 @@ export default function QuranHabit() {
                are recognizable at a glance (Istiak's spec) ── */}
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl border border-brand-warm/25 bg-brand-warm/[0.05] p-4">
-            <p className="text-white font-black text-sm">{t('quranHabit.dayStreak', { count: summary?.streak ?? 0 })}</p>
+            <p className="text-white font-black text-sm">{t('quranHabit.dayStreak', { count: formatLocaleNumber(summary?.streak ?? 0) })}</p>
             <div className="flex items-end gap-1 h-10 mt-2">
               {(summary?.last7 ?? []).map((d) => (
                 <div key={d.date} title={`${d.date}: ${d.units} ayat`}
@@ -120,15 +121,15 @@ export default function QuranHabit() {
                   style={{ height: `${Math.max(10, (d.units / maxLast7) * 100)}%` }} />
               ))}
             </div>
-            <p className="text-white/25 text-[10px] mt-1">{t('quranHabit.bestStreak', { count: summary?.bestStreak ?? 0 })}</p>
+            <p className="text-white/25 text-[10px] mt-1">{t('quranHabit.bestStreak', { count: formatLocaleNumber(summary?.bestStreak ?? 0) })}</p>
           </div>
           <Link to="/quran/khatam" className="rounded-2xl border border-brand-emerald/25 bg-brand-emerald/[0.05] p-4 hover:border-brand-emerald/50 transition-all">
-            <p className="text-white font-black text-sm">{t('quranHabit.khatamPct', { pct: khatmPct.toFixed(1) })}</p>
+            <p className="text-white font-black text-sm">{t('quranHabit.khatamPct', { pct: formatLocaleNumber(Number(khatmPct.toFixed(1))) })}</p>
             <div className="h-2 rounded-full bg-white/10 overflow-hidden mt-2.5">
               <div className="h-full rounded-full bg-gradient-to-r from-brand-emerald to-brand-info" style={{ width: `${khatmPct}%` }} />
             </div>
             <p className="text-white/25 text-[10px] mt-1.5">
-              {pos ? t('quranHabit.khatamAt', { name: nameOf(pos.surah), ref: `${pos.surah}:${pos.ayah}` }) : t('quranHabit.beginYourJourney')} · {t('quranHabit.completed', { count: summary?.profile.khatmCount ?? 0 })}
+              {pos ? t('quranHabit.khatamAt', { name: nameOf(pos.surah), ref: `${formatLocaleNumber(pos.surah)}:${formatLocaleNumber(pos.ayah)}` }) : t('quranHabit.beginYourJourney')} · {t('quranHabit.completed', { count: formatLocaleNumber(summary?.profile.khatmCount ?? 0) })}
             </p>
           </Link>
         </div>
@@ -145,8 +146,8 @@ export default function QuranHabit() {
                 className="rounded-2xl bg-white/[0.03] border border-transparent hover:border-brand-gold/40 p-3 text-left transition-all"
                 onClick={() => navigate(`/quran/read/${sp.surah}?mode=single`)}
               >
-                <p className="text-white/80 text-sm font-bold">{sp.emoji} {sp.name} <span className="text-white/25 font-normal">· {sp.surah}</span></p>
-                <p className="text-white/40 text-[11px] mt-1 leading-relaxed">{sp.note}</p>
+                <p className="text-white/80 text-sm font-bold">{sp.emoji} {surahDisplayName({ number: sp.surah, englishName: sp.name }, i18n.language)} <span className="text-white/25 font-normal">· {formatLocaleNumber(sp.surah)}</span></p>
+                <p className="text-white/40 text-[11px] mt-1 leading-relaxed">{i18n.language === 'bn' && sp.noteBn ? sp.noteBn : sp.note}</p>
                 {sp.ref && (
                   <a className="text-brand-gold/60 text-[10px] underline" href={sp.ref.url} target="_blank" rel="noreferrer"
                     onClick={(e) => e.stopPropagation()}>{sp.ref.text}</a>
@@ -166,8 +167,8 @@ export default function QuranHabit() {
                 className="rounded-2xl bg-white/[0.03] border border-transparent hover:border-brand-emerald/40 p-3 text-left transition-all"
                 onClick={() => navigate(`/quran/read/${b.surah}?start=${b.fromAyah}&end=${b.toAyah}&mode=bundle`)}
               >
-                <p className="text-white/80 text-sm font-bold">{b.emoji} {b.title} <span className="text-white/25 font-normal">· {b.surah}:{b.fromAyah}{b.toAyah !== b.fromAyah ? `–${b.toAyah}` : ''}</span></p>
-                <p className="text-white/40 text-[11px] mt-1 leading-relaxed">{b.virtue}</p>
+                <p className="text-white/80 text-sm font-bold">{b.emoji} {i18n.language === 'bn' && b.titleBn ? b.titleBn : b.title} <span className="text-white/25 font-normal">· {formatLocaleNumber(b.surah)}:{formatLocaleNumber(b.fromAyah)}{b.toAyah !== b.fromAyah ? `–${formatLocaleNumber(b.toAyah)}` : ''}</span></p>
+                <p className="text-white/40 text-[11px] mt-1 leading-relaxed">{i18n.language === 'bn' && b.virtueBn ? b.virtueBn : b.virtue}</p>
                 <a className="text-brand-emerald/60 text-[10px] underline" href={b.ref.url} target="_blank" rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}>{b.ref.text}</a>
               </button>
@@ -190,8 +191,8 @@ export default function QuranHabit() {
                   onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/quran/read/${d.surah}?start=${d.fromAyah}&end=${d.toAyah}&mode=bundle&dua=${d.id}`); }}
                 >
                   <span className="group-hover:scale-110 transition-transform">{d.emoji}</span>
-                  <span className="flex-1 text-white/60 group-hover:text-white/80 text-xs transition-colors">{d.title}</span>
-                  <span className="text-white/25 text-[10px]">{d.surah}:{d.fromAyah}</span>
+                  <span className="flex-1 text-white/60 group-hover:text-white/80 text-xs transition-colors">{i18n.language === 'bn' && d.titleBn ? d.titleBn : d.title}</span>
+                  <span className="text-white/25 text-[10px]">{formatLocaleNumber(d.surah)}:{formatLocaleNumber(d.fromAyah)}</span>
                   <button
                     aria-label={saved ? t('quranHabit.removeDuaAriaLabel', { title: d.title }) : t('quranHabit.saveDuaAriaLabel', { title: d.title })}
                     className={`text-base p-1.5 -m-1 rounded-lg hover:bg-white/10 transition-all ${saved ? 'text-brand-gold' : 'text-white/20 hover:text-brand-gold/70'}`}

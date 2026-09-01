@@ -44,7 +44,7 @@ import {
 } from '../utils/fastingRules.js';
 import { calcPrayerTimes, formatTime } from '../utils/prayerTimes.js';
 import { isPostMaghrib, getHijriToday } from '../utils/islamicCalendar.js';
-import { formatLocaleDate } from '../utils/localeDate.js';
+import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 
 // ─── date helpers ─────────────────────────────────────────────────────────────
 
@@ -354,7 +354,7 @@ export default function FastingTracker() {
     : 'from-brand-info/20 via-brand-deep to-brand-deep';
 
   const currentTypeChip = category === 'voluntary'
-    ? `${VOLUNTARY_BY_ID[effectiveKind]?.emoji ?? '💚'} ${VOLUNTARY_BY_ID[effectiveKind]?.label ?? t('fasting.voluntary', 'Voluntary')}`
+    ? `${VOLUNTARY_BY_ID[effectiveKind]?.emoji ?? '💚'} ${VOLUNTARY_BY_ID[effectiveKind] ? t(`fastingRules.voluntary.${effectiveKind}`, VOLUNTARY_BY_ID[effectiveKind]!.label) : t('fasting.voluntary', 'Voluntary')}`
     : category === 'nadhr'
     ? `🤝 ${vows.find((v) => v.id === vowId)?.title ?? t('fasting.nadhr', 'Vow')}`
     : `${CATEGORY_LABEL[category].emoji} ${t(`fasting.${category}`, CATEGORY_LABEL[category].label)}`;
@@ -800,7 +800,7 @@ export default function FastingTracker() {
                   : [{ label: t('fasting.allTime', 'All time'), value: summary?.stats.total ?? 0, color: '#5a9e8e' }]),
               ].map((s) => (
                 <div key={s.label} className="rounded-xl border border-brand-emerald/10 bg-white/[0.04] px-2 py-2 text-center">
-                  <p className="font-black text-lg tabular-nums leading-none" style={{ color: s.color }}>{s.value}</p>
+                  <p className="font-black text-lg tabular-nums leading-none" style={{ color: s.color }}>{formatLocaleNumber(s.value)}</p>
                   <p className="text-white/30 text-[9px] uppercase tracking-wide mt-1">{s.label}</p>
                 </div>
               ))}

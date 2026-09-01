@@ -5,7 +5,8 @@ import { ChevronDownIcon, TrashIcon, PencilSquareIcon } from '@heroicons/react/2
 import { useTranslation } from 'react-i18next';
 import { useZikrStore } from '../store/useZikrStore.js';
 import { useAddZikrType, useDeleteZikrType, useZikrTypes } from '../hooks/useZikrTypes.js';
-import { ZIKR_LIBRARY, PREDEFINED_TYPES, LEGACY_LIBRARY_NAMES, type LibraryZikr } from '../utils/zikrLibrary.js';
+import { ZIKR_LIBRARY, PREDEFINED_TYPES, LEGACY_LIBRARY_NAMES, zikrDisplayName, type LibraryZikr } from '../utils/zikrLibrary.js';
+import { formatLocaleNumber } from '../utils/localeDate.js';
 import ConfirmDialog from './ConfirmDialog.js';
 import EditZikrModal from './EditZikrModal.js';
 
@@ -28,7 +29,7 @@ const APP_OWNED_NAMES = new Set(
 );
 
 export default function ZikrLibrarySection() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { types, setTypes, setCustomMeaning, removeType } = useZikrStore();
   const addZikrType = useAddZikrType();
   const deleteZikrType = useDeleteZikrType();
@@ -83,7 +84,7 @@ export default function ZikrLibrarySection() {
           grade: item.grade,
           virtue: item.virtue,
         });
-        toast.success(t('zikrLibrary.added', '"{{name}}" added to your counter 📿', { name: item.name }), { id: 'lib-add' });
+        toast.success(t('zikrLibrary.added', '"{{name}}" added to your counter 📿', { name: zikrDisplayName(item.name, i18n.language) }), { id: 'lib-add' });
         setAdding(null);
       },
       onError: () => { toast.error(t('zikrLibrary.addFail', 'Could not add — try again.'), { id: 'lib-add' }); setAdding(null); },
@@ -138,8 +139,8 @@ export default function ZikrLibrarySection() {
             }}
             aria-expanded={openCat === cat.id}
           >
-            <span className="text-white/80 text-sm font-bold">{cat.emoji} {cat.title}
-              <span className="text-white/25 font-normal"> · {cat.items.length}</span>
+            <span className="text-white/80 text-sm font-bold">{cat.emoji} {i18n.language === 'bn' && cat.titleBn ? cat.titleBn : cat.title}
+              <span className="text-white/25 font-normal"> · {formatLocaleNumber(cat.items.length)}</span>
             </span>
             <ChevronDownIcon className={`w-4 h-4 text-white/30 transition-transform ${openCat === cat.id ? 'rotate-180' : ''}`} />
           </button>
@@ -147,17 +148,17 @@ export default function ZikrLibrarySection() {
             {openCat === cat.id && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                 <div className="px-4 pb-3 space-y-2">
-                  <p className="text-white/30 text-[11px] italic">{cat.blurb}</p>
+                  <p className="text-white/30 text-[11px] italic">{i18n.language === 'bn' && cat.blurbBn ? cat.blurbBn : cat.blurb}</p>
                   {cat.items.map((item) => {
                     const added = inList(item.name);
                     return (
                       <div key={item.name} className="rounded-xl bg-white/5 border border-brand-emerald/10 p-3">
                         <div className="flex items-start gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className="text-white/80 text-sm font-bold">{item.name}</p>
+                            <p className="text-white/80 text-sm font-bold">{zikrDisplayName(item.name, i18n.language)}</p>
                             <p dir="rtl" lang="ar" className="text-brand-emerald/80 font-serif text-base leading-loose mt-0.5">{item.arabic}</p>
-                            <p className="text-white/40 text-[11px] mt-1 leading-relaxed">{item.meaning}</p>
-                            {item.virtue && <p className="text-brand-gold/60 text-[11px] mt-1 leading-relaxed">✨ {item.virtue}</p>}
+                            <p className="text-white/40 text-[11px] mt-1 leading-relaxed">{i18n.language === 'bn' && item.meaningBn ? item.meaningBn : item.meaning}</p>
+                            {item.virtue && <p className="text-brand-gold/60 text-[11px] mt-1 leading-relaxed">✨ {i18n.language === 'bn' && item.virtueBn ? item.virtueBn : item.virtue}</p>}
                             <a className="text-white/30 text-[10px] underline" href={item.sourceUrl} target="_blank" rel="noreferrer">
                               {item.source}{item.grade ? ` · ${item.grade}` : ''}
                             </a>

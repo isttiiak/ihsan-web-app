@@ -3,7 +3,7 @@
 // The hijri date used everywhere is the ADJUSTED one (user's ±1 day moon-sighting
 // setting from Settings) via getHijriDate().
 
-import { getHijriDate } from './islamicCalendar.js';
+import { getHijriDate, formatHijriDate } from './islamicCalendar.js';
 
 // 'ramadan' is logged only by the dedicated Ramadan tracker (/ramadan)
 export type FastingCategory = 'qada' | 'kaffarah' | 'nadhr' | 'voluntary' | 'ramadan';
@@ -407,7 +407,7 @@ export function getDayRuling(date: Date, hijriOverride?: import('./islamicCalend
   const weekday = date.getDay(); // 0=Sun … 5=Fri, 6=Sat
   const recommended: VoluntaryMeta[] = [];
   const cautions: DayCaution[] = [];
-  const hijriLabel = h ? `${h.day} ${h.monthName} ${h.year} AH` : null;
+  const hijriLabel = h ? formatHijriDate(h) : null;
 
   if (h) {
     // ── Ramadan: dedicated tracker (future) — no ordinary logging ──────────

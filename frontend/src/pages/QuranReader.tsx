@@ -15,6 +15,7 @@ import { TAFSIRS, getPreferredTafsir, setPreferredTafsir } from '../utils/tafsir
 import { QURANIC_DUAS } from '../utils/quranMeta.js';
 import { getArabicFont, getFontPx, translitEnabled } from '../utils/quranPrefs.js';
 import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, selectedTranslations, surahDisplayName, TRANSLATIONS, type SurahMeta, type AyahText } from '../utils/quranData.js';
+import { formatLocaleNumber } from '../utils/localeDate.js';
 import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrate.js';
 
 /**
@@ -463,10 +464,10 @@ export default function QuranReader() {
         {/* info chips */}
         <div className="flex flex-wrap items-center gap-2 text-[11px]">
           <span className="px-2.5 py-1 rounded-full bg-white/5 border border-brand-emerald/10 text-white/70 font-bold">
-            {surahNo}. {surahMeta ? surahDisplayName(surahMeta, i18n.language) : '…'} <span className="text-white/30">· {surahMeta?.numberOfAyahs ?? '–'} {t('quranReader.ayahWord', 'āyāt')}</span>
+            {formatLocaleNumber(surahNo)}. {surahMeta ? surahDisplayName(surahMeta, i18n.language) : '…'} <span className="text-white/30">· {surahMeta ? formatLocaleNumber(surahMeta.numberOfAyahs) : '–'} {t('quranReader.ayahWord', 'āyāt')}</span>
           </span>
           <span className="px-2.5 py-1 rounded-full bg-white/5 border border-brand-emerald/10 text-white/50">
-            {t('quranReader.juz', 'Juz')} {current ? juzOf(surahNo, current.numberInSurah) : '–'}
+            {t('quranReader.juz', 'Juz')} {current ? formatLocaleNumber(juzOf(surahNo, current.numberInSurah)) : '–'}
           </span>
           {countsGoal ? (
             <span className="px-2.5 py-1 rounded-full bg-brand-emerald/10 border border-brand-emerald/25 text-brand-emerald font-bold">
@@ -574,7 +575,7 @@ export default function QuranReader() {
               >
                 <div className="space-y-0.5">
                   <p className="text-white/25 text-xs font-bold tracking-widest">
-                    {surahMeta?.name} · <span className="text-brand-emerald/80 text-sm">{current.numberInSurah}</span><span className="text-white/20">/{surahMeta?.numberOfAyahs}</span>
+                    {surahMeta?.name} · <span className="text-brand-emerald/80 text-sm">{formatLocaleNumber(current.numberInSurah)}</span><span className="text-white/20">/{surahMeta ? formatLocaleNumber(surahMeta.numberOfAyahs) : ''}</span>
                   </p>
                   {surahMeta?.englishNameTranslation && (
                     <p className="text-white/30 text-[11px]">
@@ -693,7 +694,7 @@ export default function QuranReader() {
                   <p className="text-white/50 text-sm">{t('quranReader.tafsirLoadErrorShort', "Couldn't load this tafsir — try another edition.")}</p>
                 ) : (
                   <>
-                    <p className="text-brand-gold/50 text-xs font-bold mb-3">{surahNo}:{ayahNo} · {tafsir.data?.resourceName}</p>
+                    <p className="text-brand-gold/50 text-xs font-bold mb-3">{formatLocaleNumber(surahNo)}:{formatLocaleNumber(ayahNo)} · {tafsir.data?.resourceName}</p>
                     <div className={`whitespace-pre-line`} style={tafsirTextStyle}>{tafsir.data?.text}</div>
                     <p className="text-white/25 text-[10px] mt-4">
                       {t('quranReader.sourcedFromPrefix', 'Sourced from')} <a className="underline" href={tafsir.data?.url} target="_blank" rel="noreferrer">quran.com</a> — {t('quranReader.authenticUnedited', 'authentic, unedited.')}

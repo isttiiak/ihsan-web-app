@@ -6,7 +6,7 @@ import TabNav from '../components/TabNav.js';
 import { ChartBarIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useSalatAnalytics } from '../hooks/useSalatLog.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
-import { formatLocaleDate } from '../utils/localeDate.js';
+import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 
 const PERIOD_OPTIONS = [
   { label: '30d', value: 30 },
@@ -136,7 +136,7 @@ export default function SalatAnalytics() {
                 <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-brand-emerald/10 border border-brand-emerald/20">
                   <span className="text-lg shrink-0">📅</span>
                   <p className="text-sm text-white/50">
-                    {t('salatAnalytics.periodNoteStart', { total: data.periodDays })} <span className="text-brand-emerald font-semibold">{data.totalDays}</span> {t('salatAnalytics.periodNoteEnd', { total: data.periodDays })}
+                    {t('salatAnalytics.periodNoteStart', { total: formatLocaleNumber(data.periodDays) })} <span className="text-brand-emerald font-semibold">{formatLocaleNumber(data.totalDays)}</span> {t('salatAnalytics.periodNoteEnd', { total: formatLocaleNumber(data.periodDays) })}
                   </p>
                 </div>
               )}
@@ -144,10 +144,10 @@ export default function SalatAnalytics() {
               {/* Stat tiles */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: t('salatAnalytics.completion'), value: `${data.completionRate}%`, accent: 'text-brand-emerald' },
-                  { label: t('salatAnalytics.currentStreak'), value: data.currentStreak, accent: 'text-brand-gold' },
-                  { label: t('salatAnalytics.bestRun'), value: data.bestStreak, accent: 'text-brand-info' },
-                  { label: t('salatAnalytics.naflDays'), value: data.naflDays ?? 0, accent: 'text-brand-warm' },
+                  { label: t('salatAnalytics.completion'), value: `${formatLocaleNumber(data.completionRate)}%`, accent: 'text-brand-emerald' },
+                  { label: t('salatAnalytics.currentStreak'), value: formatLocaleNumber(data.currentStreak), accent: 'text-brand-gold' },
+                  { label: t('salatAnalytics.bestRun'), value: formatLocaleNumber(data.bestStreak), accent: 'text-brand-info' },
+                  { label: t('salatAnalytics.naflDays'), value: formatLocaleNumber(data.naflDays ?? 0), accent: 'text-brand-warm' },
                 ].map((s, i) => (
                   <motion.div
                     key={s.label}
@@ -171,7 +171,7 @@ export default function SalatAnalytics() {
                 <div className="card-body p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <h2 className="text-base font-bold text-white">{t('salatAnalytics.overallBreakdown')}</h2>
-                    <span className="text-white/25 text-xs">{t('salatAnalytics.totalSummary', { days: data.totalDays, total: data.totalPossiblePrayers })}</span>
+                    <span className="text-white/25 text-xs">{t('salatAnalytics.totalSummary', { days: formatLocaleNumber(data.totalDays), total: formatLocaleNumber(data.totalPossiblePrayers) })}</span>
                   </div>
                   <div className="w-full h-4 rounded-full overflow-hidden flex bg-white/10">
                     {data.totalPossiblePrayers > 0 && (
@@ -183,7 +183,7 @@ export default function SalatAnalytics() {
                         ].map(({ count, color, tip }) => (
                           <motion.div
                             key={tip}
-                            title={`${tip}: ${count}`}
+                            title={`${tip}: ${formatLocaleNumber(count)}`}
                             initial={{ width: 0 }}
                             animate={{ width: `${(count / data.totalPossiblePrayers) * 100}%` }}
                             transition={{ duration: 0.8 }}
@@ -204,14 +204,14 @@ export default function SalatAnalytics() {
                       <div key={label} className="flex items-center gap-1.5">
                         <span className={`w-2.5 h-2.5 rounded-sm ${color}`} />
                         <span className="text-white/50">{label}</span>
-                        <span className="text-white font-bold">{count}</span>
+                        <span className="text-white font-bold">{formatLocaleNumber(count)}</span>
                       </div>
                     ))}
                   </div>
                   <div className="space-y-0.5 pt-1 border-t border-brand-emerald/10">
                     <p className="text-white/20 text-xs flex items-center gap-1">
                       <InformationCircleIcon className="w-3 h-3 shrink-0" />
-                      {t('salatAnalytics.completionFormula', { days: data.totalDays })} <strong className="text-white/30">{data.completionRate}%</strong>
+                      {t('salatAnalytics.completionFormula', { days: formatLocaleNumber(data.totalDays) })} <strong className="text-white/30">{formatLocaleNumber(data.completionRate)}%</strong>
                     </p>
                     <p className="text-white/20 text-xs flex items-center gap-1">
                       <InformationCircleIcon className="w-3 h-3 shrink-0" />
@@ -246,9 +246,9 @@ export default function SalatAnalytics() {
                             <span className="text-2xl">{prayer.icon}</span>
                             <h3 className="font-black text-white text-base">{t(`salatAnalytics.prayerName.${prayer.id}`)}</h3>
                           </div>
-                          <div className="text-3xl font-black text-white mb-0.5">{pct}%</div>
+                          <div className="text-3xl font-black text-white mb-0.5">{formatLocaleNumber(pct)}%</div>
                           <p className="text-white/40 text-xs mb-1.5">
-                            {t('salatAnalytics.prayedFormula', { done, total })}
+                            {t('salatAnalytics.prayedFormula', { done: formatLocaleNumber(done), total: formatLocaleNumber(total) })}
                           </p>
                           <div className="w-full bg-white/20 rounded-full h-1.5 mb-2">
                             <motion.div
@@ -259,11 +259,11 @@ export default function SalatAnalytics() {
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-0.5 text-xs text-white/80">
-                            <span>✅ {t('salatAnalytics.onTimeStat', { count: stats.completed })}</span>
-                            <span>⏰ {t('salatAnalytics.kazaStat', { count: stats.kaza })}</span>
-                            <span>❌ {t('salatAnalytics.missedStat', { count: stats.missed })}</span>
-                            <span>🕌 {t('salatAnalytics.mosqueStat', { count: stats.mosque })}</span>
-                            {stats.tasbeeh > 0 && <span className="col-span-2">📿 {t('salatAnalytics.tasbeehStat', { count: stats.tasbeeh })}</span>}
+                            <span>✅ {t('salatAnalytics.onTimeStat', { count: formatLocaleNumber(stats.completed) })}</span>
+                            <span>⏰ {t('salatAnalytics.kazaStat', { count: formatLocaleNumber(stats.kaza) })}</span>
+                            <span>❌ {t('salatAnalytics.missedStat', { count: formatLocaleNumber(stats.missed) })}</span>
+                            <span>🕌 {t('salatAnalytics.mosqueStat', { count: formatLocaleNumber(stats.mosque) })}</span>
+                            {stats.tasbeeh > 0 && <span className="col-span-2">📿 {t('salatAnalytics.tasbeehStat', { count: formatLocaleNumber(stats.tasbeeh) })}</span>}
                           </div>
                         </div>
                       </motion.div>
@@ -276,7 +276,7 @@ export default function SalatAnalytics() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3 flex-wrap">
                   <h2 className="text-white font-black text-sm">{t('salatAnalytics.prayerCalendar')}</h2>
-                  <span className="text-white/25 text-xs">{t('salatAnalytics.lastDays', { count: data.calendarData.length })}</span>
+                  <span className="text-white/25 text-xs">{t('salatAnalytics.lastDays', { count: formatLocaleNumber(data.calendarData.length) })}</span>
                 </div>
 
                 <motion.div
@@ -323,7 +323,7 @@ export default function SalatAnalytics() {
                                   animate={{ opacity: 1, scale: 1 }}
                                   transition={{ delay: (wi + di * calendarWeeks.length) * 0.004, duration: 0.25 }}
                                   className="tooltip cursor-default"
-                                  data-tip={t('salatAnalytics.calendarTip', { date: cell.date, completed: cell.completed })}
+                                  data-tip={t('salatAnalytics.calendarTip', { date: cell.date, completed: formatLocaleNumber(cell.completed) })}
                                 >
                                   <div
                                     className={`w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold transition-transform hover:scale-110 ${
@@ -336,7 +336,7 @@ export default function SalatAnalytics() {
                                   >
                                     {isLogged && (
                                       <span className={isPerfect ? 'text-white' : cell.completed >= 3 ? 'text-white/80' : cell.completed > 0 ? 'text-white/60' : 'text-white/40'}>
-                                        {cell.completed}
+                                        {formatLocaleNumber(cell.completed)}
                                       </span>
                                     )}
                                   </div>
@@ -354,7 +354,7 @@ export default function SalatAnalytics() {
                       {[0, 1, 2, 3, 4, 5].map((n) => (
                         <div key={n} className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold text-white/50"
                           style={calendarCellStyle(n, true)}>
-                          {n}
+                          {formatLocaleNumber(n)}
                         </div>
                       ))}
                       <span className="text-white/25 text-xs ml-1">{t('salatAnalytics.more')}</span>

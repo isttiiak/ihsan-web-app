@@ -291,7 +291,7 @@ export default function ZikrCounter() {
   const meaning = defaultMeaning
     ? { arabic: defaultMeaning.arabic, transliteration: t(defaultMeaning.translitKey, defaultMeaning.translitFallback), meaning: t(defaultMeaning.meaningKey, defaultMeaning.meaningFallback) }
     : (libItem
-      ? { arabic: libItem.shortArabic ?? libItem.arabic, transliteration: libItem.transliteration ?? '', meaning: libItem.shortMeaning ?? libItem.meaning }
+      ? { arabic: libItem.shortArabic ?? libItem.arabic, transliteration: libItem.transliteration ?? '', meaning: i18n.language === 'bn' && libItem.meaningBn ? libItem.meaningBn : (libItem.shortMeaning ?? libItem.meaning) }
       : customMeanings[selected]
         ? { arabic: customMeanings[selected].arabic ?? '', transliteration: customMeanings[selected].transliteration ?? '', meaning: customMeanings[selected].meaning }
         : null);
@@ -680,7 +680,7 @@ export default function ZikrCounter() {
           const predef = FULL_PREDEFINED[selected];
           // Full-text resolution: library → predefined extras → custom
           const full = libItem
-            ? { arabic: libItem.arabic, transliteration: libItem.transliteration, meaning: libItem.meaning, virtue: libItem.virtue, source: libItem.source, sourceUrl: libItem.sourceUrl, grade: libItem.grade }
+            ? { arabic: libItem.arabic, transliteration: libItem.transliteration, meaning: i18n.language === 'bn' && libItem.meaningBn ? libItem.meaningBn : libItem.meaning, virtue: i18n.language === 'bn' && libItem.virtueBn ? libItem.virtueBn : libItem.virtue, source: libItem.source, sourceUrl: libItem.sourceUrl, grade: libItem.grade }
             : predef
               ? { arabic: predef.arabic, transliteration: undefined, meaning: t(predef.meaningKey, predef.meaningFallback), virtue: undefined, source: predef.source, sourceUrl: predef.sourceUrl, grade: undefined }
               : custom

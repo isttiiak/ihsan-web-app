@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
 import { loadSurahList, surahDisplayName, type SurahMeta } from '../utils/quranData.js';
+import { formatLocaleNumber } from '../utils/localeDate.js';
 import { ArrowUpIcon } from '@heroicons/react/24/solid';
 
 /**
@@ -73,11 +74,11 @@ export default function QuranBrowse() {
                 onClick={() => navigate(`/quran/read/${s.number}`)}
               >
                 <span className="w-9 h-9 rounded-xl bg-brand-emerald/10 border border-brand-emerald/25 grid place-items-center text-brand-emerald text-xs font-black shrink-0">
-                  {s.number}
+                  {formatLocaleNumber(s.number)}
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-white font-bold text-sm">{surahDisplayName(s, i18n.language)}</span>
-                  <span className="block text-white/30 text-xs truncate">{s.englishNameTranslation} · {s.numberOfAyahs} āyāt · {s.revelationType}</span>
+                  <span className="block text-white/30 text-xs truncate">{s.englishNameTranslation} · {formatLocaleNumber(s.numberOfAyahs)} āyāt · {s.revelationType}</span>
                 </span>
                 <span className="text-xl text-white/70 font-serif" dir="rtl">{s.name}</span>
               </button>
