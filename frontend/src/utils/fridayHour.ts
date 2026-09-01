@@ -12,6 +12,7 @@
 
 export const FRIDAY_HOUR_REF = {
   text: 'Seek it in the last hour after the afternoon prayer.',
+  textBn: 'আসরের নামাযের পর শেষ সময়ে তা তালাশ করো।',
   source: 'Sunan Abī Dāwūd 1048',
   url: 'https://sunnah.com/abudawud:1048',
   grade: 'Ṣaḥīḥ (al-Albānī)',

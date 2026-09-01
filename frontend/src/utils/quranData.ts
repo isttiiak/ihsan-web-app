@@ -2,6 +2,7 @@
 // cached hard in localStorage so each surah is fetched exactly once ever.
 
 import { SURAH_NAMES_BN } from './surahNamesBn.js';
+import { SURAH_MEANINGS_BN } from './surahMeaningsBn.js';
 
 export interface SurahMeta {
   number: number;
@@ -38,6 +39,14 @@ export const TRANSLATIONS = [
 export function surahDisplayName(meta: Pick<SurahMeta, 'number' | 'englishName'>, lang: string): string {
   if (lang === 'bn') return SURAH_NAMES_BN[meta.number] ?? meta.englishName;
   return meta.englishName;
+}
+
+/** Surah MEANING in the app's current language (e.g. "The Opening" /
+ * "সূচনা") — sourced from quran.com's own API, one of this app's two
+ * authorized reference sources. Parallel to `englishNameTranslation`. */
+export function surahMeaningDisplay(meta: Pick<SurahMeta, 'number' | 'englishNameTranslation'>, lang: string): string {
+  if (lang === 'bn') return SURAH_MEANINGS_BN[meta.number] ?? meta.englishNameTranslation;
+  return meta.englishNameTranslation;
 }
 
 const LANG_TO_TRANSLATION: Record<string, string> = {

@@ -19,6 +19,7 @@ import { celebrateGoal } from '../utils/celebrate.js';
 import { getHiddenZikr, hideZikr } from '../utils/hiddenZikr.js';
 import { PREDEFINED_TYPES, findLibraryZikr, isCoreZikr, zikrDisplayName } from '../utils/zikrLibrary.js';
 import { formatLocaleNumber } from '../utils/localeDate.js';
+import { translateReference } from '../utils/localeReference.js';
 import EditZikrModal from '../components/EditZikrModal.js';
 import ReportReference from '../components/ReportReference.js';
 import ZikrSettings from '../components/ZikrSettings.js';
@@ -347,7 +348,7 @@ export default function ZikrCounter() {
       (toastObj) => (
         <div className="flex flex-col gap-3">
           <p className="font-semibold text-brand-deep text-sm">
-            {t('zikr.resetConfirmTitle', { name: selected })}
+            {t('zikr.resetConfirmTitle', { name: zikrDisplayName(selected, i18n.language) })}
             <br />
             <span className="text-white text-xs">{t('zikr.resetConfirmNote')}</span>
           </p>
@@ -742,21 +743,21 @@ export default function ZikrCounter() {
                         <div className="flex items-center gap-2 flex-wrap pt-0.5">
                           {(builtin?.grade ?? full?.grade) && (
                             <span className="text-brand-emerald/60 text-[10px] font-semibold bg-brand-emerald/10 px-2 py-0.5 rounded-full">
-                              {builtin?.grade ?? full?.grade}
+                              {translateReference((builtin?.grade ?? full?.grade)!, i18n.language)}
                             </span>
                           )}
                           {builtin ? (
                             <a href={builtin.url} target="_blank" rel="noopener noreferrer"
                               className="text-brand-gold/60 text-[10px] underline hover:text-brand-gold/90 transition-colors">
-                              {builtin.source} ↗
+                              {translateReference(builtin.source, i18n.language)} ↗
                             </a>
                           ) : full?.sourceUrl ? (
                             <a href={full.sourceUrl} target="_blank" rel="noopener noreferrer"
                               className="text-brand-gold/60 text-[10px] underline hover:text-brand-gold/90 transition-colors">
-                              {full.source} ↗
+                              {translateReference(full.source ?? '', i18n.language)} ↗
                             </a>
                           ) : full?.source ? (
-                            <span className="text-white/40 text-xs">{full.source}</span>
+                            <span className="text-white/40 text-xs">{translateReference(full.source, i18n.language)}</span>
                           ) : null}
                         </div>
                       )}

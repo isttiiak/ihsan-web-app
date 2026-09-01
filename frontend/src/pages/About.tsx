@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { translateReference } from '../utils/localeReference.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 
 const FEATURE_KEYS = [
@@ -13,7 +14,7 @@ const FEATURE_KEYS = [
 ];
 
 export default function About() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const features = FEATURE_KEYS.map((f) => ({
     emoji: f.emoji,
@@ -35,7 +36,7 @@ export default function About() {
             <p className="text-white/50 text-sm leading-relaxed max-w-lg mx-auto">
               <b className="text-brand-emerald">Iḥsān</b> {t('about.ihsanDefinition')}
               <a href="https://sunnah.com/muslim:8a" target="_blank" rel="noopener noreferrer"
-                className="text-brand-gold/60 underline ml-1 text-xs">(Ṣaḥīḥ Muslim 8a ↗)</a>.
+                className="text-brand-gold/60 underline ml-1 text-xs">{translateReference('(Ṣaḥīḥ Muslim 8a ↗)', i18n.language)}</a>.
               {' '}{t('about.ihsanPurpose')}
             </p>
           </motion.div>
@@ -105,7 +106,7 @@ export default function About() {
             </a>
             <p className="text-white/20 text-[11px] italic pt-2">
               {t('about.hadithQuote')} —{' '}
-              <a href="https://sunnah.com/bukhari:6464" target="_blank" rel="noopener noreferrer" className="underline">Ṣaḥīḥ al-Bukhārī 6464 ↗</a>
+              <a href="https://sunnah.com/bukhari:6464" target="_blank" rel="noopener noreferrer" className="underline">{translateReference('Ṣaḥīḥ al-Bukhārī 6464 ↗', i18n.language)}</a>
             </p>
           </motion.div>
         </div>

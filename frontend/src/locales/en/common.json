@@ -182,8 +182,8 @@
     "legendPeriod": "Period",
     "legendPms": "PMS",
     "nextMonth": "Next month",
-    "nifasDay": "Nifas day {{day}}",
-    "periodDay": "Period day {{day}}",
+    "nifasDay": "Nifas day",
+    "periodDay": "Period day",
     "pmsWindow": "PMS window",
     "prevMonth": "Previous month",
     "title": "Cycle Calendar",
@@ -597,7 +597,11 @@
     "today": "Today",
     "trackPrayer": "Track Prayer",
     "zikrSubtitle": "Continue your remembrance of Allah",
-    "zikrTitle": "Zikr Counter"
+    "zikrTitle": "Zikr Counter",
+    "daySuffix": "d",
+    "all5": "all 5",
+    "fridayHourQuote": "\"{{text}}\" Keep asking until the sun sets — for yourself, your parents, and the ummah.",
+    "fridayKahfQuote": "A light will shine for him between the two Fridays."
   },
   "landing": {
     "brother": "Brother",
@@ -672,8 +676,7 @@
     "zikrCounter": "Zikr Counter"
   },
   "navbar": {
-    "openAccountMenu": "Open account menu",
-    "salatTodayCount": "🕌 {{count}}/5 today"
+    "openAccountMenu": "Open account menu"
   },
   "notFound": {
     "backHome": "Back to Home",
@@ -1092,7 +1095,7 @@
     "dayCellTitle": "Ramadan {{day}} — {{date}}{{oddNightNote}}",
     "dayFasted": "Day {{day}} fasted — taqabbal Allāh!",
     "dayLabel": "Day {{day}}",
-    "daysAway": "{{days}} days away",
+    "daysAway": "days away",
     "dhikrToday": "Dhikr today",
     "excusedAutoQada": "{{count}} 🌸 excused (auto-qaḍā)",
     "expectedAround": "Expected around {{date}}",
@@ -1517,7 +1520,8 @@
     "voluntaryPrayers": "voluntary prayers",
     "whereLabel": "Where:",
     "witrReminderDesc": "Pray Witr after Isha before Fajr — usually 3 rak'ahs with Qunūt du'ā. The Prophet ﷺ never abandoned it, even while travelling.",
-    "witrReminderTitle": "Don't forget Witr — it's wājib!"
+    "witrReminderTitle": "Don't forget Witr — it's wājib!",
+    "nowTag": "now"
   },
   "settings": {
     "accessibilitySection": "Accessibility",
@@ -2137,7 +2141,8 @@
       "subhanallahWaBihamdihi": "Subḥāna-llāhi wa bi-ḥamdih"
     },
     "unsavedCounts": "You have {{count}} unsaved zikr counts. Sign in to save your progress and track your streaks.",
-    "yesRemove": "Yes, remove"
+    "yesRemove": "Yes, remove",
+    "resetAllConfirmTitle": "Reset zikr counters?"
   },
   "zikrAnalytics": {
     "addNewDhikrType": "+ Add a new dhikr type",
@@ -2301,5 +2306,13 @@
       "day_of_doubt": "Day of Doubt (30 Sha'bān)",
       "wisal": "Wiṣāl (continuous, no ifṭār)"
     }
+  },
+  "quranTabs": {
+    "quran": "📖 Quran",
+    "khatam": "🕋 Khatam",
+    "read": "🧭 Read",
+    "listen": "🎧 Listen",
+    "saved": "🔖 Saved",
+    "analytics": "📊 Analytics"
   }
 }

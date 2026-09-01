@@ -14,8 +14,9 @@ import { useTafsir } from '../hooks/useQuran.js';
 import { TAFSIRS, getPreferredTafsir, setPreferredTafsir } from '../utils/tafsir.js';
 import { QURANIC_DUAS } from '../utils/quranMeta.js';
 import { getArabicFont, getFontPx, translitEnabled } from '../utils/quranPrefs.js';
-import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, selectedTranslations, surahDisplayName, TRANSLATIONS, type SurahMeta, type AyahText } from '../utils/quranData.js';
+import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, selectedTranslations, surahDisplayName, surahMeaningDisplay, TRANSLATIONS, type SurahMeta, type AyahText } from '../utils/quranData.js';
 import { formatLocaleNumber } from '../utils/localeDate.js';
+import { translateReference } from '../utils/localeReference.js';
 import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrate.js';
 
 /**
@@ -579,7 +580,7 @@ export default function QuranReader() {
                   </p>
                   {surahMeta?.englishNameTranslation && (
                     <p className="text-white/30 text-[11px]">
-                      {surahDisplayName(surahMeta, i18n.language)} — “{surahMeta.englishNameTranslation}”
+                      {surahDisplayName(surahMeta, i18n.language)} — “{surahMeaningDisplay(surahMeta, i18n.language)}”
                     </p>
                   )}
                 </div>
@@ -765,12 +766,12 @@ export default function QuranReader() {
             {/* The story & evidence behind this duʿā (verified reference) */}
             {contextOpen && dua?.context && (
               <div className="rounded-2xl border border-brand-gold/15 bg-[#211f16] p-4 sm:p-5 space-y-2.5">
-                <p className="text-brand-gold/80 text-xs font-black">{dua.emoji} {dua.title}</p>
-                <p className="text-[#d8d0b8] text-sm leading-relaxed">{dua.context.text}</p>
+                <p className="text-brand-gold/80 text-xs font-black">{dua.emoji} {i18n.language === 'bn' && dua.titleBn ? dua.titleBn : dua.title}</p>
+                <p className="text-[#d8d0b8] text-sm leading-relaxed">{i18n.language === 'bn' && dua.context.textBn ? dua.context.textBn : dua.context.text}</p>
                 <a
                   className="inline-block text-brand-gold/60 text-[11px] underline hover:text-brand-gold"
                   href={dua.context.ref.url} target="_blank" rel="noreferrer"
-                >{dua.context.ref.text} ↗</a>
+                >{translateReference(dua.context.ref.text, i18n.language)} ↗</a>
               </div>
             )}
 

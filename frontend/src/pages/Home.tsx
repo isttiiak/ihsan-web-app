@@ -20,6 +20,8 @@ import {
   PRAYER_META,
   translateSalatName,
 } from '../utils/prayerTimes.js';
+import { formatLocaleNumber } from '../utils/localeDate.js';
+import { translateReference } from '../utils/localeReference.js';
 import { isFriday, getTodaySpecialDays } from '../utils/islamicCalendar.js';
 import { useCycleActive, useCycleSummary } from '../hooks/useCycle.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
@@ -42,7 +44,7 @@ interface ActivityItem {
 }
 
 export default function Home() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { counts = {}, hydrate } = useZikrStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -164,7 +166,7 @@ export default function Home() {
       id: 'zikr',
       icon: '📿',
       title: t('home.zikrTitle'),
-      stats: { label: t('home.today'), value: effectiveToday },
+      stats: { label: t('home.today'), value: formatLocaleNumber(effectiveToday) },
       link: '/zikr',
       accent: 'brand-emerald',
       border: 'border-brand-emerald/15',
@@ -177,11 +179,11 @@ export default function Home() {
       title: t('home.salatTitle'),
       stats: cycleActive
         ? { label: t('home.rayhanah'), value: `🌸 ${t('home.excused')}` }
-        : { label: t('home.today'), value: salatCompletedToday !== null ? `${salatCompletedToday}/5` : '—/5' },
+        : { label: t('home.today'), value: salatCompletedToday !== null ? `${formatLocaleNumber(salatCompletedToday)}/${formatLocaleNumber(5)}` : `—/${formatLocaleNumber(5)}` },
       link: '/salat',
       accent: 'brand-info',
       border: 'border-brand-info/15',
-      tag: salatAnalytics?.currentStreak ? `🔥 ${salatAnalytics.currentStreak}d · all 5` : undefined,
+      tag: salatAnalytics?.currentStreak ? `🔥 ${formatLocaleNumber(salatAnalytics.currentStreak)}${t('home.daySuffix', 'd')} · ${t('home.all5', 'all 5')}` : undefined,
     },
     {
       id: 'fasting',
@@ -191,7 +193,7 @@ export default function Home() {
         ? { label: t('home.rayhanah'), value: `🌸 ${t('home.excused')}` }
         : {
             label: t('home.thisMonth'),
-            value: fastingSummary ? `${fastingSummary.stats.thisMonth} ${t('home.fasts')}` : '—',
+            value: fastingSummary ? `${formatLocaleNumber(fastingSummary.stats.thisMonth)} ${t('home.fasts')}` : '—',
           },
       link: '/fasting',
       accent: 'brand-gold',
@@ -204,7 +206,7 @@ export default function Home() {
       stats: {
         label: t('home.today'),
         value: quranSummary
-          ? `${quranSummary.todayAyat}/${quranSummary.profile.dailyGoalAyat} āyāt`
+          ? `${formatLocaleNumber(quranSummary.todayAyat)}/${formatLocaleNumber(quranSummary.profile.dailyGoalAyat)} āyāt`
           : '—',
       },
       link: '/quran',
@@ -328,8 +330,8 @@ export default function Home() {
                         <p className="text-white/25 text-[10px] uppercase tracking-widest leading-none mb-0.5">{t('home.freeTime')}</p>
                         <p className="text-white/50 font-semibold text-sm leading-tight">{t('home.nextPrayerComing')}</p>
                         <p className="text-white/25 text-[10px] mt-0.5">
-                          {t('common.in')} {prayerWidgetData.nextHh > 0 ? `${prayerWidgetData.nextHh}h ` : ''}
-                          {String(prayerWidgetData.nextMm).padStart(2, '0')}m
+                          {t('common.in')} {prayerWidgetData.nextHh > 0 ? `${formatLocaleNumber(prayerWidgetData.nextHh)}h ` : ''}
+                          {formatLocaleNumber(Number(String(prayerWidgetData.nextMm).padStart(2, '0')))}m
                         </p>
                       </>
                     )}
@@ -342,8 +344,8 @@ export default function Home() {
                       <p className={`font-black text-base tabular-nums leading-tight ${
                         prayerWidgetData.forbiddenWindow ? 'text-red-400' : 'text-brand-gold'
                       }`}>
-                        {prayerWidgetData.endHh > 0 ? `${prayerWidgetData.endHh}h ` : ''}
-                        {String(prayerWidgetData.endMm).padStart(2, '0')}m
+                        {prayerWidgetData.endHh > 0 ? `${formatLocaleNumber(prayerWidgetData.endHh)}h ` : ''}
+                        {formatLocaleNumber(Number(String(prayerWidgetData.endMm).padStart(2, '0')))}m
                       </p>
                     </div>
                   )}
@@ -367,8 +369,8 @@ export default function Home() {
                     </div>
                   </div>
                   <p className="text-white/20 text-[10px] mt-1">
-                    {t('common.in')} {prayerWidgetData.nextHh > 0 ? `${prayerWidgetData.nextHh}h ` : ''}
-                    {String(prayerWidgetData.nextMm).padStart(2, '0')}m
+                    {t('common.in')} {prayerWidgetData.nextHh > 0 ? `${formatLocaleNumber(prayerWidgetData.nextHh)}h ` : ''}
+                    {formatLocaleNumber(Number(String(prayerWidgetData.nextMm).padStart(2, '0')))}m
                   </p>
                 </div>
               </motion.div>
@@ -447,8 +449,7 @@ export default function Home() {
                     </span>
                   </div>
                   <p className="text-white/60 text-xs mt-1.5 leading-relaxed">
-                    "{FRIDAY_HOUR_REF.text}" Keep asking until the sun sets — for yourself,
-                    your parents, and the ummah.
+                    {t('home.fridayHourQuote', '"{{text}}" Keep asking until the sun sets — for yourself, your parents, and the ummah.', { text: i18n.language === 'bn' ? FRIDAY_HOUR_REF.textBn : FRIDAY_HOUR_REF.text })}
                   </p>
                   <a
                     href={FRIDAY_HOUR_REF.url}
@@ -456,7 +457,7 @@ export default function Home() {
                     rel="noreferrer"
                     className="text-[11px] text-white/35 hover:text-brand-gold underline underline-offset-2 mt-2 inline-block"
                   >
-                    {FRIDAY_HOUR_REF.source} · {FRIDAY_HOUR_REF.grade} ↗
+                    {translateReference(FRIDAY_HOUR_REF.source, i18n.language)} · {translateReference(FRIDAY_HOUR_REF.grade, i18n.language)} ↗
                   </a>
                 </div>
               </div>
@@ -476,9 +477,9 @@ export default function Home() {
                 <div className="min-w-0 flex-1">
                   <h3 className="text-brand-emerald font-black text-sm">{t('home.fridayKahf')}</h3>
                   <p className="text-white/50 text-xs mt-1 leading-relaxed">
-                    "A light will shine for him between the two Fridays."
+                    "{t('home.fridayKahfQuote', 'A light will shine for him between the two Fridays.')}"
                   </p>
-                  <p className="text-white/25 text-[11px] mt-1">Ṣaḥīḥ at-Targhīb 736 · Ṣaḥīḥ</p>
+                  <p className="text-white/25 text-[11px] mt-1">{translateReference('Ṣaḥīḥ at-Targhīb 736 · Ṣaḥīḥ', i18n.language)}</p>
                 </div>
                 <span className="text-brand-emerald/60 text-lg shrink-0">→</span>
               </div>
@@ -535,7 +536,7 @@ export default function Home() {
                             title={ramadan.active ? 'Open the Ramadan tracker' : 'Countdown to Ramadan'}
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/ramadan'); }}
                           >
-                            {ramadan.active ? `🌙 ${t('home.ramadanDay', { day: ramadan.todayNumber })}` : `🌙 ${t('home.ramadanIn', { days: ramadan.daysUntil })}`}
+                            {ramadan.active ? `🌙 ${t('home.ramadanDay', { day: formatLocaleNumber(ramadan.todayNumber ?? 0) })}` : `🌙 ${t('home.ramadanIn', { days: formatLocaleNumber(ramadan.daysUntil) })}`}
                           </button>
                         )}
                       </div>

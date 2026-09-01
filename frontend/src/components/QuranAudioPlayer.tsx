@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { PlayIcon, PauseIcon, ForwardIcon, BackwardIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useReadAyat } from '../hooks/useQuran.js';
-import { loadSurahList, surahDisplayName, type SurahMeta } from '../utils/quranData.js';
+import { loadSurahList, surahDisplayName, surahMeaningDisplay, type SurahMeta } from '../utils/quranData.js';
 import { listenCountsAsAyat } from '../utils/quranPrefs.js';
 
 /**
@@ -174,7 +174,7 @@ export default function QuranAudioPlayer() {
             >
               {(surahs.length ? surahs : [{ number: 1, name: '', englishName: 'Al-Fatihah', englishNameTranslation: 'The Opener', numberOfAyahs: 7 }]).map((s) => (
                 <option key={s.number} value={s.number}>
-                  {s.number}. {surahDisplayName(s, i18n.language)} — {s.englishNameTranslation} ({s.numberOfAyahs} āyāt)
+                  {s.number}. {surahDisplayName(s, i18n.language)} — {surahMeaningDisplay(s, i18n.language)} ({s.numberOfAyahs} āyāt)
                 </option>
               ))}
             </select>

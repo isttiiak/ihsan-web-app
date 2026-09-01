@@ -45,6 +45,7 @@ import {
 import { calcPrayerTimes, formatTime } from '../utils/prayerTimes.js';
 import { isPostMaghrib, getHijriToday } from '../utils/islamicCalendar.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
+import { translateReference } from '../utils/localeReference.js';
 
 // ─── date helpers ─────────────────────────────────────────────────────────────
 
@@ -66,16 +67,17 @@ function friendlyDate(dateStr: string, translate?: (key: string, fallback: strin
 // ─── tiny pieces ──────────────────────────────────────────────────────────────
 
 function RefLink({ r }: { r: FastingRef }) {
+  const { i18n } = useTranslation();
   return (
     <span className="inline-flex items-center gap-1.5 flex-wrap">
       {r.grade && (
         <span className="text-brand-emerald/60 text-[10px] font-semibold bg-brand-emerald/10 px-1.5 py-0.5 rounded-full">
-          {r.grade}
+          {translateReference(r.grade, i18n.language)}
         </span>
       )}
       <a href={r.url} target="_blank" rel="noopener noreferrer"
         className="text-brand-gold/60 text-[10px] underline hover:text-brand-gold/90 transition-colors">
-        {r.source} ↗
+        {translateReference(r.source, i18n.language)} ↗
       </a>
     </span>
   );
@@ -143,7 +145,7 @@ const SPARKLES = [
 // ─── component ────────────────────────────────────────────────────────────────
 
 export default function FastingTracker() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const cycleActive = useCycleActive();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -607,7 +609,7 @@ export default function FastingTracker() {
                     onClick={() => navigate('/ramadan')}
                   >🌙 {t('fasting.openRamadanTracker', 'Open the Ramadan tracker')} →</button>
                   <a href="https://quran.com/2/185" target="_blank" rel="noopener noreferrer"
-                    className="block text-brand-gold/60 text-[10px] underline">Quran 2:185 ↗</a>
+                    className="block text-brand-gold/60 text-[10px] underline">{translateReference('Quran 2:185', i18n.language)} ↗</a>
                 </div>
               ) : log ? (
                 /* ── Logged state ── */

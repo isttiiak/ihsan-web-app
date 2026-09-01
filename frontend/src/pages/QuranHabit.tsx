@@ -7,6 +7,7 @@ import QuranTabNav from '../components/QuranTabNav.js';
 import { useQuranSummary, useStartKhatam, useToggleDuaBookmark, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
 import { loadSurahList, locateGlobalAyah, surahDisplayName, type SurahMeta } from '../utils/quranData.js';
 import { formatLocaleNumber } from '../utils/localeDate.js';
+import { translateReference } from '../utils/localeReference.js';
 import { SPECIAL_SURAHS, AYAH_BUNDLES, QURANIC_DUAS } from '../utils/quranMeta.js';
 
 /**
@@ -150,7 +151,7 @@ export default function QuranHabit() {
                 <p className="text-white/40 text-[11px] mt-1 leading-relaxed">{i18n.language === 'bn' && sp.noteBn ? sp.noteBn : sp.note}</p>
                 {sp.ref && (
                   <a className="text-brand-gold/60 text-[10px] underline" href={sp.ref.url} target="_blank" rel="noreferrer"
-                    onClick={(e) => e.stopPropagation()}>{sp.ref.text}</a>
+                    onClick={(e) => e.stopPropagation()}>{translateReference(sp.ref.text, i18n.language)}</a>
                 )}
               </button>
             ))}
@@ -170,7 +171,7 @@ export default function QuranHabit() {
                 <p className="text-white/80 text-sm font-bold">{b.emoji} {i18n.language === 'bn' && b.titleBn ? b.titleBn : b.title} <span className="text-white/25 font-normal">· {formatLocaleNumber(b.surah)}:{formatLocaleNumber(b.fromAyah)}{b.toAyah !== b.fromAyah ? `–${formatLocaleNumber(b.toAyah)}` : ''}</span></p>
                 <p className="text-white/40 text-[11px] mt-1 leading-relaxed">{i18n.language === 'bn' && b.virtueBn ? b.virtueBn : b.virtue}</p>
                 <a className="text-brand-emerald/60 text-[10px] underline" href={b.ref.url} target="_blank" rel="noreferrer"
-                  onClick={(e) => e.stopPropagation()}>{b.ref.text}</a>
+                  onClick={(e) => e.stopPropagation()}>{translateReference(b.ref.text, i18n.language)}</a>
               </button>
             ))}
           </div>
@@ -211,9 +212,9 @@ export default function QuranHabit() {
 
         {/* virtue footer */}
         <p className="text-white/30 text-[11px] leading-relaxed px-1">
-          {t('quranHabit.hadithReward')} — <a className="underline" href="https://sunnah.com/tirmidhi:2910" target="_blank" rel="noreferrer">Tirmidhi 2910 (sahih)</a>.
+          {t('quranHabit.hadithReward')} — <a className="underline" href="https://sunnah.com/tirmidhi:2910" target="_blank" rel="noreferrer">{translateReference('Tirmidhi 2910 (sahih)', i18n.language)}</a>.
           {' '}{t('quranHabit.hadithBest')} —{' '}
-          <a className="underline" href="https://sunnah.com/bukhari:5027" target="_blank" rel="noreferrer">Bukhari 5027</a>.
+          <a className="underline" href="https://sunnah.com/bukhari:5027" target="_blank" rel="noreferrer">{translateReference('Bukhari 5027', i18n.language)}</a>.
         </p>
       </div>
 

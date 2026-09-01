@@ -86,7 +86,7 @@ export default function ZikrSettings({ open, onClose }: { open: boolean; onClose
 
           <ConfirmDialog
             open={confirmReset}
-            title={t('zikr.resetConfirmTitle', 'Reset zikr counters?')}
+            title={t('zikr.resetAllConfirmTitle', 'Reset zikr counters?')}
             message={t('zikr.resetConfirmMsg', 'All running counts, streak and goal progress will be zeroed. Your daily history will not be touched.')}
             confirmLabel={resetting ? t('zikr.resetting', 'Resetting…') : t('zikr.resetConfirm', 'Yes, reset')}
             onConfirm={() => void handleReset()}

@@ -7,6 +7,7 @@ import QuranTabNav from '../components/QuranTabNav.js';
 import { useQuranSummary, useStartKhatam, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
 import { loadSurahList, locateGlobalAyah, juzOf, surahDisplayName, type SurahMeta } from '../utils/quranData.js';
 import { formatLocaleNumber } from '../utils/localeDate.js';
+import { translateReference } from '../utils/localeReference.js';
 
 /**
  * The Khatam journey — a serial, self-paced read-through of the whole Quran.
@@ -117,7 +118,7 @@ export default function QuranKhatam() {
               </p>
               <p className="text-white/30 text-[11px] mt-2">
                 {t('quranKhatam.reciteQuote')} —{' '}
-                <a className="underline" href="https://quran.com/73/4" target="_blank" rel="noreferrer">Quran 73:4</a>
+                <a className="underline" href="https://quran.com/73/4" target="_blank" rel="noreferrer">{translateReference('Quran 73:4', i18n.language)}</a>
               </p>
             </div>
           </>

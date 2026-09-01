@@ -7,11 +7,9 @@ import logo from '../assets/logo.svg';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useZikrStore } from '../store/useZikrStore.js';
 import { useAnalytics } from '../hooks/useAnalytics.js';
-import { useSalatLog } from '../hooks/useSalatLog.js';
 import { useNoor } from '../hooks/useSocial.js';
 import { useUiStore } from '../store/useUiStore.js';
 import { StreakBadge, GoalBadge } from './StatusBadges.js';
-import { PRAYER_META } from '../utils/prayerTimes.js';
 import { getHijriToday, formatHijriDate } from '../utils/islamicCalendar.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 import {
@@ -146,7 +144,6 @@ export default function Navbar() {
 
   // ── Context data (always called — React Query's enabled guards auth) ────────
   const { data: analyticsData } = useAnalytics(1);
-  const { data: salatLog }      = useSalatLog();
 
   // Noor capsules: always on /friends; elsewhere per the Settings toggles
   const { showNoorAllTime, showNoorToday } = useUiStore();
@@ -161,11 +158,6 @@ export default function Navbar() {
   const effectiveTotal = Math.max(localTotal, confirmedTotal + pendingTotal);
   const goalPct  = dailyGoal ? Math.min(100, Math.round((effectiveTotal / dailyGoal) * 100)) : null;
   const goalMet  = dailyGoal !== null && effectiveTotal >= dailyGoal;
-
-  const salatCount = PRAYER_META.filter((p) => p.isTrackable).filter((p) => {
-    const s = salatLog?.prayers[p.id as 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha']?.status;
-    return s === 'completed' || s === 'kaza';
-  }).length;
 
   const firstName = user?.displayName?.split(' ')[0] ?? '';
   const greeting  = `${t('home.greeting')}${firstName ? ', ' + firstName : ''}`;
@@ -192,15 +184,6 @@ export default function Navbar() {
             <StreakBadge streak={streak} state={analyticsData?.streak?.state} />
           )}
           <GoalBadge pct={goalPct} met={goalMet} />
-        </div>
-      );
-    }
-    if (location.pathname === '/salat') {
-      return (
-        <div className="hidden sm:flex items-center gap-1.5">
-          <span className="px-2 py-0.5 rounded-full bg-brand-info/20 border border-brand-info/30 text-white text-xs font-bold whitespace-nowrap">
-            {t('navbar.salatTodayCount', { count: formatLocaleNumber(salatCount) })}
-          </span>
         </div>
       );
     }

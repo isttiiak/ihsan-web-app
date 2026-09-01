@@ -57,7 +57,7 @@ export default function RamadanSalatCard({
   tarawih?: boolean;
   onToggleTarawih?: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: log } = useSalatLog(date);
   const updatePrayer = useUpdatePrayer();
   const updateNafl = useUpdateNafl();
@@ -304,18 +304,18 @@ export default function RamadanSalatCard({
                   className="mt-2.5 space-y-2.5"
                 >
                   <div className="flex flex-wrap gap-1.5">
-                    {SELECTABLE_NAFL_TYPES.map((t) => {
-                      const on = (nafl.types ?? []).includes(t.id);
+                    {SELECTABLE_NAFL_TYPES.map((nt) => {
+                      const on = (nafl.types ?? []).includes(nt.id);
                       return (
                         <button
-                          key={t.id}
-                          onClick={() => toggleNaflType(t.id)}
-                          title={t.shortNote}
+                          key={nt.id}
+                          onClick={() => toggleNaflType(nt.id)}
+                          title={i18n.language === 'bn' && nt.shortNoteBn ? nt.shortNoteBn : nt.shortNote}
                           className={`px-2 py-1 rounded-lg text-[11px] font-semibold border transition-colors ${
                             on ? 'bg-brand-info/20 border-brand-info/50 text-brand-info'
                                : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                           }`}
-                        >{t.emoji} {t.label}</button>
+                        >{nt.emoji} {translateSalatName(nt.id, nt.label, t)}</button>
                       );
                     })}
                   </div>

@@ -110,7 +110,7 @@ export default function CycleCalendar({ summary, today }: { summary: CycleSummar
             <div
               key={day}
               title={
-                cycleType ? (cycleType === 'nifas' ? t('cycleCalendar.nifasDay') : t('cycleCalendar.periodDay'))
+                cycleType ? (cycleType === 'nifas' ? t('cycleCalendar.nifasDay', 'Nifas day') : t('cycleCalendar.periodDay', 'Period day'))
                 : predicted ? t('cycleCalendar.expectedPeriod')
                 : isOvulation ? t('cycleCalendar.estimatedOvulation')
                 : isFertile ? t('cycleCalendar.fertileWindow')

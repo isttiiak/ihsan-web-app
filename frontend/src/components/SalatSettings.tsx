@@ -12,6 +12,7 @@ import {
   ASR_MADHABS, getAsrMadhab, setAsrMadhab, type AsrMadhab,
   AYATUL_KURSI_REF,
 } from '../utils/salatPrefs.js';
+import { translateReference } from '../utils/localeReference.js';
 
 /**
  * Salat settings — a right-side DRAWER, same shape as QuranSettings.
@@ -24,7 +25,7 @@ import {
  * Both are stored locally (utils/salatPrefs.ts) — no server round-trip.
  */
 export default function SalatSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [tasbih, setTasbih] = useState<TasbihMode>(() => getTasbihMode());
   const [madhab, setMadhab] = useState<AsrMadhab>(() => getAsrMadhab());
@@ -138,7 +139,7 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
                           onClick={(e) => e.stopPropagation()}
                           className="inline-block text-[11px] text-white/35 hover:text-brand-emerald mt-1.5 underline underline-offset-2"
                         >
-                          {m.source} · {m.grade} ↗
+                          {translateReference(m.source, i18n.language)} · {translateReference(m.grade, i18n.language)} ↗
                         </a>
                       </button>
                     );
@@ -154,7 +155,7 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
                 </p>
                 <p className="text-brand-gold/60 text-[11px] mt-2 italic">"{AYATUL_KURSI_REF.virtue}"</p>
                 <p className="text-white/30 text-[11px] mt-1">
-                  {AYATUL_KURSI_REF.source} · {AYATUL_KURSI_REF.grade}
+                  {translateReference(AYATUL_KURSI_REF.source, i18n.language)} · {translateReference(AYATUL_KURSI_REF.grade, i18n.language)}
                 </p>
               </section>
 

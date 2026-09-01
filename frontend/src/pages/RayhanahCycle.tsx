@@ -17,6 +17,7 @@ import { getTrackingDay } from '../utils/trackingDay.js';
 import { getHijriDate } from '../utils/islamicCalendar.js';
 import { celebrateSmall } from '../utils/celebrate.js';
 import { formatLocaleDate } from '../utils/localeDate.js';
+import { translateReference } from '../utils/localeReference.js';
 import MoodComfort from '../components/MoodComfort.js';
 
 // ─── Sweet, powerful phrases for excused days (Istiak's spec) ─────────────────
@@ -165,7 +166,7 @@ function ramadanDaysIn(start: string, end: string): number {
 }
 
 export default function RayhanahCycle() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const isFemale = useIsFemale();
@@ -343,7 +344,7 @@ export default function RayhanahCycle() {
                 <div className="mt-4 rounded-2xl bg-brand-gold/15 border border-brand-gold/30 p-4 text-brand-gold/90 text-xs leading-relaxed">
                   <span className="font-bold">{t('rayhanah.beyondMaxWarning', 'Day {{dayCount}} has passed the {{maxDays}}-day maximum ({{madhab}} view{{nifas}}).', { dayCount: active.dayCount, maxDays: active.maxDays, madhab: summary?.madhab === 'hanafi' ? 'Ḥanafī' : 'majority', nifas: active.type === 'nifas' ? ', nifās' : '' })}</span>{' '}
                   {t('rayhanah.istihadaNote', 'Bleeding beyond the maximum is usually')} <span className="font-bold">{t('rayhanah.istihadaLabel', 'istiḥāḍa')}</span> — {t('rayhanah.istihadaResume', 'prayer resumes with fresh wuḍū for each prayer')} (
-                  <a className="underline" href="https://sunnah.com/bukhari:306" target="_blank" rel="noreferrer">Bukhārī 306</a>
+                  <a className="underline" href="https://sunnah.com/bukhari:306" target="_blank" rel="noreferrer">{translateReference('Bukhārī 306', i18n.language)}</a>
                   ). {t('rayhanah.scholarAdvice', 'Please confirm with a scholar you trust.')}
                 </div>
               )}
@@ -413,7 +414,7 @@ export default function RayhanahCycle() {
             </div>
             <p className="text-white/40 text-xs mt-1">
               {t('rayhanah.gardenIntro', 'Everything here remains fully open to you — the Prophet ﷺ remembered Allah in all states')}
-              (<a className="underline" href="https://sunnah.com/muslim:373" target="_blank" rel="noreferrer">Muslim 373</a>).
+              (<a className="underline" href="https://sunnah.com/muslim:373" target="_blank" rel="noreferrer">{translateReference('Muslim 373', i18n.language)}</a>).
             </p>
             <div className="mt-3 space-y-1.5">
               {GARDEN_ITEMS.map((g) => {
@@ -509,7 +510,7 @@ export default function RayhanahCycle() {
 
             {(todayNote?.symptoms?.length ?? 0) > 0 && (
               <p className="text-brand-pink/70 text-xs leading-relaxed border-t border-brand-emerald/5 pt-2.5">
-                {t('rayhanah.easeHadith', 'May Allah give you ease — no fatigue or pain touches a Muslim except that Allah wipes away sins with it')} (<a className="underline" href="https://sunnah.com/bukhari:5641" target="_blank" rel="noreferrer">Bukhārī 5641</a>). 🌸
+                {t('rayhanah.easeHadith', 'May Allah give you ease — no fatigue or pain touches a Muslim except that Allah wipes away sins with it')} (<a className="underline" href="https://sunnah.com/bukhari:5641" target="_blank" rel="noreferrer">{translateReference('Bukhārī 5641', i18n.language)}</a>). 🌸
               </p>
             )}
           </div>
@@ -521,7 +522,7 @@ export default function RayhanahCycle() {
             <h2 className="text-white font-black">{t('rayhanah.adhkarGardenTitle', '🤲 Your adhkār garden')}</h2>
             <p className="text-white/40 text-xs leading-relaxed">
               {t('rayhanah.adhkarGardenIntro', "Curated authentic du'a you can recite right now — dhikr, istighfār and ṣalawāt are fully open to you in every state")} (
-              <a className="underline" href="https://sunnah.com/muslim:373" target="_blank" rel="noreferrer">Muslim 373</a>).
+              <a className="underline" href="https://sunnah.com/muslim:373" target="_blank" rel="noreferrer">{translateReference('Muslim 373', i18n.language)}</a>).
             </p>
             <div className="space-y-2">
               {EXCUSED_ADHKAR.map((dua, i) => (
@@ -544,7 +545,7 @@ export default function RayhanahCycle() {
                       href={dua.ref.url}
                       target="_blank"
                       rel="noreferrer"
-                    >📖 {dua.ref.text}</a>
+                    >📖 {translateReference(dua.ref.text, i18n.language)}</a>
                   </div>
                 </details>
               ))}
@@ -572,7 +573,7 @@ export default function RayhanahCycle() {
             </div>
             <p className="text-white/30 text-xs mt-1">
               {t('rayhanah.missedFastsMadeUp', 'Missed Ramadan fasts are made up after')} (
-              <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>).
+              <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>).
             </p>
             <div className="mt-3 grid grid-cols-3 gap-3">
               <div className="rounded-xl bg-brand-gold/10 border border-brand-gold/15 p-3 text-center">
@@ -650,25 +651,25 @@ export default function RayhanahCycle() {
             <div className="rounded-2xl bg-brand-pink/10 border border-brand-pink/20 p-4">
               <p className="font-bold text-brand-pink mb-1.5">{t('rayhanah.pausedForNow', 'Paused for now 🌙')}</p>
               <ul className="space-y-1 text-white/60">
-                <li>• {t('rayhanah.salatExcusedPre', 'Ṣalāt — fully excused,')} <span className="font-semibold text-brand-pink/90">{t('rayhanah.neverMadeUp', 'never made up')}</span> (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>)</li>
-                <li>• {t('rayhanah.fastingExcusedLater', 'Fasting — excused now, made up later')} (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>)</li>
-                <li>• {t('rayhanah.tawafExcused', 'Ṭawāf around the Kaʿbah')} (<a className="underline" href="https://sunnah.com/bukhari:305" target="_blank" rel="noreferrer">Bukhārī 305</a>)</li>
-                <li>• {t('rayhanah.intimacyExcused', 'Intimacy during menses')} (<a className="underline" href="https://quran.com/2/222" target="_blank" rel="noreferrer">Quran 2:222</a>)</li>
+                <li>• {t('rayhanah.salatExcusedPre', 'Ṣalāt — fully excused,')} <span className="font-semibold text-brand-pink/90">{t('rayhanah.neverMadeUp', 'never made up')}</span> (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>)</li>
+                <li>• {t('rayhanah.fastingExcusedLater', 'Fasting — excused now, made up later')} (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>)</li>
+                <li>• {t('rayhanah.tawafExcused', 'Ṭawāf around the Kaʿbah')} (<a className="underline" href="https://sunnah.com/bukhari:305" target="_blank" rel="noreferrer">{translateReference('Bukhārī 305', i18n.language)}</a>)</li>
+                <li>• {t('rayhanah.intimacyExcused', 'Intimacy during menses')} (<a className="underline" href="https://quran.com/2/222" target="_blank" rel="noreferrer">{translateReference('Quran 2:222', i18n.language)}</a>)</li>
               </ul>
             </div>
             <div className="rounded-2xl bg-brand-emerald/10 border border-brand-emerald/20 p-4">
               <p className="font-bold text-brand-emerald mb-1.5">{t('rayhanah.fullyOpenToYou', 'Fully open to you 🌸')}</p>
               <ul className="space-y-1 text-white/60">
-                <li>• {t('rayhanah.dhikrDuaSalawat', 'All dhikr, duʿā & ṣalawāt')} (<a className="underline" href="https://sunnah.com/muslim:373" target="_blank" rel="noreferrer">Muslim 373</a>)</li>
+                <li>• {t('rayhanah.dhikrDuaSalawat', 'All dhikr, duʿā & ṣalawāt')} (<a className="underline" href="https://sunnah.com/muslim:373" target="_blank" rel="noreferrer">{translateReference('Muslim 373', i18n.language)}</a>)</li>
                 <li>• {t('rayhanah.listeningQuranTafsir', 'Listening to the Quran, tafsīr & knowledge')}</li>
-                <li>• {t('rayhanah.attendingGatherings', 'Attending gatherings of good & duʿā')} (<a className="underline" href="https://sunnah.com/bukhari:971" target="_blank" rel="noreferrer">Bukhārī 971</a>)</li>
+                <li>• {t('rayhanah.attendingGatherings', 'Attending gatherings of good & duʿā')} (<a className="underline" href="https://sunnah.com/bukhari:971" target="_blank" rel="noreferrer">{translateReference('Bukhārī 971', i18n.language)}</a>)</li>
                 <li>• {t('rayhanah.charityKindness', 'Charity, kindness, and serving others')}</li>
               </ul>
             </div>
           </div>
           <p className="text-white/30 text-[11px] leading-relaxed">
             {t('rayhanah.aishahHajjStory', 'The Prophet ﷺ told ʿĀʾishah (may Allah be pleased with her) during Hajj: do everything the pilgrim does, except ṭawāf')} —{' '}
-            <a className="underline" href="https://sunnah.com/bukhari:305" target="_blank" rel="noreferrer">Ṣaḥīḥ al-Bukhārī 305</a>.
+            <a className="underline" href="https://sunnah.com/bukhari:305" target="_blank" rel="noreferrer">{translateReference('Ṣaḥīḥ al-Bukhārī 305', i18n.language)}</a>.
             {' '}{t('rayhanah.recitingScholarlyDifference', 'Reciting Quran from memory is a matter of scholarly difference; listening is agreed upon. Ask a scholar you trust.')}
           </p>
 
@@ -687,7 +688,7 @@ export default function RayhanahCycle() {
                 <span className="italic text-white/70">
                   {t('rayhanah.fatimahHadithQuote', '"That is a vein, not menstruation. When your period comes, stop praying, and when it ends, wash the blood off and pray."')}
                 </span>{' '}
-                (<a className="underline text-brand-gold/80" href="https://sunnah.com/bukhari:306" target="_blank" rel="noreferrer">Bukhārī 306</a>)
+                (<a className="underline text-brand-gold/80" href="https://sunnah.com/bukhari:306" target="_blank" rel="noreferrer">{translateReference('Bukhārī 306', i18n.language)}</a>)
               </p>
               <div className="rounded-xl bg-white/[0.04] p-3 space-y-1.5">
                 <p className="font-bold text-brand-gold/90">{t('rayhanah.duringIstihada', 'During istiḥāḍa:')}</p>
@@ -820,7 +821,7 @@ export default function RayhanahCycle() {
               <h3 className="text-white font-black text-lg">{t('rayhanah.welcomeBackToSalat', '🕊️ Welcome back to salat')}</h3>
               <p className="text-white/50 text-xs leading-relaxed">
                 {t('rayhanah.performGhuslIntro', 'Perform ghusl the way the Prophet ﷺ did')} (
-                <a className="underline" href="https://sunnah.com/bukhari:248" target="_blank" rel="noreferrer">Bukhārī 248</a>):
+                <a className="underline" href="https://sunnah.com/bukhari:248" target="_blank" rel="noreferrer">{translateReference('Bukhārī 248', i18n.language)}</a>):
               </p>
               <div className="space-y-1.5">
                 {GHUSL_STEPS.map((step, i) => (
@@ -836,7 +837,7 @@ export default function RayhanahCycle() {
               </div>
               <p className="text-brand-emerald/80 text-xs leading-relaxed">
                 {t('rayhanah.prayCurrentTime', "Then pray the ṣalāt of the time you're now in — no past prayers to make up")}
-                {' '}(<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>). {t('rayhanah.welcomeBackShort', 'Welcome back 🌸')}
+                {' '}(<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>). {t('rayhanah.welcomeBackShort', 'Welcome back 🌸')}
               </p>
               <button
                 className="w-full btn rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-emerald to-brand-info"
@@ -936,7 +937,7 @@ export default function RayhanahCycle() {
               <h3 className="text-white font-black text-lg">{t('rayhanah.ramadanDaysToMakeUp', '🌙 Ramadan days to make up')}</h3>
               <p className="text-white/60 text-sm leading-relaxed">
                 {t('rayhanah.qadaPromptCount', '{{count}} day(s) of this cycle fell in Ramadan.', { count: qadaPrompt.days })}{' '}
-                {t('rayhanah.missedFastsMadeUp', 'Missed Ramadan fasts are made up after')} (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>).{' '}
+                {t('rayhanah.missedFastsMadeUp', 'Missed Ramadan fasts are made up after')} (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>).{' '}
                 {qadaPrompt.days > 1
                   ? t('rayhanah.addThemToQada', 'Add them to your qaḍā counter?')
                   : t('rayhanah.addItToQada', 'Add it to your qaḍā counter?')}

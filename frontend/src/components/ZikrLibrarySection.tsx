@@ -7,6 +7,7 @@ import { useZikrStore } from '../store/useZikrStore.js';
 import { useAddZikrType, useDeleteZikrType, useZikrTypes } from '../hooks/useZikrTypes.js';
 import { ZIKR_LIBRARY, PREDEFINED_TYPES, LEGACY_LIBRARY_NAMES, zikrDisplayName, type LibraryZikr } from '../utils/zikrLibrary.js';
 import { formatLocaleNumber } from '../utils/localeDate.js';
+import { translateReference } from '../utils/localeReference.js';
 import ConfirmDialog from './ConfirmDialog.js';
 import EditZikrModal from './EditZikrModal.js';
 
@@ -160,7 +161,7 @@ export default function ZikrLibrarySection() {
                             <p className="text-white/40 text-[11px] mt-1 leading-relaxed">{i18n.language === 'bn' && item.meaningBn ? item.meaningBn : item.meaning}</p>
                             {item.virtue && <p className="text-brand-gold/60 text-[11px] mt-1 leading-relaxed">✨ {i18n.language === 'bn' && item.virtueBn ? item.virtueBn : item.virtue}</p>}
                             <a className="text-white/30 text-[10px] underline" href={item.sourceUrl} target="_blank" rel="noreferrer">
-                              {item.source}{item.grade ? ` · ${item.grade}` : ''}
+                              {translateReference(item.source, i18n.language)}{item.grade ? ` · ${translateReference(item.grade, i18n.language)}` : ''}
                             </a>
                           </div>
                           <button

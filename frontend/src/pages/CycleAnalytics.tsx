@@ -12,6 +12,7 @@ import { useFastingSummary } from '../hooks/useFasting.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
 import { formatLocaleDate } from '../utils/localeDate.js';
+import { translateReference } from '../utils/localeReference.js';
 
 function shiftStr(dateStr: string, delta: number): string {
   const d = new Date(dateStr + 'T12:00:00');
@@ -34,7 +35,7 @@ const SYMPTOM_LABEL: Record<string, string> = {
 };
 
 export default function CycleAnalytics() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const isFemale = useIsFemale();
@@ -465,7 +466,7 @@ export default function CycleAnalytics() {
                 <h2 className="text-white font-black">{t('cycleAnalytics.fastingMakeupTitle', '🌙 Fasting makeup')}</h2>
                 <p className="text-white/30 text-xs mt-0.5">
                   {t('cycleAnalytics.fastingMakeupDesc', 'Ramadan fasts missed during cycles are made up later')} (
-                  <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>).
+                  <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>).
                 </p>
                 <div className="mt-3 grid grid-cols-3 gap-3">
                   <div className="rounded-xl bg-brand-gold/10 border border-brand-gold/15 p-3 text-center">

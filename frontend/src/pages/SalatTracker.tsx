@@ -38,7 +38,8 @@ import {
 } from '../utils/salatPrefs.js';
 import { recitationsFor, recitationHref } from '../utils/postSalatQuran.js';
 import { getFridayHour, FRIDAY_HOUR_REF } from '../utils/fridayHour.js';
-import { formatLocaleDate } from '../utils/localeDate.js';
+import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
+import { translateReference } from '../utils/localeReference.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -129,7 +130,7 @@ function getDefaultDate(): string {
 }
 
 export default function SalatTracker() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const cycleActive = useCycleActive();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -499,7 +500,7 @@ export default function SalatTracker() {
                     {t(
                       'salatTracker.hourOfResponseQuote',
                       '"{{text}}" Keep asking until the sun sets — for yourself, your parents, and the ummah.',
-                      { text: FRIDAY_HOUR_REF.text },
+                      { text: i18n.language === 'bn' ? FRIDAY_HOUR_REF.textBn : FRIDAY_HOUR_REF.text },
                     )}
                   </p>
                   <div className="flex items-center gap-2 flex-wrap mt-2.5">
@@ -509,7 +510,7 @@ export default function SalatTracker() {
                       rel="noreferrer"
                       className="text-[11px] text-white/35 hover:text-brand-gold underline underline-offset-2"
                     >
-                      {FRIDAY_HOUR_REF.source} · {FRIDAY_HOUR_REF.grade} ↗
+                      {translateReference(FRIDAY_HOUR_REF.source, i18n.language)} · {translateReference(FRIDAY_HOUR_REF.grade, i18n.language)} ↗
                     </a>
                   </div>
                 </div>
@@ -558,7 +559,7 @@ export default function SalatTracker() {
                   {t('salatTracker.datePrayers', "{{date}}'s Prayers", { date: friendlyDate(selectedDate, t) })}
                 </span>
                 <span className="text-xl font-black text-brand-emerald">
-                  {completedCount}<span className="text-white/30 font-normal text-base">/5</span>
+                  {formatLocaleNumber(completedCount)}<span className="text-white/30 font-normal text-base">/{formatLocaleNumber(5)}</span>
                 </span>
               </div>
               <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
@@ -625,7 +626,7 @@ export default function SalatTracker() {
                         <div className="min-w-0">
                           <p className={`font-bold text-sm leading-none ${isCurrent ? 'text-brand-emerald' : style.text}`}>
                             {prayerId === 'dhuhr' && isCivilFriday ? t('salatNames.jumuah', "Jumu'ah") : translateSalatName(prayer.id, prayer.name, t)}
-                            {isCurrent && <span className="ml-2 text-xs font-normal text-brand-emerald/70">● now</span>}
+                            {isCurrent && <span className="ml-2 text-xs font-normal text-brand-emerald/70">● {t('salatTracker.nowTag', 'now')}</span>}
                             {prayerId === 'dhuhr' && isCivilFriday && (
                               <span className="ml-2 text-xs font-normal text-brand-emerald/60">🕌 congregation</span>
                             )}
@@ -865,7 +866,7 @@ export default function SalatTracker() {
                             onClick={(e) => e.stopPropagation()}
                             className="text-brand-gold/50 text-xs underline hover:text-brand-gold/80 transition-colors mt-0.5 inline-block"
                           >
-                            📖 Ṣaḥīḥ al-Bukhārī 998
+                            📖 {translateReference('Ṣaḥīḥ al-Bukhārī 998', i18n.language)}
                           </a>
                         </div>
                       </div>
@@ -972,7 +973,7 @@ export default function SalatTracker() {
                                 <p className={`text-xs font-bold mt-1.5 leading-tight ${selected ? 'text-brand-info' : 'text-white/70'}`}>
                                   {translateSalatName(nt.id, nt.label, t)}
                                 </p>
-                                <p className="text-white/20 text-[10px] mt-0.5 leading-snug">{nt.shortNote}</p>
+                                <p className="text-white/20 text-[10px] mt-0.5 leading-snug">{i18n.language === 'bn' && nt.shortNoteBn ? nt.shortNoteBn : nt.shortNote}</p>
                               </motion.button>
 
                               {/* Per-type rak'ah counter (only when selected) */}
@@ -1022,8 +1023,8 @@ export default function SalatTracker() {
                                     className="overflow-hidden"
                                   >
                                     <div className="mt-1 p-2.5 rounded-xl bg-brand-deep border border-brand-emerald/10 space-y-1">
-                                      <p className="text-white/50 text-[11px] leading-relaxed">{nt.fullNote}</p>
-                                      <p className="text-white/25 text-[11px] italic">{nt.hadith}</p>
+                                      <p className="text-white/50 text-[11px] leading-relaxed">{i18n.language === 'bn' && nt.fullNoteBn ? nt.fullNoteBn : nt.fullNote}</p>
+                                      <p className="text-white/25 text-[11px] italic">{i18n.language === 'bn' && nt.hadithBn ? nt.hadithBn : nt.hadith}</p>
                                       <a
                                         href={nt.hadithUrl}
                                         target="_blank"

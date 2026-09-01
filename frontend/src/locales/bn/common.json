@@ -182,8 +182,8 @@
     "legendPeriod": "হায়েয",
     "legendPms": "PMS",
     "nextMonth": "পরের মাস",
-    "nifasDay": "নিফাস দিন {{day}}",
-    "periodDay": "হায়েয দিন {{day}}",
+    "nifasDay": "নিফাসের দিন",
+    "periodDay": "হায়েযের দিন",
     "pmsWindow": "PMS উইন্ডো",
     "prevMonth": "আগের মাস",
     "title": "চক্র ক্যালেন্ডার",
@@ -597,7 +597,11 @@
     "today": "আজ",
     "trackPrayer": "নামায ট্র্যাক করুন",
     "zikrSubtitle": "আল্লাহর যিকির চালিয়ে যান",
-    "zikrTitle": "যিকির কাউন্টার"
+    "zikrTitle": "যিকির কাউন্টার",
+    "daySuffix": " দিন",
+    "all5": "সব ৫টি",
+    "fridayHourQuote": "\"{{text}}\" সূর্য অস্ত না যাওয়া পর্যন্ত দোয়া করতে থাকুন — নিজের জন্য, পিতামাতার জন্য, এবং উম্মাহর জন্য।",
+    "fridayKahfQuote": "দুই জুমার মাঝে তার জন্য একটি নূর উদ্ভাসিত হবে।"
   },
   "landing": {
     "brother": "ভাই",
@@ -672,8 +676,7 @@
     "zikrCounter": "যিকির কাউন্টার"
   },
   "navbar": {
-    "openAccountMenu": "অ্যাকাউন্ট মেনু খুলুন",
-    "salatTodayCount": "🕌 আজ {{count}}/৫"
+    "openAccountMenu": "অ্যাকাউন্ট মেনু খুলুন"
   },
   "notFound": {
     "backHome": "হোমে ফিরুন",
@@ -1092,7 +1095,7 @@
     "dayCellTitle": "রামাদান {{day}} — {{date}}{{oddNightNote}}",
     "dayFasted": "দিন {{day}} রোজা রাখা হয়েছে — তাকাব্বাল আল্লাহ!",
     "dayLabel": "দিন {{day}}",
-    "daysAway": "{{days}} দিন বাকি",
+    "daysAway": "দিন বাকি",
     "dhikrToday": "আজকের যিকির",
     "excusedAutoQada": "{{count}}টি 🌸 মাফ (স্বয়ংক্রিয়-কাযা)",
     "expectedAround": "আনুমানিক {{date}} এর কাছাকাছি",
@@ -1517,7 +1520,8 @@
     "voluntaryPrayers": "নফল নামায",
     "whereLabel": "কোথায়:",
     "witrReminderDesc": "ইশার পর ফজরের আগে বিতর পড়ুন — সাধারণত কুনূত দোয়াসহ ৩ রাকাত। নবী ﷺ সফরেও এটি কখনো ছাড়েননি।",
-    "witrReminderTitle": "বিতর ভুলবেন না — এটি ওয়াজিব!"
+    "witrReminderTitle": "বিতর ভুলবেন না — এটি ওয়াজিব!",
+    "nowTag": "এখন চলছে"
   },
   "settings": {
     "accessibilitySection": "সহায়ক ব্যবস্থা",
@@ -2137,7 +2141,8 @@
       "subhanallahWaBihamdihi": "Subḥāna-llāhi wa bi-ḥamdih"
     },
     "unsavedCounts": "আপনার {{count}}টি অসংরক্ষিত যিকির গণনা আছে। আপনার অগ্রগতি সংরক্ষণ করতে ও ধারাবাহিকতা ট্র্যাক করতে সাইন ইন করুন।",
-    "yesRemove": "হ্যাঁ, সরান"
+    "yesRemove": "হ্যাঁ, সরান",
+    "resetAllConfirmTitle": "যিকির কাউন্টার রিসেট করবেন?"
   },
   "zikrAnalytics": {
     "addNewDhikrType": "+ নতুন যিকির ধরন যোগ করুন",
@@ -2301,5 +2306,13 @@
       "day_of_doubt": "সংশয়ের দিন (৩০ শাবান)",
       "wisal": "বিসাল (একটানা রোজা, ইফতার ছাড়া)"
     }
+  },
+  "quranTabs": {
+    "quran": "📖 কুরআন",
+    "khatam": "🕋 খতম",
+    "read": "🧭 পড়ুন",
+    "listen": "🎧 শুনুন",
+    "saved": "🔖 সংরক্ষিত",
+    "analytics": "📊 বিশ্লেষণ"
   }
 }

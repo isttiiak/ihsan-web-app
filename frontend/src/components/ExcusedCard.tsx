@@ -1,13 +1,14 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { translateReference } from '../utils/localeReference.js';
 
 /**
  * Shown in place of salat/fasting logging while a Rayhanah cycle is active.
  * Tone: sweet, powerful, zero guilt (Istiak's spec — flower emojis, motivating).
  */
 export default function ExcusedCard({ feature }: { feature: 'salat' | 'fasting' }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const CARD_PHRASES = [
     t('excusedCard.phrase1'),
     t('excusedCard.phrase2'),
@@ -28,10 +29,10 @@ export default function ExcusedCard({ feature }: { feature: 'salat' | 'fasting' 
         <p className="text-white/40 text-xs leading-relaxed max-w-md mx-auto">
           {feature === 'salat' ? (
             <>{t('excusedCard.salatExplanation')} —{' '}
-            <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Ṣaḥīḥ Muslim 335</a>.</>
+            <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Ṣaḥīḥ Muslim 335', i18n.language)}</a>.</>
           ) : (
             <>{t('excusedCard.fastingExplanation')} —{' '}
-            <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Ṣaḥīḥ Muslim 335</a>.</>
+            <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Ṣaḥīḥ Muslim 335', i18n.language)}</a>.</>
           )}
         </p>
         <div className="flex flex-wrap justify-center gap-2 pt-2">

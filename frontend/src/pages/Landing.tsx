@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { translateReference } from '../utils/localeReference.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 
@@ -22,7 +23,7 @@ const FEATURE_DEFS = [
 ];
 
 export default function Landing() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { enterDemoMode } = useAuthStore();
   const [showPicker, setShowPicker] = useState(false);
@@ -147,7 +148,7 @@ export default function Landing() {
             "So compete with one another in doing good."
           </h2>
           <p className="text-white/30 text-sm mt-2">
-            <a className="underline" href="https://quran.com/2/148" target="_blank" rel="noreferrer">Quran 2:148</a>
+            <a className="underline" href="https://quran.com/2/148" target="_blank" rel="noreferrer">{translateReference('Quran 2:148', i18n.language)}</a>
           </p>
           <div className="flex flex-wrap justify-center gap-3 mt-7">
             <button

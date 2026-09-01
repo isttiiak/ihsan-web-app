@@ -755,7 +755,7 @@ export default function PrayerTimes() {
                             <div className="min-w-0">
                               <p className={`font-bold text-sm ${isActiveNow ? 'text-brand-info' : 'text-brand-info/70'}`}>
                                 {entry.label}
-                                {isActiveNow && <span className="ml-2 text-xs font-normal text-brand-info/60">● now</span>}
+                                {isActiveNow && <span className="ml-2 text-xs font-normal text-brand-info/60">{t('prayerTimes.nowBadge', '● now')}</span>}
                               </p>
                               <p className="text-brand-info/40 text-xs">{entry.arabicName}</p>
                             </div>

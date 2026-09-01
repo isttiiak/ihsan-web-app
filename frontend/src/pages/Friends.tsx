@@ -283,7 +283,7 @@ export default function Friends() {
                   >
                     <div className="flex items-center gap-3">
                       <span className="w-7 text-center text-lg font-black shrink-0">
-                        {RANK_BADGE[i] ?? <span className="text-white/30 text-sm">{i + 1}</span>}
+                        {RANK_BADGE[i] ?? <span className="text-white/30 text-sm">{formatLocaleNumber(i + 1)}</span>}
                       </span>
                       <Avatar name={f.displayName} photoUrl={f.photoUrl} />
                       <div className="flex-1 min-w-0">
@@ -300,7 +300,7 @@ export default function Friends() {
                               className={`h-full rounded-full ${i === 0 ? 'bg-gradient-to-r from-brand-gold to-brand-gold' : 'bg-brand-emerald/80'}`}
                             />
                           </div>
-                          <span className="text-white/70 text-xs font-black tabular-nums w-10 text-right">✨{f.score}</span>
+                          <span className="text-white/70 text-xs font-black tabular-nums w-10 text-right">✨{formatLocaleNumber(f.score)}</span>
                         </div>
                       </div>
                     </div>
@@ -352,12 +352,12 @@ export default function Friends() {
                 >
                   <div className="px-4 pb-4 pt-1 space-y-1.5 text-xs text-white/40 border-t border-brand-emerald/5">
                     <p>
-                      {t('friends.noorPrefix')}<span className="text-white/60">نور</span>{t('friends.noorSuffix')}<b className="text-white/70">100</b>:
+                      {t('friends.noorPrefix')}<span className="text-white/60">نور</span>{t('friends.noorSuffix')}<b className="text-white/70">{formatLocaleNumber(100)}</b>:
                     </p>
-                    <p>🕌 <b className="text-white/60">50</b> — {t('friends.noorPrayers')}</p>
-                    <p>🔥 <b className="text-white/60">20</b> — {t('friends.noorZikr')}</p>
-                    <p>📖 <b className="text-white/60">20</b> — {t('friends.noorQuran')}</p>
-                    <p>🌙 <b className="text-white/60">10</b> — {t('friends.noorFasting')}</p>
+                    <p>🕌 <b className="text-white/60">{formatLocaleNumber(50)}</b> — {t('friends.noorPrayers')}</p>
+                    <p>🔥 <b className="text-white/60">{formatLocaleNumber(20)}</b> — {t('friends.noorZikr')}</p>
+                    <p>📖 <b className="text-white/60">{formatLocaleNumber(20)}</b> — {t('friends.noorQuran')}</p>
+                    <p>🌙 <b className="text-white/60">{formatLocaleNumber(10)}</b> — {t('friends.noorFasting')}</p>
                     <p className="pt-1">
                       🌸 {t('friends.noorExcused')}
                     </p>

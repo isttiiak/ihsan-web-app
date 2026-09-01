@@ -17,7 +17,8 @@ import { getRamadanWindow } from '../utils/ramadan.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
 import { calcPrayerTimes, formatTime } from '../utils/prayerTimes.js';
 import { celebrateFast } from '../utils/celebrate.js';
-import { formatLocaleDate } from '../utils/localeDate.js';
+import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
+import { translateReference } from '../utils/localeReference.js';
 
 /**
  * Dedicated Ramadan tracker (v3.1) — the month gets its own home:
@@ -75,7 +76,7 @@ function formatGregorian(dateStr: string): string {
 }
 
 export default function RamadanTracker() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const today = getTrackingDay();
@@ -260,16 +261,16 @@ export default function RamadanTracker() {
             <div className="relative">
               <div className="text-6xl mb-3">🌙</div>
               <p className="text-brand-gold/80 text-xs font-bold uppercase tracking-widest">
-                {t('ramadan.ramadanYear', { year: window_.hijriYear ?? '' })}
+                {t('ramadan.ramadanYear', { year: window_.hijriYear != null ? formatLocaleNumber(window_.hijriYear) : '' })}
               </p>
-              <h2 className="text-5xl font-black text-white mt-2">{window_.daysUntil}</h2>
-              <p className="text-white/50 text-sm font-semibold">{t('ramadan.daysAway')}</p>
+              <h2 className="text-5xl font-black text-white mt-2">{formatLocaleNumber(window_.daysUntil)}</h2>
+              <p className="text-white/50 text-sm font-semibold">{t('ramadan.daysAway', 'days away')}</p>
               {startStr && (
                 <p className="text-white/30 text-xs mt-2">{t('ramadan.expectedAround', { date: formatGregorian(startStr) })}</p>
               )}
               <p className="text-brand-gold/80 text-sm mt-4 leading-relaxed max-w-md mx-auto">
                 {t('ramadan.gatesHadith')} —{' '}
-                <a className="underline" href="https://sunnah.com/bukhari:1899" target="_blank" rel="noreferrer">Ṣaḥīḥ al-Bukhārī 1899</a>
+                <a className="underline" href="https://sunnah.com/bukhari:1899" target="_blank" rel="noreferrer">{translateReference('Ṣaḥīḥ al-Bukhārī 1899', i18n.language)}</a>
               </p>
             </div>
           </motion.div>
@@ -285,7 +286,7 @@ export default function RamadanTracker() {
               <Link to="/fasting" className="flex items-center gap-3 rounded-xl px-3 py-3 bg-white/5 hover:bg-white/5 transition-colors">
                 <span className="text-lg">🌗</span>
                 <span className="flex-1 text-white/75">
-                  {t('ramadan.warmUpShaban')}{' '}(<a className="underline" href="https://sunnah.com/bukhari:1969" target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>Bukhārī 1969</a>)
+                  {t('ramadan.warmUpShaban')}{' '}(<a className="underline" href="https://sunnah.com/bukhari:1969" target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{translateReference('Bukhārī 1969', i18n.language)}</a>)
                 </span>
                 <span className="text-brand-gold/70 text-xs">{t('ramadan.open')}</span>
               </Link>
@@ -302,15 +303,15 @@ export default function RamadanTracker() {
             <ul className="space-y-2 text-xs text-white/50 leading-relaxed">
               <li>
                 • {t('ramadan.fastingHadith')} —{' '}
-                <a className="underline" href="https://sunnah.com/bukhari:38" target="_blank" rel="noreferrer">Bukhārī 38</a>
+                <a className="underline" href="https://sunnah.com/bukhari:38" target="_blank" rel="noreferrer">{translateReference('Bukhārī 38', i18n.language)}</a>
               </li>
               <li>
                 • {t('ramadan.nightOfDecree')} —{' '}
-                <a className="underline" href="https://quran.com/97/3" target="_blank" rel="noreferrer">Quran 97:3</a>
+                <a className="underline" href="https://quran.com/97/3" target="_blank" rel="noreferrer">{translateReference('Quran 97:3', i18n.language)}</a>
               </li>
               <li>
                 • {t('ramadan.laylatAlQadrHadith')} —{' '}
-                <a className="underline" href="https://sunnah.com/bukhari:1901" target="_blank" rel="noreferrer">Bukhārī 1901</a>
+                <a className="underline" href="https://sunnah.com/bukhari:1901" target="_blank" rel="noreferrer">{translateReference('Bukhārī 1901', i18n.language)}</a>
               </li>
             </ul>
           </div>
@@ -386,12 +387,12 @@ export default function RamadanTracker() {
                 <div className="flex-1 rounded-2xl bg-white/5 border border-brand-emerald/10 p-3 text-center">
                   <p className="text-white/30 text-[10px] font-bold uppercase">{t('ramadan.suhoorEndsFajr', 'Suhoor ends (Fajr)')}</p>
                   <p className="text-white font-black text-lg">{formatTime(prayerTimes.fajr)}</p>
-                  <p className="text-white/25 text-[10px]">"Take suhoor — there is blessing in it" · <a className="underline" href="https://sunnah.com/bukhari:1923" target="_blank" rel="noreferrer">Bukhārī 1923</a></p>
+                  <p className="text-white/25 text-[10px]">"Take suhoor — there is blessing in it" · <a className="underline" href="https://sunnah.com/bukhari:1923" target="_blank" rel="noreferrer">{translateReference('Bukhārī 1923', i18n.language)}</a></p>
                 </div>
                 <div className="flex-1 rounded-2xl bg-white/5 border border-brand-emerald/10 p-3 text-center">
                   <p className="text-white/30 text-[10px] font-bold uppercase">{t('ramadan.iftarMaghrib', 'Iftar (Maghrib)')}</p>
                   <p className="text-white font-black text-lg">{formatTime(prayerTimes.maghrib)}</p>
-                  <p className="text-white/25 text-[10px]">"People remain upon good while they hasten iftar" · <a className="underline" href="https://sunnah.com/bukhari:1957" target="_blank" rel="noreferrer">Bukhārī 1957</a></p>
+                  <p className="text-white/25 text-[10px]">"People remain upon good while they hasten iftar" · <a className="underline" href="https://sunnah.com/bukhari:1957" target="_blank" rel="noreferrer">{translateReference('Bukhārī 1957', i18n.language)}</a></p>
                 </div>
               </div>
             ) : (
@@ -464,8 +465,8 @@ export default function RamadanTracker() {
           <p className="text-white/25 text-[10px] mt-3 leading-relaxed">
             <Trans i18nKey="ramadan.naflFardNote" defaults="Nafl carries the reward of a farḍ in Ramadan, and a farḍ the reward of seventy (<1>Ibn Khuzaymah 1887</1> — ḍaʿīf chain, widely cited; the month's general virtue is established in <3>Bukhārī 1899</3>).">
               Nafl carries the reward of a farḍ in Ramadan, and a farḍ the reward of seventy
-              (<a className="underline hover:text-white/50" href="https://islamqa.info/en/answers/21364" target="_blank" rel="noreferrer">Ibn Khuzaymah 1887</a> — ḍaʿīf chain, widely cited; the month's
-              general virtue is established in <a className="underline hover:text-white/50" href="https://sunnah.com/bukhari:1899" target="_blank" rel="noreferrer">Bukhārī 1899</a>).
+              (<a className="underline hover:text-white/50" href="https://islamqa.info/en/answers/21364" target="_blank" rel="noreferrer">{translateReference('Ibn Khuzaymah 1887', i18n.language)}</a> — ḍaʿīf chain, widely cited; the month's
+              general virtue is established in <a className="underline hover:text-white/50" href="https://sunnah.com/bukhari:1899" target="_blank" rel="noreferrer">{translateReference('Bukhārī 1899', i18n.language)}</a>).
             </Trans>
           </p>
         </div>
@@ -488,10 +489,10 @@ export default function RamadanTracker() {
             <p className="text-brand-info/70 text-xs mt-1 leading-relaxed">
               <Trans i18nKey="ramadan.laylatalQadrNote" defaults="Seek Laylat al-Qadr in the odd nights — it is better than a thousand months (<1>Quran 97:3</1>, <3>Bukhārī 2017</3>). Duʿā of the night: <5>Allāhumma innaka ʿafuwwun tuḥibbul-ʿafwa faʿfu ʿannī</5> (<7>Tirmidhī 3513</7>).">
                 Seek Laylat al-Qadr in the odd nights — it is better than a thousand months
-                (<a className="underline" href="https://quran.com/97/3" target="_blank" rel="noreferrer">Quran 97:3</a>,{' '}
-                <a className="underline" href="https://sunnah.com/bukhari:2017" target="_blank" rel="noreferrer">Bukhārī 2017</a>).
+                (<a className="underline" href="https://quran.com/97/3" target="_blank" rel="noreferrer">{translateReference('Quran 97:3', i18n.language)}</a>,{' '}
+                <a className="underline" href="https://sunnah.com/bukhari:2017" target="_blank" rel="noreferrer">{translateReference('Bukhārī 2017', i18n.language)}</a>).
                 Duʿā of the night: <span className="italic">Allāhumma innaka ʿafuwwun tuḥibbul-ʿafwa faʿfu ʿannī</span>{' '}
-                (<a className="underline" href="https://sunnah.com/tirmidhi:3513" target="_blank" rel="noreferrer">Tirmidhī 3513</a>).
+                (<a className="underline" href="https://sunnah.com/tirmidhi:3513" target="_blank" rel="noreferrer">{translateReference('Tirmidhī 3513', i18n.language)}</a>).
               </Trans>
             </p>
             <div className="flex gap-1.5 mt-3">
@@ -627,7 +628,7 @@ export default function RamadanTracker() {
           <p className="text-white/25 text-[10px] mt-2 leading-relaxed">
             <Trans i18nKey="ramadan.rayhanahAutoQadaNote" defaults="🌸 Rayhanah days are excused with zero guilt — when the cycle ends, those Ramadan days are offered to your qaḍā counter automatically (<1>Muslim 335</1>).">
               🌸 Rayhanah days are excused with zero guilt — when the cycle ends, those Ramadan days are offered
-              to your qaḍā counter automatically (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>).
+              to your qaḍā counter automatically (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>).
             </Trans>
           </p>
         </div>

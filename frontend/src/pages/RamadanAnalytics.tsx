@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { translateReference } from '../utils/localeReference.js';
+import { formatLocaleNumber } from '../utils/localeDate.js';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -44,7 +46,7 @@ function Stat({ label, value, suffix, hint, tone }: {
 }
 
 export default function RamadanAnalytics() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const today = getTrackingDay();
   const window_ = useMemo(() => getRamadanWindow(), []);
@@ -184,10 +186,10 @@ export default function RamadanAnalytics() {
 
             {/* Stat tiles */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <Stat label={t('ramadanAnalytics.longestRun')} value={model.best} suffix={` ${t('common.days')}`} tone="#fbbf24" hint={t('ramadanAnalytics.backToBack')} />
-              <Stat label={t('ramadanAnalytics.tarawihNights')} value={model.tarawih} suffix={`/${model.elapsed}`} tone="#a5b4fc" hint={t('ramadanAnalytics.soFar')} />
-              <Stat label={t('ramadanAnalytics.broken')} value={model.broken} tone="#f87171" hint={model.broken ? t('ramadanAnalytics.makeTheseUp') : t('ramadanAnalytics.noneAlhamdulillah')} />
-              <Stat label={t('ramadanAnalytics.notLogged')} value={model.unlogged} tone="#94a3b8" hint={model.unlogged ? t('ramadanAnalytics.pastDaysNoEntry') : t('ramadanAnalytics.allDaysAccounted')} />
+              <Stat label={t('ramadanAnalytics.longestRun')} value={formatLocaleNumber(model.best)} suffix={` ${t('common.days')}`} tone="#fbbf24" hint={t('ramadanAnalytics.backToBack')} />
+              <Stat label={t('ramadanAnalytics.tarawihNights')} value={formatLocaleNumber(model.tarawih)} suffix={`/${formatLocaleNumber(model.elapsed)}`} tone="#a5b4fc" hint={t('ramadanAnalytics.soFar')} />
+              <Stat label={t('ramadanAnalytics.broken')} value={formatLocaleNumber(model.broken)} tone="#f87171" hint={model.broken ? t('ramadanAnalytics.makeTheseUp') : t('ramadanAnalytics.noneAlhamdulillah')} />
+              <Stat label={t('ramadanAnalytics.notLogged')} value={formatLocaleNumber(model.unlogged)} tone="#94a3b8" hint={model.unlogged ? t('ramadanAnalytics.pastDaysNoEntry', { count: formatLocaleNumber(model.unlogged) }) : t('ramadanAnalytics.allDaysAccounted', { total: formatLocaleNumber(model.elapsed) })} />
             </div>
 
             {/* Per-ashra breakdown */}
@@ -227,7 +229,7 @@ export default function RamadanAnalytics() {
               <h2 className="text-white font-black">{t('ramadanAnalytics.lastTenTitle')}</h2>
               <p className="text-brand-info/60 text-xs mt-1 leading-relaxed">
                 {t('ramadanAnalytics.lastTenHadith')}{' '}
-                <a className="underline" href="https://sunnah.com/bukhari:2017" target="_blank" rel="noreferrer">Ṣaḥīḥ al-Bukhārī 2017</a>.
+                <a className="underline" href="https://sunnah.com/bukhari:2017" target="_blank" rel="noreferrer">{translateReference('Ṣaḥīḥ al-Bukhārī 2017', i18n.language)}</a>.
                 {t('ramadanAnalytics.lastTenNote')}
               </p>
               <div className="grid grid-cols-2 gap-2.5 mt-3">
@@ -275,7 +277,7 @@ export default function RamadanAnalytics() {
 
             <p className="text-white/30 text-[11px] leading-relaxed">
               {t('ramadanAnalytics.excusedFootnote')}{' '}
-              (<a className="underline hover:text-white/50" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">Muslim 335</a>).
+              (<a className="underline hover:text-white/50" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>).
               {t('ramadanAnalytics.somethingWrong')}{' '}
               <Link to="/feedback" className="text-brand-emerald/70 hover:text-brand-emerald underline underline-offset-2">{t('ramadanAnalytics.tellUs')}</Link>.
             </p>
