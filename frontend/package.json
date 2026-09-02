@@ -31,7 +31,7 @@
     "react-router-dom": "^6.28.0",
     "sweetalert2": "^11.26.24",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-    "zustand": "^4.5.5"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",
