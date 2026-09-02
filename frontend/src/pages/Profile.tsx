@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Swal from 'sweetalert2';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { API_BASE, getIdToken } from '../lib/api.js';
-import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/useAuthStore.js';
-import { auth, googleProvider } from '../firebase.js';
+import { auth, googleProvider, storage } from '../firebase.js';
 import { linkWithPopup, unlink, AuthError } from 'firebase/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -17,94 +17,268 @@ import {
   MapPinIcon,
   BriefcaseIcon,
   XMarkIcon,
-  TrashIcon,
-  ExclamationTriangleIcon,
   LinkIcon,
   PhotoIcon,
 } from '@heroicons/react/24/outline';
 import { useAnalytics } from '../hooks/useAnalytics.js';
-import { useZikrStore } from '../store/useZikrStore.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 
 // ── Country → Cities data ─────────────────────────────────────────────────────
 const COUNTRIES_CITIES: Record<string, string[]> = {
-  'Afghanistan': ['Kabul', 'Kandahar', 'Herat', 'Mazar-i-Sharif', 'Kunduz'],
-  'Algeria': ['Algiers', 'Oran', 'Constantine', 'Annaba', 'Blida', 'Batna'],
-  'Australia': ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Gold Coast', 'Canberra'],
-  'Azerbaijan': ['Baku', 'Ganja', 'Sumqayit'],
-  'Bangladesh': ['Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Barisal', 'Mymensingh', 'Comilla', 'Rangpur', 'Narayanganj'],
-  'Belgium': ['Brussels', 'Antwerp', 'Ghent', 'Liège', 'Bruges'],
+  Afghanistan: ['Kabul', 'Kandahar', 'Herat', 'Mazar-i-Sharif', 'Kunduz'],
+  Algeria: ['Algiers', 'Oran', 'Constantine', 'Annaba', 'Blida', 'Batna'],
+  Australia: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Gold Coast', 'Canberra'],
+  Azerbaijan: ['Baku', 'Ganja', 'Sumqayit'],
+  Bangladesh: [
+    'Dhaka',
+    'Chittagong',
+    'Sylhet',
+    'Rajshahi',
+    'Khulna',
+    'Barisal',
+    'Mymensingh',
+    'Comilla',
+    'Rangpur',
+    'Narayanganj',
+  ],
+  Belgium: ['Brussels', 'Antwerp', 'Ghent', 'Liège', 'Bruges'],
   'Bosnia and Herzegovina': ['Sarajevo', 'Banja Luka', 'Tuzla', 'Zenica'],
-  'Brazil': ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Fortaleza', 'Manaus'],
-  'Brunei': ['Bandar Seri Begawan', 'Kuala Belait', 'Seria'],
-  'Canada': ['Toronto', 'Montreal', 'Vancouver', 'Calgary', 'Edmonton', 'Ottawa', 'Winnipeg', 'Mississauga'],
-  'China': ['Beijing', 'Shanghai', 'Guangzhou', 'Shenzhen', 'Chengdu', "Xi'an", 'Urumqi', 'Kunming'],
-  'Egypt': ['Cairo', 'Alexandria', 'Giza', 'Port Said', 'Luxor', 'Aswan', 'Sharm el-Sheikh'],
-  'France': ['Paris', 'Marseille', 'Lyon', 'Toulouse', 'Nice', 'Strasbourg', 'Bordeaux', 'Nantes'],
-  'Germany': ['Berlin', 'Hamburg', 'Munich', 'Cologne', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 'Bremen'],
-  'Ghana': ['Accra', 'Kumasi', 'Tamale', 'Cape Coast', 'Sekondi-Takoradi'],
-  'India': ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Ahmedabad', 'Pune', 'Surat', 'Lucknow', 'Jaipur', 'Srinagar'],
-  'Indonesia': ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Makassar', 'Palembang', 'Yogyakarta'],
-  'Iran': ['Tehran', 'Mashhad', 'Isfahan', 'Karaj', 'Tabriz', 'Shiraz', 'Ahvaz'],
-  'Iraq': ['Baghdad', 'Basra', 'Mosul', 'Erbil', 'Najaf', 'Karbala', 'Sulaymaniyah'],
-  'Jordan': ['Amman', 'Zarqa', 'Irbid', 'Aqaba', 'Madaba'],
-  'Kazakhstan': ['Almaty', 'Astana', 'Shymkent', 'Karaganda'],
-  'Kenya': ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret'],
-  'Kuwait': ['Kuwait City', 'Hawalli', 'Salmiya', 'Farwaniya', 'Jahra'],
-  'Kyrgyzstan': ['Bishkek', 'Osh', 'Jalal-Abad'],
-  'Lebanon': ['Beirut', 'Tripoli', 'Sidon', 'Tyre', 'Baalbek'],
-  'Libya': ['Tripoli', 'Benghazi', 'Misrata', 'Bayda'],
-  'Malaysia': ['Kuala Lumpur', 'George Town', 'Johor Bahru', 'Ipoh', 'Shah Alam', 'Petaling Jaya', 'Kota Kinabalu'],
-  'Maldives': ['Malé', 'Addu City', 'Fuvahmulah'],
-  'Mali': ['Bamako', 'Sikasso', 'Mopti', 'Timbuktu'],
-  'Mauritania': ['Nouakchott', 'Nouadhibou', 'Rosso'],
-  'Morocco': ['Casablanca', 'Rabat', 'Fez', 'Marrakech', 'Agadir', 'Tangier', 'Meknes', 'Oujda'],
-  'Netherlands': ['Amsterdam', 'Rotterdam', 'The Hague', 'Utrecht', 'Eindhoven'],
-  'Niger': ['Niamey', 'Zinder', 'Maradi', 'Agadez'],
-  'Nigeria': ['Lagos', 'Kano', 'Ibadan', 'Abuja', 'Port Harcourt', 'Kaduna', 'Benin City', 'Maiduguri'],
-  'Oman': ['Muscat', 'Salalah', 'Sohar', 'Nizwa', 'Sur'],
-  'Pakistan': ['Karachi', 'Lahore', 'Faisalabad', 'Rawalpindi', 'Islamabad', 'Gujranwala', 'Peshawar', 'Multan', 'Hyderabad', 'Quetta', 'Sialkot'],
-  'Palestine': ['Gaza', 'Jerusalem', 'Ramallah', 'Hebron', 'Nablus', 'Jenin'],
-  'Philippines': ['Manila', 'Quezon City', 'Davao', 'Cebu', 'Zamboanga', 'Cotabato'],
-  'Qatar': ['Doha', 'Al Rayyan', 'Al Wakrah', 'Al Khor'],
-  'Russia': ['Moscow', 'Saint Petersburg', 'Kazan', 'Ufa', 'Novosibirsk', 'Grozny', 'Makhachkala'],
-  'Saudi Arabia': ["Riyadh", 'Jeddah', 'Mecca', 'Medina', 'Dammam', "Ta'if", 'Tabuk', 'Abha'],
-  'Senegal': ['Dakar', 'Touba', 'Thiès', 'Kaolack', 'Saint-Louis'],
+  Brazil: ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Fortaleza', 'Manaus'],
+  Brunei: ['Bandar Seri Begawan', 'Kuala Belait', 'Seria'],
+  Canada: [
+    'Toronto',
+    'Montreal',
+    'Vancouver',
+    'Calgary',
+    'Edmonton',
+    'Ottawa',
+    'Winnipeg',
+    'Mississauga',
+  ],
+  China: ['Beijing', 'Shanghai', 'Guangzhou', 'Shenzhen', 'Chengdu', "Xi'an", 'Urumqi', 'Kunming'],
+  Egypt: ['Cairo', 'Alexandria', 'Giza', 'Port Said', 'Luxor', 'Aswan', 'Sharm el-Sheikh'],
+  France: ['Paris', 'Marseille', 'Lyon', 'Toulouse', 'Nice', 'Strasbourg', 'Bordeaux', 'Nantes'],
+  Germany: [
+    'Berlin',
+    'Hamburg',
+    'Munich',
+    'Cologne',
+    'Frankfurt',
+    'Stuttgart',
+    'Düsseldorf',
+    'Bremen',
+  ],
+  Ghana: ['Accra', 'Kumasi', 'Tamale', 'Cape Coast', 'Sekondi-Takoradi'],
+  India: [
+    'Mumbai',
+    'Delhi',
+    'Bangalore',
+    'Chennai',
+    'Kolkata',
+    'Hyderabad',
+    'Ahmedabad',
+    'Pune',
+    'Surat',
+    'Lucknow',
+    'Jaipur',
+    'Srinagar',
+  ],
+  Indonesia: [
+    'Jakarta',
+    'Surabaya',
+    'Bandung',
+    'Medan',
+    'Semarang',
+    'Makassar',
+    'Palembang',
+    'Yogyakarta',
+  ],
+  Iran: ['Tehran', 'Mashhad', 'Isfahan', 'Karaj', 'Tabriz', 'Shiraz', 'Ahvaz'],
+  Iraq: ['Baghdad', 'Basra', 'Mosul', 'Erbil', 'Najaf', 'Karbala', 'Sulaymaniyah'],
+  Jordan: ['Amman', 'Zarqa', 'Irbid', 'Aqaba', 'Madaba'],
+  Kazakhstan: ['Almaty', 'Astana', 'Shymkent', 'Karaganda'],
+  Kenya: ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret'],
+  Kuwait: ['Kuwait City', 'Hawalli', 'Salmiya', 'Farwaniya', 'Jahra'],
+  Kyrgyzstan: ['Bishkek', 'Osh', 'Jalal-Abad'],
+  Lebanon: ['Beirut', 'Tripoli', 'Sidon', 'Tyre', 'Baalbek'],
+  Libya: ['Tripoli', 'Benghazi', 'Misrata', 'Bayda'],
+  Malaysia: [
+    'Kuala Lumpur',
+    'George Town',
+    'Johor Bahru',
+    'Ipoh',
+    'Shah Alam',
+    'Petaling Jaya',
+    'Kota Kinabalu',
+  ],
+  Maldives: ['Malé', 'Addu City', 'Fuvahmulah'],
+  Mali: ['Bamako', 'Sikasso', 'Mopti', 'Timbuktu'],
+  Mauritania: ['Nouakchott', 'Nouadhibou', 'Rosso'],
+  Morocco: ['Casablanca', 'Rabat', 'Fez', 'Marrakech', 'Agadir', 'Tangier', 'Meknes', 'Oujda'],
+  Netherlands: ['Amsterdam', 'Rotterdam', 'The Hague', 'Utrecht', 'Eindhoven'],
+  Niger: ['Niamey', 'Zinder', 'Maradi', 'Agadez'],
+  Nigeria: [
+    'Lagos',
+    'Kano',
+    'Ibadan',
+    'Abuja',
+    'Port Harcourt',
+    'Kaduna',
+    'Benin City',
+    'Maiduguri',
+  ],
+  Oman: ['Muscat', 'Salalah', 'Sohar', 'Nizwa', 'Sur'],
+  Pakistan: [
+    'Karachi',
+    'Lahore',
+    'Faisalabad',
+    'Rawalpindi',
+    'Islamabad',
+    'Gujranwala',
+    'Peshawar',
+    'Multan',
+    'Hyderabad',
+    'Quetta',
+    'Sialkot',
+  ],
+  Palestine: ['Gaza', 'Jerusalem', 'Ramallah', 'Hebron', 'Nablus', 'Jenin'],
+  Philippines: ['Manila', 'Quezon City', 'Davao', 'Cebu', 'Zamboanga', 'Cotabato'],
+  Qatar: ['Doha', 'Al Rayyan', 'Al Wakrah', 'Al Khor'],
+  Russia: ['Moscow', 'Saint Petersburg', 'Kazan', 'Ufa', 'Novosibirsk', 'Grozny', 'Makhachkala'],
+  'Saudi Arabia': ['Riyadh', 'Jeddah', 'Mecca', 'Medina', 'Dammam', "Ta'if", 'Tabuk', 'Abha'],
+  Senegal: ['Dakar', 'Touba', 'Thiès', 'Kaolack', 'Saint-Louis'],
   'Sierra Leone': ['Freetown', 'Bo', 'Kenema'],
-  'Somalia': ['Mogadishu', 'Hargeisa', 'Bosaso', 'Kismayo', 'Berbera'],
-  'South Africa': ['Johannesburg', 'Cape Town', 'Durban', 'Pretoria', 'Port Elizabeth', 'Bloemfontein'],
-  'Spain': ['Madrid', 'Barcelona', 'Valencia', 'Seville', 'Bilbao', 'Málaga', 'Zaragoza'],
-  'Sudan': ['Khartoum', 'Omdurman', 'Port Sudan', 'Kassala', 'Obeid'],
-  'Syria': ['Damascus', 'Aleppo', 'Homs', 'Latakia', 'Hama'],
-  'Tajikistan': ['Dushanbe', 'Khujand', 'Kulob', 'Qurghonteppa'],
-  'Tanzania': ['Dar es Salaam', 'Zanzibar City', 'Mwanza', 'Arusha', 'Dodoma'],
-  'Tunisia': ['Tunis', 'Sfax', 'Sousse', 'Kairouan', 'Bizerte'],
-  'Turkey': ['Istanbul', 'Ankara', 'Izmir', 'Bursa', 'Antalya', 'Adana', 'Konya', 'Gaziantep', 'Mersin', 'Diyarbakır'],
-  'Turkmenistan': ['Ashgabat', 'Turkmenabat', 'Dashoguz'],
-  'Uganda': ['Kampala', 'Gulu', 'Lira', 'Mbarara', 'Jinja'],
-  'United Arab Emirates': ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Al Ain', 'Ras al-Khaimah', 'Fujairah'],
-  'United Kingdom': ['London', 'Birmingham', 'Manchester', 'Leeds', 'Glasgow', 'Liverpool', 'Newcastle', 'Sheffield', 'Bradford', 'Leicester'],
-  'United States': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'Detroit', 'Dearborn', 'Jersey City', 'Paterson'],
-  'Uzbekistan': ['Tashkent', 'Samarkand', 'Namangan', 'Andijan', 'Bukhara', 'Fergana'],
-  'Yemen': ['Sanaa', 'Aden', 'Taiz', 'Hudaydah', 'Mukalla', 'Ibb'],
+  Somalia: ['Mogadishu', 'Hargeisa', 'Bosaso', 'Kismayo', 'Berbera'],
+  'South Africa': [
+    'Johannesburg',
+    'Cape Town',
+    'Durban',
+    'Pretoria',
+    'Port Elizabeth',
+    'Bloemfontein',
+  ],
+  Spain: ['Madrid', 'Barcelona', 'Valencia', 'Seville', 'Bilbao', 'Málaga', 'Zaragoza'],
+  Sudan: ['Khartoum', 'Omdurman', 'Port Sudan', 'Kassala', 'Obeid'],
+  Syria: ['Damascus', 'Aleppo', 'Homs', 'Latakia', 'Hama'],
+  Tajikistan: ['Dushanbe', 'Khujand', 'Kulob', 'Qurghonteppa'],
+  Tanzania: ['Dar es Salaam', 'Zanzibar City', 'Mwanza', 'Arusha', 'Dodoma'],
+  Tunisia: ['Tunis', 'Sfax', 'Sousse', 'Kairouan', 'Bizerte'],
+  Turkey: [
+    'Istanbul',
+    'Ankara',
+    'Izmir',
+    'Bursa',
+    'Antalya',
+    'Adana',
+    'Konya',
+    'Gaziantep',
+    'Mersin',
+    'Diyarbakır',
+  ],
+  Turkmenistan: ['Ashgabat', 'Turkmenabat', 'Dashoguz'],
+  Uganda: ['Kampala', 'Gulu', 'Lira', 'Mbarara', 'Jinja'],
+  'United Arab Emirates': [
+    'Dubai',
+    'Abu Dhabi',
+    'Sharjah',
+    'Ajman',
+    'Al Ain',
+    'Ras al-Khaimah',
+    'Fujairah',
+  ],
+  'United Kingdom': [
+    'London',
+    'Birmingham',
+    'Manchester',
+    'Leeds',
+    'Glasgow',
+    'Liverpool',
+    'Newcastle',
+    'Sheffield',
+    'Bradford',
+    'Leicester',
+  ],
+  'United States': [
+    'New York',
+    'Los Angeles',
+    'Chicago',
+    'Houston',
+    'Phoenix',
+    'Philadelphia',
+    'San Antonio',
+    'San Diego',
+    'Dallas',
+    'Detroit',
+    'Dearborn',
+    'Jersey City',
+    'Paterson',
+  ],
+  Uzbekistan: ['Tashkent', 'Samarkand', 'Namangan', 'Andijan', 'Bukhara', 'Fergana'],
+  Yemen: ['Sanaa', 'Aden', 'Taiz', 'Hudaydah', 'Mukalla', 'Ibb'],
 };
 
 const SORTED_COUNTRIES = Object.keys(COUNTRIES_CITIES).sort();
 
 const COUNTRY_CODES: Record<string, string> = {
-  'Afghanistan': 'AF', 'Algeria': 'DZ', 'Australia': 'AU', 'Azerbaijan': 'AZ',
-  'Bangladesh': 'BD', 'Belgium': 'BE', 'Bosnia and Herzegovina': 'BA', 'Brazil': 'BR',
-  'Brunei': 'BN', 'Canada': 'CA', 'China': 'CN', 'Egypt': 'EG', 'France': 'FR',
-  'Germany': 'DE', 'Ghana': 'GH', 'India': 'IN', 'Indonesia': 'ID', 'Iran': 'IR',
-  'Iraq': 'IQ', 'Jordan': 'JO', 'Kazakhstan': 'KZ', 'Kenya': 'KE', 'Kuwait': 'KW',
-  'Kyrgyzstan': 'KG', 'Lebanon': 'LB', 'Libya': 'LY', 'Malaysia': 'MY', 'Maldives': 'MV',
-  'Mali': 'ML', 'Mauritania': 'MR', 'Morocco': 'MA', 'Netherlands': 'NL', 'Niger': 'NE',
-  'Nigeria': 'NG', 'Oman': 'OM', 'Pakistan': 'PK', 'Palestine': 'PS', 'Philippines': 'PH',
-  'Qatar': 'QA', 'Russia': 'RU', 'Saudi Arabia': 'SA', 'Senegal': 'SN', 'Sierra Leone': 'SL',
-  'Somalia': 'SO', 'South Africa': 'ZA', 'Spain': 'ES', 'Sudan': 'SD', 'Syria': 'SY',
-  'Tajikistan': 'TJ', 'Tanzania': 'TZ', 'Tunisia': 'TN', 'Turkey': 'TR', 'Turkmenistan': 'TM',
-  'Uganda': 'UG', 'United Arab Emirates': 'AE', 'United Kingdom': 'GB', 'United States': 'US',
-  'Uzbekistan': 'UZ', 'Yemen': 'YE',
+  Afghanistan: 'AF',
+  Algeria: 'DZ',
+  Australia: 'AU',
+  Azerbaijan: 'AZ',
+  Bangladesh: 'BD',
+  Belgium: 'BE',
+  'Bosnia and Herzegovina': 'BA',
+  Brazil: 'BR',
+  Brunei: 'BN',
+  Canada: 'CA',
+  China: 'CN',
+  Egypt: 'EG',
+  France: 'FR',
+  Germany: 'DE',
+  Ghana: 'GH',
+  India: 'IN',
+  Indonesia: 'ID',
+  Iran: 'IR',
+  Iraq: 'IQ',
+  Jordan: 'JO',
+  Kazakhstan: 'KZ',
+  Kenya: 'KE',
+  Kuwait: 'KW',
+  Kyrgyzstan: 'KG',
+  Lebanon: 'LB',
+  Libya: 'LY',
+  Malaysia: 'MY',
+  Maldives: 'MV',
+  Mali: 'ML',
+  Mauritania: 'MR',
+  Morocco: 'MA',
+  Netherlands: 'NL',
+  Niger: 'NE',
+  Nigeria: 'NG',
+  Oman: 'OM',
+  Pakistan: 'PK',
+  Palestine: 'PS',
+  Philippines: 'PH',
+  Qatar: 'QA',
+  Russia: 'RU',
+  'Saudi Arabia': 'SA',
+  Senegal: 'SN',
+  'Sierra Leone': 'SL',
+  Somalia: 'SO',
+  'South Africa': 'ZA',
+  Spain: 'ES',
+  Sudan: 'SD',
+  Syria: 'SY',
+  Tajikistan: 'TJ',
+  Tanzania: 'TZ',
+  Tunisia: 'TN',
+  Turkey: 'TR',
+  Turkmenistan: 'TM',
+  Uganda: 'UG',
+  'United Arab Emirates': 'AE',
+  'United Kingdom': 'GB',
+  'United States': 'US',
+  Uzbekistan: 'UZ',
+  Yemen: 'YE',
 };
 
 function CountryFlag({ countryName }: { countryName: string }) {
@@ -124,22 +298,22 @@ function CountryFlag({ countryName }: { countryName: string }) {
 
 // ── Preset avatars ────────────────────────────────────────────────────────────
 const PRESET_AVATARS = [
-  { id: 'sun',       emoji: '☀️',  label: 'Sun',        bg: '#92400e' },
-  { id: 'moon',      emoji: '🌙',  label: 'Moon',       bg: '#312e81' },
-  { id: 'star',      emoji: '⭐',  label: 'Star',       bg: '#1e3a5f' },
-  { id: 'glowstar',  emoji: '🌟',  label: 'Glow Star',  bg: '#3b1f63' },
-  { id: 'rose',      emoji: '🌹',  label: 'Rose',       bg: '#7f1d1d' },
-  { id: 'tulip',     emoji: '🌷',  label: 'Tulip',      bg: '#831843' },
-  { id: 'sunflower', emoji: '🌻',  label: 'Sunflower',  bg: '#713f12' },
-  { id: 'blossom',   emoji: '🌸',  label: 'Blossom',    bg: '#9d174d' },
-  { id: 'leaf',      emoji: '🌿',  label: 'Leaf',       bg: '#064e3b' },
-  { id: 'tree',      emoji: '🌳',  label: 'Tree',       bg: '#14532d' },
-  { id: 'palm',      emoji: '🌴',  label: 'Palm',       bg: '#365314' },
-  { id: 'mountain',  emoji: '⛰️',  label: 'Mountain',   bg: '#292524' },
-  { id: 'ocean',     emoji: '🌊',  label: 'Ocean',      bg: '#0c4a6e' },
-  { id: 'diamond',   emoji: '💎',  label: 'Diamond',    bg: '#164e63' },
-  { id: 'crystal',   emoji: '🔮',  label: 'Crystal',    bg: '#2e1065' },
-  { id: 'rainbow',   emoji: '🌈',  label: 'Rainbow',    bg: '#3b0764' },
+  { id: 'sun', emoji: '☀️', label: 'Sun', bg: '#92400e' },
+  { id: 'moon', emoji: '🌙', label: 'Moon', bg: '#312e81' },
+  { id: 'star', emoji: '⭐', label: 'Star', bg: '#1e3a5f' },
+  { id: 'glowstar', emoji: '🌟', label: 'Glow Star', bg: '#3b1f63' },
+  { id: 'rose', emoji: '🌹', label: 'Rose', bg: '#7f1d1d' },
+  { id: 'tulip', emoji: '🌷', label: 'Tulip', bg: '#831843' },
+  { id: 'sunflower', emoji: '🌻', label: 'Sunflower', bg: '#713f12' },
+  { id: 'blossom', emoji: '🌸', label: 'Blossom', bg: '#9d174d' },
+  { id: 'leaf', emoji: '🌿', label: 'Leaf', bg: '#064e3b' },
+  { id: 'tree', emoji: '🌳', label: 'Tree', bg: '#14532d' },
+  { id: 'palm', emoji: '🌴', label: 'Palm', bg: '#365314' },
+  { id: 'mountain', emoji: '⛰️', label: 'Mountain', bg: '#292524' },
+  { id: 'ocean', emoji: '🌊', label: 'Ocean', bg: '#0c4a6e' },
+  { id: 'diamond', emoji: '💎', label: 'Diamond', bg: '#164e63' },
+  { id: 'crystal', emoji: '🔮', label: 'Crystal', bg: '#2e1065' },
+  { id: 'rainbow', emoji: '🌈', label: 'Rainbow', bg: '#3b0764' },
 ] as const;
 
 function createAvatarDataUrl(emoji: string, bg: string): string {
@@ -167,7 +341,10 @@ function calcFullAge(birthDate: string): { years: number; months: number } | nul
   let years = now.getFullYear() - birth.getFullYear();
   let months = now.getMonth() - birth.getMonth();
   if (now.getDate() < birth.getDate()) months--;
-  if (months < 0) { years--; months += 12; }
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
   if (years < 0) return null;
   return { years, months };
 }
@@ -179,7 +356,7 @@ function formatFullDate(iso: string): string {
 
 // Animated sparkle dots for the profile card header
 const SPARKLE_POSITIONS = [
-  { left: '8%',  top: '18%', delay: 0 },
+  { left: '8%', top: '18%', delay: 0 },
   { left: '22%', top: '72%', delay: 0.4 },
   { left: '40%', top: '12%', delay: 0.8 },
   { left: '58%', top: '80%', delay: 0.3 },
@@ -233,10 +410,22 @@ interface UserResponse {
 function GoogleLogo({ className = 'w-4 h-4' }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none">
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
     </svg>
   );
 }
@@ -245,8 +434,6 @@ export default function Profile() {
   const { t } = useTranslation();
   const { user, setUser } = useAuthStore();
   const { data: analyticsData } = useAnalytics(1);
-  const { resetAll: resetZikrStore } = useZikrStore();
-  const queryClient = useQueryClient();
 
   const googleFirstName = useMemo(() => {
     const parts = (user?.displayName ?? '').trim().split(' ');
@@ -293,7 +480,9 @@ export default function Profile() {
       const s = localStorage.getItem('ihsan_location');
       if (!s) return null;
       return JSON.parse(s) as { latitude: number; longitude: number; name?: string };
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }, []);
 
   useEffect(() => {
@@ -334,8 +523,10 @@ export default function Profile() {
           setPreview(d.user.photoUrl || user?.photoUrl || '');
         }
       })
-      .catch(() => { /* non-fatal */ });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      .catch(() => {
+        /* non-fatal */
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
   }, []);
 
   const isDirty = useMemo(() => {
@@ -351,7 +542,10 @@ export default function Profile() {
     setSaveSuccess(false);
     setSaveError('');
     const idToken = await getIdToken();
-    if (!idToken) { setSaving(false); return; }
+    if (!idToken) {
+      setSaving(false);
+      return;
+    }
     try {
       const res = await fetch(`${API_BASE}/api/user/me`, {
         method: 'PATCH',
@@ -360,7 +554,14 @@ export default function Profile() {
           displayName: profile.displayName || undefined,
           firstName: profile.firstName || undefined,
           lastName: profile.lastName || undefined,
-          photoUrl: profile.photoUrl || undefined,
+          // Only send photoUrl when it is an https URL (Firebase Storage).
+          // Legacy users may still have a base64 data: URL in the DB — we don't
+          // re-send it; the DB value stays as-is until they explicitly change
+          // their photo via the upload flow.
+          photoUrl:
+            profile.photoUrl && profile.photoUrl.startsWith('https://')
+              ? profile.photoUrl
+              : undefined,
           gender: profile.gender || undefined,
           birthDate: profile.birthDate || undefined,
           occupation: profile.occupation || undefined,
@@ -369,7 +570,7 @@ export default function Profile() {
           country: profile.country || undefined,
         }),
       });
-      const data = await res.json() as UserResponse;
+      const data = (await res.json()) as UserResponse;
       if (data?.user) {
         setDbUser(data.user);
         setOriginalProfile({ ...profile });
@@ -382,12 +583,15 @@ export default function Profile() {
             'male' | 'female' | 'other' | 'prefer_not_say' | undefined,
         };
         setUser(updatedAuthUser);
-        localStorage.setItem('ihsan_user', JSON.stringify({
-          ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'),
-          displayName: updatedAuthUser.displayName,
-          photoUrl: updatedAuthUser.photoUrl,
-          gender: updatedAuthUser.gender,
-        }));
+        localStorage.setItem(
+          'ihsan_user',
+          JSON.stringify({
+            ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'),
+            displayName: updatedAuthUser.displayName,
+            photoUrl: updatedAuthUser.photoUrl,
+            gender: updatedAuthUser.gender,
+          })
+        );
         setSaveSuccess(true);
         if (saveSuccessTimeout.current) clearTimeout(saveSuccessTimeout.current);
         saveSuccessTimeout.current = setTimeout(() => setSaveSuccess(false), 4000);
@@ -395,7 +599,9 @@ export default function Profile() {
         setSaveError(t('profile.saveFailed', 'Save failed. Please try again.'));
       }
     } catch {
-      setSaveError(t('profile.saveFailedConnection', 'Failed to save. Please check your connection.'));
+      setSaveError(
+        t('profile.saveFailedConnection', 'Failed to save. Please check your connection.')
+      );
     }
     setSaving(false);
   };
@@ -411,14 +617,26 @@ export default function Profile() {
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         const ctx = canvas.getContext('2d');
-        if (!ctx) { URL.revokeObjectURL(src); reject(new Error('canvas')); return; }
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => {
+        if (!ctx) {
           URL.revokeObjectURL(src);
-          if (blob) resolve(blob); else reject(new Error('compression'));
-        }, 'image/jpeg', 0.75);
+          reject(new Error('canvas'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(
+          (blob) => {
+            URL.revokeObjectURL(src);
+            if (blob) resolve(blob);
+            else reject(new Error('compression'));
+          },
+          'image/jpeg',
+          0.75
+        );
       };
-      img.onerror = () => { URL.revokeObjectURL(src); reject(new Error('load')); };
+      img.onerror = () => {
+        URL.revokeObjectURL(src);
+        reject(new Error('load'));
+      };
       img.src = src;
     });
 
@@ -433,48 +651,74 @@ export default function Profile() {
       setPhotoPreviewUrl(URL.createObjectURL(blob));
       setPhotoModalOpen(true);
     } catch {
-      setSaveError(t('profile.imageProcessError', 'Could not process image. Try a different file.'));
+      setSaveError(
+        t('profile.imageProcessError', 'Could not process image. Try a different file.')
+      );
     }
   };
 
-  // Stores photo as base64 data URL in MongoDB — no Firebase Storage required
+  // Upload a blob to Firebase Storage at profile-photos/{uid}.jpg (overwrite).
+  // Returns the public https download URL.
+  const uploadBlobToStorage = async (blob: Blob): Promise<string> => {
+    const uid = user?.uid;
+    if (!uid) throw new Error('not authenticated');
+    const fileRef = storageRef(storage, `profile-photos/${uid}.jpg`);
+    await uploadBytes(fileRef, blob, { contentType: 'image/jpeg' });
+    return getDownloadURL(fileRef);
+  };
+
+  // Photos are uploaded directly to Firebase Storage; only the short https URL
+  // is sent to PATCH /api/user/me (keeps the Mongo document small).
   const uploadPhoto = async () => {
     if (!photoBlob) return;
     setSaveError('');
     setUploading(true);
     try {
-      const reader = new FileReader();
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error('read'));
-        reader.readAsDataURL(photoBlob);
-      });
-
-      setPreview(dataUrl);
-      setProfile((p) => ({ ...p, photoUrl: dataUrl }));
       setPhotoModalOpen(false);
       URL.revokeObjectURL(photoPreviewUrl);
-      setPhotoBlob(null);
       setPhotoPreviewUrl('');
+
+      const httpsUrl = await uploadBlobToStorage(photoBlob);
+      setPhotoBlob(null);
+
+      setPreview(httpsUrl);
+      setProfile((p) => ({ ...p, photoUrl: httpsUrl }));
 
       const idToken = await getIdToken();
       if (idToken) {
         const res = await fetch(`${API_BASE}/api/user/me`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify({ photoUrl: dataUrl }),
+          body: JSON.stringify({ photoUrl: httpsUrl }),
         });
         if (res.ok) {
-          setOriginalProfile((p) => p ? { ...p, photoUrl: dataUrl } : null);
-          const updated = { ...(user ?? { uid: '', email: null }), displayName: user?.displayName ?? null, photoUrl: dataUrl };
+          setOriginalProfile((p) => (p ? { ...p, photoUrl: httpsUrl } : null));
+          const updated = {
+            ...(user ?? { uid: '', email: null }),
+            displayName: user?.displayName ?? null,
+            photoUrl: httpsUrl,
+          };
           setUser(updated);
-          localStorage.setItem('ihsan_user', JSON.stringify({ ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'), photoUrl: dataUrl }));
+          localStorage.setItem(
+            'ihsan_user',
+            JSON.stringify({
+              ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'),
+              photoUrl: httpsUrl,
+            })
+          );
         } else {
-          setSaveError(t('profile.uploadedNotSaved', 'Uploaded but could not save — click "Save Changes" to retry.'));
+          setSaveError(
+            t(
+              'profile.uploadedNotSaved',
+              'Uploaded but could not save — click "Save Changes" to retry.'
+            )
+          );
         }
       }
     } catch {
-      setSaveError(t('profile.uploadFailed', 'Upload failed. Check your connection and try again.'));
+      setSaveError(
+        t('profile.uploadFailed', 'Upload failed. Check your connection and try again.')
+      );
     } finally {
       setUploading(false);
     }
@@ -491,23 +735,47 @@ export default function Profile() {
     setSaveError('');
     setUploading(true);
     try {
+      // Show optimistic preview immediately
       setPreview(url);
-      setProfile((p) => ({ ...p, photoUrl: url }));
+
+      // If url is a data: URI (emoji avatar canvas), upload it to Firebase Storage
+      // first so the backend only ever sees a short https URL.
+      let finalUrl = url;
+      if (url.startsWith('data:')) {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        finalUrl = await uploadBlobToStorage(blob);
+        setPreview(finalUrl);
+      }
+
+      setProfile((p) => ({ ...p, photoUrl: finalUrl }));
       const idToken = await getIdToken();
       if (idToken) {
         const res = await fetch(`${API_BASE}/api/user/me`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify({ photoUrl: url }),
+          body: JSON.stringify({ photoUrl: finalUrl }),
         });
         if (res.ok) {
-          setOriginalProfile((p) => p ? { ...p, photoUrl: url } : null);
-          const updated = { ...(user ?? { uid: '', email: null }), displayName: user?.displayName ?? null, photoUrl: url };
+          setOriginalProfile((p) => (p ? { ...p, photoUrl: finalUrl } : null));
+          const updated = {
+            ...(user ?? { uid: '', email: null }),
+            displayName: user?.displayName ?? null,
+            photoUrl: finalUrl,
+          };
           setUser(updated);
-          localStorage.setItem('ihsan_user', JSON.stringify({ ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'), photoUrl: url }));
+          localStorage.setItem(
+            'ihsan_user',
+            JSON.stringify({
+              ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'),
+              photoUrl: finalUrl,
+            })
+          );
         }
       }
-    } catch { /* non-fatal */ } finally {
+    } catch {
+      /* non-fatal */
+    } finally {
       setUploading(false);
     }
   };
@@ -521,10 +789,12 @@ export default function Profile() {
 
   // Get Google profile photo from Firebase Auth provider data
   const googlePhotoUrl = useMemo(() => {
-    return auth.currentUser?.providerData.find((p) => p.providerId === 'google.com')?.photoURL ?? null;
+    return (
+      auth.currentUser?.providerData.find((p) => p.providerId === 'google.com')?.photoURL ?? null
+    );
   }, []);
 
-  const useGoogleAccountPhoto = async () => {
+  const applyGoogleAccountPhoto = async () => {
     if (!googlePhotoUrl) return;
     setShowPhotoChoice(false);
     await applyPhotoUrl(googlePhotoUrl);
@@ -534,7 +804,8 @@ export default function Profile() {
   const googleLinked = linked.find((p) => p.provider === 'google.com');
   // Also check Firebase-level provider data: Google sign-in users have google.com
   // in their providerData before the backend has stored it in linkedProviders.
-  const firebaseHasGoogle = auth.currentUser?.providerData.some((p) => p.providerId === 'google.com') ?? false;
+  const firebaseHasGoogle =
+    auth.currentUser?.providerData.some((p) => p.providerId === 'google.com') ?? false;
   const hasGoogle = !!googleLinked || firebaseHasGoogle;
 
   const linkGoogle = async () => {
@@ -543,31 +814,72 @@ export default function Profile() {
     try {
       const result = await linkWithPopup(auth.currentUser, googleProvider);
       const googleInfo = result.user.providerData.find((p) => p.providerId === 'google.com');
-      if (!googleInfo) { setLinkingGoogle(false); return; }
+      if (!googleInfo) {
+        setLinkingGoogle(false);
+        return;
+      }
 
       const idToken = await getIdToken();
-      if (!idToken) { setLinkingGoogle(false); return; }
+      if (!idToken) {
+        setLinkingGoogle(false);
+        return;
+      }
 
       const res = await fetch(`${API_BASE}/api/user/link-google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({ googleEmail: googleInfo.email ?? '', googleUid: googleInfo.uid }),
       });
-      const data = await res.json() as { ok: boolean; user?: DBUser; error?: string };
+      const data = (await res.json()) as { ok: boolean; user?: DBUser; error?: string };
       if (data.ok && data.user) {
         setDbUser(data.user);
       } else {
-        const msg = res.status === 409
-          ? t('profile.googleAlreadyLinkedOther', 'This Google account is already linked to another Ihsan account.')
-          : (data.error ?? t('profile.linkSaveFailed', 'Failed to save linked account. Please try again.'));
-        await Swal.fire({ title: t('profile.errorTitle', 'Error'), text: msg, icon: 'error', background: '#1a1812', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#3a3425]' } });
+        const msg =
+          res.status === 409
+            ? t(
+                'profile.googleAlreadyLinkedOther',
+                'This Google account is already linked to another Ihsan account.'
+              )
+            : (data.error ??
+              t('profile.linkSaveFailed', 'Failed to save linked account. Please try again.'));
+        await Swal.fire({
+          title: t('profile.errorTitle', 'Error'),
+          text: msg,
+          icon: 'error',
+          background: '#1a1812',
+          color: '#f1f5f9',
+          confirmButtonColor: '#ef4444',
+          customClass: { popup: 'rounded-3xl border border-[#3a3425]' },
+        });
       }
     } catch (err) {
       const code = (err as AuthError).code ?? '';
       if (code === 'auth/credential-already-in-use') {
-        await Swal.fire({ title: t('profile.alreadyLinkedTitle', 'Already linked'), text: t('profile.googleAlreadyConnectedDifferent', 'This Google account is already connected to a different Ihsan account.'), icon: 'warning', background: '#1a1812', color: '#f1f5f9', confirmButtonColor: '#c9a96e', customClass: { popup: 'rounded-3xl border border-[#3a3425]' } });
+        await Swal.fire({
+          title: t('profile.alreadyLinkedTitle', 'Already linked'),
+          text: t(
+            'profile.googleAlreadyConnectedDifferent',
+            'This Google account is already connected to a different Ihsan account.'
+          ),
+          icon: 'warning',
+          background: '#1a1812',
+          color: '#f1f5f9',
+          confirmButtonColor: '#c9a96e',
+          customClass: { popup: 'rounded-3xl border border-[#3a3425]' },
+        });
       } else if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-        await Swal.fire({ title: t('profile.errorTitle', 'Error'), text: t('profile.googleConnectFailed', 'Could not connect Google account. Please try again.'), icon: 'error', background: '#1a1812', color: '#f1f5f9', confirmButtonColor: '#ef4444', customClass: { popup: 'rounded-3xl border border-[#3a3425]' } });
+        await Swal.fire({
+          title: t('profile.errorTitle', 'Error'),
+          text: t(
+            'profile.googleConnectFailed',
+            'Could not connect Google account. Please try again.'
+          ),
+          icon: 'error',
+          background: '#1a1812',
+          color: '#f1f5f9',
+          confirmButtonColor: '#ef4444',
+          customClass: { popup: 'rounded-3xl border border-[#3a3425]' },
+        });
       }
     }
     setLinkingGoogle(false);
@@ -576,7 +888,10 @@ export default function Profile() {
   const unlinkGoogle = async (providerUid: string) => {
     const confirm = await Swal.fire({
       title: t('profile.disconnectGoogleTitle', 'Disconnect Google account?'),
-      text: t('profile.disconnectGoogleText', 'You will no longer be able to sign in with this Google account.'),
+      text: t(
+        'profile.disconnectGoogleText',
+        'You will no longer be able to sign in with this Google account.'
+      ),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: t('profile.disconnect', 'Disconnect'),
@@ -598,10 +913,12 @@ export default function Profile() {
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
           body: JSON.stringify({ providerUid }),
         });
-        const data = await res.json() as { ok: boolean; user?: DBUser };
+        const data = (await res.json()) as { ok: boolean; user?: DBUser };
         if (data.ok && data.user) setDbUser(data.user);
       }
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
     setUnlinkingGoogle(false);
   };
 
@@ -621,14 +938,15 @@ export default function Profile() {
         headers: { Authorization: `Bearer ${idToken}` },
       });
       if (meRes.ok) {
-        const data = await meRes.json() as { user?: DBUser };
+        const data = (await meRes.json()) as { user?: DBUser };
         if (data.user) setDbUser(data.user);
       }
-    } catch { /* non-fatal */ } finally {
+    } catch {
+      /* non-fatal */
+    } finally {
       setPrimaryEmailLoading(false);
     }
   };
-
 
   const ageInfo = calcFullAge(profile.birthDate);
   const totalZikr = formatLocaleNumber(dbUser?.totalCount ?? 0);
@@ -637,7 +955,8 @@ export default function Profile() {
 
   // Determine primary/secondary: if primaryEmail is not set, password account is default primary
   const explicitPrimary = dbUser?.primaryEmail ?? null;
-  const googleIsPrimary = explicitPrimary !== null &&
+  const googleIsPrimary =
+    explicitPrimary !== null &&
     googleLinked !== undefined &&
     explicitPrimary === googleLinked.email &&
     explicitPrimary !== user?.email;
@@ -651,634 +970,838 @@ export default function Profile() {
 
   return (
     <>
-    <AnimatedBackground variant="dark">
-      <div className="p-4 sm:p-6 lg:p-8 pb-16">
-        <div className="max-w-2xl mx-auto space-y-5">
+      <AnimatedBackground variant="dark">
+        <div className="p-4 sm:p-6 lg:p-8 pb-16">
+          <div className="max-w-2xl mx-auto space-y-5">
+            {/* Header */}
+            <motion.div
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center"
+            >
+              <h1 className="text-3xl sm:text-4xl font-black text-brand-emerald mb-1">
+                {t('profile.title', 'My Profile')}
+              </h1>
+              <p className="text-white/40 text-sm">
+                {t('profile.subtitle', 'Manage your personal information')}
+              </p>
+            </motion.div>
 
-          {/* Header */}
-          <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="text-center">
-            <h1 className="text-3xl sm:text-4xl font-black text-brand-emerald mb-1">{t('profile.title', 'My Profile')}</h1>
-            <p className="text-white/40 text-sm">{t('profile.subtitle', 'Manage your personal information')}</p>
-          </motion.div>
-
-          {/* ── Avatar + summary card ─── gradient with star animation */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="relative rounded-2xl border border-brand-emerald/20 overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0e2040 25%, #112244 50%, #0a1a30 75%, #080c12 100%)' }}
-          >
-            {/* Animated sparkle dots */}
-            <div className="absolute inset-0 pointer-events-none">
-              {SPARKLE_POSITIONS.map((s, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute rounded-full bg-brand-emerald"
-                  style={{ left: s.left, top: s.top, width: i % 3 === 0 ? 3 : 2, height: i % 3 === 0 ? 3 : 2 }}
-                  animate={{ opacity: [0.1, 0.7, 0.1], scale: [0.8, 1.6, 0.8], y: [-3, 3, -3] }}
-                  transition={{ duration: 2.5 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: s.delay }}
-                />
-              ))}
-              {/* Subtle gradient shimmer line */}
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-emerald/30 to-transparent" />
-            </div>
-
-            <div className="relative p-5 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-                {/* Avatar */}
-                <div className="relative shrink-0">
-                  <div className="avatar">
-                    <div className="w-24 rounded-full ring-2 ring-brand-emerald ring-offset-2 ring-offset-[#0a1628]">
-                      {preview || profile.photoUrl ? (
-                        <img src={preview || profile.photoUrl} alt="profile" className="object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-brand-emerald/20 flex items-center justify-center">
-                          <UserCircleIcon className="w-16 h-16 text-brand-emerald/50" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowPhotoChoice(true)}
-                    disabled={uploading}
-                    className="absolute bottom-0 right-0 group w-8 h-8 rounded-full bg-brand-emerald hover:bg-brand-emerald-dim text-white shadow-lg flex items-center justify-center transition-colors disabled:opacity-50"
-                  >
-                    <CameraIcon className="w-4 h-4" />
-                    <span className="absolute -top-7 right-0 bg-brand-deep border border-brand-border text-white/70 text-[10px] px-2 py-0.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      {t('profile.changePhoto', 'Change Photo')}
-                    </span>
-                  </button>
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0 text-center sm:text-left space-y-1">
-                  <p className="text-xl font-black text-white leading-tight flex items-center gap-2 flex-wrap justify-center sm:justify-start">
-                    {profile.displayName || profile.firstName || user?.email?.split('@')[0] || t('profile.anonymous', 'Anonymous')}
-                    {profile.country && <CountryFlag countryName={profile.country} />}
-                  </p>
-                  {(profile.city || profile.country) && (
-                    <p className="flex items-center justify-center sm:justify-start gap-1 text-white/40 text-sm">
-                      <MapPinIcon className="w-3.5 h-3.5 text-brand-emerald/60" />
-                      {[profile.city, profile.country].filter(Boolean).join(', ')}
-                    </p>
-                  )}
-                  {profile.occupation && (
-                    <p className="flex items-center justify-center sm:justify-start gap-1 text-white/40 text-sm">
-                      <BriefcaseIcon className="w-3.5 h-3.5" /> {profile.occupation}
-                    </p>
-                  )}
-                  {profile.bio && (
-                    <p className="text-white/50 text-sm mt-2 italic leading-snug">{profile.bio}</p>
-                  )}
-                </div>
+            {/* ── Avatar + summary card ─── gradient with star animation */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="relative rounded-2xl border border-brand-emerald/20 overflow-hidden"
+              style={{
+                background:
+                  'linear-gradient(135deg, #0a1628 0%, #0e2040 25%, #112244 50%, #0a1a30 75%, #080c12 100%)',
+              }}
+            >
+              {/* Animated sparkle dots */}
+              <div className="absolute inset-0 pointer-events-none">
+                {SPARKLE_POSITIONS.map((s, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute rounded-full bg-brand-emerald"
+                    style={{
+                      left: s.left,
+                      top: s.top,
+                      width: i % 3 === 0 ? 3 : 2,
+                      height: i % 3 === 0 ? 3 : 2,
+                    }}
+                    animate={{ opacity: [0.1, 0.7, 0.1], scale: [0.8, 1.6, 0.8], y: [-3, 3, -3] }}
+                    transition={{
+                      duration: 2.5 + i * 0.4,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                      delay: s.delay,
+                    }}
+                  />
+                ))}
+                {/* Subtle gradient shimmer line */}
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-emerald/30 to-transparent" />
               </div>
 
-              {/* Quick stats — 4 columns */}
-              <div className="grid grid-cols-4 gap-2 mt-5 pt-5 border-t border-brand-emerald/15">
-                <div className="text-center">
-                  <p className="text-brand-emerald font-black text-base tabular-nums">{totalZikr}</p>
-                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">{t('profile.totalZikr', 'Total Zikr')}</p>
-                </div>
-                <div className="text-center border-x border-brand-emerald/10">
-                  <p className="text-brand-gold font-black text-base">
-                    {longestStreak !== null ? longestStreak : '—'}
-                  </p>
-                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">{t('profile.bestStreak', 'Best Streak')}</p>
-                </div>
-                <div className="text-center border-r border-brand-emerald/10">
-                  <p className="text-white/70 font-black text-base leading-tight">
-                    {ageInfo ? `${ageInfo.years}y ${ageInfo.months}m` : '—'}
-                  </p>
-                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">{t('profile.age', 'Age')}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-white/50 font-bold text-xs leading-tight">
-                    {memberSince ?? '—'}
-                  </p>
-                  <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">{t('profile.memberSince', 'Member Since')}</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* ── Account & Linked Accounts ── */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-            className="card bg-brand-surface border border-brand-border rounded-2xl"
-          >
-            <div className="card-body p-5 sm:p-6 space-y-4">
-              <div>
-                <p className="text-white/30 text-xs font-bold uppercase tracking-widest mb-1">{t('profile.accountLinked', 'Account & Linked Accounts')}</p>
-                <p className="text-white/25 text-xs">{t('profile.primaryEmailNote', 'Primary email is used for password reset and notifications.')}</p>
-              </div>
-
-              <div className="space-y-2.5">
-                {/* ── Email/Password row ── */}
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-border">
-                  <EnvelopeIcon className="w-4 h-4 text-white/30 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-white/70 text-sm truncate">{user?.email ?? '—'}</p>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${
-                        !googleIsPrimary
-                          ? 'bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald'
-                          : 'bg-white/5 border border-brand-border text-white/30'
-                      }`}>
-                        {!googleIsPrimary ? t('profile.primary', 'PRIMARY') : t('profile.secondary', 'SECONDARY')}
-                      </span>
-                    </div>
-                    <p className="text-white/25 text-xs">{t('profile.emailPassword', 'Email / Password')}</p>
-                  </div>
-                  {/* Make Primary — only when password is secondary */}
-                  {googleIsPrimary && user?.email && (
-                    <button
-                      onClick={() => void makePrimaryEmail(user.email!)}
-                      disabled={primaryEmailLoading}
-                      className="text-xs px-2.5 py-1 rounded-lg bg-brand-emerald/10 border border-brand-emerald/30 text-brand-emerald/80 hover:bg-brand-emerald/20 hover:text-brand-emerald transition-all shrink-0 font-medium whitespace-nowrap disabled:opacity-50"
-                    >
-                      {primaryEmailLoading ? <span className="loading loading-spinner loading-xs" /> : t('profile.makePrimary', 'Make Primary')}
-                    </button>
-                  )}
-                </div>
-
-                {/* ── Google row (linked / already signed-in with Google / not connected) ── */}
-                {googleLinked ? (
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-border">
-                    <GoogleLogo className="w-4 h-4 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-white/70 text-sm truncate">{googleLinked.email}</p>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${
-                          googleIsPrimary
-                            ? 'bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald'
-                            : 'bg-white/5 border border-brand-border text-white/30'
-                        }`}>
-                          {googleIsPrimary ? t('profile.primary', 'PRIMARY') : t('profile.secondary', 'SECONDARY')}
-                        </span>
-                      </div>
-                      <p className="text-white/25 text-xs">{t('profile.googleAccount', 'Google Account')}</p>
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {/* Make Primary / Make Secondary toggle */}
-                      {googleIsPrimary ? (
-                        <button
-                          onClick={() => user?.email && void makePrimaryEmail(user.email)}
-                          disabled={primaryEmailLoading}
-                          className="text-xs px-2.5 py-1 rounded-lg bg-white/5 border border-brand-border text-white/40 hover:bg-white/10 hover:text-white/70 transition-all font-medium whitespace-nowrap disabled:opacity-50"
-                        >
-                          {primaryEmailLoading ? <span className="loading loading-spinner loading-xs" /> : t('profile.makeSecondary', 'Make Secondary')}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => void makePrimaryEmail(googleLinked.email)}
-                          disabled={primaryEmailLoading}
-                          className="text-xs px-2.5 py-1 rounded-lg bg-brand-emerald/10 border border-brand-emerald/30 text-brand-emerald/80 hover:bg-brand-emerald/20 hover:text-brand-emerald transition-all font-medium whitespace-nowrap disabled:opacity-50"
-                        >
-                          {primaryEmailLoading ? <span className="loading loading-spinner loading-xs" /> : t('profile.makePrimary', 'Make Primary')}
-                        </button>
-                      )}
-
-                      {/* Disconnect — only enabled when Google is SECONDARY */}
-                      <div className="relative group/dis">
-                        <button
-                          onClick={() => !googleIsPrimary && void unlinkGoogle(googleLinked.providerUid)}
-                          disabled={unlinkingGoogle || googleIsPrimary}
-                          className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all whitespace-nowrap ${
-                            googleIsPrimary
-                              ? 'bg-white/5 border border-brand-border text-white/20 cursor-not-allowed'
-                              : 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/60'
-                          }`}
-                        >
-                          {unlinkingGoogle ? <span className="loading loading-spinner loading-xs" /> : t('profile.disconnect', 'Disconnect')}
-                        </button>
-                        {googleIsPrimary && (
-                          <div className="absolute -top-9 right-0 bg-brand-deep border border-brand-border text-white/60 text-[10px] px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover/dis:opacity-100 transition-opacity pointer-events-none z-10">
-                            {t('profile.makeSecondaryFirst', 'Make secondary first to disconnect')}
+              <div className="relative p-5 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                  {/* Avatar */}
+                  <div className="relative shrink-0">
+                    <div className="avatar">
+                      <div className="w-24 rounded-full ring-2 ring-brand-emerald ring-offset-2 ring-offset-[#0a1628]">
+                        {preview || profile.photoUrl ? (
+                          <img
+                            src={preview || profile.photoUrl}
+                            alt="profile"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-brand-emerald/20 flex items-center justify-center">
+                            <UserCircleIcon className="w-16 h-16 text-brand-emerald/50" />
                           </div>
                         )}
                       </div>
                     </div>
-                  </div>
-                ) : firebaseHasGoogle ? (
-                  // User signed in with Google — their account IS Google, no linking needed.
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-emerald/20 opacity-80 cursor-default">
-                    <GoogleLogo className="w-4 h-4 shrink-0" />
-                    <div className="text-left min-w-0 flex-1">
-                      <p className="text-sm font-medium leading-tight text-white/70">
-                        {auth.currentUser?.email ?? t('profile.googleAccountFallback', 'Google Account')}
-                      </p>
-                      <p className="text-xs text-white/30 leading-tight mt-0.5">
-                        {t('profile.signedInGoogle', "You're signed in with Google — this is your primary account")}
-                      </p>
-                    </div>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald font-bold shrink-0">
-                      {t('profile.primary', 'PRIMARY')}
-                    </span>
-                  </div>
-                ) : (
-                  // Email/password user — offer to link Google
-                  <button
-                    onClick={() => void linkGoogle()}
-                    disabled={linkingGoogle}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-dashed border-brand-border hover:border-brand-emerald/40 text-white/40 hover:text-white/70 transition-all disabled:opacity-50 group"
-                  >
-                    {linkingGoogle ? (
-                      <span className="loading loading-spinner loading-xs text-brand-emerald" />
-                    ) : (
-                      <LinkIcon className="w-4 h-4 shrink-0 group-hover:text-brand-emerald transition-colors" />
-                    )}
-                    <div className="text-left min-w-0 flex-1">
-                      <p className="text-sm font-medium leading-tight">{t('profile.connectGoogle', 'Connect Google Account')}</p>
-                      <p className="text-xs text-white/25 leading-tight mt-0.5">{t('profile.connectGoogleDesc', 'Sign in with Google & sync your profile photo')}</p>
-                    </div>
-                    <GoogleLogo className="w-4 h-4 ml-auto shrink-0 opacity-50" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Edit form */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.11 }}
-            className="card bg-brand-surface border border-brand-border rounded-2xl"
-          >
-            <div className="card-body p-5 sm:p-6 space-y-4">
-              <p className="text-white/30 text-xs font-bold uppercase tracking-widest">{t('profile.editDetails', 'Edit Details')}</p>
-
-              <AnimatePresence>
-                {saveSuccess && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                    transition={{ type: 'spring', damping: 20 }}
-                    className="flex items-center gap-2 py-2.5 px-4 rounded-xl bg-brand-emerald/15 border border-brand-emerald/40"
-                  >
-                    <CheckCircleIcon className="w-4 h-4 text-brand-emerald shrink-0" />
-                    <span className="text-brand-emerald text-sm font-semibold">{t('profile.savedSuccess', 'Profile saved successfully!')}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Display name */}
-              <div className="form-control">
-                <label className="label py-1"><span className="label-text text-white/60 text-sm">{t('profile.displayName', 'Display Name')}</span></label>
-                <input
-                  type="text"
-                  className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                  placeholder={t('profile.displayNamePlaceholder', 'How you appear in the app')}
-                  value={profile.displayName}
-                  onChange={(e) => setProfile((p) => ({ ...p, displayName: e.target.value }))}
-                />
-              </div>
-
-              {/* First / Last name */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="form-control">
-                  <label className="label py-1"><span className="label-text text-white/60 text-sm">{t('profile.firstName', 'First Name')}</span></label>
-                  <input type="text" className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                    placeholder={googleFirstName || t('profile.first', 'First')} value={profile.firstName}
-                    onChange={(e) => setProfile((p) => ({ ...p, firstName: e.target.value }))} />
-                </div>
-                <div className="form-control">
-                  <label className="label py-1"><span className="label-text text-white/60 text-sm">{t('profile.lastName', 'Last Name')}</span></label>
-                  <input type="text" className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                    placeholder={googleLastName || t('profile.last', 'Last')} value={profile.lastName}
-                    onChange={(e) => setProfile((p) => ({ ...p, lastName: e.target.value }))} />
-                </div>
-              </div>
-
-              {/* Bio */}
-              <div className="form-control">
-                <label className="label py-1">
-                  <span className="label-text text-white/60 text-sm">{t('profile.bio', 'Bio')}</span>
-                  <span className="label-text-alt text-white/20 text-xs">{profile.bio.length}/250</span>
-                </label>
-                <textarea
-                  className="textarea textarea-bordered bg-brand-deep border-brand-border text-white text-sm focus:border-brand-emerald focus:outline-none resize-none transition-colors"
-                  placeholder={t('profile.bioPlaceholder', 'A short sentence about yourself…')}
-                  rows={2}
-                  maxLength={250}
-                  value={profile.bio}
-                  onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))}
-                />
-              </div>
-
-              {/* Country → City dropdowns */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="form-control">
-                  <label className="label py-1">
-                    <span className="label-text text-white/60 text-sm flex items-center gap-1">
-                      <MapPinIcon className="w-3.5 h-3.5" /> {t('profile.country', 'Country')}
-                    </span>
-                  </label>
-                  <select
-                    className="select select-sm select-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                    value={profile.country}
-                    onChange={(e) => handleCountryChange(e.target.value)}
-                  >
-                    <option value="">{t('profile.selectCountry', 'Select country')}</option>
-                    {SORTED_COUNTRIES.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-control">
-                  <label className="label py-1">
-                    <span className="label-text text-white/60 text-sm">{t('profile.city', 'City')}</span>
-                  </label>
-                  {cityOptions.length > 0 ? (
-                    <select
-                      className="select select-sm select-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                      value={profile.city}
-                      onChange={(e) => setProfile((p) => ({ ...p, city: e.target.value }))}
+                    <button
+                      type="button"
+                      onClick={() => setShowPhotoChoice(true)}
+                      disabled={uploading}
+                      className="absolute bottom-0 right-0 group w-8 h-8 rounded-full bg-brand-emerald hover:bg-brand-emerald-dim text-white shadow-lg flex items-center justify-center transition-colors disabled:opacity-50"
                     >
-                      <option value="">{t('profile.selectCity', 'Select city')}</option>
-                      {cityOptions.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
+                      <CameraIcon className="w-4 h-4" />
+                      <span className="absolute -top-7 right-0 bg-brand-deep border border-brand-border text-white/70 text-[10px] px-2 py-0.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        {t('profile.changePhoto', 'Change Photo')}
+                      </span>
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={onFileChange}
+                    />
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0 text-center sm:text-left space-y-1">
+                    <p className="text-xl font-black text-white leading-tight flex items-center gap-2 flex-wrap justify-center sm:justify-start">
+                      {profile.displayName ||
+                        profile.firstName ||
+                        user?.email?.split('@')[0] ||
+                        t('profile.anonymous', 'Anonymous')}
+                      {profile.country && <CountryFlag countryName={profile.country} />}
+                    </p>
+                    {(profile.city || profile.country) && (
+                      <p className="flex items-center justify-center sm:justify-start gap-1 text-white/40 text-sm">
+                        <MapPinIcon className="w-3.5 h-3.5 text-brand-emerald/60" />
+                        {[profile.city, profile.country].filter(Boolean).join(', ')}
+                      </p>
+                    )}
+                    {profile.occupation && (
+                      <p className="flex items-center justify-center sm:justify-start gap-1 text-white/40 text-sm">
+                        <BriefcaseIcon className="w-3.5 h-3.5" /> {profile.occupation}
+                      </p>
+                    )}
+                    {profile.bio && (
+                      <p className="text-white/50 text-sm mt-2 italic leading-snug">
+                        {profile.bio}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick stats — 4 columns */}
+                <div className="grid grid-cols-4 gap-2 mt-5 pt-5 border-t border-brand-emerald/15">
+                  <div className="text-center">
+                    <p className="text-brand-emerald font-black text-base tabular-nums">
+                      {totalZikr}
+                    </p>
+                    <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">
+                      {t('profile.totalZikr', 'Total Zikr')}
+                    </p>
+                  </div>
+                  <div className="text-center border-x border-brand-emerald/10">
+                    <p className="text-brand-gold font-black text-base">
+                      {longestStreak !== null ? longestStreak : '—'}
+                    </p>
+                    <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">
+                      {t('profile.bestStreak', 'Best Streak')}
+                    </p>
+                  </div>
+                  <div className="text-center border-r border-brand-emerald/10">
+                    <p className="text-white/70 font-black text-base leading-tight">
+                      {ageInfo ? `${ageInfo.years}y ${ageInfo.months}m` : '—'}
+                    </p>
+                    <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">
+                      {t('profile.age', 'Age')}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-white/50 font-bold text-xs leading-tight">
+                      {memberSince ?? '—'}
+                    </p>
+                    <p className="text-white/30 text-[10px] uppercase tracking-wide leading-tight mt-0.5">
+                      {t('profile.memberSince', 'Member Since')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* ── Account & Linked Accounts ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 }}
+              className="card bg-brand-surface border border-brand-border rounded-2xl"
+            >
+              <div className="card-body p-5 sm:p-6 space-y-4">
+                <div>
+                  <p className="text-white/30 text-xs font-bold uppercase tracking-widest mb-1">
+                    {t('profile.accountLinked', 'Account & Linked Accounts')}
+                  </p>
+                  <p className="text-white/25 text-xs">
+                    {t(
+                      'profile.primaryEmailNote',
+                      'Primary email is used for password reset and notifications.'
+                    )}
+                  </p>
+                </div>
+
+                <div className="space-y-2.5">
+                  {/* ── Email/Password row ── */}
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-border">
+                    <EnvelopeIcon className="w-4 h-4 text-white/30 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-white/70 text-sm truncate">{user?.email ?? '—'}</p>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${
+                            !googleIsPrimary
+                              ? 'bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald'
+                              : 'bg-white/5 border border-brand-border text-white/30'
+                          }`}
+                        >
+                          {!googleIsPrimary
+                            ? t('profile.primary', 'PRIMARY')
+                            : t('profile.secondary', 'SECONDARY')}
+                        </span>
+                      </div>
+                      <p className="text-white/25 text-xs">
+                        {t('profile.emailPassword', 'Email / Password')}
+                      </p>
+                    </div>
+                    {/* Make Primary — only when password is secondary */}
+                    {googleIsPrimary && user?.email && (
+                      <button
+                        onClick={() => void makePrimaryEmail(user.email!)}
+                        disabled={primaryEmailLoading}
+                        className="text-xs px-2.5 py-1 rounded-lg bg-brand-emerald/10 border border-brand-emerald/30 text-brand-emerald/80 hover:bg-brand-emerald/20 hover:text-brand-emerald transition-all shrink-0 font-medium whitespace-nowrap disabled:opacity-50"
+                      >
+                        {primaryEmailLoading ? (
+                          <span className="loading loading-spinner loading-xs" />
+                        ) : (
+                          t('profile.makePrimary', 'Make Primary')
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* ── Google row (linked / already signed-in with Google / not connected) ── */}
+                  {googleLinked ? (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-border">
+                      <GoogleLogo className="w-4 h-4 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-white/70 text-sm truncate">{googleLinked.email}</p>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${
+                              googleIsPrimary
+                                ? 'bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald'
+                                : 'bg-white/5 border border-brand-border text-white/30'
+                            }`}
+                          >
+                            {googleIsPrimary
+                              ? t('profile.primary', 'PRIMARY')
+                              : t('profile.secondary', 'SECONDARY')}
+                          </span>
+                        </div>
+                        <p className="text-white/25 text-xs">
+                          {t('profile.googleAccount', 'Google Account')}
+                        </p>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Make Primary / Make Secondary toggle */}
+                        {googleIsPrimary ? (
+                          <button
+                            onClick={() => user?.email && void makePrimaryEmail(user.email)}
+                            disabled={primaryEmailLoading}
+                            className="text-xs px-2.5 py-1 rounded-lg bg-white/5 border border-brand-border text-white/40 hover:bg-white/10 hover:text-white/70 transition-all font-medium whitespace-nowrap disabled:opacity-50"
+                          >
+                            {primaryEmailLoading ? (
+                              <span className="loading loading-spinner loading-xs" />
+                            ) : (
+                              t('profile.makeSecondary', 'Make Secondary')
+                            )}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => void makePrimaryEmail(googleLinked.email)}
+                            disabled={primaryEmailLoading}
+                            className="text-xs px-2.5 py-1 rounded-lg bg-brand-emerald/10 border border-brand-emerald/30 text-brand-emerald/80 hover:bg-brand-emerald/20 hover:text-brand-emerald transition-all font-medium whitespace-nowrap disabled:opacity-50"
+                          >
+                            {primaryEmailLoading ? (
+                              <span className="loading loading-spinner loading-xs" />
+                            ) : (
+                              t('profile.makePrimary', 'Make Primary')
+                            )}
+                          </button>
+                        )}
+
+                        {/* Disconnect — only enabled when Google is SECONDARY */}
+                        <div className="relative group/dis">
+                          <button
+                            onClick={() =>
+                              !googleIsPrimary && void unlinkGoogle(googleLinked.providerUid)
+                            }
+                            disabled={unlinkingGoogle || googleIsPrimary}
+                            className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all whitespace-nowrap ${
+                              googleIsPrimary
+                                ? 'bg-white/5 border border-brand-border text-white/20 cursor-not-allowed'
+                                : 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/60'
+                            }`}
+                          >
+                            {unlinkingGoogle ? (
+                              <span className="loading loading-spinner loading-xs" />
+                            ) : (
+                              t('profile.disconnect', 'Disconnect')
+                            )}
+                          </button>
+                          {googleIsPrimary && (
+                            <div className="absolute -top-9 right-0 bg-brand-deep border border-brand-border text-white/60 text-[10px] px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover/dis:opacity-100 transition-opacity pointer-events-none z-10">
+                              {t(
+                                'profile.makeSecondaryFirst',
+                                'Make secondary first to disconnect'
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : firebaseHasGoogle ? (
+                    // User signed in with Google — their account IS Google, no linking needed.
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-brand-emerald/20 opacity-80 cursor-default">
+                      <GoogleLogo className="w-4 h-4 shrink-0" />
+                      <div className="text-left min-w-0 flex-1">
+                        <p className="text-sm font-medium leading-tight text-white/70">
+                          {auth.currentUser?.email ??
+                            t('profile.googleAccountFallback', 'Google Account')}
+                        </p>
+                        <p className="text-xs text-white/30 leading-tight mt-0.5">
+                          {t(
+                            'profile.signedInGoogle',
+                            "You're signed in with Google — this is your primary account"
+                          )}
+                        </p>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-emerald/20 border border-brand-emerald/40 text-brand-emerald font-bold shrink-0">
+                        {t('profile.primary', 'PRIMARY')}
+                      </span>
+                    </div>
                   ) : (
+                    // Email/password user — offer to link Google
+                    <button
+                      onClick={() => void linkGoogle()}
+                      disabled={linkingGoogle}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl bg-brand-deep border border-dashed border-brand-border hover:border-brand-emerald/40 text-white/40 hover:text-white/70 transition-all disabled:opacity-50 group"
+                    >
+                      {linkingGoogle ? (
+                        <span className="loading loading-spinner loading-xs text-brand-emerald" />
+                      ) : (
+                        <LinkIcon className="w-4 h-4 shrink-0 group-hover:text-brand-emerald transition-colors" />
+                      )}
+                      <div className="text-left min-w-0 flex-1">
+                        <p className="text-sm font-medium leading-tight">
+                          {t('profile.connectGoogle', 'Connect Google Account')}
+                        </p>
+                        <p className="text-xs text-white/25 leading-tight mt-0.5">
+                          {t(
+                            'profile.connectGoogleDesc',
+                            'Sign in with Google & sync your profile photo'
+                          )}
+                        </p>
+                      </div>
+                      <GoogleLogo className="w-4 h-4 ml-auto shrink-0 opacity-50" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Edit form */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.11 }}
+              className="card bg-brand-surface border border-brand-border rounded-2xl"
+            >
+              <div className="card-body p-5 sm:p-6 space-y-4">
+                <p className="text-white/30 text-xs font-bold uppercase tracking-widest">
+                  {t('profile.editDetails', 'Edit Details')}
+                </p>
+
+                <AnimatePresence>
+                  {saveSuccess && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                      transition={{ type: 'spring', damping: 20 }}
+                      className="flex items-center gap-2 py-2.5 px-4 rounded-xl bg-brand-emerald/15 border border-brand-emerald/40"
+                    >
+                      <CheckCircleIcon className="w-4 h-4 text-brand-emerald shrink-0" />
+                      <span className="text-brand-emerald text-sm font-semibold">
+                        {t('profile.savedSuccess', 'Profile saved successfully!')}
+                      </span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Display name */}
+                <div className="form-control">
+                  <label className="label py-1">
+                    <span className="label-text text-white/60 text-sm">
+                      {t('profile.displayName', 'Display Name')}
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                    placeholder={t('profile.displayNamePlaceholder', 'How you appear in the app')}
+                    value={profile.displayName}
+                    onChange={(e) => setProfile((p) => ({ ...p, displayName: e.target.value }))}
+                  />
+                </div>
+
+                {/* First / Last name */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="form-control">
+                    <label className="label py-1">
+                      <span className="label-text text-white/60 text-sm">
+                        {t('profile.firstName', 'First Name')}
+                      </span>
+                    </label>
                     <input
                       type="text"
                       className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                      placeholder={profile.country ? t('profile.enterCity', 'Enter city') : t('profile.selectCountryFirst', 'Select country first')}
-                      value={profile.city}
-                      onChange={(e) => setProfile((p) => ({ ...p, city: e.target.value }))}
+                      placeholder={googleFirstName || t('profile.first', 'First')}
+                      value={profile.firstName}
+                      onChange={(e) => setProfile((p) => ({ ...p, firstName: e.target.value }))}
                     />
-                  )}
+                  </div>
+                  <div className="form-control">
+                    <label className="label py-1">
+                      <span className="label-text text-white/60 text-sm">
+                        {t('profile.lastName', 'Last Name')}
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                      placeholder={googleLastName || t('profile.last', 'Last')}
+                      value={profile.lastName}
+                      onChange={(e) => setProfile((p) => ({ ...p, lastName: e.target.value }))}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Occupation */}
-              <div className="form-control">
-                <label className="label py-1">
-                  <span className="label-text text-white/60 text-sm flex items-center gap-1">
-                    <BriefcaseIcon className="w-3.5 h-3.5" /> {t('profile.occupation', 'Occupation')}
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                  placeholder={t('profile.occupationPlaceholder', 'Your profession or field')}
-                  value={profile.occupation}
-                  onChange={(e) => setProfile((p) => ({ ...p, occupation: e.target.value }))}
-                />
-              </div>
-
-              {/* Gender / Birth date */}
-              <div className="grid grid-cols-2 gap-3">
+                {/* Bio */}
                 <div className="form-control">
-                  <label className="label py-1"><span className="label-text text-white/60 text-sm">{t('profile.gender', 'Gender')}</span></label>
-                  <select
-                    className="select select-sm select-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
-                    value={profile.gender}
-                    onChange={(e) => setProfile((p) => ({ ...p, gender: e.target.value }))}
-                  >
-                    <option value="">{t('profile.notSet', 'Not set')}</option>
-                    <option value="male">{t('profile.male', 'Male')}</option>
-                    <option value="female">{t('profile.female', 'Female')}</option>
-                  </select>
+                  <label className="label py-1">
+                    <span className="label-text text-white/60 text-sm">
+                      {t('profile.bio', 'Bio')}
+                    </span>
+                    <span className="label-text-alt text-white/20 text-xs">
+                      {profile.bio.length}/250
+                    </span>
+                  </label>
+                  <textarea
+                    className="textarea textarea-bordered bg-brand-deep border-brand-border text-white text-sm focus:border-brand-emerald focus:outline-none resize-none transition-colors"
+                    placeholder={t('profile.bioPlaceholder', 'A short sentence about yourself…')}
+                    rows={2}
+                    maxLength={250}
+                    value={profile.bio}
+                    onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))}
+                  />
                 </div>
 
+                {/* Country → City dropdowns */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="form-control">
+                    <label className="label py-1">
+                      <span className="label-text text-white/60 text-sm flex items-center gap-1">
+                        <MapPinIcon className="w-3.5 h-3.5" /> {t('profile.country', 'Country')}
+                      </span>
+                    </label>
+                    <select
+                      className="select select-sm select-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                      value={profile.country}
+                      onChange={(e) => handleCountryChange(e.target.value)}
+                    >
+                      <option value="">{t('profile.selectCountry', 'Select country')}</option>
+                      {SORTED_COUNTRIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-control">
+                    <label className="label py-1">
+                      <span className="label-text text-white/60 text-sm">
+                        {t('profile.city', 'City')}
+                      </span>
+                    </label>
+                    {cityOptions.length > 0 ? (
+                      <select
+                        className="select select-sm select-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                        value={profile.city}
+                        onChange={(e) => setProfile((p) => ({ ...p, city: e.target.value }))}
+                      >
+                        <option value="">{t('profile.selectCity', 'Select city')}</option>
+                        {cityOptions.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                        placeholder={
+                          profile.country
+                            ? t('profile.enterCity', 'Enter city')
+                            : t('profile.selectCountryFirst', 'Select country first')
+                        }
+                        value={profile.city}
+                        onChange={(e) => setProfile((p) => ({ ...p, city: e.target.value }))}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Occupation */}
                 <div className="form-control">
                   <label className="label py-1">
                     <span className="label-text text-white/60 text-sm flex items-center gap-1">
-                      <CalendarDaysIcon className="w-3.5 h-3.5" /> {t('profile.birthDate', 'Birth Date')}
+                      <BriefcaseIcon className="w-3.5 h-3.5" />{' '}
+                      {t('profile.occupation', 'Occupation')}
                     </span>
-                    {profile.birthDate && (
-                      <button
-                        type="button"
-                        className="label-text-alt flex items-center gap-0.5 text-white/30 hover:text-red-400 text-xs transition-colors"
-                        onClick={() => setProfile((p) => ({ ...p, birthDate: '' }))}
-                        title={t('profile.clearBirthDate', 'Clear birth date')}
-                      >
-                        <XMarkIcon className="w-3 h-3" /> {t('profile.clear', 'Clear')}
-                      </button>
-                    )}
                   </label>
                   <input
-                    type="date"
-                    className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors [color-scheme:dark]"
-                    value={profile.birthDate}
-                    max={new Date().toISOString().substring(0, 10)}
-                    onChange={(e) => setProfile((p) => ({ ...p, birthDate: e.target.value }))}
+                    type="text"
+                    className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                    placeholder={t('profile.occupationPlaceholder', 'Your profession or field')}
+                    value={profile.occupation}
+                    onChange={(e) => setProfile((p) => ({ ...p, occupation: e.target.value }))}
                   />
-                  {ageInfo && (
-                    <p className="text-white/30 text-xs mt-1">
-                      {t('profile.ageDisplay', 'Age: {{years}} years, {{months}} month{{suffix}}', { years: ageInfo.years, months: ageInfo.months, suffix: ageInfo.months !== 1 ? 's' : '' })}
-                    </p>
-                  )}
                 </div>
-              </div>
 
-              {saveError && <p className="text-red-400 text-xs">{saveError}</p>}
+                {/* Gender / Birth date */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="form-control">
+                    <label className="label py-1">
+                      <span className="label-text text-white/60 text-sm">
+                        {t('profile.gender', 'Gender')}
+                      </span>
+                    </label>
+                    <select
+                      className="select select-sm select-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors"
+                      value={profile.gender}
+                      onChange={(e) => setProfile((p) => ({ ...p, gender: e.target.value }))}
+                    >
+                      <option value="">{t('profile.notSet', 'Not set')}</option>
+                      <option value="male">{t('profile.male', 'Male')}</option>
+                      <option value="female">{t('profile.female', 'Female')}</option>
+                    </select>
+                  </div>
 
-              <button
-                className={`btn btn-sm w-full mt-1 gap-2 transition-all duration-300 border-0 ${
-                  isDirty && !saving
-                    ? 'bg-brand-emerald hover:bg-brand-emerald-dim text-white shadow-[0_0_20px_rgba(16,185,129,0.35)]'
-                    : 'bg-brand-surface border border-brand-border text-white/30 cursor-not-allowed'
-                }`}
-                onClick={saveProfile}
-                disabled={!isDirty || saving}
-              >
-                {saving ? (
-                  <><span className="loading loading-spinner loading-xs" /> {t('profile.saving', 'Saving…')}</>
-                ) : isDirty ? (
-                  t('profile.saveChanges', 'Save Changes')
-                ) : (
-                  t('profile.noChanges', 'No changes')
-                )}
-              </button>
-            </div>
-          </motion.div>
-
-        </div>
-      </div>
-    </AnimatedBackground>
-
-    {/* ── Photo choice modal ── */}
-    <AnimatePresence>
-      {showPhotoChoice && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowPhotoChoice(false); }}
-        >
-          <motion.div
-            initial={{ y: 30, opacity: 0, scale: 0.96 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 30, opacity: 0, scale: 0.96 }}
-            transition={{ type: 'spring', damping: 24 }}
-            className="bg-brand-surface rounded-3xl p-6 w-full max-w-xs shadow-2xl border border-brand-border"
-          >
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h3 className="text-lg font-black text-white">{t('profile.changeProfilePhoto', 'Change Profile Photo')}</h3>
-                <p className="text-white/30 text-xs mt-0.5">{t('profile.howUpdate', 'How would you like to update?')}</p>
-              </div>
-              <button onClick={() => setShowPhotoChoice(false)} className="text-white/40 hover:text-white p-1 transition-colors">
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-2.5">
-              <button
-                onClick={() => { setShowPhotoChoice(false); fileInputRef.current?.click(); }}
-                className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-brand-emerald/40 hover:bg-brand-emerald/5 text-white/70 hover:text-white transition-all text-left group"
-              >
-                <div className="w-9 h-9 rounded-xl bg-brand-emerald/15 flex items-center justify-center shrink-0 group-hover:bg-brand-emerald/25 transition-colors">
-                  <CameraIcon className="w-5 h-5 text-brand-emerald" />
+                  <div className="form-control">
+                    <label className="label py-1">
+                      <span className="label-text text-white/60 text-sm flex items-center gap-1">
+                        <CalendarDaysIcon className="w-3.5 h-3.5" />{' '}
+                        {t('profile.birthDate', 'Birth Date')}
+                      </span>
+                      {profile.birthDate && (
+                        <button
+                          type="button"
+                          className="label-text-alt flex items-center gap-0.5 text-white/30 hover:text-red-400 text-xs transition-colors"
+                          onClick={() => setProfile((p) => ({ ...p, birthDate: '' }))}
+                          title={t('profile.clearBirthDate', 'Clear birth date')}
+                        >
+                          <XMarkIcon className="w-3 h-3" /> {t('profile.clear', 'Clear')}
+                        </button>
+                      )}
+                    </label>
+                    <input
+                      type="date"
+                      className="input input-sm input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald focus:outline-none transition-colors [color-scheme:dark]"
+                      value={profile.birthDate}
+                      max={new Date().toISOString().substring(0, 10)}
+                      onChange={(e) => setProfile((p) => ({ ...p, birthDate: e.target.value }))}
+                    />
+                    {ageInfo && (
+                      <p className="text-white/30 text-xs mt-1">
+                        {t(
+                          'profile.ageDisplay',
+                          'Age: {{years}} years, {{months}} month{{suffix}}',
+                          {
+                            years: ageInfo.years,
+                            months: ageInfo.months,
+                            suffix: ageInfo.months !== 1 ? 's' : '',
+                          }
+                        )}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold">{t('profile.uploadPhoto', 'Upload Photo')}</p>
-                  <p className="text-white/30 text-xs">{t('profile.fromDevice', 'From your device')}</p>
-                </div>
-              </button>
 
-              <button
-                onClick={() => { setShowPhotoChoice(false); setAvatarModalOpen(true); }}
-                className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-brand-warm/40 hover:bg-brand-warm/5 text-white/70 hover:text-white transition-all text-left group"
-              >
-                <div className="w-9 h-9 rounded-xl bg-brand-warm/15 flex items-center justify-center shrink-0 group-hover:bg-brand-warm/25 transition-colors">
-                  <PhotoIcon className="w-5 h-5 text-brand-warm" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">{t('profile.chooseAvatar', 'Choose Avatar')}</p>
-                  <p className="text-white/30 text-xs">{t('profile.themedIcons', 'Themed emoji icons')}</p>
-                </div>
-              </button>
+                {saveError && <p className="text-red-400 text-xs">{saveError}</p>}
 
-              {hasGoogle && googlePhotoUrl && (
                 <button
-                  onClick={() => void useGoogleAccountPhoto()}
-                  disabled={uploading}
-                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-brand-info/40 hover:bg-brand-info/5 text-white/70 hover:text-white transition-all text-left group disabled:opacity-50"
+                  className={`btn btn-sm w-full mt-1 gap-2 transition-all duration-300 border-0 ${
+                    isDirty && !saving
+                      ? 'bg-brand-emerald hover:bg-brand-emerald-dim text-white shadow-[0_0_20px_rgba(16,185,129,0.35)]'
+                      : 'bg-brand-surface border border-brand-border text-white/30 cursor-not-allowed'
+                  }`}
+                  onClick={saveProfile}
+                  disabled={!isDirty || saving}
                 >
-                  <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-brand-border">
-                    <img src={googlePhotoUrl} alt="Google" className="w-full h-full object-cover" />
+                  {saving ? (
+                    <>
+                      <span className="loading loading-spinner loading-xs" />{' '}
+                      {t('profile.saving', 'Saving…')}
+                    </>
+                  ) : isDirty ? (
+                    t('profile.saveChanges', 'Save Changes')
+                  ) : (
+                    t('profile.noChanges', 'No changes')
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </AnimatedBackground>
+
+      {/* ── Photo choice modal ── */}
+      <AnimatePresence>
+        {showPhotoChoice && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowPhotoChoice(false);
+            }}
+          >
+            <motion.div
+              initial={{ y: 30, opacity: 0, scale: 0.96 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 30, opacity: 0, scale: 0.96 }}
+              transition={{ type: 'spring', damping: 24 }}
+              className="bg-brand-surface rounded-3xl p-6 w-full max-w-xs shadow-2xl border border-brand-border"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="text-lg font-black text-white">
+                    {t('profile.changeProfilePhoto', 'Change Profile Photo')}
+                  </h3>
+                  <p className="text-white/30 text-xs mt-0.5">
+                    {t('profile.howUpdate', 'How would you like to update?')}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowPhotoChoice(false)}
+                  className="text-white/40 hover:text-white p-1 transition-colors"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="space-y-2.5">
+                <button
+                  onClick={() => {
+                    setShowPhotoChoice(false);
+                    fileInputRef.current?.click();
+                  }}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-brand-emerald/40 hover:bg-brand-emerald/5 text-white/70 hover:text-white transition-all text-left group"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-brand-emerald/15 flex items-center justify-center shrink-0 group-hover:bg-brand-emerald/25 transition-colors">
+                    <CameraIcon className="w-5 h-5 text-brand-emerald" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">{t('profile.useGooglePhoto', 'Use Google Account Photo')}</p>
-                    <p className="text-white/30 text-xs">{googleLinked?.email}</p>
+                    <p className="text-sm font-semibold">
+                      {t('profile.uploadPhoto', 'Upload Photo')}
+                    </p>
+                    <p className="text-white/30 text-xs">
+                      {t('profile.fromDevice', 'From your device')}
+                    </p>
                   </div>
-                  {uploading && <span className="loading loading-spinner loading-xs ml-auto" />}
                 </button>
-              )}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
 
-    {/* ── Avatar selection modal ── */}
-    <AnimatePresence>
-      {avatarModalOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        >
-          <motion.div
-            initial={{ scale: 0.92, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.92, opacity: 0, y: 20 }}
-            transition={{ type: 'spring', damping: 22 }}
-            className="bg-brand-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-border space-y-4"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-black text-white">{t('profile.chooseAvatar', 'Choose Avatar')}</h3>
-                <p className="text-white/30 text-xs mt-0.5">{t('profile.natureIcons', 'Nature-themed icons — no upload required')}</p>
-              </div>
-              <button onClick={() => setAvatarModalOpen(false)} className="text-white/40 hover:text-white transition-colors p-1">
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="grid grid-cols-4 gap-3">
-              {PRESET_AVATARS.map((av) => (
                 <button
-                  key={av.id}
-                  onClick={() => void selectAvatar(av)}
-                  disabled={uploading}
-                  className="flex flex-col items-center gap-1 group disabled:opacity-50"
-                  title={t(`profile.avatar.${av.id}`, av.label)}
+                  onClick={() => {
+                    setShowPhotoChoice(false);
+                    setAvatarModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-brand-warm/40 hover:bg-brand-warm/5 text-white/70 hover:text-white transition-all text-left group"
                 >
-                  <div
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all group-hover:scale-110 group-hover:ring-2 ring-brand-emerald/60 ring-offset-2 ring-offset-brand-surface shadow-md"
-                    style={{ backgroundColor: av.bg }}
-                  >
-                    {av.emoji}
+                  <div className="w-9 h-9 rounded-xl bg-brand-warm/15 flex items-center justify-center shrink-0 group-hover:bg-brand-warm/25 transition-colors">
+                    <PhotoIcon className="w-5 h-5 text-brand-warm" />
                   </div>
-                  <span className="text-white/30 text-[9px] leading-none group-hover:text-white/60 transition-colors">{t(`profile.avatar.${av.id}`, av.label)}</span>
+                  <div>
+                    <p className="text-sm font-semibold">
+                      {t('profile.chooseAvatar', 'Choose Avatar')}
+                    </p>
+                    <p className="text-white/30 text-xs">
+                      {t('profile.themedIcons', 'Themed emoji icons')}
+                    </p>
+                  </div>
                 </button>
-              ))}
-            </div>
-            {uploading && (
-              <div className="flex items-center justify-center gap-2 text-brand-emerald text-sm">
-                <span className="loading loading-spinner loading-sm" /> {t('profile.saving', 'Saving…')}
-              </div>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
 
-    {/* ── Photo upload preview modal ── */}
-    <AnimatePresence>
-      {photoModalOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        >
+                {hasGoogle && googlePhotoUrl && (
+                  <button
+                    onClick={() => void applyGoogleAccountPhoto()}
+                    disabled={uploading}
+                    className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-brand-deep border border-brand-border hover:border-brand-info/40 hover:bg-brand-info/5 text-white/70 hover:text-white transition-all text-left group disabled:opacity-50"
+                  >
+                    <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-brand-border">
+                      <img
+                        src={googlePhotoUrl}
+                        alt="Google"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">
+                        {t('profile.useGooglePhoto', 'Use Google Account Photo')}
+                      </p>
+                      <p className="text-white/30 text-xs">{googleLinked?.email}</p>
+                    </div>
+                    {uploading && <span className="loading loading-spinner loading-xs ml-auto" />}
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Avatar selection modal ── */}
+      <AnimatePresence>
+        {avatarModalOpen && (
           <motion.div
-            initial={{ scale: 0.92, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.92, opacity: 0, y: 20 }}
-            transition={{ type: 'spring', damping: 22 }}
-            className="bg-brand-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-border text-center space-y-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           >
-            <h3 className="text-lg font-black text-white">{t('profile.uploadProfilePhoto', 'Upload Profile Photo')}</h3>
-
-            <div className="flex justify-center">
-              <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-brand-emerald/40">
-                <img src={photoPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', damping: 22 }}
+              className="bg-brand-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-border space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-white">
+                    {t('profile.chooseAvatar', 'Choose Avatar')}
+                  </h3>
+                  <p className="text-white/30 text-xs mt-0.5">
+                    {t('profile.natureIcons', 'Nature-themed icons — no upload required')}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setAvatarModalOpen(false)}
+                  className="text-white/40 hover:text-white transition-colors p-1"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
               </div>
-            </div>
-
-            <p className="text-white/30 text-xs leading-relaxed px-2">
-              {t('profile.compressedNote', 'Compressed to 400px JPEG. Stored securely in your account.')}
-            </p>
-
-            <div className="flex gap-3">
-              <button
-                onClick={cancelPhotoModal}
-                disabled={uploading}
-                className="btn flex-1 btn-ghost text-white/60 border-brand-border disabled:opacity-40"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={uploadPhoto}
-                disabled={uploading}
-                className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold"
-              >
-                {uploading ? <span className="loading loading-spinner loading-sm" /> : t('profile.useThisPhoto', 'Use This Photo')}
-              </button>
-            </div>
+              <div className="grid grid-cols-4 gap-3">
+                {PRESET_AVATARS.map((av) => (
+                  <button
+                    key={av.id}
+                    onClick={() => void selectAvatar(av)}
+                    disabled={uploading}
+                    className="flex flex-col items-center gap-1 group disabled:opacity-50"
+                    title={t(`profile.avatar.${av.id}`, av.label)}
+                  >
+                    <div
+                      className="w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all group-hover:scale-110 group-hover:ring-2 ring-brand-emerald/60 ring-offset-2 ring-offset-brand-surface shadow-md"
+                      style={{ backgroundColor: av.bg }}
+                    >
+                      {av.emoji}
+                    </div>
+                    <span className="text-white/30 text-[9px] leading-none group-hover:text-white/60 transition-colors">
+                      {t(`profile.avatar.${av.id}`, av.label)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {uploading && (
+                <div className="flex items-center justify-center gap-2 text-brand-emerald text-sm">
+                  <span className="loading loading-spinner loading-sm" />{' '}
+                  {t('profile.saving', 'Saving…')}
+                </div>
+              )}
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+
+      {/* ── Photo upload preview modal ── */}
+      <AnimatePresence>
+        {photoModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', damping: 22 }}
+              className="bg-brand-surface rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-border text-center space-y-4"
+            >
+              <h3 className="text-lg font-black text-white">
+                {t('profile.uploadProfilePhoto', 'Upload Profile Photo')}
+              </h3>
+
+              <div className="flex justify-center">
+                <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-brand-emerald/40">
+                  <img src={photoPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              </div>
+
+              <p className="text-white/30 text-xs leading-relaxed px-2">
+                {t(
+                  'profile.compressedNote',
+                  'Compressed to 400px JPEG. Stored in Firebase Storage.'
+                )}
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={cancelPhotoModal}
+                  disabled={uploading}
+                  className="btn flex-1 btn-ghost text-white/60 border-brand-border disabled:opacity-40"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={uploadPhoto}
+                  disabled={uploading}
+                  className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold"
+                >
+                  {uploading ? (
+                    <span className="loading loading-spinner loading-sm" />
+                  ) : (
+                    t('profile.useThisPhoto', 'Use This Photo')
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

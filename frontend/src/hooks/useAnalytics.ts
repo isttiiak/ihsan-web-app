@@ -18,7 +18,7 @@ export function useAnalytics(days = 7) {
       return res.data;
     },
     enabled: !!user,
-    staleTime: 2 * 60_000,
+    staleTime: 60_000, // analytics: 1-min staleness keeps charts responsive without flooding the API
     placeholderData: keepPreviousData,
     retry: 1,
   });
@@ -55,8 +55,7 @@ export function useStreak() {
 export function useUpdateGoal() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (dailyTarget: number) =>
-      api.post('/api/analytics/goal', { dailyTarget }),
+    mutationFn: (dailyTarget: number) => api.post('/api/analytics/goal', { dailyTarget }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['analytics'] });
     },
@@ -66,9 +65,10 @@ export function useUpdateGoal() {
 export function usePauseStreak() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => api.post('/api/analytics/streak/pause', null, {
-      params: { timezoneOffset: getUserTimezoneOffset(), today: getTrackingDay() },
-    }),
+    mutationFn: () =>
+      api.post('/api/analytics/streak/pause', null, {
+        params: { timezoneOffset: getUserTimezoneOffset(), today: getTrackingDay() },
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['analytics', 'streak'] });
       void queryClient.invalidateQueries({ queryKey: ['analytics'] });
@@ -79,9 +79,10 @@ export function usePauseStreak() {
 export function useResumeStreak() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => api.post('/api/analytics/streak/resume', null, {
-      params: { timezoneOffset: getUserTimezoneOffset(), today: getTrackingDay() },
-    }),
+    mutationFn: () =>
+      api.post('/api/analytics/streak/resume', null, {
+        params: { timezoneOffset: getUserTimezoneOffset(), today: getTrackingDay() },
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['analytics', 'streak'] });
       void queryClient.invalidateQueries({ queryKey: ['analytics'] });

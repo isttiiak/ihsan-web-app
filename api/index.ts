@@ -12,6 +12,9 @@ import { initFirebaseAdmin } from '../backend/src/config/firebaseAdmin.js';
  * - connectDB() caches its promise (see config/mongo.ts): the first request on
  *   a cold instance pays the Atlas handshake, warm requests skip it entirely.
  * - No dotenv here — Vercel injects env vars directly.
+ * - Fluid Compute ("fluid": true in vercel.json) keeps warm instances alive
+ *   between requests so MongoDB connections and Firebase Admin are reused.
+ *   https://vercel.com/docs/functions/fluid-compute
  *
  * Local dev is untouched: backend/src/index.ts is still the dev server.
  */

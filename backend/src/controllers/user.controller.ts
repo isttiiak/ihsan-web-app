@@ -1,24 +1,49 @@
 import { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/user.service.js';
 
-export const getUserHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getUserHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const user = await userService.getUserById(req.user.uid);
     if (!user) {
       res.status(404).json({ ok: false, error: 'User not found' });
       return;
     }
+    // Weak ETag keyed on updatedAt — cuts payload bytes for the very common
+    // case where profile data hasn't changed since the client's last fetch.
+    const etag = `W/"${user.updatedAt.getTime()}"`;
+    if (req.headers['if-none-match'] === etag) {
+      res.status(304).end();
+      return;
+    }
+    res.setHeader('ETag', etag);
     res.json({ ok: true, user });
   } catch (err) {
     next(err);
   }
 };
 
-export const updateUserHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const updateUserHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const {
-      displayName, photoUrl, gender, birthDate,
-      firstName, lastName, occupation, bio, city, country, hijriOffset,
+      displayName,
+      photoUrl,
+      gender,
+      birthDate,
+      firstName,
+      lastName,
+      occupation,
+      bio,
+      city,
+      country,
+      hijriOffset,
     } = req.body as {
       displayName?: string;
       photoUrl?: string;
@@ -34,8 +59,17 @@ export const updateUserHandler = async (req: Request, res: Response, next: NextF
     };
 
     const user = await userService.updateUser(req.user.uid, {
-      displayName, photoUrl, gender, birthDate,
-      firstName, lastName, occupation, bio, city, country, hijriOffset,
+      displayName,
+      photoUrl,
+      gender,
+      birthDate,
+      firstName,
+      lastName,
+      occupation,
+      bio,
+      city,
+      country,
+      hijriOffset,
     });
 
     res.json({ ok: true, user });
@@ -44,7 +78,11 @@ export const updateUserHandler = async (req: Request, res: Response, next: NextF
   }
 };
 
-export const linkGoogleHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const linkGoogleHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { googleEmail, googleUid } = req.body as { googleEmail: string; googleUid: string };
     const user = await userService.linkGoogleProvider(req.user.uid, googleEmail, googleUid);
@@ -54,7 +92,11 @@ export const linkGoogleHandler = async (req: Request, res: Response, next: NextF
   }
 };
 
-export const unlinkGoogleHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const unlinkGoogleHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { providerUid } = req.body as { providerUid: string };
     const user = await userService.unlinkGoogleProvider(req.user.uid, providerUid);
@@ -64,7 +106,11 @@ export const unlinkGoogleHandler = async (req: Request, res: Response, next: Nex
   }
 };
 
-export const setPrimaryEmailHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const setPrimaryEmailHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { email } = req.body as { email: string };
     const user = await userService.setPrimaryEmail(req.user.uid, email);
@@ -76,7 +122,11 @@ export const setPrimaryEmailHandler = async (req: Request, res: Response, next: 
 
 // ── Full-account backup & restore (Istiak's spec, v4.9) ─────────────────────
 
-export const exportAllHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const exportAllHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const backupService = await import('../services/backup.service.js');
     const data = await backupService.exportAll(req.user.uid);
@@ -86,11 +136,17 @@ export const exportAllHandler = async (req: Request, res: Response, next: NextFu
   }
 };
 
-export const importAllHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const importAllHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const body = req.body as { app?: string; version?: number } & Record<string, unknown>;
     if (body?.app !== 'ihsan' || body?.version !== 1) {
-      res.status(400).json({ ok: false, error: 'Not an Ihsan backup file (expected app "ihsan", version 1).' });
+      res
+        .status(400)
+        .json({ ok: false, error: 'Not an Ihsan backup file (expected app "ihsan", version 1).' });
       return;
     }
     const backupService = await import('../services/backup.service.js');

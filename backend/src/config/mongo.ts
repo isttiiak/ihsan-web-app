@@ -19,10 +19,15 @@ export const connectDB = async (): Promise<void> => {
       .connect(uri, {
         dbName: 'ihsan',
         autoIndex: true,
-        // Atlas M0 caps total connections at 500 — keep each serverless
-        // instance's pool small so many warm instances can coexist.
-        maxPoolSize: 5,
+        // Atlas M0 caps total connections at 500 — with Fluid Compute warm
+        // instances persist longer, so we raise the per-instance pool to 10
+        // while keeping minPoolSize:1 so idle instances don't hold spare sockets.
+        // family:4 forces IPv4 to avoid DNS round-trip jitter on some Vercel regions.
+        maxPoolSize: 10,
+        minPoolSize: 1,
         serverSelectionTimeoutMS: 10_000,
+        socketTimeoutMS: 45_000,
+        family: 4,
       })
       .then((m) => {
         if (process.env.NODE_ENV !== 'test') console.log('MongoDB connected');
