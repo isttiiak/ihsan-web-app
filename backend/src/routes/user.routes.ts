@@ -8,6 +8,7 @@ import {
   unlinkGoogleSchema,
   setPrimaryEmailSchema,
 } from '../validation/user.schemas.js';
+import { importLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
@@ -15,12 +16,28 @@ router.get('/me', requireAuth, userController.getUserHandler);
 router.patch('/me', requireAuth, validate(updateUserSchema), userController.updateUserHandler);
 
 // Linked Google account management
-router.post('/link-google', requireAuth, validate(linkGoogleSchema), userController.linkGoogleHandler);
-router.post('/unlink-google', requireAuth, validate(unlinkGoogleSchema), userController.unlinkGoogleHandler);
-router.patch('/primary-email', requireAuth, validate(setPrimaryEmailSchema), userController.setPrimaryEmailHandler);
+router.post(
+  '/link-google',
+  requireAuth,
+  validate(linkGoogleSchema),
+  userController.linkGoogleHandler
+);
+router.post(
+  '/unlink-google',
+  requireAuth,
+  validate(unlinkGoogleSchema),
+  userController.unlinkGoogleHandler
+);
+router.patch(
+  '/primary-email',
+  requireAuth,
+  validate(setPrimaryEmailSchema),
+  userController.setPrimaryEmailHandler
+);
 
 // Full-account backup (one JSON of every domain) + merge-restore of that file
 router.get('/export', requireAuth, userController.exportAllHandler);
-router.post('/import', requireAuth, userController.importAllHandler);
+// UID-keyed limiter after requireAuth — prevents backup-flood abuse
+router.post('/import', requireAuth, importLimiter, userController.importAllHandler);
 
 export default router;
