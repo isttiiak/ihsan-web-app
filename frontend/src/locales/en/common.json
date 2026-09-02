@@ -304,6 +304,19 @@
       "S"
     ]
   },
+  "daifExplainer": {
+    "explainerParagraph": "The term <1>ḍaʿīf</1> means the chain of transmission has a flaw — a narrator with weak memory, an unknown link, or a break — so the words cannot be attributed to the Prophet ﷺ with confidence. It does not automatically mean the meaning is false. Many scholars permit acting on a weak report to encourage good deeds (faḍāʾil al-aʿmāl) provided nothing is treated as an established ruling or a guaranteed reward; others decline to use them at all. Ihsan shows the grade so you can follow your own scholars.",
+    "footerLink": "Tell us and we will correct it",
+    "footerText": "Ihsan is not a source of religious authority — verify with a scholar you trust. Spotted a grading you believe is wrong?",
+    "headerTitle": "Why some things on this page are marked <1>ḍaʿīf</1>",
+    "howIhsanUsesIt": "How Ihsan uses it:",
+    "narrationCount_one": "{{count}} narration — the chain, the defect, and who graded it",
+    "narrationCount_other": "{{count}} narrations — the chain, the defect, and who graded it",
+    "readScholarlyDiscussion": "Read the scholarly discussion ↗",
+    "theDefect": "The defect:",
+    "verdictLabel": "Verdict:",
+    "whereFound": "Where it is found:"
+  },
   "demoBanner": {
     "changesNotSaved": "Changes won't be saved",
     "demoMode": "Demo Mode",
