@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useAnalytics } from '../../hooks/useAnalytics.js';
 import { useQuranSummary } from '../../hooks/useQuran.js';
 import { useSalatAnalytics } from '../../hooks/useSalatLog.js';
@@ -38,6 +39,7 @@ function writeCache(key: string, data: object): void {
 }
 
 export default function NaseehInsights() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const aiEnabled = useAuthStore((s) => s.aiEnabled);
   const { data: zikrData } = useAnalytics(7);
@@ -111,16 +113,16 @@ export default function NaseehInsights() {
       <AiPanel>
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <AiBadge label="Naseeh · your week" />
+            <AiBadge label={t('naseehInsights.badgeLabel', 'Naseeh · your week')} />
             <button
               className="text-white/30 hover:text-white text-xs"
               onClick={() => setDismissed(true)}
-              aria-label="Dismiss"
-            >Dismiss</button>
+              aria-label={t('naseehInsights.dismiss', 'Dismiss')}
+            >{t('naseehInsights.dismiss', 'Dismiss')}</button>
           </div>
 
           {loading && !weekly && !insight && (
-            <AiThinking label="Naseeh is reading your week…" />
+            <AiThinking label={t('naseehInsights.thinkingLabel', 'Naseeh is reading your week…')} />
           )}
 
           {weekly && (
@@ -132,7 +134,7 @@ export default function NaseehInsights() {
 
           {insight && (
             <div className="mt-3 pt-3 border-t border-white/[0.06] space-y-1.5">
-              <p className="text-white/50 text-[10px] uppercase tracking-widest font-bold">Monthly patterns</p>
+              <p className="text-white/50 text-[10px] uppercase tracking-widest font-bold">{t('naseehInsights.monthlyPatterns', 'Monthly patterns')}</p>
               <p className="text-white/70 text-sm font-semibold">{insight.headline}</p>
               {insight.insights.map((ins, i) => (
                 <p key={i} className="text-white/50 text-xs leading-relaxed pl-3 border-l-2 border-brand-emerald/20">

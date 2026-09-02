@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useAiStreakCoach } from '../../hooks/useAi.js';
 import { useAuthStore } from '../../store/useAuthStore.js';
 import { AiBadge, AiDisclaimer } from './AiFlair.js';
@@ -46,11 +47,12 @@ function detectEvents(
   quranStreak: number | null,
   salatStreak: number | null,
   prevStreaks: Record<string, number>,
+  featureLabels: { zikr: string; quran: string; salat: string },
 ): StreakEvent | null {
   const checks = [
-    { key: 'zikr', label: 'Zikr', streak: zikrStreak },
-    { key: 'quran', label: 'Quran', streak: quranStreak },
-    { key: 'salat', label: 'Salat', streak: salatStreak },
+    { key: 'zikr', label: featureLabels.zikr, streak: zikrStreak },
+    { key: 'quran', label: featureLabels.quran, streak: quranStreak },
+    { key: 'salat', label: featureLabels.salat, streak: salatStreak },
   ];
   for (const c of checks) {
     if (c.streak == null) continue;
@@ -82,6 +84,7 @@ export default function StreakCoaching({
   quranStreak: number | null;
   salatStreak: number | null;
 }) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const aiEnabled = useAuthStore((s) => s.aiEnabled);
   const coach = useAiStreakCoach();
@@ -91,8 +94,14 @@ export default function StreakCoaching({
   const day = getTrackingDay();
   const prev = readPrev();
 
+  const featureLabels = {
+    zikr: t('streakCoaching.zikr', 'Zikr'),
+    quran: t('streakCoaching.quran', 'Quran'),
+    salat: t('streakCoaching.salat', 'Salat'),
+  };
+
   const streakEvent = (user && aiEnabled)
-    ? detectEvents(zikrStreak, quranStreak, salatStreak, prev)
+    ? detectEvents(zikrStreak, quranStreak, salatStreak, prev, featureLabels)
     : null;
 
   useEffect(() => {
@@ -135,14 +144,14 @@ export default function StreakCoaching({
       }`}>
         <div className="flex items-center justify-between mb-2">
           <AiBadge label={isMilestone
-            ? `${streakEvent.streakDays}-day ${streakEvent.featureLabel} streak!`
-            : `${streakEvent.featureLabel} streak reset`
+            ? t('streakCoaching.milestoneBadge', '{{days}}-day {{feature}} streak!', { days: streakEvent.streakDays, feature: streakEvent.featureLabel })
+            : t('streakCoaching.resetBadge', '{{feature}} streak reset', { feature: streakEvent.featureLabel })
           } />
           <button
             className="text-white/30 hover:text-white text-xs"
             onClick={() => setDismissed(true)}
-            aria-label="Dismiss"
-          >Dismiss</button>
+            aria-label={t('naseehInsights.dismiss', 'Dismiss')}
+          >{t('naseehInsights.dismiss', 'Dismiss')}</button>
         </div>
 
         {coach.isPending && !result ? (
@@ -154,7 +163,7 @@ export default function StreakCoaching({
                 transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.15 }}
               />
             ))}
-            <span className="text-white/40 text-xs">finding the right words…</span>
+            <span className="text-white/40 text-xs">{t('naseeh.findingWords', 'Finding the right words…')}</span>
           </div>
         ) : result ? (
           <div className="space-y-1.5">

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * The distinct "AI feel" — deliberately more colorful and alive than the calm
@@ -9,7 +10,8 @@ import type { ReactNode } from 'react';
  */
 
 /** A colorful pill/badge that marks a surface as AI. */
-export function AiBadge({ label = 'Naseeh · AI companion' }: { label?: string }) {
+export function AiBadge({ label }: { label?: string }) {
+  const { t } = useTranslation();
   return (
     <span className="relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-black text-white overflow-hidden">
       <motion.span
@@ -20,13 +22,14 @@ export function AiBadge({ label = 'Naseeh · AI companion' }: { label?: string }
         transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
       />
       <span className="relative">✨</span>
-      <span className="relative">{label}</span>
+      <span className="relative">{label ?? t('aiFlair.badgeLabel', 'Naseeh · AI companion')}</span>
     </span>
   );
 }
 
 /** Prismatic "thinking" loader — colorful pulsing dots over a soft aurora. */
-export function AiThinking({ label = 'Naseeh is reflecting…' }: { label?: string }) {
+export function AiThinking({ label }: { label?: string }) {
+  const { t } = useTranslation();
   const colors = ['#7a9e6e', '#5a9e8e', '#c4825a', '#c4825a', '#c9a96e'];
   return (
     <div className="relative flex flex-col items-center justify-center gap-3 py-6">
@@ -48,7 +51,7 @@ export function AiThinking({ label = 'Naseeh is reflecting…' }: { label?: stri
           />
         ))}
       </div>
-      <p className="relative text-white/50 text-xs font-semibold tracking-wide">{label}</p>
+      <p className="relative text-white/50 text-xs font-semibold tracking-wide">{label ?? t('aiFlair.thinkingLabel', 'Naseeh is reflecting…')}</p>
     </div>
   );
 }
@@ -79,12 +82,14 @@ export function AiPanel({ children, className = '' }: { children: ReactNode; cla
 
 /** The non-negotiable label under every AI output. */
 export function AiDisclaimer() {
+  const { t } = useTranslation();
   return (
     <p className="text-white/30 text-[10px] leading-relaxed mt-2 flex items-start gap-1">
       <span aria-hidden>✨</span>
       <span>
-        AI-generated encouragement — a companion, <b className="text-white/50">never a source of religious evidence</b>.
-        For rulings or proofs, see the app's verified references or ask a qualified scholar.
+        {t('aiFlair.disclaimerPrefix', 'AI-generated encouragement — a companion,')}{' '}
+        <b className="text-white/50">{t('aiFlair.disclaimerBold', 'never a source of religious evidence')}</b>.{' '}
+        {t('aiFlair.disclaimerSuffix', "For rulings or proofs, see the app's verified references or ask a qualified scholar.")}
       </span>
     </p>
   );

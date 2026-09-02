@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useAiFastingCompanion } from '../../hooks/useAi.js';
 import { useAuthStore } from '../../store/useAuthStore.js';
 import { AiBadge, AiDisclaimer } from './AiFlair.js';
@@ -40,6 +41,7 @@ export default function FastingCompanion({
   dayNumber?: number;
   isPostMaghrib: boolean;
 }) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const aiEnabled = useAuthStore((s) => s.aiEnabled);
   const companion = useAiFastingCompanion();
@@ -71,7 +73,7 @@ export default function FastingCompanion({
           ? 'border-brand-gold/25 bg-gradient-to-br from-brand-gold/10 to-brand-warm/[0.04]'
           : 'border-brand-emerald/20 bg-brand-emerald/[0.05]'
       }`}>
-        <AiBadge label={isPostMaghrib ? 'Naseeh · near iftar' : 'Naseeh · fasting today'} />
+        <AiBadge label={isPostMaghrib ? t('fastingCompanion.nearIftar', 'Naseeh · near iftar') : t('fastingCompanion.fastingToday', 'Naseeh · fasting today')} />
         {companion.isPending && !message ? (
           <div className="flex items-center gap-2 mt-2">
             {['#c9a96e', '#7a9e6e', '#5a9e8e'].map((c, i) => (
@@ -92,7 +94,7 @@ export default function FastingCompanion({
           <button
             className="text-white/20 hover:text-white/50 text-[10px]"
             onClick={() => setDismissed(true)}
-          >Dismiss</button>
+          >{t('naseehInsights.dismiss', 'Dismiss')}</button>
         </div>
       </div>
     </motion.div>

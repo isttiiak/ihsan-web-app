@@ -43,6 +43,13 @@
     "privacyLink": "Privacy →",
     "srTitle": "About Ihsan"
   },
+  "aiFlair": {
+    "badgeLabel": "Naseeh · AI companion",
+    "disclaimerBold": "never a source of religious evidence",
+    "disclaimerPrefix": "AI-generated encouragement — a companion,",
+    "disclaimerSuffix": "For rulings or proofs, see the app's verified references or ask a qualified scholar.",
+    "thinkingLabel": "Naseeh is reflecting…"
+  },
   "app": {
     "createFreeAccount": "Create Free Account",
     "resendVerification": "Resend verification email",
@@ -465,6 +472,10 @@
       "broken": "Broken"
     }
   },
+  "fastingCompanion": {
+    "fastingToday": "Naseeh · fasting today",
+    "nearIftar": "Naseeh · near iftar"
+  },
   "feedback": {
     "disclaimer": "Messages go directly to the developer. No data is shared with third parties.",
     "heroDesc1": "Ihsan is built quietly by one developer for the sake of Allah — which means there's no big team testing every screen.",
@@ -747,6 +758,12 @@
     "disclaimer": "✨ A companion's words — not medical or religious advice.",
     "findingWords": "Finding the right words…",
     "forYouToday": "Naseeh · for you today"
+  },
+  "naseehInsights": {
+    "badgeLabel": "Naseeh · your week",
+    "dismiss": "Dismiss",
+    "monthlyPatterns": "Monthly patterns",
+    "thinkingLabel": "Naseeh is reading your week…"
   },
   "nav": {
     "aboutUs": "About Us",
@@ -2132,6 +2149,13 @@
     "streakActive": "{{streak}}-day streak — keep it burning!",
     "streakFrozen": "Streak frozen! Complete today's goal to keep your {{streak}}-day streak alive",
     "streakPaused": "Streak paused — resume from analytics"
+  },
+  "streakCoaching": {
+    "milestoneBadge": "{{days}}-day {{feature}} streak!",
+    "quran": "Quran",
+    "resetBadge": "{{feature}} streak reset",
+    "salat": "Salat",
+    "zikr": "Zikr"
   },
   "unsavedWarning": {
     "dismiss": "Leave without saving",
