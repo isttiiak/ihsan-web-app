@@ -63,7 +63,7 @@
 > desktop web simply doesn't have). Kept separate so the lists above stay
 > "works for every visitor."
 
-- [x] **Vibration feedback** — haptic pulse on each zikr count, Android/mobile Chrome only (`navigator.vibrate`, already built in `ZikrCounter.tsx`)
+- [ ] **Vibration feedback** — haptic pulse on each zikr count, Android/mobile Chrome only (`navigator.vibrate`, already built in `ZikrCounter.tsx`)
 - [ ] **Qibla compass** — direction to Mecca using the device orientation sensor (moved from Prayer Times — desktops have no compass/orientation sensor to read)
 
 ---
