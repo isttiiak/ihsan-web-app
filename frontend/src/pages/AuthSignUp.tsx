@@ -10,6 +10,7 @@ import {
 import { auth, googleProvider } from '../firebase.js';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore.js';
+import { useTranslation } from 'react-i18next';
 import {
   EyeIcon,
   EyeSlashIcon,
@@ -19,34 +20,36 @@ import {
 } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 
-function mapFirebaseError(code: string): string {
+type Translator = (key: string, fallback: string) => string;
+
+function mapFirebaseError(code: string, t: Translator): string {
   switch (code) {
     case 'auth/email-already-in-use':
-      return 'An account with this email already exists. Try signing in instead.';
+      return t('authSignUp.errEmailInUse', 'An account with this email already exists. Try signing in instead.');
     case 'auth/invalid-email':
-      return 'Please enter a valid email address.';
+      return t('authSignUp.errInvalidEmail', 'Please enter a valid email address.');
     case 'auth/weak-password':
-      return 'Password must be at least 6 characters.';
+      return t('authSignUp.errWeakPassword', 'Password must be at least 6 characters.');
     case 'auth/too-many-requests':
-      return 'Too many attempts. Please wait a moment and try again.';
+      return t('authSignUp.errTooManyRequests', 'Too many attempts. Please wait a moment and try again.');
     case 'auth/network-request-failed':
-      return 'Network error. Check your connection and try again.';
+      return t('authSignUp.errNetwork', 'Network error. Check your connection and try again.');
     default:
-      return 'Account creation failed. Please try again.';
+      return t('authSignUp.errGeneric', 'Account creation failed. Please try again.');
   }
 }
 
-function getPasswordStrength(pw: string): { score: number; label: string; color: string } {
+function getPasswordStrength(pw: string, t: Translator): { score: number; label: string; color: string } {
   if (!pw) return { score: 0, label: '', color: '' };
   let score = 0;
   if (pw.length >= 8) score++;
   if (/[A-Z]/.test(pw)) score++;
   if (/[0-9]/.test(pw)) score++;
   if (/[^A-Za-z0-9]/.test(pw)) score++;
-  if (score <= 1) return { score, label: 'Weak', color: 'bg-red-500' };
-  if (score === 2) return { score, label: 'Fair', color: 'bg-brand-gold' };
-  if (score === 3) return { score, label: 'Good', color: 'bg-brand-info' };
-  return { score, label: 'Strong', color: 'bg-brand-emerald' };
+  if (score <= 1) return { score, label: t('authSignUp.strengthWeak', 'Weak'), color: 'bg-red-500' };
+  if (score === 2) return { score, label: t('authSignUp.strengthFair', 'Fair'), color: 'bg-brand-gold' };
+  if (score === 3) return { score, label: t('authSignUp.strengthGood', 'Good'), color: 'bg-brand-info' };
+  return { score, label: t('authSignUp.strengthStrong', 'Strong'), color: 'bg-brand-emerald' };
 }
 
 // Stricter email regex: requires a real domain with a TLD of 2+ chars
@@ -55,6 +58,7 @@ function isValidEmail(email: string): boolean {
 }
 
 export default function AuthSignUp() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
@@ -82,7 +86,7 @@ export default function AuthSignUp() {
     }
   }, [user, verificationSent]);
 
-  const strength = getPasswordStrength(password);
+  const strength = getPasswordStrength(password, t);
   const confirmMismatch = confirmTouched && confirm !== password;
   const emailInvalid = emailTouched && emailValue.length > 0 && !isValidEmail(emailValue);
 
@@ -94,7 +98,7 @@ export default function AuthSignUp() {
     } catch (err) {
       const code = (err as AuthError).code ?? '';
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-        setError(mapFirebaseError(code));
+        setError(mapFirebaseError(code, t));
       }
       setLoading(false);
     }
@@ -110,19 +114,19 @@ export default function AuthSignUp() {
     const email = (form.elements.namedItem('email') as HTMLInputElement).value.trim();
 
     if (!gender) {
-      setError('Please select your gender to continue.');
+      setError(t('authSignUp.errGenderRequired', 'Please select your gender to continue.'));
       return;
     }
     if (!isValidEmail(email)) {
-      setError('Please enter a valid email address (e.g. name@domain.com).');
+      setError(t('authSignUp.errEmailFormat', 'Please enter a valid email address (e.g. name@domain.com).'));
       return;
     }
     if (password !== confirm) {
-      setError('Passwords do not match.');
+      setError(t('authSignUp.errPasswordMismatch', 'Passwords do not match.'));
       return;
     }
     if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+      setError(t('authSignUp.errWeakPassword', 'Password must be at least 6 characters.'));
       return;
     }
 
@@ -148,7 +152,7 @@ export default function AuthSignUp() {
       setVerificationSent(true);
       setLoading(false);
     } catch (err) {
-      setError(mapFirebaseError((err as AuthError).code ?? ''));
+      setError(mapFirebaseError((err as AuthError).code ?? '', t));
       setLoading(false);
     }
   };
@@ -187,13 +191,13 @@ export default function AuthSignUp() {
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl sm:text-3xl font-black text-white">Check your inbox</h2>
+              <h2 className="text-2xl sm:text-3xl font-black text-white">{t('authSignUp.checkInbox', 'Check your inbox')}</h2>
               <p className="text-white/50 text-sm leading-relaxed">
-                We sent a verification link to
+                {t('authSignUp.verificationSentTo', 'We sent a verification link to')}
               </p>
               <p className="text-brand-emerald font-semibold text-sm break-all">{verificationEmail}</p>
               <p className="text-white/40 text-xs leading-relaxed pt-1">
-                Click the link in the email to verify your address. You can use the app now — some features require a verified email.
+                {t('authSignUp.verifyClickHint', 'Click the link in the email to verify your address. You can use the app now — some features require a verified email.')}
               </p>
             </div>
 
@@ -202,7 +206,7 @@ export default function AuthSignUp() {
               {resendSuccess ? (
                 <div className="flex items-center justify-center gap-2 text-brand-emerald text-sm">
                   <CheckCircleIcon className="w-4 h-4" />
-                  Verification email resent!
+                  {t('authSignUp.verificationResent', 'Verification email resent!')}
                 </div>
               ) : (
                 <button
@@ -210,7 +214,7 @@ export default function AuthSignUp() {
                   disabled={resendLoading}
                   className="text-white/40 hover:text-brand-emerald text-sm transition-colors disabled:opacity-40"
                 >
-                  {resendLoading ? 'Sending…' : 'Resend verification email'}
+                  {resendLoading ? t('authSignUp.sending', 'Sending…') : t('app.resendVerification', 'Resend verification email')}
                 </button>
               )}
             </div>
@@ -220,16 +224,16 @@ export default function AuthSignUp() {
               onClick={() => navigate('/')}
               className="w-full py-3 px-4 bg-brand-emerald hover:bg-brand-emerald-dim text-white rounded-xl font-semibold shadow-lg transition-all duration-300"
             >
-              Continue to App
+              {t('authSignUp.continueToApp', 'Continue to App')}
             </button>
 
             <p className="text-white/30 text-xs">
-              Wrong email?{' '}
+              {t('authSignUp.wrongEmail', 'Wrong email?')}{' '}
               <button
                 className="text-brand-emerald hover:underline"
                 onClick={() => { setVerificationSent(false); setVerificationEmail(''); }}
               >
-                Go back
+                {t('authSignUp.goBack', 'Go back')}
               </button>
             </p>
           </div>
@@ -253,8 +257,8 @@ export default function AuthSignUp() {
             <div className="p-8 space-y-6">
 
               <div className="text-center space-y-2">
-                <h2 className="text-4xl sm:text-5xl font-bold text-brand-emerald">Join Ihsan</h2>
-                <p className="text-white/60 text-sm sm:text-base">Start your spiritual journey today</p>
+                <h2 className="text-4xl sm:text-5xl font-bold text-brand-emerald">{t('authSignUp.joinIhsan', 'Join Ihsan')}</h2>
+                <p className="text-white/60 text-sm sm:text-base">{t('authSignUp.subtitle', 'Start your spiritual journey today')}</p>
               </div>
 
               <motion.button
@@ -274,7 +278,7 @@ export default function AuthSignUp() {
                       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
-                    Sign up with Google
+                    {t('authSignUp.signUpWithGoogle', 'Sign up with Google')}
                   </>
                 )}
               </motion.button>
@@ -284,7 +288,7 @@ export default function AuthSignUp() {
                   <div className="w-full border-t border-brand-border" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-brand-surface text-white/40">OR</span>
+                  <span className="px-4 bg-brand-surface text-white/40">{t('authSignUp.or', 'OR')}</span>
                 </div>
               </div>
 
@@ -298,28 +302,28 @@ export default function AuthSignUp() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-white/70 text-sm font-medium">First Name</label>
+                    <label className="text-white/70 text-sm font-medium">{t('authSignUp.firstName', 'First Name')}</label>
                     <input
                       name="firstName"
                       type="text"
-                      placeholder="First name"
+                      placeholder={t('authSignUp.firstNamePlaceholder', 'First name')}
                       className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-transparent transition-all"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-white/70 text-sm font-medium">Last Name</label>
+                    <label className="text-white/70 text-sm font-medium">{t('authSignUp.lastName', 'Last Name')}</label>
                     <input
                       name="lastName"
                       type="text"
-                      placeholder="Last name"
+                      placeholder={t('authSignUp.lastNamePlaceholder', 'Last name')}
                       className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-transparent transition-all"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-white/70 text-sm font-medium">Gender <span className="text-red-400">*</span></label>
-                  <p className="text-white/30 text-xs leading-relaxed">Required for personalized content and Rayhanah (cycle tracking for sisters).</p>
+                  <label className="text-white/70 text-sm font-medium">{t('authSignUp.gender', 'Gender')} <span className="text-red-400">*</span></label>
+                  <p className="text-white/30 text-xs leading-relaxed">{t('authSignUp.genderHint', 'Required for personalized content and Rayhanah (cycle tracking for sisters).')}</p>
                   <div className="flex gap-3">
                     {(['male', 'female'] as const).map((g) => (
                       <button
@@ -332,14 +336,14 @@ export default function AuthSignUp() {
                             : 'bg-white/5 border-brand-border text-white/50 hover:border-brand-border/80'
                         }`}
                       >
-                        {g === 'male' ? 'Brother' : 'Sister'}
+                        {g === 'male' ? t('authSignUp.brother', 'Brother') : t('authSignUp.sister', 'Sister')}
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-white/70 text-sm font-medium">Email</label>
+                  <label className="text-white/70 text-sm font-medium">{t('authSignIn.email', 'Email')}</label>
                   <input
                     name="email"
                     type="email"
@@ -357,17 +361,17 @@ export default function AuthSignUp() {
                     required
                   />
                   {emailInvalid && (
-                    <p className="text-xs text-red-400">Enter a valid email address (e.g. name@domain.com).</p>
+                    <p className="text-xs text-red-400">{t('authSignUp.errEmailFormat', 'Enter a valid email address (e.g. name@domain.com).')}</p>
                   )}
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-white/70 text-sm font-medium">Password</label>
+                  <label className="text-white/70 text-sm font-medium">{t('authSignIn.password', 'Password')}</label>
                   <div className="relative">
                     <input
                       name="password"
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="Create a strong password"
+                      placeholder={t('authSignUp.passwordPlaceholder', 'Create a strong password')}
                       value={password}
                       onChange={(e) => { setPassword(e.target.value); error && setError(''); }}
                       className="w-full px-4 py-3 pr-12 bg-white/5 border border-brand-border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-transparent transition-all"
@@ -392,18 +396,18 @@ export default function AuthSignUp() {
                           />
                         ))}
                       </div>
-                      <p className="text-xs text-white/40">{strength.label} password</p>
+                      <p className="text-xs text-white/40">{t('authSignUp.passwordStrengthLabel', '{{strength}} password', { strength: strength.label })}</p>
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-white/70 text-sm font-medium">Confirm Password</label>
+                  <label className="text-white/70 text-sm font-medium">{t('authSignUp.confirmPassword', 'Confirm Password')}</label>
                   <div className="relative">
                     <input
                       name="confirmPassword"
                       type={showConfirm ? 'text' : 'password'}
-                      placeholder="Repeat your password"
+                      placeholder={t('authSignUp.confirmPasswordPlaceholder', 'Repeat your password')}
                       value={confirm}
                       onChange={(e) => { setConfirm(e.target.value); error && setError(''); }}
                       onBlur={() => setConfirmTouched(true)}
@@ -433,7 +437,7 @@ export default function AuthSignUp() {
                     </div>
                   </div>
                   {confirmMismatch && (
-                    <p className="text-xs text-red-400">Passwords do not match.</p>
+                    <p className="text-xs text-red-400">{t('authSignUp.errPasswordMismatch', 'Passwords do not match.')}</p>
                   )}
                 </div>
 
@@ -444,17 +448,17 @@ export default function AuthSignUp() {
                   type="submit"
                   disabled={loading || confirmMismatch || emailInvalid}
                 >
-                  {loading ? <span className="loading loading-spinner loading-md" /> : 'Create Account'}
+                  {loading ? <span className="loading loading-spinner loading-md" /> : t('authSignUp.createAccount', 'Create Account')}
                 </motion.button>
               </form>
 
               <div className="text-center text-sm">
-                <span className="text-white/50">Already have an account? </span>
+                <span className="text-white/50">{t('authSignUp.alreadyHaveAccount', 'Already have an account?')} </span>
                 <button
                   className="text-brand-emerald font-semibold hover:text-brand-emerald-dim transition-colors cursor-pointer"
                   onClick={() => navigate('/login')}
                 >
-                  Log in
+                  {t('authSignUp.logIn', 'Log in')}
                 </button>
               </div>
             </div>

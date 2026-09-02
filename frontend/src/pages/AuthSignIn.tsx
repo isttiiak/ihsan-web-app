@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase.js';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   EyeIcon,
   EyeSlashIcon,
@@ -18,36 +19,38 @@ import {
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 
-function mapFirebaseError(code: string): string {
+type Translator = (key: string, fallback: string) => string;
+
+function mapFirebaseError(code: string, t: Translator): string {
   switch (code) {
     case 'auth/user-not-found':
     case 'auth/invalid-credential':
     case 'auth/wrong-password':
-      return 'Invalid email or password. Please try again.';
+      return t('authSignIn.errInvalidCredential', 'Invalid email or password. Please try again.');
     case 'auth/invalid-email':
-      return 'Please enter a valid email address.';
+      return t('authSignIn.errInvalidEmail', 'Please enter a valid email address.');
     case 'auth/user-disabled':
-      return 'This account has been disabled. Contact support.';
+      return t('authSignIn.errUserDisabled', 'This account has been disabled. Contact support.');
     case 'auth/too-many-requests':
-      return 'Too many sign-in attempts. Please wait a moment and try again.';
+      return t('authSignIn.errTooManyRequests', 'Too many sign-in attempts. Please wait a moment and try again.');
     case 'auth/network-request-failed':
-      return 'Network error. Check your connection and try again.';
+      return t('authSignIn.errNetwork', 'Network error. Check your connection and try again.');
     default:
-      return 'Sign in failed. Please try again.';
+      return t('authSignIn.errGeneric', 'Sign in failed. Please try again.');
   }
 }
 
-function mapResetError(code: string): string {
+function mapResetError(code: string, t: Translator): string {
   switch (code) {
     case 'auth/user-not-found':
     case 'auth/invalid-email':
-      return 'No account found with this email address.';
+      return t('authSignIn.errResetNoAccount', 'No account found with this email address.');
     case 'auth/too-many-requests':
-      return 'Too many requests. Please wait before trying again.';
+      return t('authSignIn.errTooManyRequestsReset', 'Too many requests. Please wait before trying again.');
     case 'auth/network-request-failed':
-      return 'Network error. Check your connection and try again.';
+      return t('authSignIn.errNetwork', 'Network error. Check your connection and try again.');
     default:
-      return 'Could not send reset email. Please try again.';
+      return t('authSignIn.errResetGeneric', 'Could not send reset email. Please try again.');
   }
 }
 
@@ -61,6 +64,7 @@ const itemVariants = {
 };
 
 export default function AuthSignIn() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const user = useAuthStore((s) => s.user);
@@ -92,7 +96,7 @@ export default function AuthSignIn() {
     } catch (err) {
       const code = (err as AuthError).code ?? '';
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-        setError(mapFirebaseError(code));
+        setError(mapFirebaseError(code, t));
       }
       setLoading(false);
     }
@@ -108,7 +112,7 @@ export default function AuthSignIn() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err) {
-      setError(mapFirebaseError((err as AuthError).code ?? ''));
+      setError(mapFirebaseError((err as AuthError).code ?? '', t));
       setLoading(false);
     }
   };
@@ -127,7 +131,7 @@ export default function AuthSignIn() {
       });
       setResetSent(true);
     } catch (err) {
-      setResetError(mapResetError((err as AuthError).code ?? ''));
+      setResetError(mapResetError((err as AuthError).code ?? '', t));
     }
     setResetLoading(false);
   };
@@ -149,7 +153,7 @@ export default function AuthSignIn() {
             onClick={() => { setForgotMode(false); setResetSent(false); setResetError(''); setResetEmail(''); }}
             className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition-colors"
           >
-            <ArrowLeftIcon className="w-4 h-4" /> Back to sign in
+            <ArrowLeftIcon className="w-4 h-4" /> {t('authSignIn.backToSignIn', 'Back to sign in')}
           </button>
 
           {resetSent ? (
@@ -160,28 +164,28 @@ export default function AuthSignIn() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-xl font-black text-white">Check your email</h3>
+                <h3 className="text-xl font-black text-white">{t('authSignIn.checkEmail', 'Check your email')}</h3>
                 <p className="text-white/50 text-sm">
-                  We sent a password reset link to
+                  {t('authSignIn.resetLinkSentTo', 'We sent a password reset link to')}
                 </p>
                 <p className="text-brand-emerald font-semibold text-sm break-all">{resetEmail}</p>
                 <p className="text-white/30 text-xs pt-1 leading-relaxed">
-                  Didn't receive it? Check your spam folder or try again.
+                  {t('authSignIn.didntReceive', "Didn't receive it? Check your spam folder or try again.")}
                 </p>
               </div>
               <button
                 onClick={() => { setResetSent(false); setResetError(''); }}
                 className="text-white/40 hover:text-brand-emerald text-sm transition-colors"
               >
-                Send again
+                {t('authSignIn.sendAgain', 'Send again')}
               </button>
             </div>
           ) : (
             <form onSubmit={onSendReset} className="space-y-5">
               <div className="space-y-1.5">
-                <h3 className="text-xl font-black text-white">Reset your password</h3>
+                <h3 className="text-xl font-black text-white">{t('authSignIn.resetPassword', 'Reset your password')}</h3>
                 <p className="text-white/50 text-sm leading-relaxed">
-                  Enter your account email and we'll send you a link to reset your password.
+                  {t('authSignIn.resetPasswordDesc', "Enter your account email and we'll send you a link to reset your password.")}
                 </p>
               </div>
 
@@ -193,7 +197,7 @@ export default function AuthSignIn() {
               )}
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white/70">Email address</label>
+                <label className="text-sm font-medium text-white/70">{t('authSignIn.emailAddress', 'Email address')}</label>
                 <input
                   type="email"
                   value={resetEmail}
@@ -212,7 +216,7 @@ export default function AuthSignIn() {
               >
                 {resetLoading
                   ? <span className="loading loading-spinner loading-sm" />
-                  : 'Send Reset Link'}
+                  : t('authSignIn.sendResetLink', 'Send Reset Link')}
               </button>
             </form>
           )}
@@ -239,10 +243,10 @@ export default function AuthSignIn() {
               {/* Title — always visible */}
               <motion.div variants={itemVariants} className="text-center space-y-3">
                 <h1 className="text-4xl sm:text-5xl font-bold text-brand-emerald">
-                  {forgotMode ? 'Forgot Password' : 'Welcome Back'}
+                  {forgotMode ? t('authSignIn.forgotPasswordTitle', 'Forgot Password') : t('authSignIn.welcomeBack', 'Welcome Back')}
                 </h1>
                 {!forgotMode && (
-                  <p className="text-white/60 text-sm sm:text-base">Log in to continue your spiritual journey</p>
+                  <p className="text-white/60 text-sm sm:text-base">{t('authSignIn.subtitle', 'Log in to continue your spiritual journey')}</p>
                 )}
               </motion.div>
 
@@ -270,7 +274,7 @@ export default function AuthSignIn() {
                           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                         </svg>
-                        <span>Continue with Google</span>
+                        <span>{t('authSignIn.continueWithGoogle', 'Continue with Google')}</span>
                       </>
                     )}
                   </motion.button>
@@ -280,7 +284,7 @@ export default function AuthSignIn() {
                       <div className="w-full border-t border-brand-border" />
                     </div>
                     <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-brand-surface text-white/40">or continue with email</span>
+                      <span className="px-4 bg-brand-surface text-white/40">{t('authSignIn.orContinueWithEmail', 'or continue with email')}</span>
                     </div>
                   </motion.div>
 
@@ -293,7 +297,7 @@ export default function AuthSignIn() {
                     )}
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-white/70">Email</label>
+                      <label className="text-sm font-medium text-white/70">{t('authSignIn.email', 'Email')}</label>
                       <input
                         type="email"
                         name="email"
@@ -306,13 +310,13 @@ export default function AuthSignIn() {
 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium text-white/70">Password</label>
+                        <label className="text-sm font-medium text-white/70">{t('authSignIn.password', 'Password')}</label>
                         <button
                           type="button"
                           onClick={() => { setForgotMode(true); setError(''); }}
                           className="text-xs text-white/40 hover:text-brand-emerald transition-colors"
                         >
-                          Forgot password?
+                          {t('authSignIn.forgotPasswordLink', 'Forgot password?')}
                         </button>
                       </div>
                       <div className="relative">
@@ -341,24 +345,24 @@ export default function AuthSignIn() {
                       disabled={loading}
                       className="w-full bg-brand-emerald hover:bg-brand-emerald-dim text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {loading ? <span className="loading loading-spinner loading-sm" /> : 'Sign In'}
+                      {loading ? <span className="loading loading-spinner loading-sm" /> : t('common.signIn')}
                     </motion.button>
                   </motion.form>
 
                   <motion.div variants={itemVariants} className="text-center">
                     <p className="text-brand-gold/50 text-xs italic mb-3 px-2">
-                      💡 For the most flexible experience (instant photo, easier sign-in), use{' '}
-                      <span className="font-semibold text-brand-gold/70">Continue with Google</span>.
+                      💡 {t('authSignIn.googleTipPrefix', 'For the most flexible experience (instant photo, easier sign-in), use')}{' '}
+                      <span className="font-semibold text-brand-gold/70">{t('authSignIn.continueWithGoogle', 'Continue with Google')}</span>.
                     </p>
                   </motion.div>
                   <motion.div variants={itemVariants} className="text-center">
                     <p className="text-white/40 text-sm">
-                      Don't have an account?{' '}
+                      {t('authSignIn.noAccount', "Don't have an account?")}{' '}
                       <button
                         onClick={() => navigate('/signup')}
                         className="text-brand-emerald hover:text-brand-emerald-dim font-semibold transition-colors"
                       >
-                        Sign up
+                        {t('authSignIn.signUpLink', 'Sign up')}
                       </button>
                     </p>
                   </motion.div>
