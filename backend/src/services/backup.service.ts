@@ -78,7 +78,7 @@ export async function exportAll(uid: string): Promise<PlainDoc> {
           email: user.email ?? null,
           gender: user.gender ?? null,
           birthDate: user.birthDate ?? null,
-          country: (user as PlainDoc).country ?? null,
+          country: (user as unknown as PlainDoc).country ?? null,
           photoUrl: user.photoUrl ?? null,
         }
       : null,
@@ -90,16 +90,16 @@ export async function exportAll(uid: string): Promise<PlainDoc> {
         name: t.name,
       })),
       goal: clean(goal as PlainDoc | null),
-      daily: cleanAll(zikrDaily as PlainDoc[]),
+      daily: cleanAll(zikrDaily as unknown as PlainDoc[]),
     },
-    salat: cleanAll(salat as PlainDoc[]),
+    salat: cleanAll(salat as unknown as PlainDoc[]),
     fasting: {
       profile: clean(fastingProfile as PlainDoc | null),
-      logs: cleanAll(fastingLogs as PlainDoc[]),
+      logs: cleanAll(fastingLogs as unknown as PlainDoc[]),
     },
     quran: {
       profile: clean(quranProfile as PlainDoc | null),
-      logs: cleanAll(quranLogs as PlainDoc[]),
+      logs: cleanAll(quranLogs as unknown as PlainDoc[]),
     },
     // Rayhanah data ships only when it exists — and the file stays on the
     // user's own device; nothing here changes the no-leak API rules.
@@ -107,8 +107,8 @@ export async function exportAll(uid: string): Promise<PlainDoc> {
       ? {
           cycle: {
             profile: clean(cycleProfile as PlainDoc | null),
-            logs: cleanAll(cycleLogs as PlainDoc[]),
-            days: cleanAll(cycleDays as PlainDoc[]),
+            logs: cleanAll(cycleLogs as unknown as PlainDoc[]),
+            days: cleanAll(cycleDays as unknown as PlainDoc[]),
           },
         }
       : {}),

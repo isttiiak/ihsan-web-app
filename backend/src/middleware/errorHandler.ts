@@ -24,7 +24,7 @@ export const globalErrorHandler = (
     res.status(400).json({
       ok: false,
       error: 'Validation failed',
-      details: err.errors.map((e) => ({ path: e.path.join('.'), message: e.message })),
+      details: err.issues.map((e) => ({ path: e.path.join('.'), message: e.message })),
     });
     return;
   }

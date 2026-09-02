@@ -47,12 +47,13 @@ async function applyIncrements(
           { upsert: true }
         );
       } else {
-        // Atomic clamp-at-zero via pipeline update; new:false returns the
-        // pre-update doc so we can compute how much was really subtracted.
+        // Atomic clamp-at-zero via pipeline update. Mongoose v9 requires
+        // updatePipeline:true when the update is an array, and returnDocument
+        // instead of the deprecated `new` option.
         const before = await ZikrDaily.findOneAndUpdate(
           { userId, date, zikrType },
           [{ $set: { count: { $max: [0, { $add: [{ $ifNull: ['$count', 0] }, amount] }] } } }],
-          { new: false }
+          { returnDocument: 'before', updatePipeline: true }
         );
         const prev = before?.count ?? 0;
         applied = Math.max(0, prev + amount) - prev; // ≤ 0, never past the bucket
