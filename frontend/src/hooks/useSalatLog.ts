@@ -244,9 +244,11 @@ export interface SalatAnalytics {
   perPrayer: Record<string, {
     completed: number; kaza: number; missed: number; pending: number;
     mosque: number; jamat: number; tasbeeh: number;
+    currentStreak: number; bestStreak: number;
   }>;
   last7Days: Array<{ date: string; completed: number; total: number }>;
   calendarData: Array<{ date: string; completed: number; total: number }>;
+  weeklyMosqueTrend: Array<{ weekStart: string; weekEnd: string; mosqueCount: number; prayedCount: number; rate: number }>;
 }
 
 const EMPTY_PRAYERS: Record<PrayerId, PrayerEntry> = {

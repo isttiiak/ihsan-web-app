@@ -1418,7 +1418,11 @@
       "isha": "Isha",
       "maghrib": "Maghrib"
     },
+    "prayerStreakBest": "Best {{count}}",
+    "prayerStreakCurrent": "Streak {{count}}",
     "prayersPerDay": "prayers/day",
+    "mosqueTrend": "Mosque Frequency Trend",
+    "mosqueTrendHint": "Weekly mosque attendance rate — the share of completed/kaza fard prayers prayed at the mosque, week by week.",
     "tasbeehStat": "{{count}} tasbeeh",
     "title": "Salat Analytics",
     "totalSummary": "{{days}} days · {{total}} total prayers"

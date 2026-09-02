@@ -235,7 +235,7 @@ export default function SalatAnalytics() {
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {PRAYER_META.filter((p) => p.isTrackable).map((prayer, i) => {
-                    const stats = data.perPrayer[prayer.id] ?? { completed: 0, kaza: 0, missed: 0, pending: 0, mosque: 0, jamat: 0, tasbeeh: 0 };
+                    const stats = data.perPrayer[prayer.id] ?? { completed: 0, kaza: 0, missed: 0, pending: 0, mosque: 0, jamat: 0, tasbeeh: 0, currentStreak: 0, bestStreak: 0 };
                     const total = data.totalDays;
                     const done = stats.completed + stats.kaza;
                     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -272,12 +272,56 @@ export default function SalatAnalytics() {
                             <span>🕌 {t('salatAnalytics.mosqueStat', { count: formatLocaleNumber(stats.mosque) })}</span>
                             {stats.tasbeeh > 0 && <span className="col-span-2">📿 {t('salatAnalytics.tasbeehStat', { count: formatLocaleNumber(stats.tasbeeh) })}</span>}
                           </div>
+                          {(stats.currentStreak > 0 || stats.bestStreak > 0) && (
+                            <div className="flex items-center gap-3 mt-2 pt-2 border-t border-white/15 text-xs text-white/80">
+                              <span>🔥 {t('salatAnalytics.prayerStreakCurrent', { count: formatLocaleNumber(stats.currentStreak) })}</span>
+                              <span>🏆 {t('salatAnalytics.prayerStreakBest', { count: formatLocaleNumber(stats.bestStreak) })}</span>
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     );
                   })}
                 </div>
               </div>
+
+              {/* Mosque frequency trend — weekly attendance rate, last 12 weeks max */}
+              {data.weeklyMosqueTrend.length > 0 && (
+                <div className="space-y-3">
+                  <h2 className="text-white font-black text-sm flex items-center gap-2">
+                    <ChartBarIcon className="w-4 h-4 text-brand-emerald" /> {t('salatAnalytics.mosqueTrend')}
+                  </h2>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="card bg-brand-deep/80 border border-brand-border rounded-2xl overflow-x-auto"
+                  >
+                    <div className="card-body p-5">
+                      <div className="flex items-end gap-2 h-36 min-w-max">
+                        {data.weeklyMosqueTrend.map((w, i) => (
+                          <div key={w.weekStart} className="flex flex-col items-center gap-1.5 w-9 shrink-0">
+                            <span className="text-white/40 text-[10px] font-bold">{formatLocaleNumber(w.rate)}%</span>
+                            <div className="w-full h-24 bg-white/5 rounded-md flex items-end overflow-hidden">
+                              <motion.div
+                                initial={{ height: 0 }}
+                                animate={{ height: `${w.rate}%` }}
+                                transition={{ duration: 0.5, delay: i * 0.03 }}
+                                className="w-full bg-gradient-to-t from-brand-emerald to-brand-info rounded-t-sm"
+                              />
+                            </div>
+                            <span className="text-white/25 text-[9px]">
+                              {formatLocaleDate(new Date(w.weekStart + 'T12:00:00'), { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-white/25 text-[10px] mt-3">
+                        {t('salatAnalytics.mosqueTrendHint')}
+                      </p>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
 
               {/* Prayer Calendar — horizontal (weeks flow left→right, days top→bottom) */}
               <div className="space-y-3">

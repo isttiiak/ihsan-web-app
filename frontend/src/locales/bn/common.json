@@ -1418,7 +1418,11 @@
       "isha": "ইশা",
       "maghrib": "মাগরিব"
     },
+    "prayerStreakBest": "সেরা {{count}}",
+    "prayerStreakCurrent": "ধারাবাহিকতা {{count}}",
     "prayersPerDay": "নামায/দিন",
+    "mosqueTrend": "মসজিদ উপস্থিতির প্রবণতা",
+    "mosqueTrendHint": "সাপ্তাহিক মসজিদ উপস্থিতির হার — সপ্তাহ ধরে সম্পন্ন/কাযা ফরয নামাযের মধ্যে মসজিদে পড়া নামাযের অংশ।",
     "tasbeehStat": "{{count}}টি তাসবীহ",
     "title": "সালাত বিশ্লেষণ",
     "totalSummary": "{{days}} দিন · {{total}}টি মোট নামায"

@@ -170,9 +170,11 @@ export interface SalatAnalyticsResult {
   perPrayer: Record<string, {
     completed: number; kaza: number; missed: number; pending: number;
     mosque: number; jamat: number; tasbeeh: number;
+    currentStreak: number; bestStreak: number;
   }>;
   last7Days: Array<{ date: string; completed: number; total: number }>;
   calendarData: Array<{ date: string; completed: number; total: number }>;
+  weeklyMosqueTrend: Array<{ weekStart: string; weekEnd: string; mosqueCount: number; prayedCount: number; rate: number }>;
 }
 
 export async function getSalatAnalytics(userId: string, days: number, clientToday?: string, resetDate?: string): Promise<SalatAnalyticsResult> {
@@ -197,7 +199,7 @@ export async function getSalatAnalytics(userId: string, days: number, clientToda
 
   const perPrayer: SalatAnalyticsResult['perPrayer'] = {};
   for (const pid of PRAYER_IDS) {
-    perPrayer[pid] = { completed: 0, kaza: 0, missed: 0, pending: 0, mosque: 0, jamat: 0, tasbeeh: 0 };
+    perPrayer[pid] = { completed: 0, kaza: 0, missed: 0, pending: 0, mosque: 0, jamat: 0, tasbeeh: 0, currentStreak: 0, bestStreak: 0 };
   }
 
   for (const log of statsLogs) {
@@ -266,6 +268,62 @@ export async function getSalatAnalytics(userId: string, days: number, clientToda
     cursor = shiftDateStr(cursor, -1);
   }
 
+  // Per-prayer streaks — same best/current-run logic as the all-5 streak
+  // above, but for one prayer at a time (e.g. "42-day Fajr streak").
+  const isPrayerDone = (pid: PrayerId, date: string): boolean => {
+    const log = logMap.get(date);
+    if (!log) return false;
+    const s = log.prayers[pid]?.status;
+    return s === 'completed' || s === 'kaza';
+  };
+  for (const pid of PRAYER_IDS) {
+    let pBest = 0;
+    let pRun = 0;
+    for (let i = 0; i < effectiveDays; i++) {
+      const date = shiftDateStr(statsCutoff, i);
+      pRun = isPrayerDone(pid, date) ? pRun + 1 : 0;
+      if (pRun > pBest) pBest = pRun;
+    }
+    let pCurrent = 0;
+    let pCursor = isPrayerDone(pid, today) ? today : shiftDateStr(today, -1);
+    while (isPrayerDone(pid, pCursor) && pCursor >= statsCutoff) {
+      pCurrent++;
+      pCursor = shiftDateStr(pCursor, -1);
+    }
+    perPrayer[pid].currentStreak = pCurrent;
+    perPrayer[pid].bestStreak = pBest;
+  }
+
+  // Weekly mosque attendance trend — 7-day buckets ending "today", oldest
+  // first, capped at the last 12 weeks so a 1-year view doesn't render 52 bars.
+  const weeklyMosqueTrend: SalatAnalyticsResult['weeklyMosqueTrend'] = [];
+  const totalWeeks = Math.min(12, Math.ceil(effectiveDays / 7));
+  for (let w = totalWeeks - 1; w >= 0; w--) {
+    const weekEnd = shiftDateStr(today, -(w * 7));
+    const weekStart = shiftDateStr(weekEnd, -6);
+    const clampedStart = weekStart < statsCutoff ? statsCutoff : weekStart;
+    let weekMosque = 0;
+    let weekPrayed = 0;
+    for (let d = clampedStart; d <= weekEnd; d = shiftDateStr(d, 1)) {
+      const log = logMap.get(d);
+      if (!log) continue;
+      for (const pid of PRAYER_IDS) {
+        const entry = log.prayers[pid];
+        if (entry?.status === 'completed' || entry?.status === 'kaza') {
+          weekPrayed++;
+          if (entry.location === 'mosque') weekMosque++;
+        }
+      }
+    }
+    weeklyMosqueTrend.push({
+      weekStart: clampedStart,
+      weekEnd,
+      mosqueCount: weekMosque,
+      prayedCount: weekPrayed,
+      rate: weekPrayed > 0 ? Math.round((weekMosque / weekPrayed) * 100) : 0,
+    });
+  }
+
   const countDone = (dateStr: string): number => {
     const log = logMap.get(dateStr);
     if (!log) return 0;
@@ -314,6 +372,7 @@ export async function getSalatAnalytics(userId: string, days: number, clientToda
     perPrayer,
     last7Days,
     calendarData,
+    weeklyMosqueTrend,
   };
 }
 
