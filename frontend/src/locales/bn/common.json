@@ -1522,7 +1522,8 @@
     "witrReminderDesc": "ইশার পর ফজরের আগে বিতর পড়ুন — সাধারণত কুনূত দোয়াসহ ৩ রাকাত। নবী ﷺ সফরেও এটি কখনো ছাড়েননি।",
     "witrReminderTitle": "বিতর ভুলবেন না — এটি ওয়াজিব!",
     "nowTag": "এখন চলছে",
-    "selectDay": "{{day}} নির্বাচন করুন"
+    "selectDay": "{{day}} নির্বাচন করুন",
+    "overdueTag": "সময় পার হয়ে গেছে"
   },
   "settings": {
     "accessibilitySection": "সহায়ক ব্যবস্থা",

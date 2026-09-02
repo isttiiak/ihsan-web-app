@@ -25,6 +25,7 @@ import {
   PRAYER_META,
   calcPrayerTimes,
   getCurrentAndNextPrayer,
+  getPrayerEndTime,
   formatTime,
   translateSalatName,
 } from '../utils/prayerTimes.js';
@@ -180,11 +181,21 @@ export default function SalatTracker() {
           maghrib: times.maghrib,
           isha:    times.isha,
         } as Record<string, Date>,
+        full: times,
         nextTime: info.nextTime,
         current: info.current as string,
       };
     } catch { return null; }
   }, [minuteNow]);
+
+  // A prayer's window has auto-closed (adhan-time-derived) for today while
+  // still logged pending — flag it so nobody forgets to mark it, without
+  // waiting until the day rolls over into "missed".
+  const isOverdueToday = (prayerId: PrayerId): boolean => {
+    if (!isToday || !todayPrayerTimes?.full) return false;
+    const end = getPrayerEndTime(prayerId, todayPrayerTimes.full);
+    return minuteNow > end;
+  };
 
   const { data: log, isLoading } = useSalatLog(selectedDate);
   const updatePrayer = useUpdatePrayer();
@@ -642,6 +653,9 @@ export default function SalatTracker() {
                 const style = STATUS_STYLE[displayStatus] ?? STATUS_STYLE['pending'];
                 const isCurrent = isToday && isCurrentPrayer(prayerId, todayPrayerTimes?.current);
                 const isFuture = isToday && isFuturePrayer(prayerId, todayPrayerTimes?.times);
+                // Window auto-closed today (adhan-derived) but never logged —
+                // nudge without forcing it into 'missed' the way a past day does.
+                const isOverdue = status === 'pending' && isOverdueToday(prayerId);
                 const isExpanded = expandedPrayer === prayerId;
                 const hasSubTag = status === 'completed' || status === 'kaza';
 
@@ -661,6 +675,8 @@ export default function SalatTracker() {
                     className={`rounded-2xl border overflow-hidden transition-colors ${
                       isCurrent
                         ? 'bg-brand-emerald/10 border-brand-emerald/50 shadow-[0_0_20px_rgba(16,185,129,0.15)]'
+                        : isOverdue
+                        ? 'bg-brand-gold/10 border-brand-gold/40'
                         : `${style.bg} ${style.border}`
                     }`}
                   >
@@ -670,9 +686,10 @@ export default function SalatTracker() {
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <span className="text-2xl shrink-0">{prayer.icon}</span>
                         <div className="min-w-0">
-                          <p className={`font-bold text-sm leading-none ${isCurrent ? 'text-brand-emerald' : style.text}`}>
+                          <p className={`font-bold text-sm leading-none ${isCurrent ? 'text-brand-emerald' : isOverdue ? 'text-brand-gold' : style.text}`}>
                             {prayerId === 'dhuhr' && isCivilFriday ? t('salatNames.jumuah', "Jumu'ah") : translateSalatName(prayer.id, prayer.name, t)}
                             {isCurrent && <span className="ml-2 text-xs font-normal text-brand-emerald/70">● {t('salatTracker.nowTag', 'now')}</span>}
+                            {isOverdue && <span className="ml-2 text-xs font-normal text-brand-gold/80">⚠️ {t('salatTracker.overdueTag', 'window closed')}</span>}
                             {prayerId === 'dhuhr' && isCivilFriday && (
                               <span className="ml-2 text-xs font-normal text-brand-emerald/60">🕌 congregation</span>
                             )}
