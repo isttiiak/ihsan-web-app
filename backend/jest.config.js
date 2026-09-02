@@ -6,11 +6,6 @@ export default {
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
-    // firebase-admin v14 pulls in jose (ESM-only) which Jest's CJS loader can't
-    // require(). Tests use DEV_AUTH_BYPASS=1 so the real SDK is never called —
-    // redirect sub-package imports to lightweight stubs.
-    '^firebase-admin/app$': '<rootDir>/tests/__mocks__/firebase-admin-app.js',
-    '^firebase-admin/auth$': '<rootDir>/tests/__mocks__/firebase-admin-auth.js',
   },
   transform: {
     '^.+\\.ts$': ['ts-jest', { useESM: true }],
