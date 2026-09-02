@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as salatService from '../services/salat.service.js';
+import * as salatDebtService from '../services/salatDebt.service.js';
 import { PrayerId, PrayerStatus, PrayerLocation, NaflType } from '../models/SalatLog.js';
 
 export const getLog = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -66,6 +67,29 @@ export const resetSalat = async (req: Request, res: Response, next: NextFunction
     const User = (await import('../models/User.js')).default;
     await User.updateOne({ uid: req.user.uid }, { $set: { salatResetDate: resetDate } });
     res.json({ ok: true, resetDate });
+  } catch (err) { next(err); }
+};
+
+export const getDebt = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const debt = await salatDebtService.getDebtReadOnly(req.user.uid);
+    res.json({ ok: true, ...debt });
+  } catch (err) { next(err); }
+};
+
+export const adjustDebt = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { prayer, delta } = req.body as { prayer: PrayerId; delta: number };
+    const debt = await salatDebtService.adjustDebt(req.user.uid, prayer, delta);
+    res.json({ ok: true, ...debt });
+  } catch (err) { next(err); }
+};
+
+export const setDebt = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { prayer, count } = req.body as { prayer: PrayerId; count: number };
+    const debt = await salatDebtService.setDebt(req.user.uid, prayer, count);
+    res.json({ ok: true, ...debt });
   } catch (err) { next(err); }
 };
 

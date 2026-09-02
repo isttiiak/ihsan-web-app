@@ -28,6 +28,22 @@ export const salatHistorySchema = z.object({
   body: z.object({}).optional(),
 });
 
+const prayerIdEnum = z.enum(['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']);
+
+export const adjustSalatDebtSchema = z.object({
+  body: z.object({
+    prayer: prayerIdEnum,
+    delta: z.number().int().min(-9999).max(9999),
+  }),
+});
+
+export const setSalatDebtSchema = z.object({
+  body: z.object({
+    prayer: prayerIdEnum,
+    count: z.number().int().min(0).max(9999),
+  }),
+});
+
 export const updateNaflSchema = z.object({
   body: z.object({
     completed: z.boolean(),

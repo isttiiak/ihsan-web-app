@@ -1398,6 +1398,7 @@
     "mosqueJamatNote": "Mosque and Jamat overlap — a prayer at the mosque is usually also in jamat.",
     "mosqueStat": "{{count}} at mosque",
     "naflDays": "Nafl Days",
+    "kazaDebt": "Kaza Owed",
     "onTime": "On Time",
     "onTimeStat": "{{count}} on time",
     "overallBreakdown": "Overall Breakdown",
@@ -1523,7 +1524,15 @@
     "witrReminderTitle": "Don't forget Witr — it's wājib!",
     "nowTag": "now",
     "selectDay": "Select {{day}}",
-    "overdueTag": "window closed"
+    "overdueTag": "window closed",
+    "kazaDebtTitle": "Kaza Debt",
+    "kazaDebtOwed": "{{count}} prayers owed",
+    "kazaDebtNone": "Nothing owed — MashaAllah",
+    "kazaDebtHint": "Tap ❌ Miss on a prayer above to add it here automatically. Owe some from before you started tracking? Set a starting count for each below.",
+    "kazaDebtSave": "Save",
+    "kazaDebtPaidBack": "Prayed one back",
+    "kazaDebtSetCount": "Set exact count",
+    "kazaDebtAddOwed": "Add one owed"
   },
   "settings": {
     "accessibilitySection": "Accessibility",

@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { updatePrayerSchema, updateNaflSchema, getSalatLogSchema, salatHistorySchema } from '../validation/salat.schemas.js';
+import {
+  updatePrayerSchema, updateNaflSchema, getSalatLogSchema, salatHistorySchema,
+  adjustSalatDebtSchema, setSalatDebtSchema,
+} from '../validation/salat.schemas.js';
 import * as salatController from '../controllers/salat.controller.js';
 
 const router = Router();
@@ -20,6 +23,13 @@ router.get('/history', requireAuth, validate(salatHistorySchema), salatControlle
 
 // GET /api/salat/analytics
 router.get('/analytics', requireAuth, validate(salatHistorySchema), salatController.getAnalytics);
+
+// GET /api/salat/debt — kaza (missed-prayer) debt per prayer
+router.get('/debt', requireAuth, salatController.getDebt);
+// PATCH /api/salat/debt/adjust — +/- one prayer's owed count (e.g. "paid one back")
+router.patch('/debt/adjust', requireAuth, validate(adjustSalatDebtSchema), salatController.adjustDebt);
+// PATCH /api/salat/debt/set — absolute set (initial estimate from before tracking)
+router.patch('/debt/set', requireAuth, validate(setSalatDebtSchema), salatController.setDebt);
 
 // POST /api/salat/reset — start fresh without deleting history
 router.post('/reset', requireAuth, salatController.resetSalat);

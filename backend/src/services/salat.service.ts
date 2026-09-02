@@ -6,6 +6,7 @@ import SalatLog, {
   PrayerLocation,
   NaflType,
 } from '../models/SalatLog.js';
+import * as salatDebtService from './salatDebt.service.js';
 
 export function todayDateString(): string {
   return new Date().toISOString().substring(0, 10);
@@ -87,6 +88,7 @@ export async function updatePrayerStatus(
   const log = await getOrCreateLog(userId, d);
 
   const entry = log.prayers[prayer];
+  const wasMissed = entry.status === 'missed';
   entry.status = status;
   entry.prayedAt = status !== 'pending' ? new Date() : undefined;
 
@@ -101,6 +103,14 @@ export async function updatePrayerStatus(
   }
 
   await log.save();
+
+  // Keep the kaza-debt counter in sync with explicit 'missed' taps only —
+  // a past day that was simply never logged does not silently add debt,
+  // matching how missedCount in analytics already works.
+  const isMissed = status === 'missed';
+  if (wasMissed && !isMissed) await salatDebtService.adjustDebt(userId, prayer, -1);
+  else if (!wasMissed && isMissed) await salatDebtService.adjustDebt(userId, prayer, 1);
+
   return log;
 }
 
@@ -293,5 +303,6 @@ export async function getSalatAnalytics(userId: string, days: number, clientToda
 
 export async function deleteAllUserSalatLogs(userId: string): Promise<{ deletedCount: number }> {
   const result = await SalatLog.deleteMany({ userId });
+  await salatDebtService.deleteDebt(userId);
   return { deletedCount: result.deletedCount ?? 0 };
 }

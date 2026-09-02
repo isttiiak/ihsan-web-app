@@ -14,6 +14,9 @@ import {
   useUpdatePrayer,
   useUpdateNafl,
   useSalatAnalytics,
+  useSalatDebt,
+  useAdjustSalatDebt,
+  useSetSalatDebt,
   PrayerId,
   PrayerStatus,
   PrayerLocation,
@@ -244,6 +247,30 @@ export default function SalatTracker() {
   const [naflExpanded, setNaflExpanded] = useState(false);
   const [naflInfoExpanded, setNaflInfoExpanded] = useState<NaflType | null>(null);
   const [rakatOverrides, setRakatOverrides] = useState<Record<string, number>>({});
+
+  // Kaza debt — auto-tracked from explicit 'missed' taps, adjustable by hand
+  // for debt owed from before the user started tracking.
+  const { data: debt } = useSalatDebt();
+  const adjustDebt = useAdjustSalatDebt();
+  const setDebtExact = useSetSalatDebt();
+  const [debtExpanded, setDebtExpanded] = useState(false);
+  const [editingDebtPrayer, setEditingDebtPrayer] = useState<PrayerId | null>(null);
+  const [editingDebtValue, setEditingDebtValue] = useState('');
+
+  const handleDebtAdjust = (prayer: PrayerId, delta: number) => {
+    if (!user) { setShowGuestDialog(true); return; }
+    adjustDebt.mutate({ prayer, delta });
+  };
+  const openDebtEditor = (prayer: PrayerId, current: number) => {
+    setEditingDebtPrayer(prayer);
+    setEditingDebtValue(String(current));
+  };
+  const saveDebtEditor = () => {
+    if (!editingDebtPrayer) return;
+    const count = Math.max(0, Math.min(9999, parseInt(editingDebtValue, 10) || 0));
+    setDebtExact.mutate({ prayer: editingDebtPrayer, count });
+    setEditingDebtPrayer(null);
+  };
 
   const naflEntry = log?.nafl ?? { completed: false, types: [], rakat: 2 };
 
@@ -1123,6 +1150,111 @@ export default function SalatTracker() {
                   )}
                 </button>
               )}
+            </motion.div>
+          )}
+
+          {/* Kaza debt — missed prayers owed, paid back one at a time */}
+          {!isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.28 }}
+              layout
+              className={`rounded-2xl border overflow-hidden transition-colors ${
+                (debt?.totalOwed ?? 0) > 0
+                  ? 'bg-brand-gold/10 border-brand-gold/40'
+                  : 'bg-brand-surface border-brand-border'
+              }`}
+            >
+              <button
+                onClick={() => setDebtExpanded((v) => !v)}
+                className="w-full p-3.5 flex items-center gap-3 text-left"
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className="text-2xl shrink-0">⏳</span>
+                  <div className="min-w-0">
+                    <p className={`font-bold text-sm leading-none ${(debt?.totalOwed ?? 0) > 0 ? 'text-brand-gold' : 'text-white/60'}`}>
+                      {t('salatTracker.kazaDebtTitle', 'Kaza Debt')}
+                    </p>
+                    <p className="text-white/25 text-xs mt-0.5">
+                      {(debt?.totalOwed ?? 0) > 0
+                        ? t('salatTracker.kazaDebtOwed', '{{count}} prayers owed', { count: debt?.totalOwed ?? 0 })
+                        : t('salatTracker.kazaDebtNone', 'Nothing owed — MashaAllah')}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-white/20 text-xs shrink-0">{debtExpanded ? t('salatTracker.less', '▲ Less') : t('salatTracker.details', '▾ Details')}</span>
+              </button>
+
+              <AnimatePresence>
+                {debtExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden border-t border-brand-emerald/10"
+                  >
+                    <div className="px-3 py-3 space-y-2">
+                      <p className="text-white/30 text-[11px] leading-relaxed">
+                        {t('salatTracker.kazaDebtHint', 'Tap ❌ Miss on a prayer above to add it here automatically. Owe some from before you started tracking? Set a starting count for each below.')}
+                      </p>
+                      {trackablePrayers.map((prayer) => {
+                        const prayerId = prayer.id as PrayerId;
+                        const owed = debt?.owed[prayerId] ?? 0;
+                        const isEditing = editingDebtPrayer === prayerId;
+                        return (
+                          <div key={prayerId} className="flex items-center gap-2 py-1.5 border-t border-brand-emerald/5 first:border-t-0">
+                            <span className="text-lg shrink-0">{prayer.icon}</span>
+                            <span className="text-white/60 text-xs font-semibold flex-1 min-w-0 truncate">
+                              {translateSalatName(prayer.id, prayer.name, t)}
+                            </span>
+                            {isEditing ? (
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="number"
+                                  inputMode="numeric"
+                                  min={0}
+                                  max={9999}
+                                  autoFocus
+                                  value={editingDebtValue}
+                                  onChange={(e) => setEditingDebtValue(e.target.value)}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') saveDebtEditor(); if (e.key === 'Escape') setEditingDebtPrayer(null); }}
+                                  className="w-16 px-2 py-1 rounded-lg bg-brand-deep border border-brand-gold/40 text-white text-xs text-center"
+                                />
+                                <button onClick={saveDebtEditor} className="px-2 py-1 rounded-lg bg-brand-gold text-white text-[11px] font-bold">
+                                  {t('salatTracker.kazaDebtSave', 'Save')}
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  onClick={() => handleDebtAdjust(prayerId, -1)}
+                                  disabled={owed <= 0}
+                                  title={t('salatTracker.kazaDebtPaidBack', 'Prayed one back')}
+                                  className="w-6 h-6 rounded-md bg-brand-deep border border-brand-border text-white/50 font-bold text-sm flex items-center justify-center disabled:opacity-20 hover:border-brand-gold/40 transition-all"
+                                >−</button>
+                                <button
+                                  onClick={() => openDebtEditor(prayerId, owed)}
+                                  className="w-9 text-center text-brand-gold font-black text-sm tabular-nums"
+                                  title={t('salatTracker.kazaDebtSetCount', 'Set exact count')}
+                                >
+                                  {formatLocaleNumber(owed)}
+                                </button>
+                                <button
+                                  onClick={() => handleDebtAdjust(prayerId, 1)}
+                                  title={t('salatTracker.kazaDebtAddOwed', 'Add one owed')}
+                                  className="w-6 h-6 rounded-md bg-brand-deep border border-brand-border text-white/50 font-bold text-sm flex items-center justify-center hover:border-brand-gold/40 transition-all"
+                                >+</button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
 

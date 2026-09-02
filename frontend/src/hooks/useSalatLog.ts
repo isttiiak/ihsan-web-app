@@ -323,6 +323,8 @@ export function useUpdatePrayer() {
     onSettled: (_data, _err, vars) => {
       void qc.invalidateQueries({ queryKey: ['salat', 'log', vars.date ?? localTodayStr()] });
       void qc.invalidateQueries({ queryKey: ['salat', 'analytics'] });
+      // A prayer moving into/out of 'missed' auto-adjusts the kaza debt server-side.
+      void qc.invalidateQueries({ queryKey: ['salat', 'debt'] });
     },
   });
 }
@@ -359,6 +361,46 @@ export function useUpdateNafl() {
       void qc.invalidateQueries({ queryKey: ['salat', 'log', vars.date ?? localTodayStr()] });
       void qc.invalidateQueries({ queryKey: ['salat', 'analytics'] });
     },
+  });
+}
+
+export interface SalatDebt {
+  owed: Record<PrayerId, number>;
+  totalOwed: number;
+}
+
+export function useSalatDebt() {
+  const user = useAuthStore((s) => s.user);
+  return useQuery({
+    queryKey: ['salat', 'debt'],
+    queryFn: async () => {
+      const { data } = await api.get<SalatDebt & { ok: boolean }>('/api/salat/debt');
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+}
+
+export function useAdjustSalatDebt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { prayer: PrayerId; delta: number }) => {
+      const { data } = await api.patch<SalatDebt & { ok: boolean }>('/api/salat/debt/adjust', vars);
+      return data;
+    },
+    onSuccess: (data) => qc.setQueryData(['salat', 'debt'], data),
+  });
+}
+
+export function useSetSalatDebt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { prayer: PrayerId; count: number }) => {
+      const { data } = await api.patch<SalatDebt & { ok: boolean }>('/api/salat/debt/set', vars);
+      return data;
+    },
+    onSuccess: (data) => qc.setQueryData(['salat', 'debt'], data),
   });
 }
 

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
 import { ChartBarIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { useSalatAnalytics } from '../hooks/useSalatLog.js';
+import { useSalatAnalytics, useSalatDebt } from '../hooks/useSalatLog.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 
@@ -36,6 +36,7 @@ export default function SalatAnalytics() {
   const { t, i18n } = useTranslation();
   const [days, setDays] = useState(30);
   const { data, isLoading, isError } = useSalatAnalytics(days);
+  const { data: debt } = useSalatDebt();
 
   // Group calendar data into weeks (Fri–Thu, Islamic week) for the heatmap
   const calendarWeeks = (() => {
@@ -148,6 +149,7 @@ export default function SalatAnalytics() {
                   { label: t('salatAnalytics.currentStreak'), value: formatLocaleNumber(data.currentStreak), accent: 'text-brand-gold' },
                   { label: t('salatAnalytics.bestRun'), value: formatLocaleNumber(data.bestStreak), accent: 'text-brand-info' },
                   { label: t('salatAnalytics.naflDays'), value: formatLocaleNumber(data.naflDays ?? 0), accent: 'text-brand-warm' },
+                  { label: t('salatAnalytics.kazaDebt'), value: formatLocaleNumber(debt?.totalOwed ?? 0), accent: 'text-brand-pink' },
                 ].map((s, i) => (
                   <motion.div
                     key={s.label}

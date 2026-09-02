@@ -1398,6 +1398,7 @@
     "mosqueJamatNote": "মসজিদ ও জামাত ওভারল্যাপ করে — মসজিদে পড়া নামায সাধারণত জামাতেও গণ্য হয়।",
     "mosqueStat": "{{count}}টি মসজিদে",
     "naflDays": "নফল দিন",
+    "kazaDebt": "কাযা বাকি",
     "onTime": "সময়মতো",
     "onTimeStat": "{{count}}টি সময়মতো",
     "overallBreakdown": "সার্বিক বিশ্লেষণ",
@@ -1523,7 +1524,15 @@
     "witrReminderTitle": "বিতর ভুলবেন না — এটি ওয়াজিব!",
     "nowTag": "এখন চলছে",
     "selectDay": "{{day}} নির্বাচন করুন",
-    "overdueTag": "সময় পার হয়ে গেছে"
+    "overdueTag": "সময় পার হয়ে গেছে",
+    "kazaDebtTitle": "কাযা ঋণ",
+    "kazaDebtOwed": "{{count}}টি নামায বাকি",
+    "kazaDebtNone": "কোনো নামায বাকি নেই — মাশাআল্লাহ",
+    "kazaDebtHint": "উপরে কোনো নামাযে ❌ ছুটে গেছে চাপলে তা এখানে নিজে থেকে যোগ হবে। ট্র্যাকিং শুরুর আগে থেকে কিছু নামায বাকি থাকলে নিচে প্রতিটির জন্য শুরুর সংখ্যা সেট করুন।",
+    "kazaDebtSave": "সংরক্ষণ",
+    "kazaDebtPaidBack": "একটি আদায় করা হয়েছে",
+    "kazaDebtSetCount": "সঠিক সংখ্যা সেট করুন",
+    "kazaDebtAddOwed": "একটি বাকি যোগ করুন"
   },
   "settings": {
     "accessibilitySection": "সহায়ক ব্যবস্থা",
