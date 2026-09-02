@@ -13,6 +13,7 @@ import {
   useSalatLog,
   useUpdatePrayer,
   useUpdateNafl,
+  useSalatAnalytics,
   PrayerId,
   PrayerStatus,
   PrayerLocation,
@@ -91,6 +92,13 @@ function isFuturePrayer(prayerId: string, todayTimes: Record<string, Date> | nul
 function isCurrentPrayer(prayerId: string, currentId: string | undefined): boolean {
   return prayerId === currentId;
 }
+function weekDotColor(completed: number): string {
+  if (completed >= 5) return '#10b981'; // brand-emerald
+  if (completed >= 3) return '#c9a96e'; // brand-gold
+  if (completed >= 1) return '#f59e0b'; // amber
+  return '#ef4444'; // red — logged nothing that day
+}
+
 function friendlyDate(dateStr: string, tr?: (key: string, fallback: string) => string): string {
   const today = todayStr();
   const yesterday = offsetDate(today, -1);
@@ -181,6 +189,10 @@ export default function SalatTracker() {
   const { data: log, isLoading } = useSalatLog(selectedDate);
   const updatePrayer = useUpdatePrayer();
   const updateNafl = useUpdateNafl();
+
+  // Weekly summary strip — quick glance at the last 7 days, tap to jump.
+  const { data: weekAnalytics } = useSalatAnalytics(7);
+  const weekDays = weekAnalytics?.last7Days ?? [];
 
   // Tarawih during Ramadan lives on the FastingLog row (category 'ramadan'),
   // the same record /ramadan writes — one source of truth, two places to tap.
@@ -545,6 +557,40 @@ export default function SalatTracker() {
               <ChevronRightIcon className="w-5 h-5" />
             </motion.button>
           </div>
+
+          {/* Weekly summary — quick glance at the last 7 days, tap a day to jump */}
+          {weekDays.length > 0 && (
+            <div className="flex justify-between gap-1 [&>*]:min-w-0">
+              {weekDays.map((d) => {
+                const isSel = d.date === selectedDate;
+                const isTod = d.date === todayStr();
+                const isFutureDay = d.date > todayStr();
+                const hasData = !isFutureDay;
+                const dot = hasData ? weekDotColor(d.completed) : 'rgba(255,255,255,0.12)';
+                return (
+                  <motion.button
+                    key={d.date}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => { setSelectedDate(d.date); setExpandedPrayer(null); }}
+                    aria-label={t('salatTracker.selectDay', 'Select {{day}}', { day: friendlyDate(d.date, t) })}
+                    className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border transition-all ${
+                      isSel
+                        ? 'bg-white/10 border-brand-emerald/30'
+                        : 'bg-white/[0.03] border-brand-emerald/5 hover:border-brand-emerald/20'
+                    }`}
+                  >
+                    <span className={`text-[9px] uppercase font-bold ${isTod ? 'text-brand-emerald' : 'text-white/30'}`}>
+                      {formatLocaleDate(new Date(d.date + 'T12:00:00'), { weekday: 'narrow' })}
+                    </span>
+                    <span className={`text-xs font-bold ${isSel ? 'text-white' : 'text-white/50'}`}>
+                      {formatLocaleNumber(parseInt(d.date.slice(8), 10))}
+                    </span>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: dot, boxShadow: hasData ? `0 0 6px ${dot}` : 'none' }} />
+                  </motion.button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Rayhanah days — salat fully excused (never made up) */}
           {cycleActive && selectedDate >= cycleActive.startDate ? (

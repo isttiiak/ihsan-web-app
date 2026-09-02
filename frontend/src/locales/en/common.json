@@ -1521,7 +1521,8 @@
     "whereLabel": "Where:",
     "witrReminderDesc": "Pray Witr after Isha before Fajr — usually 3 rak'ahs with Qunūt du'ā. The Prophet ﷺ never abandoned it, even while travelling.",
     "witrReminderTitle": "Don't forget Witr — it's wājib!",
-    "nowTag": "now"
+    "nowTag": "now",
+    "selectDay": "Select {{day}}"
   },
   "settings": {
     "accessibilitySection": "Accessibility",
