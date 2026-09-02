@@ -1399,6 +1399,7 @@
     "mosqueStat": "{{count}} at mosque",
     "naflDays": "Nafl Days",
     "kazaDebt": "Kaza Owed",
+    "jumuahAttendance": "Jumu'ah Attendance",
     "onTime": "On Time",
     "onTimeStat": "{{count}} on time",
     "overallBreakdown": "Overall Breakdown",

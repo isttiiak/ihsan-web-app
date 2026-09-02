@@ -236,6 +236,8 @@ export interface SalatAnalytics {
   homeCount: number;
   tasbeehCount: number;
   naflDays: number;
+  fridayCount: number;
+  jumuahAttendedCount: number;
   completionRate: number;
   currentStreak: number;
   bestStreak: number;

@@ -150,6 +150,11 @@ export default function SalatAnalytics() {
                   { label: t('salatAnalytics.bestRun'), value: formatLocaleNumber(data.bestStreak), accent: 'text-brand-info' },
                   { label: t('salatAnalytics.naflDays'), value: formatLocaleNumber(data.naflDays ?? 0), accent: 'text-brand-warm' },
                   { label: t('salatAnalytics.kazaDebt'), value: formatLocaleNumber(debt?.totalOwed ?? 0), accent: 'text-brand-pink' },
+                  ...(data.fridayCount > 0 ? [{
+                    label: t('salatAnalytics.jumuahAttendance'),
+                    value: `${formatLocaleNumber(Math.round((data.jumuahAttendedCount / data.fridayCount) * 100))}%`,
+                    accent: 'text-brand-gold',
+                  }] : []),
                 ].map((s, i) => (
                   <motion.div
                     key={s.label}

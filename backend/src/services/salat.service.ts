@@ -162,6 +162,8 @@ export interface SalatAnalyticsResult {
   homeCount: number;
   tasbeehCount: number;
   naflDays: number;
+  fridayCount: number;
+  jumuahAttendedCount: number;
   completionRate: number;
   currentStreak: number;
   bestStreak: number;
@@ -190,6 +192,8 @@ export async function getSalatAnalytics(userId: string, days: number, clientToda
   let homeCount = 0;
   let tasbeehCount = 0;
   let naflDays = 0;
+  let fridayCount = 0;
+  let jumuahAttendedCount = 0;
 
   const perPrayer: SalatAnalyticsResult['perPrayer'] = {};
   for (const pid of PRAYER_IDS) {
@@ -215,6 +219,16 @@ export async function getSalatAnalytics(userId: string, days: number, clientToda
       }
     }
     if (log.nafl?.completed) naflDays++;
+
+    // Jumu'ah — Friday's Dhuhr, prayed specifically at the mosque (the
+    // obligation Jumu'ah adds on top of an ordinary Dhuhr).
+    if (new Date(log.date + 'T12:00:00').getDay() === 5) {
+      fridayCount++;
+      const dhuhr = log.prayers.dhuhr;
+      if ((dhuhr?.status === 'completed' || dhuhr?.status === 'kaza') && dhuhr.location === 'mosque') {
+        jumuahAttendedCount++;
+      }
+    }
   }
 
   const totalDays = statsLogs.length;
@@ -292,6 +306,8 @@ export async function getSalatAnalytics(userId: string, days: number, clientToda
     homeCount,
     tasbeehCount,
     naflDays,
+    fridayCount,
+    jumuahAttendedCount,
     completionRate,
     currentStreak,
     bestStreak,
