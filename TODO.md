@@ -26,17 +26,17 @@
 ## Salat Tracker
 
 ### Features
-- [ ] **Prayer time integration** — auto-mark a prayer window open/closed based on adhan times
-- [ ] **Missed prayer debt tracker** — count accumulated kaza prayers and track payback
-- [ ] **Jumu'ah tracking** — Friday prayer logged separately with attendance flag
-- [ ] **Tahajjud / Nafl** — optional voluntary prayers section
-- [ ] **Push reminders** — browser notification at adhan time
-- [ ] **Date navigation** — view/edit logs for past dates (not just today)
-- [ ] **Weekly summary card** — quick glance view for the last 7 days on the tracker page
+- [x] **Prayer time integration** — auto-mark a prayer window open/closed based on adhan times (2026-09-02: amber "window closed" flag once a today prayer's adhan-derived window passes while still unlogged)
+- [x] **Missed prayer debt tracker** — count accumulated kaza prayers and track payback (2026-09-02: per-prayer counter, auto-tracked from explicit "Miss" taps + manual adjust/set)
+- [x] **Jumu'ah tracking** — Friday prayer logged separately with attendance flag (2026-09-02: Jumu'ah Attendance % stat on analytics, mosque-specific)
+- [x] **Tahajjud / Nafl** — optional voluntary prayers section (already built — tile-grid picker with per-type rak'ah counters)
+- [ ] **Push reminders** — browser notification at adhan time (explicitly excluded from the 2026-09-02 pass)
+- [x] **Date navigation** — view/edit logs for past dates (not just today) (already built — prev/next day navigator)
+- [x] **Weekly summary card** — quick glance view for the last 7 days on the tracker page (2026-09-02: 7-dot strip, tap to jump)
 
 ### Analytics
-- [ ] **Monthly completion heatmap** — full calendar view with colour intensity
-- [ ] **Kaza debt chart** — stacked bar showing accumulation vs payback over time
+- [x] **Monthly completion heatmap** — full calendar view with colour intensity (already built — `prayerCalendar` grid on `/salat/analytics`)
+- [ ] **Kaza debt chart** — stacked bar showing accumulation vs payback over time (2026-09-02: current total shown as a stat tile; a historical trend chart needs periodic debt snapshots, not built yet)
 - [ ] **Mosque frequency trend** — weekly mosque attendance rate
 - [ ] **Best prayer streak per salat** — individual streaks for Fajr, Isha, etc.
 
