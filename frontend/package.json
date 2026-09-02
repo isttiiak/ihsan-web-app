@@ -25,7 +25,7 @@
     "i18next": "^26.3.6",
     "i18next-browser-languagedetector": "^8.2.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.2.8",
     "react-hot-toast": "^2.6.0",
     "react-i18next": "^17.0.11",
     "react-router-dom": "^6.28.0",
@@ -36,7 +36,7 @@
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",
     "@types/react": "^18.3.5",
-    "@types/react-dom": "^18.3.0",
+    "@types/react-dom": "^19.2.5",
     "@vitejs/plugin-react": "^5.2.0",
     "autoprefixer": "^10.4.20",
     "baseline-browser-mapping": "^2.10.19",
