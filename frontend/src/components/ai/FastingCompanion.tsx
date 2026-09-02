@@ -22,20 +22,31 @@ function cacheId(day: string, period: string, fastType: string): string {
   return `${day}|${period}|${fastType}`;
 }
 
-interface CachedMsg { id: string; message: string }
+interface CachedMsg {
+  id: string;
+  message: string;
+}
 
 function readCache(id: string): string | null {
   try {
     const raw = JSON.parse(localStorage.getItem(CACHE_KEY) ?? '{}') as CachedMsg;
     return raw.id === id ? raw.message : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 function writeCache(id: string, message: string): void {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ id, message })); } catch { /* full */ }
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ id, message }));
+  } catch {
+    /* full */
+  }
 }
 
 export default function FastingCompanion({
-  fastType, dayNumber, isPostMaghrib,
+  fastType,
+  dayNumber,
+  isPostMaghrib,
 }: {
   fastType: string;
   dayNumber?: number;
@@ -55,46 +66,70 @@ export default function FastingCompanion({
   useEffect(() => {
     if (!user || !aiEnabled) return;
     const cached = readCache(id);
-    if (cached) { setMessage(cached); return; }
+    if (cached) {
+      setMessage(cached);
+      return;
+    }
     if (companion.isPending || message) return;
     companion.mutate(
       { period, fastType, dayNumber },
-      { onSuccess: (r) => { setMessage(r.message); writeCache(id, r.message); } },
+      {
+        onSuccess: (r) => {
+          setMessage(r.message);
+          writeCache(id, r.message);
+        },
+      }
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
   }, [user, aiEnabled, id]);
 
   if (!user || !aiEnabled || dismissed || (!message && !companion.isPending)) return null;
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-      <div className={`rounded-2xl border p-3.5 ${
-        isPostMaghrib
-          ? 'border-brand-gold/25 bg-gradient-to-br from-brand-gold/10 to-brand-warm/[0.04]'
-          : 'border-brand-emerald/20 bg-brand-emerald/[0.05]'
-      }`}>
-        <AiBadge label={isPostMaghrib ? t('fastingCompanion.nearIftar', 'Naseeh · near iftar') : t('fastingCompanion.fastingToday', 'Naseeh · fasting today')} />
+      <div
+        className={`rounded-2xl border p-3.5 ${
+          isPostMaghrib
+            ? 'border-brand-gold/25 bg-gradient-to-br from-brand-gold/10 to-brand-warm/[0.04]'
+            : 'border-brand-emerald/20 bg-brand-emerald/[0.05]'
+        }`}
+      >
+        <AiBadge
+          label={
+            isPostMaghrib
+              ? t('fastingCompanion.nearIftar', 'Naseeh · near iftar')
+              : t('fastingCompanion.fastingToday', 'Naseeh · fasting today')
+          }
+        />
         {companion.isPending && !message ? (
           <div className="flex items-center gap-2 mt-2">
             {['#c9a96e', '#7a9e6e', '#5a9e8e'].map((c, i) => (
               <motion.span
-                key={c} className="w-2 h-2 rounded-full" style={{ background: c }}
+                key={c}
+                className="w-2 h-2 rounded-full"
+                style={{ background: c }}
                 animate={{ opacity: [0.3, 1, 0.3] }}
                 transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.15 }}
               />
             ))}
           </div>
         ) : (
-          <p className={`text-sm leading-relaxed mt-2 ${
-            isPostMaghrib ? 'text-brand-gold/80' : 'text-white/70'
-          }`}>{message}</p>
+          <p
+            className={`text-sm leading-relaxed mt-2 ${
+              isPostMaghrib ? 'text-brand-gold/80' : 'text-white/70'
+            }`}
+          >
+            {message}
+          </p>
         )}
         <div className="flex items-center justify-between mt-2">
           <AiDisclaimer />
           <button
             className="text-white/20 hover:text-white/50 text-[10px]"
             onClick={() => setDismissed(true)}
-          >{t('naseehInsights.dismiss', 'Dismiss')}</button>
+          >
+            {t('naseehInsights.dismiss', 'Dismiss')}
+          </button>
         </div>
       </div>
     </motion.div>

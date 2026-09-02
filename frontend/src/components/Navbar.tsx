@@ -20,7 +20,6 @@ import {
   InformationCircleIcon,
   ShieldCheckIcon,
   ChatBubbleLeftRightIcon,
-  EnvelopeIcon,
   GlobeAltIcon,
 } from '@heroicons/react/24/outline';
 import i18n from '../i18n.js';
@@ -42,40 +41,40 @@ const PAGE_KEYS: Record<string, string> = {
   '/profile': 'nav.myProfile',
 };
 const PAGE_META: Record<string, { title: string; emoji: string }> = {
-  '/zikr':            { title: 'Zikr Counter',   emoji: '📿' },
-  '/zikr/analytics':  { title: 'Zikr Analytics', emoji: '📊' },
-  '/salat':           { title: 'Salat Tracker',   emoji: '🕌' },
+  '/zikr': { title: 'Zikr Counter', emoji: '📿' },
+  '/zikr/analytics': { title: 'Zikr Analytics', emoji: '📊' },
+  '/salat': { title: 'Salat Tracker', emoji: '🕌' },
   '/salat/analytics': { title: 'Salat Analytics', emoji: '📊' },
-  '/fasting':         { title: 'Fasting',         emoji: '🌙' },
+  '/fasting': { title: 'Fasting', emoji: '🌙' },
   '/fasting/analytics': { title: 'Fasting Analytics', emoji: '📊' },
-  '/prayer-times':    { title: 'Prayer Times',    emoji: '🕐' },
-  '/quran':           { title: 'Quran Habit',     emoji: '📖' },
-  '/friends':         { title: 'Friends',         emoji: '🤝' },
-  '/settings':        { title: 'Settings',        emoji: '⚙️'  },
-  '/about':           { title: 'About Ihsan',     emoji: '🕌' },
-  '/privacy':         { title: 'Privacy',         emoji: '🔒' },
-  '/feedback':        { title: 'Feedback',        emoji: '💬' },
-  '/contact':         { title: 'Contact Us',      emoji: '📨' },
-  '/profile':         { title: 'My Profile',      emoji: '👤' },
+  '/prayer-times': { title: 'Prayer Times', emoji: '🕐' },
+  '/quran': { title: 'Quran Habit', emoji: '📖' },
+  '/friends': { title: 'Friends', emoji: '🤝' },
+  '/settings': { title: 'Settings', emoji: '⚙️' },
+  '/about': { title: 'About Ihsan', emoji: '🕌' },
+  '/privacy': { title: 'Privacy', emoji: '🔒' },
+  '/feedback': { title: 'Feedback', emoji: '💬' },
+  '/contact': { title: 'Contact Us', emoji: '📨' },
+  '/profile': { title: 'My Profile', emoji: '👤' },
 };
 
 // Maps each page to its logical parent for the back button
 const PARENT_ROUTES: Record<string, string> = {
-  '/zikr':            '/',
-  '/zikr/analytics':  '/zikr',
-  '/salat':           '/',
+  '/zikr': '/',
+  '/zikr/analytics': '/zikr',
+  '/salat': '/',
   '/salat/analytics': '/salat',
-  '/fasting':         '/',
+  '/fasting': '/',
   '/fasting/analytics': '/fasting',
-  '/prayer-times':    '/',
-  '/quran':           '/',
-  '/friends':         '/',
-  '/settings':        '/',
-  '/about':           '/',
-  '/privacy':         '/',
-  '/feedback':        '/',
-  '/contact':         '/',
-  '/profile':         '/',
+  '/prayer-times': '/',
+  '/quran': '/',
+  '/friends': '/',
+  '/settings': '/',
+  '/about': '/',
+  '/privacy': '/',
+  '/feedback': '/',
+  '/contact': '/',
+  '/profile': '/',
 };
 
 // ── Typewriter greeting ───────────────────────────────────────────────────────
@@ -94,7 +93,8 @@ function TextType({ text, speed = 55 }: { text: string; speed?: number }) {
   return (
     <span
       style={{
-        backgroundImage: 'linear-gradient(90deg,var(--brand-emerald,#7a9e6e) 0%,var(--brand-gold,#c9a96e) 50%,var(--brand-warm,#c4825a) 100%)',
+        backgroundImage:
+          'linear-gradient(90deg,var(--brand-emerald,#7a9e6e) 0%,var(--brand-gold,#c9a96e) 50%,var(--brand-warm,#c4825a) 100%)',
         backgroundSize: '200% 100%',
         backgroundClip: 'text',
         WebkitBackgroundClip: 'text',
@@ -110,8 +110,8 @@ function TextType({ text, speed = 55 }: { text: string; speed?: number }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Navbar() {
-  const location  = useLocation();
-  const navigate  = useNavigate();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   /** translated page title with English fallback */
   const pageTitle = (path: string, fallback: string) =>
@@ -124,10 +124,13 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const isHome     = location.pathname === '/';
-  const pageMeta   = PAGE_META[location.pathname];
+  const isHome = location.pathname === '/';
+  const pageMeta = PAGE_META[location.pathname];
   const parentPath = PARENT_ROUTES[location.pathname] ?? '/';
-  const parentMeta = parentPath === '/' ? { title: 'Home', emoji: '🏠' } : (PAGE_META[parentPath] ?? { title: 'Home', emoji: '🏠' });
+  const parentMeta =
+    parentPath === '/'
+      ? { title: 'Home', emoji: '🏠' }
+      : (PAGE_META[parentPath] ?? { title: 'Home', emoji: '🏠' });
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -140,7 +143,9 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handler);
   }, [dropdownOpen]);
 
-  useEffect(() => { setDropdownOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    setDropdownOpen(false);
+  }, [location.pathname]);
 
   // ── Context data (always called — React Query's enabled guards auth) ────────
   const { data: analyticsData } = useAnalytics(1);
@@ -152,18 +157,21 @@ export default function Navbar() {
   const noorAllTimeVisible = onFriendsPage || showNoorAllTime;
   const { data: noor } = useNoor(!!user && (noorTodayVisible || noorAllTimeVisible));
 
-  const streak        = analyticsData?.streak?.currentStreak ?? null;
-  const dailyGoal     = analyticsData?.goal?.dailyTarget ?? null;
+  const streak = analyticsData?.streak?.currentStreak ?? null;
+  const dailyGoal = analyticsData?.goal?.dailyTarget ?? null;
   const confirmedTotal = analyticsData?.today?.total ?? 0;
   const effectiveTotal = Math.max(localTotal, confirmedTotal + pendingTotal);
-  const goalPct  = dailyGoal ? Math.min(100, Math.round((effectiveTotal / dailyGoal) * 100)) : null;
-  const goalMet  = dailyGoal !== null && effectiveTotal >= dailyGoal;
+  const goalPct = dailyGoal ? Math.min(100, Math.round((effectiveTotal / dailyGoal) * 100)) : null;
+  const goalMet = dailyGoal !== null && effectiveTotal >= dailyGoal;
 
   const firstName = user?.displayName?.split(' ')[0] ?? '';
-  const greeting  = `${t('home.greeting')}${firstName ? ', ' + firstName : ''}`;
+  const greeting = `${t('home.greeting')}${firstName ? ', ' + firstName : ''}`;
 
   // ── Center content by route ───────────────────────────────────────────────
-  const hijriToday = (() => { const h = getHijriToday(); return h ? formatHijriDate(h) : null; })();
+  const hijriToday = (() => {
+    const h = getHijriToday();
+    return h ? formatHijriDate(h) : null;
+  })();
 
   const todayEnglish = (() => {
     return formatLocaleDate(new Date(), { month: 'short', day: 'numeric', year: 'numeric' });
@@ -173,16 +181,16 @@ export default function Navbar() {
     if (isHome && user) {
       return (
         <div className="hidden sm:flex flex-col items-center truncate">
-          <span className="text-sm font-bold leading-tight"><TextType text={greeting} speed={50} /></span>
+          <span className="text-sm font-bold leading-tight">
+            <TextType text={greeting} speed={50} />
+          </span>
         </div>
       );
     }
     if (location.pathname === '/zikr') {
       return (
         <div className="hidden sm:flex items-center gap-1.5">
-          {streak !== null && (
-            <StreakBadge streak={streak} state={analyticsData?.streak?.state} />
-          )}
+          {streak !== null && <StreakBadge streak={streak} state={analyticsData?.streak?.state} />}
           <GoalBadge pct={goalPct} met={goalMet} />
         </div>
       );
@@ -194,7 +202,6 @@ export default function Navbar() {
     <>
       <nav className="sticky top-0 z-40 bg-gradient-to-r from-[#14130e] via-brand-deep to-brand-deep border-b border-brand-emerald/20 shadow-[0_2px_16px_rgba(122,158,110,0.08)]">
         <div className="flex items-center h-14 px-3 sm:px-4 gap-2">
-
           {/* ── Left: logo + back + title ─────────────────── */}
           <div className="flex items-center gap-0.5 flex-shrink-0 min-w-0">
             <Link
@@ -202,7 +209,9 @@ export default function Navbar() {
               className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl hover:bg-white/10 transition-all group"
             >
               <img src={logo as string} alt="Ihsan" className="w-5 h-5 flex-shrink-0" />
-              <span className="font-display font-bold text-white text-sm hidden sm:inline group-hover:text-brand-emerald transition-colors">Ihsan</span>
+              <span className="font-display font-bold text-white text-sm hidden sm:inline group-hover:text-brand-emerald transition-colors">
+                Ihsan
+              </span>
             </Link>
 
             {!isHome && (
@@ -212,13 +221,18 @@ export default function Navbar() {
                   className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all text-xs font-medium flex-shrink-0"
                 >
                   <ArrowLeftIcon className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{parentMeta.emoji} {parentPath === '/' ? t('nav.home') : pageTitle(parentPath, parentMeta.title)}</span>
+                  <span className="hidden sm:inline">
+                    {parentMeta.emoji}{' '}
+                    {parentPath === '/' ? t('nav.home') : pageTitle(parentPath, parentMeta.title)}
+                  </span>
                 </button>
 
                 {pageMeta && (
                   <div className="flex items-center gap-1 min-w-0 pl-1">
                     <span className="text-white/15 text-sm hidden sm:inline">|</span>
-                    <span className="text-sm shrink-0" aria-hidden>{pageMeta.emoji}</span>
+                    <span className="text-sm shrink-0" aria-hidden>
+                      {pageMeta.emoji}
+                    </span>
                     <span className="font-semibold text-white/70 text-xs sm:text-sm truncate max-w-[70px] sm:max-w-[130px]">
                       {pageTitle(location.pathname, pageMeta.title)}
                     </span>
@@ -236,7 +250,8 @@ export default function Navbar() {
                 <span
                   className="text-xs font-bold truncate block"
                   style={{
-                    backgroundImage: 'linear-gradient(90deg,var(--brand-emerald,#7a9e6e) 0%,var(--brand-gold,#c9a96e) 50%,var(--brand-warm,#c4825a) 100%)',
+                    backgroundImage:
+                      'linear-gradient(90deg,var(--brand-emerald,#7a9e6e) 0%,var(--brand-gold,#c9a96e) 50%,var(--brand-warm,#c4825a) 100%)',
                     backgroundSize: '200% 100%',
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',
@@ -255,24 +270,36 @@ export default function Navbar() {
           <div className="flex items-center gap-0.5 flex-shrink-0">
             {/* Language toggle — cycles en ↔ bn */}
             <button
-              onClick={() => { const next = i18n.resolvedLanguage === 'bn' ? 'en' : 'bn'; void i18n.changeLanguage(next); syncQuranTranslationWithLang(next); }}
+              onClick={() => {
+                const next = i18n.resolvedLanguage === 'bn' ? 'en' : 'bn';
+                void i18n.changeLanguage(next);
+                syncQuranTranslationWithLang(next);
+              }}
               aria-label={t('nav.switchLang')}
               className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all mr-0.5"
             >
               <GlobeAltIcon className="w-4 h-4" />
-              <span className="text-[10px] font-bold uppercase">{i18n.resolvedLanguage === 'bn' ? 'EN' : 'বা'}</span>
+              <span className="text-[10px] font-bold uppercase">
+                {i18n.resolvedLanguage === 'bn' ? 'EN' : 'বা'}
+              </span>
             </button>
             {user && noor && (noorTodayVisible || noorAllTimeVisible) && (
               <div className="flex items-center gap-1 mr-1">
                 {noorTodayVisible && (
-                  <div className="tooltip tooltip-bottom" data-tip="Today's Noor — fresh light every day, resets at midnight">
+                  <div
+                    className="tooltip tooltip-bottom"
+                    data-tip="Today's Noor — fresh light every day, resets at midnight"
+                  >
                     <span className="px-2 py-0.5 rounded-full bg-brand-emerald/15 border border-brand-emerald/40 text-brand-emerald text-xs font-bold flex items-center gap-1 whitespace-nowrap">
                       ✨ {formatLocaleNumber(noor.today)}
                     </span>
                   </div>
                 )}
                 {noorAllTimeVisible && (
-                  <div className="tooltip tooltip-bottom" data-tip="All-time Noor — every day's light, gathered. Never resets">
+                  <div
+                    className="tooltip tooltip-bottom"
+                    data-tip="All-time Noor — every day's light, gathered. Never resets"
+                  >
                     <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 border border-brand-gold/40 text-brand-gold text-xs font-bold flex items-center gap-1 whitespace-nowrap">
                       🌟 {formatLocaleNumber(noor.allTime ?? 0)}
                     </span>
@@ -284,7 +311,11 @@ export default function Navbar() {
             {isHome && user && (
               <div className="hidden md:flex flex-col items-end mr-2 shrink-0 px-2 py-1 rounded-xl bg-white/5 border border-brand-border/60">
                 <span className="text-white/80 text-xs font-bold leading-none">{todayEnglish}</span>
-                {hijriToday && <span className="text-brand-gold/70 text-[10px] font-medium leading-none mt-0.5">{hijriToday}</span>}
+                {hijriToday && (
+                  <span className="text-brand-gold/70 text-[10px] font-medium leading-none mt-0.5">
+                    {hijriToday}
+                  </span>
+                )}
               </div>
             )}
 
@@ -297,11 +328,17 @@ export default function Navbar() {
                   className={`flex items-center justify-center w-8 h-8 rounded-full transition-all ring-2 ${dropdownOpen ? 'ring-brand-emerald scale-105' : 'ring-brand-emerald/30 hover:ring-brand-emerald/70'}`}
                 >
                   {user.photoUrl ? (
-                    <img alt="Profile" src={user.photoUrl} className="w-8 h-8 rounded-full object-cover" />
+                    <img
+                      alt="Profile"
+                      src={user.photoUrl}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-brand-emerald/30 flex items-center justify-center">
                       <span className="text-xs font-black text-white">
-                        {user.displayName?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? 'U'}
+                        {user.displayName?.[0]?.toUpperCase() ??
+                          user.email?.[0]?.toUpperCase() ??
+                          'U'}
                       </span>
                     </div>
                   )}
@@ -312,7 +349,11 @@ export default function Navbar() {
                     <div className="px-4 py-3 border-b border-brand-border/60 bg-brand-surface/60">
                       <div className="flex items-center gap-3">
                         {user.photoUrl ? (
-                          <img src={user.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover ring-2 ring-brand-emerald/40 flex-shrink-0" />
+                          <img
+                            src={user.photoUrl}
+                            alt=""
+                            className="w-9 h-9 rounded-full object-cover ring-2 ring-brand-emerald/40 flex-shrink-0"
+                          />
                         ) : (
                           <div className="w-9 h-9 rounded-full bg-brand-emerald/20 ring-2 ring-brand-emerald/30 flex items-center justify-center flex-shrink-0">
                             <span className="text-sm font-black text-brand-emerald">
@@ -321,7 +362,9 @@ export default function Navbar() {
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="text-white font-bold text-sm truncate leading-snug">{user.displayName ?? 'User'}</p>
+                          <p className="text-white font-bold text-sm truncate leading-snug">
+                            {user.displayName ?? 'User'}
+                          </p>
                           <p className="text-white/30 text-xs truncate">{user.email}</p>
                         </div>
                       </div>
@@ -367,7 +410,9 @@ export default function Navbar() {
                           onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-brand-pink/10 text-sm transition-colors"
                         >
-                          <span className="w-4 h-4 grid place-items-center text-brand-pink/90 text-sm leading-none">🌸</span>
+                          <span className="w-4 h-4 grid place-items-center text-brand-pink/90 text-sm leading-none">
+                            🌸
+                          </span>
                           {t('nav.rayhanahCycle')}
                         </Link>
                       )}
@@ -385,7 +430,10 @@ export default function Navbar() {
                       <div className="border-t border-brand-border/60 mt-1 pt-1">
                         <button
                           className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 text-sm transition-colors"
-                          onClick={() => { setDropdownOpen(false); setConfirmLogout(true); }}
+                          onClick={() => {
+                            setDropdownOpen(false);
+                            setConfirmLogout(true);
+                          }}
                         >
                           <ArrowRightOnRectangleIcon className="w-4 h-4" />
                           {t('nav.signOut')}
@@ -416,7 +464,12 @@ export default function Navbar() {
               <h3 className="text-lg font-black text-brand-emerald">{t('nav.signOutConfirm')}</h3>
               <p className="text-sm text-white/60">{t('nav.signOutMsg')}</p>
               <div className="flex gap-3 justify-end">
-                <button className="btn btn-ghost btn-sm text-white/60" onClick={() => setConfirmLogout(false)}>{t('common.cancel')}</button>
+                <button
+                  className="btn btn-ghost btn-sm text-white/60"
+                  onClick={() => setConfirmLogout(false)}
+                >
+                  {t('common.cancel')}
+                </button>
                 <button
                   className="btn btn-sm bg-red-500 hover:bg-red-600 text-white border-0"
                   onClick={async () => {

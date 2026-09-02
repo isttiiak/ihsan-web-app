@@ -1,20 +1,51 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import {
-  ChevronLeftIcon, ChevronRightIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon,
-  BookmarkIcon as BookmarkOutline, SpeakerWaveIcon, SpeakerXMarkIcon, BookOpenIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ArrowsPointingOutIcon,
+  ArrowsPointingInIcon,
+  BookmarkIcon as BookmarkOutline,
+  SpeakerWaveIcon,
+  SpeakerXMarkIcon,
+  BookOpenIcon,
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolid, PlayIcon, PauseIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
-import { useQuranSummary, useReadAyat, useToggleBookmark, useSetResume } from '../hooks/useQuran.js';
+import {
+  useQuranSummary,
+  useReadAyat,
+  useToggleBookmark,
+  useSetResume,
+} from '../hooks/useQuran.js';
 import { useTafsir } from '../hooks/useQuran.js';
 import { TAFSIRS, getPreferredTafsir, setPreferredTafsir } from '../utils/tafsir.js';
 import { QURANIC_DUAS } from '../utils/quranMeta.js';
 import { getArabicFont, getFontPx, translitEnabled } from '../utils/quranPrefs.js';
-import { loadSurahList, loadSurahText, ayahAudioUrl, juzOf, locateGlobalAyah, selectedTranslations, surahDisplayName, surahMeaningDisplay, TRANSLATIONS, type SurahMeta, type AyahText } from '../utils/quranData.js';
+import {
+  loadSurahList,
+  loadSurahText,
+  ayahAudioUrl,
+  juzOf,
+  locateGlobalAyah,
+  selectedTranslations,
+  surahDisplayName,
+  surahMeaningDisplay,
+  TRANSLATIONS,
+  type SurahMeta,
+  type AyahText,
+} from '../utils/quranData.js';
 import { formatLocaleNumber } from '../utils/localeDate.js';
 import { translateReference } from '../utils/localeReference.js';
 import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrate.js';
@@ -48,10 +79,15 @@ import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrat
 // device (Istiak: web said āyah 12, phone said 3 — critical bug).
 const RESUME_KEY = 'ihsan_reader_pos';
 function readResumeMap(): Record<string, number> {
-  try { return JSON.parse(localStorage.getItem(RESUME_KEY) ?? '{}') as Record<string, number>; }
-  catch { return {}; }
+  try {
+    return JSON.parse(localStorage.getItem(RESUME_KEY) ?? '{}') as Record<string, number>;
+  } catch {
+    return {};
+  }
 }
-function getResume(surah: number): number { return readResumeMap()[String(surah)] ?? 0; }
+function getResume(surah: number): number {
+  return readResumeMap()[String(surah)] ?? 0;
+}
 function saveResume(surah: number, ayah: number): void {
   const m = readResumeMap();
   m[String(surah)] = ayah;
@@ -77,7 +113,7 @@ export default function QuranReader() {
   // When opened from "Duas from the Quran": carries the story/evidence panel
   const dua = useMemo(() => {
     const id = params.get('dua');
-    return id ? QURANIC_DUAS.find((d) => d.id === id) ?? null : null;
+    return id ? (QURANIC_DUAS.find((d) => d.id === id) ?? null) : null;
   }, [params]);
   const [contextOpen, setContextOpen] = useState(false);
   const hasStart = params.get('start') != null;
@@ -116,12 +152,15 @@ export default function QuranReader() {
   });
   // Typography prefs — read once per mount (the settings drawer writes them)
   const arabicFont = useMemo(() => getArabicFont(), []);
-  const baseFs = useMemo(() => ({
-    arabic: getFontPx('arabic'),
-    translation: getFontPx('translation'),
-    translit: getFontPx('translit'),
-    tafsir: getFontPx('tafsir'),
-  }), []);
+  const baseFs = useMemo(
+    () => ({
+      arabic: getFontPx('arabic'),
+      translation: getFontPx('translation'),
+      translit: getFontPx('translit'),
+      tafsir: getFontPx('tafsir'),
+    }),
+    []
+  );
   const showTranslit = useMemo(() => translitEnabled(), []);
   // In-app ZOOM (Istiak's spec): big screens have room to spare — scale every
   // reader text together, without touching the browser zoom. Persisted.
@@ -136,12 +175,15 @@ export default function QuranReader() {
       return n;
     });
   }, []);
-  const fs = useMemo(() => ({
-    arabic: Math.round(baseFs.arabic * zoom),
-    translation: Math.round(baseFs.translation * zoom),
-    translit: Math.round(baseFs.translit * zoom),
-    tafsir: Math.round(baseFs.tafsir * zoom),
-  }), [baseFs, zoom]);
+  const fs = useMemo(
+    () => ({
+      arabic: Math.round(baseFs.arabic * zoom),
+      translation: Math.round(baseFs.translation * zoom),
+      translit: Math.round(baseFs.translit * zoom),
+      tafsir: Math.round(baseFs.tafsir * zoom),
+    }),
+    [baseFs, zoom]
+  );
   const editions = useMemo(() => selectedTranslations(), []);
   const editionLabel = (id: string) => TRANSLATIONS.find((tf) => tf.id === id)?.label ?? id;
 
@@ -158,7 +200,10 @@ export default function QuranReader() {
   const seenRef = useRef(new Set<number>());
   const suppressSaveRef = useRef(false);
 
-  const surahMeta = useMemo(() => surahs.find((s) => s.number === surahNo) ?? null, [surahs, surahNo]);
+  const surahMeta = useMemo(
+    () => surahs.find((s) => s.number === surahNo) ?? null,
+    [surahs, surahNo]
+  );
   const current = ayat[idx] ?? null;
   const lastIdx = endAyah ? Math.min(ayat.length - 1, endAyah - 1) : ayat.length - 1;
   const firstIdx = mode === 'bundle' ? startAyah - 1 : 0;
@@ -180,9 +225,19 @@ export default function QuranReader() {
         setIdx(initialIdx);
         setLoading(false);
       })
-      .catch(() => { if (alive) { setLoading(false); toast.error(t('quranReader.loadError', 'Could not load the surah — check your connection.'), { id: 'quran-load' }); } });
-    return () => { alive = false; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      .catch(() => {
+        if (alive) {
+          setLoading(false);
+          toast.error(
+            t('quranReader.loadError', 'Could not load the surah — check your connection.'),
+            { id: 'quran-load' }
+          );
+        }
+      });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
   }, [surahNo]);
 
   // Offer "continue where you left off?" once text (and, when signed in, the
@@ -197,44 +252,57 @@ export default function QuranReader() {
       saveResume(surahNo, saved); // refresh the local cache from the server
       setResumeAyah(saved);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
   }, [loading, summary, surahNo, usesResume, hasStart, user]);
 
   // Push the resume position to the server, debounced — cheap and idempotent.
-  const syncResume = useCallback((ayah: number) => {
-    if (!user) return;
-    if (resumeSyncTimerRef.current) clearTimeout(resumeSyncTimerRef.current);
-    resumeSyncTimerRef.current = setTimeout(() => {
-      setResumeServer.mutate({ surah: surahNo, ayah });
-    }, 1500);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, surahNo]);
+  const syncResume = useCallback(
+    (ayah: number) => {
+      if (!user) return;
+      if (resumeSyncTimerRef.current) clearTimeout(resumeSyncTimerRef.current);
+      resumeSyncTimerRef.current = setTimeout(() => {
+        setResumeServer.mutate({ surah: surahNo, ayah });
+      }, 1500);
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
+    },
+    [user, surahNo]
+  );
 
   // ── logging: count each NEW ayah the reader moves past, flush in batches ──
-  const flush = useCallback((completedSurah = false) => {
-    const n = pendingRef.current;
-    if ((n <= 0 && !completedSurah) || !user || !countsGoal) return;
-    pendingRef.current = 0;
-    readAyat.mutate(
-      { count: n, surah: surahNo, advanceKhatm: mode === 'khatam', completedSurah },
-      { onSuccess: (r) => { if (r.khatmCompleted) celebrateKhatm(); } }
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, surahNo, mode, countsGoal]);
+  const flush = useCallback(
+    (completedSurah = false) => {
+      const n = pendingRef.current;
+      if ((n <= 0 && !completedSurah) || !user || !countsGoal) return;
+      pendingRef.current = 0;
+      readAyat.mutate(
+        { count: n, surah: surahNo, advanceKhatm: mode === 'khatam', completedSurah },
+        {
+          onSuccess: (r) => {
+            if (r.khatmCompleted) celebrateKhatm();
+          },
+        }
+      );
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
+    },
+    [user, surahNo, mode, countsGoal]
+  );
 
   useEffect(() => () => flush(), [flush]); // flush on unmount / surah change
 
-  const markRead = useCallback((ayahIdx: number) => {
-    if (!countsGoal) return; // bundles/duas don't count toward the goal
-    const a = ayat[ayahIdx];
-    if (!a || seenRef.current.has(a.number)) return;
-    seenRef.current.add(a.number);
-    pendingRef.current += 1;
-    const before = (summary?.todayAyat ?? 0) + pendingRef.current - 1;
-    const goal = summary?.profile.dailyGoalAyat ?? 1;
-    if (before < goal && before + 1 >= goal) celebrateGoal();
-    if (pendingRef.current >= 5) flush();
-  }, [ayat, flush, summary, countsGoal]);
+  const markRead = useCallback(
+    (ayahIdx: number) => {
+      if (!countsGoal) return; // bundles/duas don't count toward the goal
+      const a = ayat[ayahIdx];
+      if (!a || seenRef.current.has(a.number)) return;
+      seenRef.current.add(a.number);
+      pendingRef.current += 1;
+      const before = (summary?.todayAyat ?? 0) + pendingRef.current - 1;
+      const goal = summary?.profile.dailyGoalAyat ?? 1;
+      if (before < goal && before + 1 >= goal) celebrateGoal();
+      if (pendingRef.current >= 5) flush();
+    },
+    [ayat, flush, summary, countsGoal]
+  );
 
   // ── audio: play ONLY the current ayah, highlight words while it runs ──
   const stopAudio = useCallback(() => {
@@ -247,7 +315,10 @@ export default function QuranReader() {
 
   const playAyah = useCallback(() => {
     if (!current) return;
-    if (playing) { stopAudio(); return; }
+    if (playing) {
+      stopAudio();
+      return;
+    }
     const a = new Audio(ayahAudioUrl(current.number));
     a.volume = volume;
     audioRef.current = a;
@@ -259,13 +330,30 @@ export default function QuranReader() {
       setWordIdx(0);
       wordTimerRef.current = setInterval(() => {
         w += 1;
-        if (w >= words) { if (wordTimerRef.current) clearInterval(wordTimerRef.current); return; }
+        if (w >= words) {
+          if (wordTimerRef.current) clearInterval(wordTimerRef.current);
+          return;
+        }
         setWordIdx(w);
       }, per);
     });
-    a.addEventListener('ended', () => { stopAudio(); }); // ONE ayah, then stop
-    a.addEventListener('error', () => { stopAudio(); toast.error(t('quranReader.audioError', 'Audio unavailable — try again.'), { id: 'ayah-audio' }); });
-    void a.play().then(() => setPlaying(true)).catch(() => toast.error(t('quranReader.audioTapAgain', 'Tap again to allow audio.'), { id: 'ayah-audio' }));
+    a.addEventListener('ended', () => {
+      stopAudio();
+    }); // ONE ayah, then stop
+    a.addEventListener('error', () => {
+      stopAudio();
+      toast.error(t('quranReader.audioError', 'Audio unavailable — try again.'), {
+        id: 'ayah-audio',
+      });
+    });
+    void a
+      .play()
+      .then(() => setPlaying(true))
+      .catch(() =>
+        toast.error(t('quranReader.audioTapAgain', 'Tap again to allow audio.'), {
+          id: 'ayah-audio',
+        })
+      );
   }, [current, playing, stopAudio, volume]);
 
   const changeVolume = useCallback((v: number) => {
@@ -275,25 +363,34 @@ export default function QuranReader() {
   }, []);
 
   // ── navigation ──
-  const goToIdx = useCallback((next: number) => {
-    stopAudio();
-    setIdx(next);
-    if (usesResume && !suppressSaveRef.current) {
-      const a = ayat[next];
-      if (a) { saveResume(surahNo, a.numberInSurah); syncResume(a.numberInSurah); }
-    }
-  }, [stopAudio, usesResume, ayat, surahNo, syncResume]);
+  const goToIdx = useCallback(
+    (next: number) => {
+      stopAudio();
+      setIdx(next);
+      if (usesResume && !suppressSaveRef.current) {
+        const a = ayat[next];
+        if (a) {
+          saveResume(surahNo, a.numberInSurah);
+          syncResume(a.numberInSurah);
+        }
+      }
+    },
+    [stopAudio, usesResume, ayat, surahNo, syncResume]
+  );
 
-  const finishAndRedirect = useCallback((msg: string) => {
-    suppressSaveRef.current = true;
-    clearResume(surahNo);
-    syncResume(0); // clear on the server too
-    celebrateSmall();
-    toast.success(msg, { id: 'reader-done', duration: 2200 });
-    // Finishing a duʿā returns to the DUA SECTION of the Quran home, not the
-    // top of the page (Istiak: landing mid-page felt wrong).
-    setTimeout(() => navigate(dua ? '/quran#duas' : '/quran'), 850);
-  }, [surahNo, navigate, syncResume, dua]);
+  const finishAndRedirect = useCallback(
+    (msg: string) => {
+      suppressSaveRef.current = true;
+      clearResume(surahNo);
+      syncResume(0); // clear on the server too
+      celebrateSmall();
+      toast.success(msg, { id: 'reader-done', duration: 2200 });
+      // Finishing a duʿā returns to the DUA SECTION of the Quran home, not the
+      // top of the page (Istiak: landing mid-page felt wrong).
+      setTimeout(() => navigate(dua ? '/quran#duas' : '/quran'), 850);
+    },
+    [surahNo, navigate, syncResume, dua]
+  );
 
   const goNext = useCallback(() => {
     stopAudio();
@@ -304,7 +401,9 @@ export default function QuranReader() {
     }
     // At the last ayah of this view.
     if (mode === 'bundle') {
-      finishAndRedirect(t('quranReader.bundleComplete', 'Complete — may it protect and bless you 🤲'));
+      finishAndRedirect(
+        t('quranReader.bundleComplete', 'Complete — may it protect and bless you 🤲')
+      );
       return;
     }
     // free / khatam / single reached the surah's end
@@ -313,13 +412,26 @@ export default function QuranReader() {
     clearResume(surahNo);
     syncResume(0);
     if (mode === 'single') {
-      finishAndRedirect(t('quranReader.singleComplete', '{{name}} complete 🌿', { name: surahMeta ? surahDisplayName(surahMeta, i18n.language) : t('quranReader.surah', 'Surah') }));
+      finishAndRedirect(
+        t('quranReader.singleComplete', '{{name}} complete 🌿', {
+          name: surahMeta
+            ? surahDisplayName(surahMeta, i18n.language)
+            : t('quranReader.surah', 'Surah'),
+        })
+      );
       return;
     }
     if (surahNo < 114) {
       suppressSaveRef.current = true;
       celebrateSmall();
-      toast.success(t('quranReader.surahDone', '{{name}} completed — onward! 🌿', { name: surahMeta ? surahDisplayName(surahMeta, i18n.language) : t('quranReader.surah', 'Surah') }), { id: 'surah-done', duration: 2200 });
+      toast.success(
+        t('quranReader.surahDone', '{{name}} completed — onward! 🌿', {
+          name: surahMeta
+            ? surahDisplayName(surahMeta, i18n.language)
+            : t('quranReader.surah', 'Surah'),
+        }),
+        { id: 'surah-done', duration: 2200 }
+      );
       // REPLACE so Back returns to where you came from — not the finished surah
       // — and so you can't step back into the previous surah.
       navigate(`/quran/read/${surahNo + 1}?mode=${mode}`, { replace: true });
@@ -327,7 +439,20 @@ export default function QuranReader() {
       finishAndRedirect(t('quranReader.khatmComplete', 'Khatm complete — Allahu akbar! 🕋'));
       celebrateKhatm();
     }
-  }, [idx, lastIdx, markRead, stopAudio, flush, mode, surahNo, surahMeta, navigate, goToIdx, finishAndRedirect, syncResume]);
+  }, [
+    idx,
+    lastIdx,
+    markRead,
+    stopAudio,
+    flush,
+    mode,
+    surahNo,
+    surahMeta,
+    navigate,
+    goToIdx,
+    finishAndRedirect,
+    syncResume,
+  ]);
 
   const goPrev = useCallback(() => {
     if (idx > firstIdx) goToIdx(idx - 1);
@@ -335,7 +460,12 @@ export default function QuranReader() {
 
   // ── Tafsir (authentic, from quran.com — NO AI anywhere in the Quran rooms) ──
   const ayahNo = current?.numberInSurah ?? 0;
-  const tafsir = useTafsir(surahNo, ayahNo, tafsirEdition, (tafsirOpen || splitTafsir) && ayahNo > 0);
+  const tafsir = useTafsir(
+    surahNo,
+    ayahNo,
+    tafsirEdition,
+    (tafsirOpen || splitTafsir) && ayahNo > 0
+  );
   const tafsirIsBn = TAFSIRS.find((tf) => tf.id === tafsirEdition)?.language === 'bn';
   // Calm long-form reading: warm ink (never pure white), generous line-height,
   // and a Bengali-friendly font stack when a বাংলা edition is selected.
@@ -343,7 +473,12 @@ export default function QuranReader() {
     color: '#d6d0bf',
     fontSize: fs.tafsir,
     lineHeight: tafsirIsBn ? 2.15 : 1.95,
-    ...(tafsirIsBn ? { fontFamily: "'Noto Sans Bengali', 'Hind Siliguri', 'Bangla Sangam MN', 'Vrinda', sans-serif" } : {}),
+    ...(tafsirIsBn
+      ? {
+          fontFamily:
+            "'Noto Sans Bengali', 'Hind Siliguri', 'Bangla Sangam MN', 'Vrinda', sans-serif",
+        }
+      : {}),
   } as const;
   const changeTafsirEdition = (id: number) => {
     setTafsirEdition(id);
@@ -364,7 +499,9 @@ export default function QuranReader() {
     try {
       const p = el?.requestFullscreen?.();
       if (p) p.catch(() => {});
-    } catch { /* no native fullscreen — CSS fallback still applies */ }
+    } catch {
+      /* no native fullscreen — CSS fallback still applies */
+    }
     setFullscreen(true);
   }, [fullscreen]);
 
@@ -411,7 +548,10 @@ export default function QuranReader() {
     };
     const onUp = () => {
       draggingRef.current = false;
-      setSplitPct((v) => { localStorage.setItem('ihsan_split_pct', String(Math.round(v))); return v; });
+      setSplitPct((v) => {
+        localStorage.setItem('ihsan_split_pct', String(Math.round(v)));
+        return v;
+      });
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
     };
@@ -422,9 +562,16 @@ export default function QuranReader() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
-      if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
-      else if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
-      else if (e.key.toLowerCase() === 'f') { e.preventDefault(); toggleFullscreen(); }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goPrev();
+      } else if (e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        toggleFullscreen();
+      }
       // Esc exits fullscreen natively
     };
     window.addEventListener('keydown', onKey);
@@ -433,17 +580,20 @@ export default function QuranReader() {
 
   useEffect(() => stopAudio, [idx, stopAudio]); // stop when the ayah changes
 
-  const isBookmarked = !!summary?.bookmarks?.some((b) => b.surah === surahNo && b.ayah === (current?.numberInSurah ?? 0));
+  const isBookmarked = !!summary?.bookmarks?.some(
+    (b) => b.surah === surahNo && b.ayah === (current?.numberInSurah ?? 0)
+  );
   const todayCount = (summary?.todayAyat ?? 0) + pendingRef.current;
-  const khatamPos = mode === 'khatam' && summary && surahs.length
-    ? locateGlobalAyah(summary.profile.currentAyah, surahs) : null;
+  const khatamPos =
+    mode === 'khatam' && summary && surahs.length
+      ? locateGlobalAyah(summary.profile.currentAyah, surahs)
+      : null;
 
   const words = useMemo(() => (current ? current.arabic.split(' ') : []), [current]);
 
   return (
     <div className="min-h-screen bg-brand-void pb-16">
       <div className="max-w-3xl mx-auto px-4 pt-4 space-y-4">
-
         {/* top bar */}
         <div className="flex items-center justify-between text-xs">
           <button
@@ -454,25 +604,46 @@ export default function QuranReader() {
               if (window.history.length > 1) navigate(-1);
               else navigate(mode === 'khatam' ? '/quran/khatam' : '/quran');
             }}
-          >{t('quranReader.back', '← Back')}</button>
+          >
+            {t('quranReader.back', '← Back')}
+          </button>
           <div className="flex items-center gap-2 text-white/40">
-            {mode === 'khatam' && <span className="px-2 py-0.5 rounded-full bg-brand-emerald/15 text-brand-emerald border border-brand-emerald/30 font-bold">{t('quranReader.khatamJourney', 'Khatam journey')}</span>}
-            {(mode === 'bundle' || mode === 'single') && <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold border border-brand-gold/30 font-bold">{t('quranReader.specialSelection', 'Special selection')}</span>}
-            <span className="hidden sm:inline">{t('quranReader.keyboardHint', '⌨️ ← → · F fullscreen')}</span>
+            {mode === 'khatam' && (
+              <span className="px-2 py-0.5 rounded-full bg-brand-emerald/15 text-brand-emerald border border-brand-emerald/30 font-bold">
+                {t('quranReader.khatamJourney', 'Khatam journey')}
+              </span>
+            )}
+            {(mode === 'bundle' || mode === 'single') && (
+              <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold border border-brand-gold/30 font-bold">
+                {t('quranReader.specialSelection', 'Special selection')}
+              </span>
+            )}
+            <span className="hidden sm:inline">
+              {t('quranReader.keyboardHint', '⌨️ ← → · F fullscreen')}
+            </span>
           </div>
         </div>
 
         {/* info chips */}
         <div className="flex flex-wrap items-center gap-2 text-[11px]">
           <span className="px-2.5 py-1 rounded-full bg-white/5 border border-brand-emerald/10 text-white/70 font-bold">
-            {formatLocaleNumber(surahNo)}. {surahMeta ? surahDisplayName(surahMeta, i18n.language) : '…'} <span className="text-white/30">· {surahMeta ? formatLocaleNumber(surahMeta.numberOfAyahs) : '–'} {t('quranReader.ayahWord', 'āyāt')}</span>
+            {formatLocaleNumber(surahNo)}.{' '}
+            {surahMeta ? surahDisplayName(surahMeta, i18n.language) : '…'}{' '}
+            <span className="text-white/30">
+              · {surahMeta ? formatLocaleNumber(surahMeta.numberOfAyahs) : '–'}{' '}
+              {t('quranReader.ayahWord', 'āyāt')}
+            </span>
           </span>
           <span className="px-2.5 py-1 rounded-full bg-white/5 border border-brand-emerald/10 text-white/50">
-            {t('quranReader.juz', 'Juz')} {current ? formatLocaleNumber(juzOf(surahNo, current.numberInSurah)) : '–'}
+            {t('quranReader.juz', 'Juz')}{' '}
+            {current ? formatLocaleNumber(juzOf(surahNo, current.numberInSurah)) : '–'}
           </span>
           {countsGoal ? (
             <span className="px-2.5 py-1 rounded-full bg-brand-emerald/10 border border-brand-emerald/25 text-brand-emerald font-bold">
-              📖 {t('quranReader.todayCount', '{{count}} āyāt today', { count: todayCount })}{summary ? ` / ${t('quranReader.goalCount', '{{count}} goal', { count: summary.profile.dailyGoalAyat })}` : ''}
+              📖 {t('quranReader.todayCount', '{{count}} āyāt today', { count: todayCount })}
+              {summary
+                ? ` / ${t('quranReader.goalCount', '{{count}} goal', { count: summary.profile.dailyGoalAyat })}`
+                : ''}
             </span>
           ) : (
             <span className="px-2.5 py-1 rounded-full bg-white/5 border border-brand-emerald/10 text-white/40">
@@ -481,7 +652,10 @@ export default function QuranReader() {
           )}
           {khatamPos && (
             <span className="px-2.5 py-1 rounded-full bg-white/5 border border-brand-emerald/10 text-white/40">
-              {t('quranReader.khatamAt', 'Khatam at {{surah}}:{{ayah}}', { surah: khatamPos.surah, ayah: khatamPos.ayah })}
+              {t('quranReader.khatamAt', 'Khatam at {{surah}}:{{ayah}}', {
+                surah: khatamPos.surah,
+                ayah: khatamPos.ayah,
+              })}
             </span>
           )}
         </div>
@@ -496,7 +670,9 @@ export default function QuranReader() {
         >
           {/* controls — in-flow row on phones (they overlapped the āyah header),
               floating top-right from sm up */}
-          <div className={`flex items-center justify-end gap-2 z-20 ${fullscreen ? 'absolute top-3 right-3 sm:top-4 sm:right-4' : 'sm:absolute sm:top-4 sm:right-4 mb-2 sm:mb-0'}`}>
+          <div
+            className={`flex items-center justify-end gap-2 z-20 ${fullscreen ? 'absolute top-3 right-3 sm:top-4 sm:right-4' : 'sm:absolute sm:top-4 sm:right-4 mb-2 sm:mb-0'}`}
+          >
             {/* in-app zoom — works in the card AND fullscreen (Istiak's spec) */}
             <div className="flex items-center rounded-full bg-white/5 border border-brand-emerald/10 overflow-hidden">
               <button
@@ -504,41 +680,69 @@ export default function QuranReader() {
                 onClick={() => changeZoom(-0.1)}
                 disabled={zoom <= 0.8}
                 className="w-8 h-9 sm:h-10 grid place-items-center text-white/50 hover:text-white disabled:opacity-25 text-base font-black"
-              >−</button>
+              >
+                −
+              </button>
               <button
                 aria-label={t('quranReader.resetZoom', 'Reset zoom')}
                 title={t('quranReader.resetZoom', 'Reset zoom')}
                 onClick={() => changeZoom(0)}
                 className={`px-1 text-[10px] font-bold tabular-nums ${zoom === 1 ? 'text-white/25' : 'text-brand-emerald'}`}
-              >{Math.round(zoom * 100)}%</button>
+              >
+                {Math.round(zoom * 100)}%
+              </button>
               <button
                 aria-label={t('quranReader.zoomIn', 'Zoom in')}
                 onClick={() => changeZoom(0.1)}
                 disabled={zoom >= 1.8}
                 className="w-8 h-9 sm:h-10 grid place-items-center text-white/50 hover:text-white disabled:opacity-25 text-base font-black"
-              >＋</button>
+              >
+                ＋
+              </button>
             </div>
             <button
-              aria-label={playing ? t('quranReader.stopRecitation', 'Stop recitation') : t('quranReader.reciteAyah', 'Recite this ayah')}
+              aria-label={
+                playing
+                  ? t('quranReader.stopRecitation', 'Stop recitation')
+                  : t('quranReader.reciteAyah', 'Recite this ayah')
+              }
               title={t('quranReader.reciteOnlyThis', 'Recite only this ayah')}
               onClick={playAyah}
               className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border transition-all ${playing ? 'bg-brand-emerald text-white border-brand-emerald' : 'bg-white/5 text-brand-emerald border-brand-emerald/10 hover:border-brand-emerald/50'}`}
             >
-              {playing ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4 ml-0.5" />}
+              {playing ? (
+                <PauseIcon className="w-4 h-4" />
+              ) : (
+                <PlayIcon className="w-4 h-4 ml-0.5" />
+              )}
             </button>
             {user && (
               <button
-                aria-label={isBookmarked ? t('quranReader.removeBookmark', 'Remove bookmark') : t('quranReader.bookmarkAyah', 'Bookmark this ayah')}
-                onClick={() => current && toggleBookmark.mutate({ surah: surahNo, ayah: current.numberInSurah })}
+                aria-label={
+                  isBookmarked
+                    ? t('quranReader.removeBookmark', 'Remove bookmark')
+                    : t('quranReader.bookmarkAyah', 'Bookmark this ayah')
+                }
+                onClick={() =>
+                  current && toggleBookmark.mutate({ surah: surahNo, ayah: current.numberInSurah })
+                }
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border bg-white/5 border-brand-emerald/10 text-brand-gold hover:border-brand-gold/50"
               >
-                {isBookmarked ? <BookmarkSolid className="w-4 h-4" /> : <BookmarkOutline className="w-4 h-4" />}
+                {isBookmarked ? (
+                  <BookmarkSolid className="w-4 h-4" />
+                ) : (
+                  <BookmarkOutline className="w-4 h-4" />
+                )}
               </button>
             )}
             {/* fullscreen-only: open the tafsir (split on desktop, stacked below on mobile) */}
             {fullscreen && (
               <button
-                aria-label={splitTafsir ? t('quranReader.hideTafsir', 'Hide tafsir') : t('quranReader.readTafsir', 'Read tafsir')}
+                aria-label={
+                  splitTafsir
+                    ? t('quranReader.hideTafsir', 'Hide tafsir')
+                    : t('quranReader.readTafsir', 'Read tafsir')
+                }
                 title={t('quranReader.tafsir', 'Tafsir')}
                 onClick={() => setSplitTafsir((v) => !v)}
                 className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border transition-all ${splitTafsir ? 'bg-brand-emerald/20 text-brand-emerald border-brand-emerald/50' : 'bg-white/5 text-white/60 border-brand-emerald/10 hover:text-white'}`}
@@ -547,113 +751,161 @@ export default function QuranReader() {
               </button>
             )}
             <button
-              aria-label={fullscreen ? t('quranReader.exitFullscreen', 'Exit fullscreen') : t('quranReader.fullscreen', 'Fullscreen')}
+              aria-label={
+                fullscreen
+                  ? t('quranReader.exitFullscreen', 'Exit fullscreen')
+                  : t('quranReader.fullscreen', 'Fullscreen')
+              }
               onClick={toggleFullscreen}
               className="w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border bg-white/5 border-brand-emerald/10 text-white/50 hover:text-white"
             >
-              {fullscreen ? <ArrowsPointingInIcon className="w-4 h-4" /> : <ArrowsPointingOutIcon className="w-4 h-4" />}
+              {fullscreen ? (
+                <ArrowsPointingInIcon className="w-4 h-4" />
+              ) : (
+                <ArrowsPointingOutIcon className="w-4 h-4" />
+              )}
             </button>
           </div>
 
           {/* LEFT pane (the āyah + meaning). Fullscreen desktop: resizable width; mobile: full-width block. */}
           <div
-            className={fullscreen
-              ? `relative md:h-full grid place-items-center md:overflow-y-auto p-6 pt-16 sm:p-12 w-full shrink-0 md:shrink ${splitTafsir ? 'md:border-r md:border-brand-emerald/15 min-h-[70vh] md:min-h-0 md:w-[var(--split)]' : ''}`
-              : 'contents'}
-            style={fullscreen && splitTafsir ? ({ '--split': `${splitPct}%` } as CSSProperties) : undefined}
+            className={
+              fullscreen
+                ? `relative md:h-full grid place-items-center md:overflow-y-auto p-6 pt-16 sm:p-12 w-full shrink-0 md:shrink ${splitTafsir ? 'md:border-r md:border-brand-emerald/15 min-h-[70vh] md:min-h-0 md:w-[var(--split)]' : ''}`
+                : 'contents'
+            }
+            style={
+              fullscreen && splitTafsir
+                ? ({ '--split': `${splitPct}%` } as CSSProperties)
+                : undefined
+            }
           >
-          {loading || !current ? (
-            <div className="min-h-[40vh] grid place-items-center">
-              <span className="loading loading-spinner loading-lg text-brand-emerald" />
-            </div>
-          ) : (
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={current.number}
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18 }}
-                className={`${fullscreen ? 'max-w-4xl' : ''} w-full text-center space-y-6 sm:space-y-8 pt-2 sm:pt-8`}
-              >
-                <div className="space-y-0.5">
-                  <p className="text-white/25 text-xs font-bold tracking-widest">
-                    {surahMeta?.name} · <span className="text-brand-emerald/80 text-sm">{formatLocaleNumber(current.numberInSurah)}</span><span className="text-white/20">/{surahMeta ? formatLocaleNumber(surahMeta.numberOfAyahs) : ''}</span>
+            {loading || !current ? (
+              <div className="min-h-[40vh] grid place-items-center">
+                <span className="loading loading-spinner loading-lg text-brand-emerald" />
+              </div>
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={current.number}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18 }}
+                  className={`${fullscreen ? 'max-w-4xl' : ''} w-full text-center space-y-6 sm:space-y-8 pt-2 sm:pt-8`}
+                >
+                  <div className="space-y-0.5">
+                    <p className="text-white/25 text-xs font-bold tracking-widest">
+                      {surahMeta?.name} ·{' '}
+                      <span className="text-brand-emerald/80 text-sm">
+                        {formatLocaleNumber(current.numberInSurah)}
+                      </span>
+                      <span className="text-white/20">
+                        /{surahMeta ? formatLocaleNumber(surahMeta.numberOfAyahs) : ''}
+                      </span>
+                    </p>
+                    {surahMeta?.englishNameTranslation && (
+                      <p className="text-white/30 text-[11px]">
+                        {surahDisplayName(surahMeta, i18n.language)} — “
+                        {surahMeaningDisplay(surahMeta, i18n.language)}”
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Arabic — word hover highlight; timed highlight while reciting */}
+                  <p
+                    dir="rtl"
+                    lang="ar"
+                    className="leading-[2.1] text-[#e8e2d0]"
+                    style={{ fontSize: fs.arabic, fontFamily: arabicFont.stack }}
+                  >
+                    {words.map((w, i) => (
+                      <span
+                        key={i}
+                        className={`transition-colors duration-150 rounded px-0.5 cursor-default ${playing && i === wordIdx ? 'bg-brand-emerald/30 text-white' : 'hover:bg-white/10'}`}
+                      >
+                        {w}{' '}
+                      </span>
+                    ))}
                   </p>
-                  {surahMeta?.englishNameTranslation && (
-                    <p className="text-white/30 text-[11px]">
-                      {surahDisplayName(surahMeta, i18n.language)} — “{surahMeaningDisplay(surahMeta, i18n.language)}”
+
+                  {/* Transliteration — Latin pronunciation aid (optional) */}
+                  {showTranslit && current.transliteration && (
+                    <p
+                      className="text-brand-gold/60 italic leading-relaxed max-w-2xl mx-auto"
+                      style={{ fontSize: fs.translit }}
+                    >
+                      {current.transliteration}
                     </p>
                   )}
-                </div>
 
-                {/* Arabic — word hover highlight; timed highlight while reciting */}
-                <p dir="rtl" lang="ar" className="leading-[2.1] text-[#e8e2d0]"
-                  style={{ fontSize: fs.arabic, fontFamily: arabicFont.stack }}>
-                  {words.map((w, i) => (
-                    <span
-                      key={i}
-                      className={`transition-colors duration-150 rounded px-0.5 cursor-default ${playing && i === wordIdx ? 'bg-brand-emerald/30 text-white' : 'hover:bg-white/10'}`}
+                  <div className="space-y-3 max-w-2xl mx-auto">
+                    {current.translations.map((tr, i) => (
+                      <p
+                        key={editions[i] ?? i}
+                        className={`${i === 0 ? 'text-white/60' : 'text-brand-info/50'} leading-relaxed`}
+                        style={{ fontSize: fs.translation }}
+                      >
+                        {tr}
+                      </p>
+                    ))}
+                  </div>
+                  <p className="text-white/20 text-[10px]">
+                    {editions.map(editionLabel).join(' · ')} ·{' '}
+                    <a
+                      className="underline"
+                      href={`https://quran.com/${surahNo}/${current.numberInSurah}`}
+                      target="_blank"
+                      rel="noreferrer"
                     >
-                      {w}{' '}
-                    </span>
-                  ))}
-                </p>
-
-                {/* Transliteration — Latin pronunciation aid (optional) */}
-                {showTranslit && current.transliteration && (
-                  <p className="text-brand-gold/60 italic leading-relaxed max-w-2xl mx-auto"
-                    style={{ fontSize: fs.translit }}>
-                    {current.transliteration}
+                      quran.com/{surahNo}/{current.numberInSurah}
+                    </a>
                   </p>
-                )}
+                </motion.div>
+              </AnimatePresence>
+            )}
 
-                <div className="space-y-3 max-w-2xl mx-auto">
-                  {current.translations.map((tr, i) => (
-                    <p key={editions[i] ?? i} className={`${i === 0 ? 'text-white/60' : 'text-brand-info/50'} leading-relaxed`}
-                      style={{ fontSize: fs.translation }}>
-                      {tr}
-                    </p>
-                  ))}
-                </div>
-                <p className="text-white/20 text-[10px]">
-                  {editions.map(editionLabel).join(' · ')} ·{' '}
-                  <a className="underline" href={`https://quran.com/${surahNo}/${current.numberInSurah}`} target="_blank" rel="noreferrer">quran.com/{surahNo}/{current.numberInSurah}</a>
-                </p>
-              </motion.div>
-            </AnimatePresence>
-          )}
-
-          {/* Prev/Next stay IN FLOW. They used to be md:absolute with
+            {/* Prev/Next stay IN FLOW. They used to be md:absolute with
               left-8/right-8 in fullscreen, which is measured against the
               nearest positioned ancestor — with the tafsir split that is not
               the reading pane, so the row overflowed and "Next" sat off-screen
               behind a horizontal scroll. In-flow + min-w-0 + shrink can't
               overflow regardless of pane width. */}
-          {!loading && current && (
-            <div className={`flex items-center justify-between gap-3 w-full max-w-4xl mx-auto mt-8 ${fullscreen ? 'md:mt-6' : ''}`}>
-              <button
-                aria-label={t('quranReader.previousAyah', 'Previous ayah')}
-                onClick={goPrev}
-                disabled={idx <= firstIdx}
-                className="flex items-center gap-1.5 min-w-0 px-4 py-2.5 rounded-2xl bg-white/5 border border-brand-emerald/10 text-white/60 hover:text-white disabled:opacity-20 text-sm font-bold"
+            {!loading && current && (
+              <div
+                className={`flex items-center justify-between gap-3 w-full max-w-4xl mx-auto mt-8 ${fullscreen ? 'md:mt-6' : ''}`}
               >
-                <ChevronLeftIcon className="w-4 h-4 shrink-0" />
-                <span className="truncate">{t('quranReader.previous', 'Previous')}</span>
-              </button>
-              <button
-                aria-label={t('quranReader.nextAyah', 'Next ayah')}
-                onClick={goNext}
-                className="flex items-center gap-1.5 min-w-0 px-5 py-2.5 rounded-2xl bg-brand-emerald/90 hover:bg-brand-emerald text-white text-sm font-black border-0"
-              >
-                <span className="truncate">
-                  {idx >= lastIdx
-                    ? (mode === 'bundle' ? t('quranReader.finishDua', 'Finish 🤲') : mode === 'single' ? t('quranReader.finishLeaf', 'Finish 🌿') : surahNo < 114 ? t('quranReader.nextSurah', 'Next surah') : t('quranReader.finish', 'Finish'))
-                    : t('quranReader.next', 'Next')}
-                </span>
-                <ChevronRightIcon className="w-4 h-4 shrink-0" />
-              </button>
-            </div>
-          )}
-          </div>{/* end left pane */}
+                <button
+                  aria-label={t('quranReader.previousAyah', 'Previous ayah')}
+                  onClick={goPrev}
+                  disabled={idx <= firstIdx}
+                  className="flex items-center gap-1.5 min-w-0 px-4 py-2.5 rounded-2xl bg-white/5 border border-brand-emerald/10 text-white/60 hover:text-white disabled:opacity-20 text-sm font-bold"
+                >
+                  <ChevronLeftIcon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{t('quranReader.previous', 'Previous')}</span>
+                </button>
+                <button
+                  aria-label={t('quranReader.nextAyah', 'Next ayah')}
+                  onClick={goNext}
+                  className="flex items-center gap-1.5 min-w-0 px-5 py-2.5 rounded-2xl bg-brand-emerald/90 hover:bg-brand-emerald text-white text-sm font-black border-0"
+                >
+                  <span className="truncate">
+                    {idx >= lastIdx
+                      ? mode === 'bundle'
+                        ? t('quranReader.finishDua', 'Finish 🤲')
+                        : mode === 'single'
+                          ? t('quranReader.finishLeaf', 'Finish 🌿')
+                          : surahNo < 114
+                            ? t('quranReader.nextSurah', 'Next surah')
+                            : t('quranReader.finish', 'Finish')
+                      : t('quranReader.next', 'Next')}
+                  </span>
+                  <ChevronRightIcon className="w-4 h-4 shrink-0" />
+                </button>
+              </div>
+            )}
+          </div>
+          {/* end left pane */}
 
           {/* drag handle — desktop fullscreen split only */}
           {fullscreen && splitTafsir && (
@@ -682,23 +934,52 @@ export default function QuranReader() {
                     onChange={(e) => changeTafsirEdition(Number(e.target.value))}
                   >
                     <optgroup label={t('quranReader.tafsirEnglish', 'English')}>
-                      {TAFSIRS.filter((tf) => tf.language === 'en').map((tf) => <option key={tf.id} value={tf.id}>{tf.name}</option>)}
+                      {TAFSIRS.filter((tf) => tf.language === 'en').map((tf) => (
+                        <option key={tf.id} value={tf.id}>
+                          {tf.name}
+                        </option>
+                      ))}
                     </optgroup>
                     <optgroup label={t('quranReader.tafsirBengali', 'বাংলা (Bengali)')}>
-                      {TAFSIRS.filter((tf) => tf.language === 'bn').map((tf) => <option key={tf.id} value={tf.id}>{tf.name}</option>)}
+                      {TAFSIRS.filter((tf) => tf.language === 'bn').map((tf) => (
+                        <option key={tf.id} value={tf.id}>
+                          {tf.name}
+                        </option>
+                      ))}
                     </optgroup>
                   </select>
                 </div>
                 {tafsir.isLoading ? (
-                  <div className="py-10 grid place-items-center"><span className="loading loading-spinner text-brand-emerald" /></div>
+                  <div className="py-10 grid place-items-center">
+                    <span className="loading loading-spinner text-brand-emerald" />
+                  </div>
                 ) : tafsir.isError ? (
-                  <p className="text-white/50 text-sm">{t('quranReader.tafsirLoadErrorShort', "Couldn't load this tafsir — try another edition.")}</p>
+                  <p className="text-white/50 text-sm">
+                    {t(
+                      'quranReader.tafsirLoadErrorShort',
+                      "Couldn't load this tafsir — try another edition."
+                    )}
+                  </p>
                 ) : (
                   <>
-                    <p className="text-brand-gold/50 text-xs font-bold mb-3">{formatLocaleNumber(surahNo)}:{formatLocaleNumber(ayahNo)} · {tafsir.data?.resourceName}</p>
-                    <div className={`whitespace-pre-line`} style={tafsirTextStyle}>{tafsir.data?.text}</div>
+                    <p className="text-brand-gold/50 text-xs font-bold mb-3">
+                      {formatLocaleNumber(surahNo)}:{formatLocaleNumber(ayahNo)} ·{' '}
+                      {tafsir.data?.resourceName}
+                    </p>
+                    <div className={`whitespace-pre-line`} style={tafsirTextStyle}>
+                      {tafsir.data?.text}
+                    </div>
                     <p className="text-white/25 text-[10px] mt-4">
-                      {t('quranReader.sourcedFromPrefix', 'Sourced from')} <a className="underline" href={tafsir.data?.url} target="_blank" rel="noreferrer">quran.com</a> — {t('quranReader.authenticUnedited', 'authentic, unedited.')}
+                      {t('quranReader.sourcedFromPrefix', 'Sourced from')}{' '}
+                      <a
+                        className="underline"
+                        href={tafsir.data?.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        quran.com
+                      </a>{' '}
+                      — {t('quranReader.authenticUnedited', 'authentic, unedited.')}
                     </p>
                   </>
                 )}
@@ -712,29 +993,48 @@ export default function QuranReader() {
           <div className="flex items-center justify-between gap-3 text-xs text-white/40">
             {mode !== 'bundle' ? (
               <div className="flex items-center gap-2">
-                <label htmlFor="jump-ayah" className="font-bold">{t('quranReader.jumpToAyah', 'Jump to āyah')}</label>
+                <label htmlFor="jump-ayah" className="font-bold">
+                  {t('quranReader.jumpToAyah', 'Jump to āyah')}
+                </label>
                 <select
                   id="jump-ayah"
                   className="select select-xs bg-white/5 border-brand-emerald/10 text-white/70 rounded-lg"
                   value={idx + 1}
                   onChange={(e) => goToIdx(Number(e.target.value) - 1)}
                 >
-                  {ayat.map((a) => <option key={a.number} value={a.numberInSurah}>{a.numberInSurah}</option>)}
+                  {ayat.map((a) => (
+                    <option key={a.number} value={a.numberInSurah}>
+                      {a.numberInSurah}
+                    </option>
+                  ))}
                 </select>
               </div>
-            ) : <span />}
+            ) : (
+              <span />
+            )}
 
             {/* volume control (defaults to 40%) */}
             <div className="flex items-center gap-1.5 shrink-0">
               <button
-                aria-label={volume === 0 ? t('quranReader.volumeOff', 'Volume off') : t('quranReader.volume', 'Volume')}
+                aria-label={
+                  volume === 0
+                    ? t('quranReader.volumeOff', 'Volume off')
+                    : t('quranReader.volume', 'Volume')
+                }
                 className="text-white/50 hover:text-white"
                 onClick={() => changeVolume(volume === 0 ? 0.4 : 0)}
               >
-                {volume === 0 ? <SpeakerXMarkIcon className="w-4 h-4" /> : <SpeakerWaveIcon className="w-4 h-4" />}
+                {volume === 0 ? (
+                  <SpeakerXMarkIcon className="w-4 h-4" />
+                ) : (
+                  <SpeakerWaveIcon className="w-4 h-4" />
+                )}
               </button>
               <input
-                type="range" min={0} max={100} value={Math.round(volume * 100)}
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(volume * 100)}
                 aria-label={t('quranReader.recitationVolume', 'Recitation volume')}
                 onChange={(e) => changeVolume(Number(e.target.value) / 100)}
                 className="range range-xs w-24 [--range-shdw:theme(colors.emerald.400)]"
@@ -766,12 +1066,22 @@ export default function QuranReader() {
             {/* The story & evidence behind this duʿā (verified reference) */}
             {contextOpen && dua?.context && (
               <div className="rounded-2xl border border-brand-gold/15 bg-[#211f16] p-4 sm:p-5 space-y-2.5">
-                <p className="text-brand-gold/80 text-xs font-black">{dua.emoji} {i18n.language === 'bn' && dua.titleBn ? dua.titleBn : dua.title}</p>
-                <p className="text-[#d8d0b8] text-sm leading-relaxed">{i18n.language === 'bn' && dua.context.textBn ? dua.context.textBn : dua.context.text}</p>
+                <p className="text-brand-gold/80 text-xs font-black">
+                  {dua.emoji} {i18n.language === 'bn' && dua.titleBn ? dua.titleBn : dua.title}
+                </p>
+                <p className="text-[#d8d0b8] text-sm leading-relaxed">
+                  {i18n.language === 'bn' && dua.context.textBn
+                    ? dua.context.textBn
+                    : dua.context.text}
+                </p>
                 <a
                   className="inline-block text-brand-gold/60 text-[11px] underline hover:text-brand-gold"
-                  href={dua.context.ref.url} target="_blank" rel="noreferrer"
-                >{translateReference(dua.context.ref.text, i18n.language)} ↗</a>
+                  href={dua.context.ref.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {translateReference(dua.context.ref.text, i18n.language)} ↗
+                </a>
               </div>
             )}
 
@@ -786,29 +1096,66 @@ export default function QuranReader() {
                     onChange={(e) => changeTafsirEdition(Number(e.target.value))}
                   >
                     <optgroup label={t('quranReader.tafsirEnglish', 'English')}>
-                      {TAFSIRS.filter((tf) => tf.language === 'en').map((tf) => <option key={tf.id} value={tf.id}>{tf.name}</option>)}
+                      {TAFSIRS.filter((tf) => tf.language === 'en').map((tf) => (
+                        <option key={tf.id} value={tf.id}>
+                          {tf.name}
+                        </option>
+                      ))}
                     </optgroup>
                     <optgroup label={t('quranReader.tafsirBengali', 'বাংলা (Bengali)')}>
-                      {TAFSIRS.filter((tf) => tf.language === 'bn').map((tf) => <option key={tf.id} value={tf.id}>{tf.name}</option>)}
+                      {TAFSIRS.filter((tf) => tf.language === 'bn').map((tf) => (
+                        <option key={tf.id} value={tf.id}>
+                          {tf.name}
+                        </option>
+                      ))}
                     </optgroup>
                   </select>
-                  <button className="text-white/40 hover:text-white text-xs shrink-0" onClick={() => setTafsirOpen(false)}>{t('quranReader.close', 'Close')}</button>
+                  <button
+                    className="text-white/40 hover:text-white text-xs shrink-0"
+                    onClick={() => setTafsirOpen(false)}
+                  >
+                    {t('quranReader.close', 'Close')}
+                  </button>
                 </div>
 
                 {tafsir.isLoading ? (
-                  <div className="py-6 grid place-items-center"><span className="loading loading-spinner text-brand-emerald" /></div>
+                  <div className="py-6 grid place-items-center">
+                    <span className="loading loading-spinner text-brand-emerald" />
+                  </div>
                 ) : tafsir.isError ? (
-                  <p className="text-white/50 text-sm py-2">{t('quranReader.tafsirLoadErrorLong', "Couldn't load this tafsir — check your connection or try another edition.")}</p>
+                  <p className="text-white/50 text-sm py-2">
+                    {t(
+                      'quranReader.tafsirLoadErrorLong',
+                      "Couldn't load this tafsir — check your connection or try another edition."
+                    )}
+                  </p>
                 ) : (
                   <>
-                    <div className={`max-h-96 overflow-y-auto pr-2 whitespace-pre-line`} style={tafsirTextStyle}>
+                    <div
+                      className={`max-h-96 overflow-y-auto pr-2 whitespace-pre-line`}
+                      style={tafsirTextStyle}
+                    >
                       {tafsir.data?.text}
                     </div>
                     <p className="text-white/30 text-[10px]">
-                      📖 {tafsir.data?.resourceName} · {t('quranReader.sourcedFromLower', 'sourced from')}{' '}
-                      <a className="underline" href={tafsir.data?.url} target="_blank" rel="noreferrer">quran.com</a> — {t('quranReader.authenticUnedited', 'authentic, unedited.')}
+                      📖 {tafsir.data?.resourceName} ·{' '}
+                      {t('quranReader.sourcedFromLower', 'sourced from')}{' '}
+                      <a
+                        className="underline"
+                        href={tafsir.data?.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        quran.com
+                      </a>{' '}
+                      — {t('quranReader.authenticUnedited', 'authentic, unedited.')}
                       <span className="mx-1.5">·</span>
-                      <a className="underline text-white/20 hover:text-brand-emerald/60" href="/feedback">{t('quranReader.reportReferenceIssue', 'Report a reference issue')}</a>
+                      <a
+                        className="underline text-white/20 hover:text-brand-emerald/60"
+                        href="/feedback"
+                      >
+                        {t('quranReader.reportReferenceIssue', 'Report a reference issue')}
+                      </a>
                     </p>
                   </>
                 )}
@@ -822,31 +1169,54 @@ export default function QuranReader() {
       <AnimatePresence>
         {resumeAyah !== null && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm grid place-items-center p-4"
           >
             <motion.div
-              initial={{ scale: 0.94, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94, y: 8 }}
+              initial={{ scale: 0.94, y: 8 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.94, y: 8 }}
               transition={{ type: 'spring', damping: 24 }}
               className="w-full max-w-xs rounded-2xl bg-brand-deep border border-brand-emerald/25 p-5 text-center"
-              role="alertdialog" aria-modal="true"
+              role="alertdialog"
+              aria-modal="true"
             >
               <div className="text-3xl mb-2">📖</div>
-              <h3 className="text-white font-black text-base">{t('quranReader.continueReading', 'Continue reading?')}</h3>
+              <h3 className="text-white font-black text-base">
+                {t('quranReader.continueReading', 'Continue reading?')}
+              </h3>
               <p className="text-white/50 text-xs mt-1.5 leading-relaxed">
-                {t('quranReader.leftOffAt', 'You left {{name}} at āyah', { name: surahMeta ? surahDisplayName(surahMeta, i18n.language) : t('quranReader.thisSurah', 'this surah') })} <b className="text-brand-emerald">{resumeAyah}</b>.
-                {' '}{t('quranReader.pickUpOrRestart', 'Pick up from there, or start over from the beginning.')}
+                {t('quranReader.leftOffAt', 'You left {{name}} at āyah', {
+                  name: surahMeta
+                    ? surahDisplayName(surahMeta, i18n.language)
+                    : t('quranReader.thisSurah', 'this surah'),
+                })}{' '}
+                <b className="text-brand-emerald">{resumeAyah}</b>.{' '}
+                {t(
+                  'quranReader.pickUpOrRestart',
+                  'Pick up from there, or start over from the beginning.'
+                )}
               </p>
               <div className="flex gap-2 mt-4">
                 <button
                   className="flex-1 btn btn-sm rounded-xl bg-white/5 border-brand-emerald/10 text-white/70"
-                  onClick={() => { clearResume(surahNo); syncResume(0); setIdx(0); setResumeAyah(null); }}
+                  onClick={() => {
+                    clearResume(surahNo);
+                    syncResume(0);
+                    setIdx(0);
+                    setResumeAyah(null);
+                  }}
                 >
                   {t('quranReader.startOver', 'Start over')}
                 </button>
                 <button
                   className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-info"
-                  onClick={() => { setIdx(Math.min(ayat.length - 1, resumeAyah - 1)); setResumeAyah(null); }}
+                  onClick={() => {
+                    setIdx(Math.min(ayat.length - 1, resumeAyah - 1));
+                    setResumeAyah(null);
+                  }}
                 >
                   {t('quranReader.continue', 'Continue')}
                 </button>

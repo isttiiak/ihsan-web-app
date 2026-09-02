@@ -14,7 +14,7 @@ export const globalErrorHandler = (
   err: AppError,
   _req: Request,
   res: Response,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Express only treats a 4-arg function as error middleware; the trailing param must stay
   _next: NextFunction
 ): void => {
   const isProd = process.env.NODE_ENV === 'production';
@@ -53,7 +53,10 @@ export const globalErrorHandler = (
 
   // Default
   const statusCode = err.statusCode ?? 500;
-  const message = isProd && statusCode === 500 ? 'Internal Server Error' : (err.message ?? 'Internal Server Error');
+  const message =
+    isProd && statusCode === 500
+      ? 'Internal Server Error'
+      : (err.message ?? 'Internal Server Error');
 
   if (!isProd) console.error(err);
 

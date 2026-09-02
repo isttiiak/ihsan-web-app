@@ -88,7 +88,9 @@ function VerifyEmailGate({ email }: { email: string | null }) {
     try {
       await sendEmailVerification(auth.currentUser);
       setResent(true);
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
     setResending(false);
   };
 
@@ -96,21 +98,32 @@ function VerifyEmailGate({ email }: { email: string | null }) {
     <div className="min-h-[60vh] flex items-center justify-center px-4">
       <div className="text-center space-y-5 max-w-sm w-full">
         <div className="text-6xl">📧</div>
-        <h2 className="text-2xl font-black text-white">{t('app.verifyEmailTitle', 'Verify your email')}</h2>
+        <h2 className="text-2xl font-black text-white">
+          {t('app.verifyEmailTitle', 'Verify your email')}
+        </h2>
         <p className="text-white/50 text-sm leading-relaxed">
           {t('app.verifyEmailSentTo', 'A verification link was sent to')}{' '}
-          <span className="text-brand-emerald font-medium">{email}</span>.
-          {' '}{t('app.verifyEmailCheckInbox', 'Check your inbox (and spam folder) and click the link to unlock this page.')}
+          <span className="text-brand-emerald font-medium">{email}</span>.{' '}
+          {t(
+            'app.verifyEmailCheckInbox',
+            'Check your inbox (and spam folder) and click the link to unlock this page.'
+          )}
         </p>
         {resent ? (
-          <p className="text-brand-emerald text-sm font-medium">{t('app.verifyEmailResent', 'Email resent! Check your inbox.')}</p>
+          <p className="text-brand-emerald text-sm font-medium">
+            {t('app.verifyEmailResent', 'Email resent! Check your inbox.')}
+          </p>
         ) : (
           <button
             className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
             onClick={() => void resend()}
             disabled={resending}
           >
-            {resending ? <span className="loading loading-spinner loading-xs" /> : t('app.resendVerification', 'Resend verification email')}
+            {resending ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              t('app.resendVerification', 'Resend verification email')
+            )}
           </button>
         )}
       </div>
@@ -139,15 +152,20 @@ const Protected = ({ children }: ProtectedProps) => {
   const { user, authLoading } = useAuthStore();
   const location = useLocation();
   const nav = useNavigate();
-  if (authLoading) return null;
   const hadSession = !!localStorage.getItem('ihsan_idToken');
   const [grace, setGrace] = useState(hadSession && !user);
   useEffect(() => {
-    if (user) { setGrace(false); return; }
+    if (user) {
+      setGrace(false);
+      return;
+    }
     if (!grace) return;
     const t = setTimeout(() => setGrace(false), 2000);
     return () => clearTimeout(t);
   }, [user, grace]);
+  // Hooks above must run unconditionally on every render (react-hooks/rules-of-hooks) —
+  // these early returns come after.
+  if (authLoading) return null;
   if (grace) return null;
   if (!user) {
     const redirectTarget = location.pathname + location.search;
@@ -155,9 +173,14 @@ const Protected = ({ children }: ProtectedProps) => {
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="text-center space-y-5 max-w-sm w-full">
           <div className="text-6xl">🔐</div>
-          <h2 className="text-2xl font-black text-white">{t('app.signInRequired', 'Sign in required')}</h2>
+          <h2 className="text-2xl font-black text-white">
+            {t('app.signInRequired', 'Sign in required')}
+          </h2>
           <p className="text-white/50 text-sm leading-relaxed">
-            {t('app.signInRequiredDesc', 'This page is only available to signed-in users. Create a free account to track your progress and access analytics.')}
+            {t(
+              'app.signInRequiredDesc',
+              'This page is only available to signed-in users. Create a free account to track your progress and access analytics.'
+            )}
           </p>
           <div className="flex flex-col gap-3">
             <button
@@ -233,7 +256,9 @@ export default function App() {
 
   // Daily-reset listeners registered once; route changes also trigger a check below.
   useEffect(() => {
-    const onVisibility = () => { if (!document.hidden) checkAndResetIfNewDay(); };
+    const onVisibility = () => {
+      if (!document.hidden) checkAndResetIfNewDay();
+    };
     const onFocus = () => checkAndResetIfNewDay();
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('focus', onFocus);
@@ -243,7 +268,9 @@ export default function App() {
     };
   }, [checkAndResetIfNewDay]);
 
-  useEffect(() => { checkAndResetIfNewDay(); }, [checkAndResetIfNewDay, location.pathname]);
+  useEffect(() => {
+    checkAndResetIfNewDay();
+  }, [checkAndResetIfNewDay, location.pathname]);
 
   // Every route change starts at the TOP of the new page — SPAs keep the old
   // scroll position by default (opening /quran from Home landed mid-page).
@@ -301,7 +328,9 @@ export default function App() {
           optimistic.displayName = cached.displayName ?? optimistic.displayName;
           optimistic.photoUrl = cached.photoUrl ?? optimistic.photoUrl;
         }
-      } catch { /* corrupt cache — Firebase values are fine */ }
+      } catch {
+        /* corrupt cache — Firebase values are fine */
+      }
       setUser(optimistic);
       setAuthLoading(false);
 
@@ -338,7 +367,14 @@ export default function App() {
           } else {
             // Reconcile with the DB profile (user may have edited name/photo there)
             try {
-              const verifyData = await verifyRes.json() as { user?: { displayName?: string; photoUrl?: string; gender?: AuthUser['gender']; hijriOffset?: number } };
+              const verifyData = (await verifyRes.json()) as {
+                user?: {
+                  displayName?: string;
+                  photoUrl?: string;
+                  gender?: AuthUser['gender'];
+                  hijriOffset?: number;
+                };
+              };
               const authUser: AuthUser = {
                 ...optimistic,
                 displayName: verifyData?.user?.displayName || optimistic.displayName,
@@ -351,13 +387,23 @@ export default function App() {
               if (verifyData?.user?.hijriOffset !== undefined) {
                 localStorage.setItem('ihsan_hijri_offset', String(verifyData.user.hijriOffset));
               }
-            } catch { /* ignore parse error — optimistic values stand */ }
+            } catch {
+              /* ignore parse error — optimistic values stand */
+            }
           }
 
-          try { await hydrate(); } catch { /* hydrate errors are non-fatal */ }
+          try {
+            await hydrate();
+          } catch {
+            /* hydrate errors are non-fatal */
+          }
           // Push any counts made while signed out — the guest dialog promises
           // "Sign in to save", so save immediately rather than on the next tap.
-          try { await useZikrStore.getState().flush(); } catch { /* retried on next tap */ }
+          try {
+            await useZikrStore.getState().flush();
+          } catch {
+            /* retried on next tap */
+          }
         } catch (err) {
           console.error('Auth background sync error:', err);
         }
@@ -366,13 +412,15 @@ export default function App() {
 
     return () => unsub();
     // Subscribe exactly once — navigation is handled via refs above.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
   }, [setUser, init, resetAll, hydrate, setAuthLoading]);
 
   const { authLoading } = useAuthStore();
   const isAuthPage = ['/login', '/signup', '/auth/action'].includes(location.pathname);
   const noFooterPrefixes = ['/zikr', '/salat', '/fasting', '/prayer-times', '/quran', '/friends'];
-  const showFooter = !isAuthPage && !noFooterPrefixes.some((p) => location.pathname === p || location.pathname.startsWith(p + '/'));
+  const showFooter =
+    !isAuthPage &&
+    !noFooterPrefixes.some((p) => location.pathname === p || location.pathname.startsWith(p + '/'));
 
   return (
     <div className="min-h-screen flex flex-col bg-base-100">
@@ -393,41 +441,160 @@ export default function App() {
           {!isAuthPage && <GenderGate />}
           <div className="flex-1">
             <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/" element={<RootRoute />} />
-              <Route path="/zikr" element={<ZikrCounter />} />
-              <Route path="/salat" element={<SalatTracker />} />
-              <Route path="/salat/analytics" element={<Protected><SalatAnalytics /></Protected>} />
-              <Route path="/fasting" element={<FastingTracker />} />
-              <Route path="/fasting/analytics" element={<Protected><FastingAnalytics /></Protected>} />
-              <Route path="/prayer-times" element={<PrayerTimes />} />
-              <Route path="/quran" element={<Protected><QuranHabit /></Protected>} />
-              <Route path="/quran/khatam" element={<Protected><QuranKhatam /></Protected>} />
-              <Route path="/quran/browse" element={<Protected><QuranBrowse /></Protected>} />
-              <Route path="/quran/listen" element={<Protected><QuranListen /></Protected>} />
-              <Route path="/quran/analytics" element={<Protected><QuranAnalytics /></Protected>} />
-              <Route path="/quran/bookmarks" element={<Protected><QuranBookmarks /></Protected>} />
-              <Route path="/quran/read/:surah" element={<Protected><QuranReader /></Protected>} />
-              <Route path="/zikr/analytics" element={<Protected><ZikrAnalytics /></Protected>} />
-              <Route path="/settings" element={<Protected><Settings /></Protected>} />
-              <Route path="/profile" element={<Protected><Profile /></Protected>} />
-              <Route path="/special-day/:id" element={<IslamicSpecialDay />} />
-              <Route path="/friends" element={<Protected><Friends /></Protected>} />
-              <Route path="/cycle" element={<Protected><RayhanahCycle /></Protected>} />
-              <Route path="/ramadan" element={<Protected><RamadanTracker /></Protected>} />
-              <Route path="/ramadan/analytics" element={<Protected><RamadanAnalytics /></Protected>} />
-              <Route path="/cycle/analytics" element={<Protected><CycleAnalytics /></Protected>} />
-              {/* Public: handles guests itself (sign-in gate that returns here) */}
-              <Route path="/connect/:code" element={<ConnectFriend />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/feedback" element={<Feedback />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/login" element={<AuthSignIn />} />
-              <Route path="/signup" element={<AuthSignUp />} />
-              <Route path="/auth/action" element={<AuthAction />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+              <Routes>
+                <Route path="/" element={<RootRoute />} />
+                <Route path="/zikr" element={<ZikrCounter />} />
+                <Route path="/salat" element={<SalatTracker />} />
+                <Route
+                  path="/salat/analytics"
+                  element={
+                    <Protected>
+                      <SalatAnalytics />
+                    </Protected>
+                  }
+                />
+                <Route path="/fasting" element={<FastingTracker />} />
+                <Route
+                  path="/fasting/analytics"
+                  element={
+                    <Protected>
+                      <FastingAnalytics />
+                    </Protected>
+                  }
+                />
+                <Route path="/prayer-times" element={<PrayerTimes />} />
+                <Route
+                  path="/quran"
+                  element={
+                    <Protected>
+                      <QuranHabit />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/quran/khatam"
+                  element={
+                    <Protected>
+                      <QuranKhatam />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/quran/browse"
+                  element={
+                    <Protected>
+                      <QuranBrowse />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/quran/listen"
+                  element={
+                    <Protected>
+                      <QuranListen />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/quran/analytics"
+                  element={
+                    <Protected>
+                      <QuranAnalytics />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/quran/bookmarks"
+                  element={
+                    <Protected>
+                      <QuranBookmarks />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/quran/read/:surah"
+                  element={
+                    <Protected>
+                      <QuranReader />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/zikr/analytics"
+                  element={
+                    <Protected>
+                      <ZikrAnalytics />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <Protected>
+                      <Settings />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <Protected>
+                      <Profile />
+                    </Protected>
+                  }
+                />
+                <Route path="/special-day/:id" element={<IslamicSpecialDay />} />
+                <Route
+                  path="/friends"
+                  element={
+                    <Protected>
+                      <Friends />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/cycle"
+                  element={
+                    <Protected>
+                      <RayhanahCycle />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/ramadan"
+                  element={
+                    <Protected>
+                      <RamadanTracker />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/ramadan/analytics"
+                  element={
+                    <Protected>
+                      <RamadanAnalytics />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/cycle/analytics"
+                  element={
+                    <Protected>
+                      <CycleAnalytics />
+                    </Protected>
+                  }
+                />
+                {/* Public: handles guests itself (sign-in gate that returns here) */}
+                <Route path="/connect/:code" element={<ConnectFriend />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/feedback" element={<Feedback />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/login" element={<AuthSignIn />} />
+                <Route path="/signup" element={<AuthSignUp />} />
+                <Route path="/auth/action" element={<AuthAction />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
             </Suspense>
           </div>
           {showFooter && <Footer />}

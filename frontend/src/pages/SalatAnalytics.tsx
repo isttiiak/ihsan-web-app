@@ -11,29 +11,35 @@ import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 const PERIOD_OPTIONS = [
   { label: '30d', value: 30 },
   { label: '90d', value: 90 },
-  { label: '1y',  value: 365 },
+  { label: '1y', value: 365 },
 ];
 
 const PRAYER_GRADIENTS: Record<string, string> = {
-  fajr:    'from-brand-info to-brand-info-dim',
-  dhuhr:   'from-brand-gold to-brand-warm',
-  asr:     'from-brand-info to-brand-info-dim',
+  fajr: 'from-brand-info to-brand-info-dim',
+  dhuhr: 'from-brand-gold to-brand-warm',
+  asr: 'from-brand-info to-brand-info-dim',
   maghrib: 'from-brand-pink to-brand-pink-dim',
-  isha:    'from-brand-info to-brand-info-dim',
+  isha: 'from-brand-info to-brand-info-dim',
 };
 
 function calendarCellStyle(completed: number, hasData: boolean) {
-  if (!hasData) return { background: 'rgba(122,158,110,0.04)', border: '1px solid rgba(122,158,110,0.08)' };
-  if (completed === 0) return { background: 'rgba(185,28,28,0.30)', border: '1px solid rgba(185,28,28,0.40)' };
-  if (completed === 1) return { background: 'rgba(196,130,90,0.35)', border: '1px solid rgba(196,130,90,0.45)' };
-  if (completed === 2) return { background: 'rgba(201,169,110,0.35)', border: '1px solid rgba(201,169,110,0.45)' };
-  if (completed === 3) return { background: 'rgba(201,169,110,0.55)', border: '1px solid rgba(201,169,110,0.60)' };
-  if (completed === 4) return { background: 'rgba(122,158,110,0.45)', border: '1px solid rgba(122,158,110,0.55)' };
+  if (!hasData)
+    return { background: 'rgba(122,158,110,0.04)', border: '1px solid rgba(122,158,110,0.08)' };
+  if (completed === 0)
+    return { background: 'rgba(185,28,28,0.30)', border: '1px solid rgba(185,28,28,0.40)' };
+  if (completed === 1)
+    return { background: 'rgba(196,130,90,0.35)', border: '1px solid rgba(196,130,90,0.45)' };
+  if (completed === 2)
+    return { background: 'rgba(201,169,110,0.35)', border: '1px solid rgba(201,169,110,0.45)' };
+  if (completed === 3)
+    return { background: 'rgba(201,169,110,0.55)', border: '1px solid rgba(201,169,110,0.60)' };
+  if (completed === 4)
+    return { background: 'rgba(122,158,110,0.45)', border: '1px solid rgba(122,158,110,0.55)' };
   return { background: 'rgba(122,158,110,0.75)', border: '1px solid rgba(122,158,110,0.85)' };
 }
 
 export default function SalatAnalytics() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [days, setDays] = useState(30);
   const { data, isLoading, isError } = useSalatAnalytics(days);
   const { data: debt } = useSalatDebt();
@@ -45,8 +51,8 @@ export default function SalatAnalytics() {
     const cells = [...data.calendarData];
     const jsDay = new Date(cells[0].date + 'T12:00:00').getDay(); // 0=Sun
     const firstDay = (jsDay + 2) % 7; // Fri=0, Sat=1, ..., Thu=6
-    const padded: (typeof cells[number] | null)[] = Array(firstDay).fill(null).concat(cells);
-    const weeks: (typeof cells[number] | null)[][] = [];
+    const padded: ((typeof cells)[number] | null)[] = Array(firstDay).fill(null).concat(cells);
+    const weeks: ((typeof cells)[number] | null)[][] = [];
     for (let i = 0; i < padded.length; i += 7) {
       weeks.push(padded.slice(i, i + 7));
     }
@@ -65,7 +71,10 @@ export default function SalatAnalytics() {
       const weekIdx = Math.floor(paddedIdx / 7);
       const month = new Date(d.date + 'T12:00:00').getMonth();
       if (month !== lastMonth) {
-        labels.push({ label: formatLocaleDate(new Date(d.date + 'T12:00:00'), { month: 'short' }), weekIdx });
+        labels.push({
+          label: formatLocaleDate(new Date(d.date + 'T12:00:00'), { month: 'short' }),
+          weekIdx,
+        });
         lastMonth = month;
       }
     });
@@ -91,7 +100,6 @@ export default function SalatAnalytics() {
     <AnimatedBackground variant="dark">
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
-
           {/* Tab navigation — mirrors SalatTracker */}
           <TabNav
             items={[
@@ -138,7 +146,15 @@ export default function SalatAnalytics() {
                 <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-brand-emerald/10 border border-brand-emerald/20">
                   <span className="text-lg shrink-0">📅</span>
                   <p className="text-sm text-white/50">
-                    {t('salatAnalytics.periodNoteStart', { total: formatLocaleNumber(data.periodDays) })} <span className="text-brand-emerald font-semibold">{formatLocaleNumber(data.totalDays)}</span> {t('salatAnalytics.periodNoteEnd', { total: formatLocaleNumber(data.periodDays) })}
+                    {t('salatAnalytics.periodNoteStart', {
+                      total: formatLocaleNumber(data.periodDays),
+                    })}{' '}
+                    <span className="text-brand-emerald font-semibold">
+                      {formatLocaleNumber(data.totalDays)}
+                    </span>{' '}
+                    {t('salatAnalytics.periodNoteEnd', {
+                      total: formatLocaleNumber(data.periodDays),
+                    })}
                   </p>
                 </div>
               )}
@@ -146,16 +162,40 @@ export default function SalatAnalytics() {
               {/* Stat tiles */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: t('salatAnalytics.completion'), value: `${formatLocaleNumber(data.completionRate)}%`, accent: 'text-brand-emerald' },
-                  { label: t('salatAnalytics.currentStreak'), value: formatLocaleNumber(data.currentStreak), accent: 'text-brand-gold' },
-                  { label: t('salatAnalytics.bestRun'), value: formatLocaleNumber(data.bestStreak), accent: 'text-brand-info' },
-                  { label: t('salatAnalytics.naflDays'), value: formatLocaleNumber(data.naflDays ?? 0), accent: 'text-brand-warm' },
-                  { label: t('salatAnalytics.kazaDebt'), value: formatLocaleNumber(debt?.totalOwed ?? 0), accent: 'text-brand-pink' },
-                  ...(data.fridayCount > 0 ? [{
-                    label: t('salatAnalytics.jumuahAttendance'),
-                    value: `${formatLocaleNumber(Math.round((data.jumuahAttendedCount / data.fridayCount) * 100))}%`,
+                  {
+                    label: t('salatAnalytics.completion'),
+                    value: `${formatLocaleNumber(data.completionRate)}%`,
+                    accent: 'text-brand-emerald',
+                  },
+                  {
+                    label: t('salatAnalytics.currentStreak'),
+                    value: formatLocaleNumber(data.currentStreak),
                     accent: 'text-brand-gold',
-                  }] : []),
+                  },
+                  {
+                    label: t('salatAnalytics.bestRun'),
+                    value: formatLocaleNumber(data.bestStreak),
+                    accent: 'text-brand-info',
+                  },
+                  {
+                    label: t('salatAnalytics.naflDays'),
+                    value: formatLocaleNumber(data.naflDays ?? 0),
+                    accent: 'text-brand-warm',
+                  },
+                  {
+                    label: t('salatAnalytics.kazaDebt'),
+                    value: formatLocaleNumber(debt?.totalOwed ?? 0),
+                    accent: 'text-brand-pink',
+                  },
+                  ...(data.fridayCount > 0
+                    ? [
+                        {
+                          label: t('salatAnalytics.jumuahAttendance'),
+                          value: `${formatLocaleNumber(Math.round((data.jumuahAttendedCount / data.fridayCount) * 100))}%`,
+                          accent: 'text-brand-gold',
+                        },
+                      ]
+                    : []),
                 ].map((s, i) => (
                   <motion.div
                     key={s.label}
@@ -178,16 +218,35 @@ export default function SalatAnalytics() {
               >
                 <div className="card-body p-5 space-y-3">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-white">{t('salatAnalytics.overallBreakdown')}</h2>
-                    <span className="text-white/25 text-xs">{t('salatAnalytics.totalSummary', { days: formatLocaleNumber(data.totalDays), total: formatLocaleNumber(data.totalPossiblePrayers) })}</span>
+                    <h2 className="text-base font-bold text-white">
+                      {t('salatAnalytics.overallBreakdown')}
+                    </h2>
+                    <span className="text-white/25 text-xs">
+                      {t('salatAnalytics.totalSummary', {
+                        days: formatLocaleNumber(data.totalDays),
+                        total: formatLocaleNumber(data.totalPossiblePrayers),
+                      })}
+                    </span>
                   </div>
                   <div className="w-full h-4 rounded-full overflow-hidden flex bg-white/10">
                     {data.totalPossiblePrayers > 0 && (
                       <>
                         {[
-                          { count: data.completedCount, color: 'bg-brand-emerald', tip: t('salatAnalytics.onTime') },
-                          { count: data.kazaCount,      color: 'bg-brand-gold',    tip: t('salatAnalytics.kaza') },
-                          { count: data.missedCount,    color: 'bg-red-600/70',    tip: t('salatAnalytics.missed') },
+                          {
+                            count: data.completedCount,
+                            color: 'bg-brand-emerald',
+                            tip: t('salatAnalytics.onTime'),
+                          },
+                          {
+                            count: data.kazaCount,
+                            color: 'bg-brand-gold',
+                            tip: t('salatAnalytics.kaza'),
+                          },
+                          {
+                            count: data.missedCount,
+                            color: 'bg-red-600/70',
+                            tip: t('salatAnalytics.missed'),
+                          },
                         ].map(({ count, color, tip }) => (
                           <motion.div
                             key={tip}
@@ -203,11 +262,31 @@ export default function SalatAnalytics() {
                   </div>
                   <div className="flex flex-wrap gap-4 text-xs">
                     {[
-                      { label: t('salatAnalytics.onTime'), count: data.completedCount, color: 'bg-brand-emerald' },
-                      { label: t('salatAnalytics.kaza'),    count: data.kazaCount,      color: 'bg-brand-gold' },
-                      { label: t('salatAnalytics.missed'),  count: data.missedCount,    color: 'bg-red-600/70' },
-                      { label: t('salatAnalytics.mosque'),  count: data.mosqueCount,    color: 'bg-brand-info' },
-                      { label: t('salatAnalytics.jamat'),   count: data.jamaatCount,    color: 'bg-brand-info' },
+                      {
+                        label: t('salatAnalytics.onTime'),
+                        count: data.completedCount,
+                        color: 'bg-brand-emerald',
+                      },
+                      {
+                        label: t('salatAnalytics.kaza'),
+                        count: data.kazaCount,
+                        color: 'bg-brand-gold',
+                      },
+                      {
+                        label: t('salatAnalytics.missed'),
+                        count: data.missedCount,
+                        color: 'bg-red-600/70',
+                      },
+                      {
+                        label: t('salatAnalytics.mosque'),
+                        count: data.mosqueCount,
+                        color: 'bg-brand-info',
+                      },
+                      {
+                        label: t('salatAnalytics.jamat'),
+                        count: data.jamaatCount,
+                        color: 'bg-brand-info',
+                      },
                     ].map(({ label, count, color }) => (
                       <div key={label} className="flex items-center gap-1.5">
                         <span className={`w-2.5 h-2.5 rounded-sm ${color}`} />
@@ -219,7 +298,12 @@ export default function SalatAnalytics() {
                   <div className="space-y-0.5 pt-1 border-t border-brand-emerald/10">
                     <p className="text-white/20 text-xs flex items-center gap-1">
                       <InformationCircleIcon className="w-3 h-3 shrink-0" />
-                      {t('salatAnalytics.completionFormula', { days: formatLocaleNumber(data.totalDays) })} <strong className="text-white/30">{formatLocaleNumber(data.completionRate)}%</strong>
+                      {t('salatAnalytics.completionFormula', {
+                        days: formatLocaleNumber(data.totalDays),
+                      })}{' '}
+                      <strong className="text-white/30">
+                        {formatLocaleNumber(data.completionRate)}%
+                      </strong>
                     </p>
                     <p className="text-white/20 text-xs flex items-center gap-1">
                       <InformationCircleIcon className="w-3 h-3 shrink-0" />
@@ -232,11 +316,22 @@ export default function SalatAnalytics() {
               {/* Per-prayer cards */}
               <div className="space-y-3">
                 <h2 className="text-white font-black text-sm flex items-center gap-2">
-                  <ChartBarIcon className="w-4 h-4 text-brand-emerald" /> {t('salatAnalytics.perPrayer')}
+                  <ChartBarIcon className="w-4 h-4 text-brand-emerald" />{' '}
+                  {t('salatAnalytics.perPrayer')}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {PRAYER_META.filter((p) => p.isTrackable).map((prayer, i) => {
-                    const stats = data.perPrayer[prayer.id] ?? { completed: 0, kaza: 0, missed: 0, pending: 0, mosque: 0, jamat: 0, tasbeeh: 0, currentStreak: 0, bestStreak: 0 };
+                    const stats = data.perPrayer[prayer.id] ?? {
+                      completed: 0,
+                      kaza: 0,
+                      missed: 0,
+                      pending: 0,
+                      mosque: 0,
+                      jamat: 0,
+                      tasbeeh: 0,
+                      currentStreak: 0,
+                      bestStreak: 0,
+                    };
                     const total = data.totalDays;
                     const done = stats.completed + stats.kaza;
                     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -252,11 +347,18 @@ export default function SalatAnalytics() {
                         <div className="card-body p-4">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-2xl">{prayer.icon}</span>
-                            <h3 className="font-black text-white text-base">{t(`salatAnalytics.prayerName.${prayer.id}`)}</h3>
+                            <h3 className="font-black text-white text-base">
+                              {t(`salatAnalytics.prayerName.${prayer.id}`)}
+                            </h3>
                           </div>
-                          <div className="text-3xl font-black text-white mb-0.5">{formatLocaleNumber(pct)}%</div>
+                          <div className="text-3xl font-black text-white mb-0.5">
+                            {formatLocaleNumber(pct)}%
+                          </div>
                           <p className="text-white/40 text-xs mb-1.5">
-                            {t('salatAnalytics.prayedFormula', { done: formatLocaleNumber(done), total: formatLocaleNumber(total) })}
+                            {t('salatAnalytics.prayedFormula', {
+                              done: formatLocaleNumber(done),
+                              total: formatLocaleNumber(total),
+                            })}
                           </p>
                           <div className="w-full bg-white/20 rounded-full h-1.5 mb-2">
                             <motion.div
@@ -267,16 +369,53 @@ export default function SalatAnalytics() {
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-0.5 text-xs text-white/80">
-                            <span>✅ {t('salatAnalytics.onTimeStat', { count: formatLocaleNumber(stats.completed) })}</span>
-                            <span>⏰ {t('salatAnalytics.kazaStat', { count: formatLocaleNumber(stats.kaza) })}</span>
-                            <span>❌ {t('salatAnalytics.missedStat', { count: formatLocaleNumber(stats.missed) })}</span>
-                            <span>🕌 {t('salatAnalytics.mosqueStat', { count: formatLocaleNumber(stats.mosque) })}</span>
-                            {stats.tasbeeh > 0 && <span className="col-span-2">📿 {t('salatAnalytics.tasbeehStat', { count: formatLocaleNumber(stats.tasbeeh) })}</span>}
+                            <span>
+                              ✅{' '}
+                              {t('salatAnalytics.onTimeStat', {
+                                count: formatLocaleNumber(stats.completed),
+                              })}
+                            </span>
+                            <span>
+                              ⏰{' '}
+                              {t('salatAnalytics.kazaStat', {
+                                count: formatLocaleNumber(stats.kaza),
+                              })}
+                            </span>
+                            <span>
+                              ❌{' '}
+                              {t('salatAnalytics.missedStat', {
+                                count: formatLocaleNumber(stats.missed),
+                              })}
+                            </span>
+                            <span>
+                              🕌{' '}
+                              {t('salatAnalytics.mosqueStat', {
+                                count: formatLocaleNumber(stats.mosque),
+                              })}
+                            </span>
+                            {stats.tasbeeh > 0 && (
+                              <span className="col-span-2">
+                                📿{' '}
+                                {t('salatAnalytics.tasbeehStat', {
+                                  count: formatLocaleNumber(stats.tasbeeh),
+                                })}
+                              </span>
+                            )}
                           </div>
                           {(stats.currentStreak > 0 || stats.bestStreak > 0) && (
                             <div className="flex items-center gap-3 mt-2 pt-2 border-t border-white/15 text-xs text-white/80">
-                              <span>🔥 {t('salatAnalytics.prayerStreakCurrent', { count: formatLocaleNumber(stats.currentStreak) })}</span>
-                              <span>🏆 {t('salatAnalytics.prayerStreakBest', { count: formatLocaleNumber(stats.bestStreak) })}</span>
+                              <span>
+                                🔥{' '}
+                                {t('salatAnalytics.prayerStreakCurrent', {
+                                  count: formatLocaleNumber(stats.currentStreak),
+                                })}
+                              </span>
+                              <span>
+                                🏆{' '}
+                                {t('salatAnalytics.prayerStreakBest', {
+                                  count: formatLocaleNumber(stats.bestStreak),
+                                })}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -290,7 +429,8 @@ export default function SalatAnalytics() {
               {debtHistory && debtHistory.some((w) => w.accumulated > 0 || w.paidBack > 0) && (
                 <div className="space-y-3">
                   <h2 className="text-white font-black text-sm flex items-center gap-2">
-                    <ChartBarIcon className="w-4 h-4 text-brand-emerald" /> {t('salatAnalytics.kazaDebtChart')}
+                    <ChartBarIcon className="w-4 h-4 text-brand-emerald" />{' '}
+                    {t('salatAnalytics.kazaDebtChart')}
                   </h2>
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -299,11 +439,20 @@ export default function SalatAnalytics() {
                   >
                     <div className="card-body p-5">
                       <div className="flex items-center gap-3 text-[11px] text-white/50 mb-3">
-                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-500/70 inline-block" /> {t('salatAnalytics.kazaDebtAccumulated')}</span>
-                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-brand-emerald inline-block" /> {t('salatAnalytics.kazaDebtPaidBack')}</span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-2.5 h-2.5 rounded-sm bg-red-500/70 inline-block" />{' '}
+                          {t('salatAnalytics.kazaDebtAccumulated')}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-2.5 h-2.5 rounded-sm bg-brand-emerald inline-block" />{' '}
+                          {t('salatAnalytics.kazaDebtPaidBack')}
+                        </span>
                       </div>
                       {(() => {
-                        const maxTotal = Math.max(1, ...debtHistory.map((w) => w.accumulated + w.paidBack));
+                        const maxTotal = Math.max(
+                          1,
+                          ...debtHistory.map((w) => w.accumulated + w.paidBack)
+                        );
                         return (
                           <div className="flex items-end gap-2 h-36 min-w-max">
                             {debtHistory.map((w, i) => {
@@ -312,7 +461,10 @@ export default function SalatAnalytics() {
                               const accShare = total > 0 ? (w.accumulated / total) * 100 : 0;
                               const paidShare = total > 0 ? (w.paidBack / total) * 100 : 0;
                               return (
-                                <div key={w.weekStart} className="flex flex-col items-center gap-1.5 w-9 shrink-0">
+                                <div
+                                  key={w.weekStart}
+                                  className="flex flex-col items-center gap-1.5 w-9 shrink-0"
+                                >
                                   <div className="w-full h-24 bg-white/5 rounded-md flex flex-col justify-end overflow-hidden">
                                     <motion.div
                                       initial={{ height: 0 }}
@@ -320,12 +472,23 @@ export default function SalatAnalytics() {
                                       transition={{ duration: 0.5, delay: i * 0.03 }}
                                       className="w-full flex flex-col justify-end rounded-t-sm overflow-hidden"
                                     >
-                                      <div style={{ height: `${accShare}%` }} className="w-full bg-red-500/70" title={`+${w.accumulated}`} />
-                                      <div style={{ height: `${paidShare}%` }} className="w-full bg-brand-emerald" title={`-${w.paidBack}`} />
+                                      <div
+                                        style={{ height: `${accShare}%` }}
+                                        className="w-full bg-red-500/70"
+                                        title={`+${w.accumulated}`}
+                                      />
+                                      <div
+                                        style={{ height: `${paidShare}%` }}
+                                        className="w-full bg-brand-emerald"
+                                        title={`-${w.paidBack}`}
+                                      />
                                     </motion.div>
                                   </div>
                                   <span className="text-white/25 text-[9px]">
-                                    {formatLocaleDate(new Date(w.weekStart + 'T12:00:00'), { month: 'short', day: 'numeric' })}
+                                    {formatLocaleDate(new Date(w.weekStart + 'T12:00:00'), {
+                                      month: 'short',
+                                      day: 'numeric',
+                                    })}
                                   </span>
                                 </div>
                               );
@@ -345,7 +508,8 @@ export default function SalatAnalytics() {
               {data.weeklyMosqueTrend.length > 0 && (
                 <div className="space-y-3">
                   <h2 className="text-white font-black text-sm flex items-center gap-2">
-                    <ChartBarIcon className="w-4 h-4 text-brand-emerald" /> {t('salatAnalytics.mosqueTrend')}
+                    <ChartBarIcon className="w-4 h-4 text-brand-emerald" />{' '}
+                    {t('salatAnalytics.mosqueTrend')}
                   </h2>
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -355,8 +519,13 @@ export default function SalatAnalytics() {
                     <div className="card-body p-5">
                       <div className="flex items-end gap-2 h-36 min-w-max">
                         {data.weeklyMosqueTrend.map((w, i) => (
-                          <div key={w.weekStart} className="flex flex-col items-center gap-1.5 w-9 shrink-0">
-                            <span className="text-white/40 text-[10px] font-bold">{formatLocaleNumber(w.rate)}%</span>
+                          <div
+                            key={w.weekStart}
+                            className="flex flex-col items-center gap-1.5 w-9 shrink-0"
+                          >
+                            <span className="text-white/40 text-[10px] font-bold">
+                              {formatLocaleNumber(w.rate)}%
+                            </span>
                             <div className="w-full h-24 bg-white/5 rounded-md flex items-end overflow-hidden">
                               <motion.div
                                 initial={{ height: 0 }}
@@ -366,7 +535,10 @@ export default function SalatAnalytics() {
                               />
                             </div>
                             <span className="text-white/25 text-[9px]">
-                              {formatLocaleDate(new Date(w.weekStart + 'T12:00:00'), { month: 'short', day: 'numeric' })}
+                              {formatLocaleDate(new Date(w.weekStart + 'T12:00:00'), {
+                                month: 'short',
+                                day: 'numeric',
+                              })}
                             </span>
                           </div>
                         ))}
@@ -382,8 +554,14 @@ export default function SalatAnalytics() {
               {/* Prayer Calendar — horizontal (weeks flow left→right, days top→bottom) */}
               <div className="space-y-3">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <h2 className="text-white font-black text-sm">{t('salatAnalytics.prayerCalendar')}</h2>
-                  <span className="text-white/25 text-xs">{t('salatAnalytics.lastDays', { count: formatLocaleNumber(data.calendarData.length) })}</span>
+                  <h2 className="text-white font-black text-sm">
+                    {t('salatAnalytics.prayerCalendar')}
+                  </h2>
+                  <span className="text-white/25 text-xs">
+                    {t('salatAnalytics.lastDays', {
+                      count: formatLocaleNumber(data.calendarData.length),
+                    })}
+                  </span>
                 </div>
 
                 <motion.div
@@ -398,7 +576,11 @@ export default function SalatAnalytics() {
                         const ml = monthLabels.find((m) => m.weekIdx === wi);
                         return (
                           <div key={wi} className="w-7 text-center shrink-0">
-                            {ml ? <span className="text-white/30 text-[10px] leading-none">{ml.label}</span> : null}
+                            {ml ? (
+                              <span className="text-white/30 text-[10px] leading-none">
+                                {ml.label}
+                              </span>
+                            ) : null}
                           </div>
                         );
                       })}
@@ -408,7 +590,10 @@ export default function SalatAnalytics() {
                       {/* Day-of-week labels on the left (Islamic week: Fri→Thu) */}
                       <div className="flex flex-col gap-1 w-9 shrink-0">
                         {DAY_LABELS.map((d, i) => (
-                          <div key={i} className={`h-7 flex items-center text-[11px] ${i === 0 ? 'text-brand-emerald/60 font-semibold' : 'text-white/25'}`}>
+                          <div
+                            key={i}
+                            className={`h-7 flex items-center text-[11px] ${i === 0 ? 'text-brand-emerald/60 font-semibold' : 'text-white/25'}`}
+                          >
                             {d}
                           </div>
                         ))}
@@ -428,21 +613,41 @@ export default function SalatAnalytics() {
                                   key={di}
                                   initial={{ opacity: 0, scale: 0.5 }}
                                   animate={{ opacity: 1, scale: 1 }}
-                                  transition={{ delay: (wi + di * calendarWeeks.length) * 0.004, duration: 0.25 }}
+                                  transition={{
+                                    delay: (wi + di * calendarWeeks.length) * 0.004,
+                                    duration: 0.25,
+                                  }}
                                   className="tooltip cursor-default"
-                                  data-tip={t('salatAnalytics.calendarTip', { date: cell.date, completed: formatLocaleNumber(cell.completed) })}
+                                  data-tip={t('salatAnalytics.calendarTip', {
+                                    date: cell.date,
+                                    completed: formatLocaleNumber(cell.completed),
+                                  })}
                                 >
                                   <div
                                     className={`w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold transition-transform hover:scale-110 ${
-                                      isToday ? 'ring-2 ring-brand-emerald ring-offset-1 ring-offset-brand-surface' : ''
+                                      isToday
+                                        ? 'ring-2 ring-brand-emerald ring-offset-1 ring-offset-brand-surface'
+                                        : ''
                                     }`}
                                     style={{
                                       ...calendarCellStyle(cell.completed, isLogged),
-                                      ...(isPerfect ? { boxShadow: '0 0 8px rgba(122,158,110,0.35)' } : {}),
+                                      ...(isPerfect
+                                        ? { boxShadow: '0 0 8px rgba(122,158,110,0.35)' }
+                                        : {}),
                                     }}
                                   >
                                     {isLogged && (
-                                      <span className={isPerfect ? 'text-white' : cell.completed >= 3 ? 'text-white/80' : cell.completed > 0 ? 'text-white/60' : 'text-white/40'}>
+                                      <span
+                                        className={
+                                          isPerfect
+                                            ? 'text-white'
+                                            : cell.completed >= 3
+                                              ? 'text-white/80'
+                                              : cell.completed > 0
+                                                ? 'text-white/60'
+                                                : 'text-white/40'
+                                        }
+                                      >
                                         {formatLocaleNumber(cell.completed)}
                                       </span>
                                     )}
@@ -459,18 +664,22 @@ export default function SalatAnalytics() {
                     <div className="flex items-center gap-1.5 mt-4 pl-10 flex-wrap">
                       <span className="text-white/25 text-xs mr-1">{t('salatAnalytics.less')}</span>
                       {[0, 1, 2, 3, 4, 5].map((n) => (
-                        <div key={n} className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold text-white/50"
-                          style={calendarCellStyle(n, true)}>
+                        <div
+                          key={n}
+                          className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold text-white/50"
+                          style={calendarCellStyle(n, true)}
+                        >
                           {formatLocaleNumber(n)}
                         </div>
                       ))}
                       <span className="text-white/25 text-xs ml-1">{t('salatAnalytics.more')}</span>
-                      <span className="text-white/20 text-xs ml-2">{t('salatAnalytics.prayersPerDay')}</span>
+                      <span className="text-white/20 text-xs ml-2">
+                        {t('salatAnalytics.prayersPerDay')}
+                      </span>
                     </div>
                   </div>
                 </motion.div>
               </div>
-
             </>
           )}
         </div>

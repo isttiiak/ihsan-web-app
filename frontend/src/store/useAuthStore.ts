@@ -50,7 +50,12 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     const demoGender = sessionStorage.getItem('ihsan_demo_mode');
     if (demoGender) {
-      set({ aiEnabled: ai === '1', user: getDemoUser(demoGender), isDemoMode: true, authLoading: false });
+      set({
+        aiEnabled: ai === '1',
+        user: getDemoUser(demoGender),
+        isDemoMode: true,
+        authLoading: false,
+      });
       return;
     }
 
@@ -58,7 +63,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       cachedUser = JSON.parse(localStorage.getItem('ihsan_user') ?? 'null') as AuthUser | null;
     } catch {
-      cachedUser = null;
+      // cachedUser already defaults to null
     }
     if (cachedUser?.uid) {
       set({ aiEnabled: ai === '1', user: cachedUser, authLoading: false });

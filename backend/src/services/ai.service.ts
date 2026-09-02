@@ -55,7 +55,12 @@ Your ONLY job is to ENCOURAGE, PERSONALIZE and warmly reflect. Follow these ABSO
 6. Do not produce long Arabic supplication text (the app has verified ones already).
 Stay strictly within encouragement and personal reflection.`;
 
-async function callProvider(p: Provider, system: string, user: string, maxTokens = 600): Promise<string | null> {
+async function callProvider(
+  p: Provider,
+  system: string,
+  user: string,
+  maxTokens = 600
+): Promise<string | null> {
   try {
     const res = await fetch(p.url, {
       method: 'POST',
@@ -71,21 +76,23 @@ async function callProvider(p: Provider, system: string, user: string, maxTokens
       }),
     });
     if (!res.ok) {
-      // eslint-disable-next-line no-console
       console.warn(`[ai] ${p.name} responded ${res.status}`);
       return null;
     }
     const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
     return data.choices?.[0]?.message?.content ?? null;
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.warn(`[ai] ${p.name} error`, (e as Error).message);
     return null;
   }
 }
 
 /** Try each provider in order with a fully-formed system prompt. */
-async function completeRaw(system: string, user: string, maxTokens = 600): Promise<{ text: string; provider: string } | null> {
+async function completeRaw(
+  system: string,
+  user: string,
+  maxTokens = 600
+): Promise<{ text: string; provider: string } | null> {
   for (const p of providers()) {
     const text = await callProvider(p, system, user, maxTokens);
     if (text && text.trim()) return { text: text.trim(), provider: p.name };
@@ -94,14 +101,21 @@ async function completeRaw(system: string, user: string, maxTokens = 600): Promi
 }
 
 /** Encouragement path — always prefixed with the immutable guardrail. */
-async function complete(system: string, user: string, maxTokens = 600): Promise<{ text: string; provider: string } | null> {
+async function complete(
+  system: string,
+  user: string,
+  maxTokens = 600
+): Promise<{ text: string; provider: string } | null> {
   return completeRaw(`${GUARDRAIL}\n\n${system}`, user, maxTokens);
 }
 
 /** Parse a JSON object out of a model reply, tolerating ```json fences / prose. */
 function parseLoose<T>(raw: string): T | null {
   try {
-    const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const cleaned = raw
+      .replace(/```json/gi, '')
+      .replace(/```/g, '')
+      .trim();
     const start = cleaned.indexOf('{');
     const end = cleaned.lastIndexOf('}');
     if (start === -1 || end === -1) return null;
@@ -112,11 +126,17 @@ function parseLoose<T>(raw: string): T | null {
 }
 
 // ── Feature 1: personalized dhikr / habit encouragement ──────────────────────
-export interface SuggestResult { suggestions: string[]; motivation: string; ai: boolean; provider?: string }
+export interface SuggestResult {
+  suggestions: string[];
+  motivation: string;
+  ai: boolean;
+  provider?: string;
+}
 
 const STATIC_SUGGEST: SuggestResult = {
   suggestions: ['SubhanAllah wa bihamdihi', 'Astaghfirullah', 'La ilaha illallah'],
-  motivation: 'A little, kept up with love, is beloved. Take one small step today — you are not behind.',
+  motivation:
+    'A little, kept up with love, is beloved. Take one small step today — you are not behind.',
   ai: false,
 };
 
@@ -137,7 +157,12 @@ export async function getSuggestions(userSummary: string): Promise<SuggestResult
 }
 
 // ── Feature 2: weekly worship recap ──────────────────────────────────────────
-export interface WeeklyResult { summary: string; encouragement: string; ai: boolean; provider?: string }
+export interface WeeklyResult {
+  summary: string;
+  encouragement: string;
+  ai: boolean;
+  provider?: string;
+}
 
 export async function getWeeklySummary(stats: Record<string, unknown>): Promise<WeeklyResult> {
   const out = await complete(
@@ -153,7 +178,12 @@ export async function getWeeklySummary(stats: Record<string, unknown>): Promise<
   }
   const parsed = parseLoose<{ summary?: string; encouragement?: string }>(out.text);
   if (!parsed?.summary || !parsed.encouragement) {
-    return { summary: out.text.slice(0, 300), encouragement: 'Keep going — steadily and with love.', ai: true, provider: out.provider };
+    return {
+      summary: out.text.slice(0, 300),
+      encouragement: 'Keep going — steadily and with love.',
+      ai: true,
+      provider: out.provider,
+    };
   }
   return {
     summary: String(parsed.summary),
@@ -164,9 +194,16 @@ export async function getWeeklySummary(stats: Record<string, unknown>): Promise<
 }
 
 // ── Feature 3: comeback nudge after time away ────────────────────────────────
-export interface NudgeResult { message: string; ai: boolean; provider?: string }
+export interface NudgeResult {
+  message: string;
+  ai: boolean;
+  provider?: string;
+}
 
-export async function getComebackNudge(input: { daysAway: number; bestStreak?: number }): Promise<NudgeResult> {
+export async function getComebackNudge(input: {
+  daysAway: number;
+  bestStreak?: number;
+}): Promise<NudgeResult> {
   const out = await complete(
     `The user has been away from their worship tracking for a few days and just opened the app again. Write ONE short, warm welcome-back line (max 2 sentences). Make returning feel easy and shame-free — suggest the SMALLEST possible next step (a single āyah, one dhikr, one prayer logged). Never guilt them, never mention "streak loss" as a failure. Reply ONLY as JSON: {"message": string}.`,
     `Days away: ${input.daysAway}. Their best run ever: ${input.bestStreak ?? 0} days.`,
@@ -175,24 +212,41 @@ export async function getComebackNudge(input: { daysAway: number; bestStreak?: n
   const fallback = `${input.daysAway} days away — and you came back. Start tiny today: one āyah, or one dhikr. That's enough.`;
   if (!out) return { message: fallback, ai: false };
   const parsed = parseLoose<{ message?: string }>(out.text);
-  return { message: parsed?.message ? String(parsed.message) : fallback, ai: !!parsed?.message, provider: out.provider };
+  return {
+    message: parsed?.message ? String(parsed.message) : fallback,
+    ai: !!parsed?.message,
+    provider: out.provider,
+  };
 }
 
 // ── Feature 4: mood-aware comfort (Rayhanah) ─────────────────────────────────
-export async function getMoodComfort(input: { moods: string[]; symptoms?: string[] }): Promise<NudgeResult> {
+export async function getMoodComfort(input: {
+  moods: string[];
+  symptoms?: string[];
+}): Promise<NudgeResult> {
   const out = await complete(
     `A Muslim woman logged how she feels today during her cycle. Write ONE gentle, comforting line (max 2 sentences) that acknowledges EXACTLY the feelings she named — warm, sisterly, never clinical, never preachy. If she named several, hold them together. Do NOT give medical advice, do NOT give any ruling, do NOT cite anything. Reply ONLY as JSON: {"message": string}.`,
     `She feels: ${input.moods.join(', ') || 'unspecified'}${input.symptoms?.length ? `. Body: ${input.symptoms.join(', ')}` : ''}.`,
     220
   );
-  const fallback = 'Whatever today feels like, you are still held and still beloved to Allah. Be gentle with yourself.';
+  const fallback =
+    'Whatever today feels like, you are still held and still beloved to Allah. Be gentle with yourself.';
   if (!out) return { message: fallback, ai: false };
   const parsed = parseLoose<{ message?: string }>(out.text);
-  return { message: parsed?.message ? String(parsed.message) : fallback, ai: !!parsed?.message, provider: out.provider };
+  return {
+    message: parsed?.message ? String(parsed.message) : fallback,
+    ai: !!parsed?.message,
+    provider: out.provider,
+  };
 }
 
 // ── Feature 5: streak coaching (milestones & recovery) ───────────────────────
-export interface CoachResult { message: string; tip: string; ai: boolean; provider?: string }
+export interface CoachResult {
+  message: string;
+  tip: string;
+  ai: boolean;
+  provider?: string;
+}
 
 export async function getStreakCoaching(input: {
   event: 'milestone' | 'break';
@@ -209,16 +263,33 @@ export async function getStreakCoaching(input: {
     300
   );
   const fallback: CoachResult = isMilestone
-    ? { message: `${input.streakDays} days — masha'Allah, your consistency is beautiful.`, tip: 'Same time, same place — rhythm outlasts willpower.', ai: false }
-    : { message: `Streaks end — but you showed up for ${input.streakDays ?? 0} days, and that counted.`, tip: 'Just one today. One dhikr, one āyah, one prayer logged. That restarts everything.', ai: false };
+    ? {
+        message: `${input.streakDays} days — masha'Allah, your consistency is beautiful.`,
+        tip: 'Same time, same place — rhythm outlasts willpower.',
+        ai: false,
+      }
+    : {
+        message: `Streaks end — but you showed up for ${input.streakDays ?? 0} days, and that counted.`,
+        tip: 'Just one today. One dhikr, one āyah, one prayer logged. That restarts everything.',
+        ai: false,
+      };
   if (!out) return fallback;
   const parsed = parseLoose<{ message?: string; tip?: string }>(out.text);
   if (!parsed?.message || !parsed.tip) return fallback;
-  return { message: String(parsed.message), tip: String(parsed.tip), ai: true, provider: out.provider };
+  return {
+    message: String(parsed.message),
+    tip: String(parsed.tip),
+    ai: true,
+    provider: out.provider,
+  };
 }
 
 // ── Feature 6: fasting companion (daily encouragement during fasts) ──────────
-export interface FastingCompanionResult { message: string; ai: boolean; provider?: string }
+export interface FastingCompanionResult {
+  message: string;
+  ai: boolean;
+  provider?: string;
+}
 
 export async function getFastingCompanion(input: {
   period: 'morning' | 'evening';
@@ -234,15 +305,32 @@ export async function getFastingCompanion(input: {
     220
   );
   const fallback: FastingCompanionResult = isMorning
-    ? { message: 'A new day of fasting begins — you chose this closeness to Allah. Let every quiet moment today be a conversation with Him.', ai: false }
-    : { message: 'The end is near — you carried this day with patience. Soon the reward of breaking your fast, and every hungry moment counted.', ai: false };
+    ? {
+        message:
+          'A new day of fasting begins — you chose this closeness to Allah. Let every quiet moment today be a conversation with Him.',
+        ai: false,
+      }
+    : {
+        message:
+          'The end is near — you carried this day with patience. Soon the reward of breaking your fast, and every hungry moment counted.',
+        ai: false,
+      };
   if (!out) return fallback;
   const parsed = parseLoose<{ message?: string }>(out.text);
-  return { message: parsed?.message ? String(parsed.message) : fallback.message, ai: !!parsed?.message, provider: out.provider };
+  return {
+    message: parsed?.message ? String(parsed.message) : fallback.message,
+    ai: !!parsed?.message,
+    provider: out.provider,
+  };
 }
 
 // ── Feature 7: activity pattern analysis ─────────────────────────────────────
-export interface InsightResult { insights: string[]; headline: string; ai: boolean; provider?: string }
+export interface InsightResult {
+  insights: string[];
+  headline: string;
+  ai: boolean;
+  provider?: string;
+}
 
 export async function getActivityInsight(stats: Record<string, unknown>): Promise<InsightResult> {
   const out = await complete(
@@ -256,7 +344,10 @@ Be warm and specific — name the actual numbers you see. No hadith, no ruling, 
   );
   const fallback: InsightResult = {
     headline: 'Your month had its own rhythm — every day you showed up mattered.',
-    insights: ['Look at your strongest days and keep protecting that time.', 'Small consistency beats occasional bursts — the quiet days add up too.'],
+    insights: [
+      'Look at your strongest days and keep protecting that time.',
+      'Small consistency beats occasional bursts — the quiet days add up too.',
+    ],
     ai: false,
   };
   if (!out) return fallback;

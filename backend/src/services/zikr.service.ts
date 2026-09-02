@@ -1,6 +1,10 @@
 import User from '../models/User.js';
 import ZikrDaily from '../models/ZikrDaily.js';
-import { truncateToTimezone, bucketDateForDayString, DEFAULT_TIMEZONE_OFFSET } from '../utils/timezone-flexible.js';
+import {
+  truncateToTimezone,
+  bucketDateForDayString,
+  DEFAULT_TIMEZONE_OFFSET,
+} from '../utils/timezone-flexible.js';
 import { ZikrIncrementItem } from '../types/api.types.js';
 
 export interface IncrementResult {
@@ -65,10 +69,7 @@ async function applyIncrements(
   }
 
   if (totalAdded !== 0 || Object.keys(userInc).length) {
-    await User.updateOne(
-      { uid: userId },
-      { $inc: { ...userInc, totalCount: totalAdded } }
-    );
+    await User.updateOne({ uid: userId }, { $inc: { ...userInc, totalCount: totalAdded } });
   }
 
   const user = await User.findOne({ uid: userId }).select(ZIKR_PROJECTION);
@@ -123,8 +124,9 @@ export async function getZikrSummary(
 
   // Today's buckets — the DB is the source of truth for the day count so every
   // browser/device shows the same number (localStorage is only a tap buffer).
-  const todayDate = (todayStr ? bucketDateForDayString(todayStr, timezoneOffset) : null)
-    ?? truncateToTimezone(Date.now(), timezoneOffset);
+  const todayDate =
+    (todayStr ? bucketDateForDayString(todayStr, timezoneOffset) : null) ??
+    truncateToTimezone(Date.now(), timezoneOffset);
   const todayDocs = await ZikrDaily.find({ userId, date: todayDate }).select('zikrType count');
   const todayPerType: Record<string, number> = {};
   let todayTotal = 0;
@@ -137,7 +139,9 @@ export async function getZikrSummary(
   if (user.zikrTotals instanceof Map) {
     perType = [...user.zikrTotals.entries()].map(([zikrType, total]) => ({ zikrType, total }));
   } else if (user.zikrTotals && typeof user.zikrTotals === 'object') {
-    perType = Object.entries(user.zikrTotals as unknown as Record<string, number>).map(([zikrType, total]) => ({ zikrType, total }));
+    perType = Object.entries(user.zikrTotals as unknown as Record<string, number>).map(
+      ([zikrType, total]) => ({ zikrType, total })
+    );
   }
 
   return {
@@ -157,9 +161,9 @@ export async function addZikrType(userId: string, name: string): Promise<unknown
   const user = await User.findOne({ uid: userId }).select(ZIKR_PROJECTION);
   if (!user) throw new Error('User not found');
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Mongoose DocumentArray subdocument typing doesn't expose `.name` cleanly here
   if (!user.zikrTypes.some((t: any) => (t.name as string).toLowerCase() === name.toLowerCase())) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DocumentArray#push rejects a plain object under the subdocument's strict type
     (user.zikrTypes as any).push({ name });
     await user.save();
   }
@@ -174,7 +178,11 @@ export async function addZikrType(userId: string, name: string): Promise<unknown
  * accident). Historic buckets that somehow already use the new name are merged
  * additively so the unique index never throws.
  */
-export async function renameZikrType(userId: string, oldName: string, newName: string): Promise<unknown[]> {
+export async function renameZikrType(
+  userId: string,
+  oldName: string,
+  newName: string
+): Promise<unknown[]> {
   const user = await User.findOne({ uid: userId }).select(ZIKR_PROJECTION);
   if (!user) throw new Error('User not found');
 
@@ -187,7 +195,10 @@ export async function renameZikrType(userId: string, oldName: string, newName: s
     err.status = 404;
     throw err;
   }
-  if (oldLower !== newLower && user.zikrTypes.some((t: { name: string }) => t.name.toLowerCase() === newLower)) {
+  if (
+    oldLower !== newLower &&
+    user.zikrTypes.some((t: { name: string }) => t.name.toLowerCase() === newLower)
+  ) {
     const err = new Error('A zikr with that name already exists') as Error & { status?: number };
     err.status = 409;
     throw err;
@@ -233,10 +244,9 @@ export async function removeZikrType(userId: string, name: string): Promise<unkn
   if (!user) throw new Error('User not found');
 
   const before = user.zikrTypes.length;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user.zikrTypes = user.zikrTypes.filter(
     (t: { name: string }) => t.name.toLowerCase() !== name.toLowerCase()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filter() returns a plain array, not the DocumentArray Mongoose expects back
   ) as any;
   if (user.zikrTypes.length !== before) await user.save();
   return user.zikrTypes;

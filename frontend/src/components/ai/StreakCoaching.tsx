@@ -22,16 +22,26 @@ function cacheId(day: string, feature: string, event: string): string {
   return `${day}|${feature}|${event}`;
 }
 
-interface CachedCoach { id: string; message: string; tip: string }
+interface CachedCoach {
+  id: string;
+  message: string;
+  tip: string;
+}
 
 function readCache(id: string): CachedCoach | null {
   try {
     const raw = JSON.parse(localStorage.getItem(CACHE_KEY) ?? '{}') as CachedCoach;
     return raw.id === id ? raw : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 function writeCache(data: CachedCoach): void {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch { /* full */ }
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch {
+    /* full */
+  }
 }
 
 interface StreakEvent {
@@ -47,7 +57,7 @@ function detectEvents(
   quranStreak: number | null,
   salatStreak: number | null,
   prevStreaks: Record<string, number>,
-  featureLabels: { zikr: string; quran: string; salat: string },
+  featureLabels: { zikr: string; quran: string; salat: string }
 ): StreakEvent | null {
   const checks = [
     { key: 'zikr', label: featureLabels.zikr, streak: zikrStreak },
@@ -58,10 +68,22 @@ function detectEvents(
     if (c.streak == null) continue;
     const prev = prevStreaks[c.key] ?? 0;
     if (c.streak > prev && MILESTONES.includes(c.streak)) {
-      return { event: 'milestone', feature: c.key, featureLabel: c.label, streakDays: c.streak, bestStreak: prev };
+      return {
+        event: 'milestone',
+        feature: c.key,
+        featureLabel: c.label,
+        streakDays: c.streak,
+        bestStreak: prev,
+      };
     }
     if (c.streak === 0 && prev >= 3) {
-      return { event: 'break', feature: c.key, featureLabel: c.label, streakDays: prev, bestStreak: prev };
+      return {
+        event: 'break',
+        feature: c.key,
+        featureLabel: c.label,
+        streakDays: prev,
+        bestStreak: prev,
+      };
     }
   }
   return null;
@@ -70,15 +92,24 @@ function detectEvents(
 const PREV_KEY = 'ihsan_prev_streaks';
 
 function readPrev(): Record<string, number> {
-  try { return JSON.parse(localStorage.getItem(PREV_KEY) ?? '{}') as Record<string, number>; }
-  catch { return {}; }
+  try {
+    return JSON.parse(localStorage.getItem(PREV_KEY) ?? '{}') as Record<string, number>;
+  } catch {
+    return {};
+  }
 }
 function writePrev(streaks: Record<string, number>): void {
-  try { localStorage.setItem(PREV_KEY, JSON.stringify(streaks)); } catch { /* full */ }
+  try {
+    localStorage.setItem(PREV_KEY, JSON.stringify(streaks));
+  } catch {
+    /* full */
+  }
 }
 
 export default function StreakCoaching({
-  zikrStreak, quranStreak, salatStreak,
+  zikrStreak,
+  quranStreak,
+  salatStreak,
 }: {
   zikrStreak: number | null;
   quranStreak: number | null;
@@ -100,9 +131,10 @@ export default function StreakCoaching({
     salat: t('streakCoaching.salat', 'Salat'),
   };
 
-  const streakEvent = (user && aiEnabled)
-    ? detectEvents(zikrStreak, quranStreak, salatStreak, prev, featureLabels)
-    : null;
+  const streakEvent =
+    user && aiEnabled
+      ? detectEvents(zikrStreak, quranStreak, salatStreak, prev, featureLabels)
+      : null;
 
   useEffect(() => {
     const cur: Record<string, number> = {};
@@ -116,19 +148,27 @@ export default function StreakCoaching({
     if (!streakEvent) return;
     const id = cacheId(day, streakEvent.feature, streakEvent.event);
     const cached = readCache(id);
-    if (cached) { setResult(cached); return; }
+    if (cached) {
+      setResult(cached);
+      return;
+    }
     if (coach.isPending) return;
     coach.mutate(
-      { event: streakEvent.event, streakDays: streakEvent.streakDays, feature: streakEvent.featureLabel, bestStreak: streakEvent.bestStreak },
+      {
+        event: streakEvent.event,
+        streakDays: streakEvent.streakDays,
+        feature: streakEvent.featureLabel,
+        bestStreak: streakEvent.bestStreak,
+      },
       {
         onSuccess: (r) => {
           const entry: CachedCoach = { id, message: r.message, tip: r.tip };
           setResult(entry);
           writeCache(entry);
         },
-      },
+      }
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
   }, [day, streakEvent?.feature, streakEvent?.event]);
 
   if (!streakEvent || dismissed || (!result && !coach.isPending)) return null;
@@ -137,38 +177,56 @@ export default function StreakCoaching({
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-      <div className={`rounded-2xl border p-4 ${
-        isMilestone
-          ? 'border-brand-gold/30 bg-gradient-to-br from-brand-gold/10 to-brand-gold/[0.04]'
-          : 'border-brand-info/20 bg-brand-info/[0.05]'
-      }`}>
+      <div
+        className={`rounded-2xl border p-4 ${
+          isMilestone
+            ? 'border-brand-gold/30 bg-gradient-to-br from-brand-gold/10 to-brand-gold/[0.04]'
+            : 'border-brand-info/20 bg-brand-info/[0.05]'
+        }`}
+      >
         <div className="flex items-center justify-between mb-2">
-          <AiBadge label={isMilestone
-            ? t('streakCoaching.milestoneBadge', '{{days}}-day {{feature}} streak!', { days: streakEvent.streakDays, feature: streakEvent.featureLabel })
-            : t('streakCoaching.resetBadge', '{{feature}} streak reset', { feature: streakEvent.featureLabel })
-          } />
+          <AiBadge
+            label={
+              isMilestone
+                ? t('streakCoaching.milestoneBadge', '{{days}}-day {{feature}} streak!', {
+                    days: streakEvent.streakDays,
+                    feature: streakEvent.featureLabel,
+                  })
+                : t('streakCoaching.resetBadge', '{{feature}} streak reset', {
+                    feature: streakEvent.featureLabel,
+                  })
+            }
+          />
           <button
             className="text-white/30 hover:text-white text-xs"
             onClick={() => setDismissed(true)}
             aria-label={t('naseehInsights.dismiss', 'Dismiss')}
-          >{t('naseehInsights.dismiss', 'Dismiss')}</button>
+          >
+            {t('naseehInsights.dismiss', 'Dismiss')}
+          </button>
         </div>
 
         {coach.isPending && !result ? (
           <div className="flex items-center gap-2 py-2">
             {['#c9a96e', '#7a9e6e', '#5a9e8e'].map((c, i) => (
               <motion.span
-                key={c} className="w-2 h-2 rounded-full" style={{ background: c }}
+                key={c}
+                className="w-2 h-2 rounded-full"
+                style={{ background: c }}
                 animate={{ opacity: [0.3, 1, 0.3] }}
                 transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.15 }}
               />
             ))}
-            <span className="text-white/40 text-xs">{t('naseeh.findingWords', 'Finding the right words…')}</span>
+            <span className="text-white/40 text-xs">
+              {t('naseeh.findingWords', 'Finding the right words…')}
+            </span>
           </div>
         ) : result ? (
           <div className="space-y-1.5">
             <p className="text-white/80 text-sm leading-relaxed">{result.message}</p>
-            <p className={`text-sm italic ${isMilestone ? 'text-brand-gold/70' : 'text-brand-info/70'}`}>
+            <p
+              className={`text-sm italic ${isMilestone ? 'text-brand-gold/70' : 'text-brand-info/70'}`}
+            >
               {result.tip}
             </p>
           </div>

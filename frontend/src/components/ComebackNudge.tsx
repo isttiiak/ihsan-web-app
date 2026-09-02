@@ -22,12 +22,21 @@ const CACHE_KEY = 'ihsan_comeback_nudge';
 
 function readCache(day: string): string | null {
   try {
-    const raw = JSON.parse(localStorage.getItem(CACHE_KEY) ?? '{}') as { day?: string; message?: string };
+    const raw = JSON.parse(localStorage.getItem(CACHE_KEY) ?? '{}') as {
+      day?: string;
+      message?: string;
+    };
     return raw.day === day && raw.message ? raw.message : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 function writeCache(day: string, message: string): void {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ day, message })); } catch { /* full */ }
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ day, message }));
+  } catch {
+    /* full */
+  }
 }
 
 export default function ComebackNudge() {
@@ -59,13 +68,21 @@ export default function ComebackNudge() {
     if (!show) return;
     const day = getTrackingDay();
     const cached = readCache(day);
-    if (cached) { setMessage(cached); return; }
+    if (cached) {
+      setMessage(cached);
+      return;
+    }
     if (comeback.isPending || message) return;
     comeback.mutate(
       { daysAway, bestStreak: summary?.bestStreak ?? 0 },
-      { onSuccess: (r) => { setMessage(r.message); writeCache(day, r.message); } }
+      {
+        onSuccess: (r) => {
+          setMessage(r.message);
+          writeCache(day, r.message);
+        },
+      }
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
   }, [show, daysAway]);
 
   if (!show || !message) return null;
@@ -80,14 +97,22 @@ export default function ComebackNudge() {
               className="text-white/30 hover:text-white text-xs"
               onClick={() => setDismissed(true)}
               aria-label={t('comebackNudge.dismiss')}
-            >{t('comebackNudge.dismiss')}</button>
+            >
+              {t('comebackNudge.dismiss')}
+            </button>
           </div>
           <p className="text-white/80 text-sm leading-relaxed">{message}</p>
           <div className="flex flex-wrap gap-2 mt-3">
-            <Link to="/quran/browse" className="btn btn-xs rounded-xl border-0 text-white font-bold bg-brand-emerald hover:bg-brand-emerald-dim">
+            <Link
+              to="/quran/browse"
+              className="btn btn-xs rounded-xl border-0 text-white font-bold bg-brand-emerald hover:bg-brand-emerald-dim"
+            >
               {t('comebackNudge.readOneAyah')}
             </Link>
-            <Link to="/zikr" className="btn btn-xs rounded-xl bg-white/5 border-brand-emerald/15 text-white/70">
+            <Link
+              to="/zikr"
+              className="btn btn-xs rounded-xl bg-white/5 border-brand-emerald/15 text-white/70"
+            >
               {t('comebackNudge.oneDhikr')}
             </Link>
           </div>

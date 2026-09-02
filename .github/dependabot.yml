@@ -1,0 +1,45 @@
+version: 2
+
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    groups:
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
+    # Security updates are opened as their own PRs, outside the group above.
+    open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+      - 'root'
+
+  - package-ecosystem: 'npm'
+    directory: '/backend'
+    schedule:
+      interval: 'weekly'
+    groups:
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
+    open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+      - 'backend'
+
+  - package-ecosystem: 'npm'
+    directory: '/frontend'
+    schedule:
+      interval: 'weekly'
+    groups:
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
+    open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+      - 'frontend'

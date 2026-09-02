@@ -6,7 +6,10 @@ import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
 import {
-  useCycleSummary, useAddPastCycle, useDeleteCycleLog, useIsFemale,
+  useCycleSummary,
+  useAddPastCycle,
+  useDeleteCycleLog,
+  useIsFemale,
 } from '../hooks/useCycle.js';
 import { useFastingSummary } from '../hooks/useFasting.js';
 import { useAuthStore } from '../store/useAuthStore.js';
@@ -20,18 +23,30 @@ function shiftStr(dateStr: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 function daysBetween(a: string, b: string): number {
-  return Math.round((new Date(b + 'T12:00:00').getTime() - new Date(a + 'T12:00:00').getTime()) / 86_400_000);
+  return Math.round(
+    (new Date(b + 'T12:00:00').getTime() - new Date(a + 'T12:00:00').getTime()) / 86_400_000
+  );
 }
 function fmt(dateStr: string): string {
   return formatLocaleDate(new Date(dateStr + 'T12:00:00'), { month: 'short', day: 'numeric' });
 }
 function fmtFull(dateStr: string): string {
-  return formatLocaleDate(new Date(dateStr + 'T12:00:00'), { month: 'short', day: 'numeric', year: 'numeric' });
+  return formatLocaleDate(new Date(dateStr + 'T12:00:00'), {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 const SYMPTOM_LABEL: Record<string, string> = {
-  cramps: '🌀 Cramps', headache: '🤕 Headache', fatigue: '🪫 Fatigue', nausea: '🌊 Nausea',
-  backache: '🦴 Backache', bloating: '🎈 Bloating', tenderness: '🌡️ Tenderness', insomnia: '🌙 Insomnia',
+  cramps: '🌀 Cramps',
+  headache: '🤕 Headache',
+  fatigue: '🪫 Fatigue',
+  nausea: '🌊 Nausea',
+  backache: '🦴 Backache',
+  bloating: '🎈 Bloating',
+  tenderness: '🌡️ Tenderness',
+  insomnia: '🌙 Insomnia',
 };
 
 export default function CycleAnalytics() {
@@ -69,27 +84,34 @@ export default function CycleAnalytics() {
 
     const gapVals = gaps.map((g) => g.days);
     const mean = gapVals.length ? gapVals.reduce((a, b) => a + b, 0) / gapVals.length : 28;
-    const sd = gapVals.length > 1
-      ? Math.sqrt(gapVals.reduce((a, b) => a + (b - mean) ** 2, 0) / (gapVals.length - 1))
-      : 0;
+    const sd =
+      gapVals.length > 1
+        ? Math.sqrt(gapVals.reduce((a, b) => a + (b - mean) ** 2, 0) / (gapVals.length - 1))
+        : 0;
     const lenVals = lengths.map((l) => l.days);
     const meanLen = lenVals.length ? lenVals.reduce((a, b) => a + b, 0) / lenVals.length : 7;
 
     const regularity =
-      gapVals.length < 2 ? { key: 'learning', label: 'Learning…', tone: 'text-white/40' }
-      : sd <= 2 ? { key: 'veryRegular', label: 'Very regular', tone: 'text-brand-emerald' }
-      : sd <= 4 ? { key: 'regular', label: 'Regular', tone: 'text-brand-emerald/80' }
-      : sd <= 7 ? { key: 'somewhatVariable', label: 'Somewhat variable', tone: 'text-brand-gold/80' }
-      : { key: 'irregular', label: 'Irregular', tone: 'text-brand-pink/80' };
+      gapVals.length < 2
+        ? { key: 'learning', label: 'Learning…', tone: 'text-white/40' }
+        : sd <= 2
+          ? { key: 'veryRegular', label: 'Very regular', tone: 'text-brand-emerald' }
+          : sd <= 4
+            ? { key: 'regular', label: 'Regular', tone: 'text-brand-emerald/80' }
+            : sd <= 7
+              ? { key: 'somewhatVariable', label: 'Somewhat variable', tone: 'text-brand-gold/80' }
+              : { key: 'irregular', label: 'Irregular', tone: 'text-brand-pink/80' };
 
     // Next 3 predicted windows: lastStart + n·mean, each ± max(1, round(SD))
     const lastStart = hayd.length ? hayd[hayd.length - 1]!.startDate : null;
     const spread = Math.max(1, Math.round(sd));
     const windows = lastStart
-      ? [1, 2, 3].map((n) => {
-          const center = shiftStr(lastStart, Math.round(n * mean));
-          return { center, from: shiftStr(center, -spread), to: shiftStr(center, spread) };
-        }).filter((w) => w.center >= today || daysBetween(w.center, today) < Math.round(mean))
+      ? [1, 2, 3]
+          .map((n) => {
+            const center = shiftStr(lastStart, Math.round(n * mean));
+            return { center, from: shiftStr(center, -spread), to: shiftStr(center, spread) };
+          })
+          .filter((w) => w.center >= today || daysBetween(w.center, today) < Math.round(mean))
       : [];
 
     // Fertile window + ovulation for each predicted window
@@ -105,7 +127,10 @@ export default function CycleAnalytics() {
     // PMS prediction: look at symptom patterns to find typical pre-period onset
     const days = summary?.days ?? [];
     const symCount = new Map<string, number>();
-    let flowLight = 0, flowMed = 0, flowHeavy = 0, moodCount = new Map<string, number>();
+    let flowLight = 0,
+      flowMed = 0,
+      flowHeavy = 0;
+    const moodCount = new Map<string, number>();
     for (const d of days) {
       for (const sy of d.symptoms) symCount.set(sy, (symCount.get(sy) ?? 0) + 1);
       if (d.flow === 'light') flowLight++;
@@ -140,7 +165,9 @@ export default function CycleAnalytics() {
       .slice(0, 5)
       .map(([key, n]) => ({
         key,
-        label: key.startsWith('mood:') ? `${key.replace('mood:', '')} mood` : (SYMPTOM_LABEL[key] ?? key),
+        label: key.startsWith('mood:')
+          ? `${key.replace('mood:', '')} mood`
+          : (SYMPTOM_LABEL[key] ?? key),
         count: n,
         pct: pmsPeriodsAnalyzed > 0 ? Math.round((n / pmsPeriodsAnalyzed) * 100) : 0,
       }));
@@ -175,10 +202,28 @@ export default function CycleAnalytics() {
       .reduce((sum, l) => sum + daysBetween(l.startDate, l.endDate!) + 1, 0);
 
     return {
-      gaps, lengths, mean, sd, meanLen, regularity, windows, fertileWindows,
-      topSymptoms, flowLight, flowMed, flowHeavy, flowTotal, haydCount: hayd.length,
-      pmsPatterns, pmsPeriodsAnalyzed,
-      longest, shortest, trend, irregAlertDays, irregAlertDirection, totalExcusedDays,
+      gaps,
+      lengths,
+      mean,
+      sd,
+      meanLen,
+      regularity,
+      windows,
+      fertileWindows,
+      topSymptoms,
+      flowLight,
+      flowMed,
+      flowHeavy,
+      flowTotal,
+      haydCount: hayd.length,
+      pmsPatterns,
+      pmsPeriodsAnalyzed,
+      longest,
+      shortest,
+      trend,
+      irregAlertDays,
+      irregAlertDirection,
+      totalExcusedDays,
     };
   }, [summary, today]);
 
@@ -188,8 +233,14 @@ export default function CycleAnalytics() {
         <div>
           <div className="text-5xl mb-4">🌸</div>
           <p className="text-white/60 text-sm max-w-sm">
-            {t('cycleAnalytics.accessRestricted', 'Rayhanah Analytics is a private space for our sisters — set your gender to female in')}{' '}
-            <button className="text-brand-emerald underline" onClick={() => navigate('/profile')}>{t('cycleAnalytics.yourProfile', 'your profile')}</button>.
+            {t(
+              'cycleAnalytics.accessRestricted',
+              'Rayhanah Analytics is a private space for our sisters — set your gender to female in'
+            )}{' '}
+            <button className="text-brand-emerald underline" onClick={() => navigate('/profile')}>
+              {t('cycleAnalytics.yourProfile', 'your profile')}
+            </button>
+            .
           </p>
         </div>
       </div>
@@ -205,16 +256,31 @@ export default function CycleAnalytics() {
     const lines = ['Type,Start Date,End Date,Duration (days),Flow,Symptoms,Moods'];
     for (const l of logs) {
       const dur = l.endDate ? daysBetween(l.startDate, l.endDate) + 1 : 'ongoing';
-      const periodDays = days.filter((d) => d.date >= l.startDate && d.date <= (l.endDate ?? today));
+      const periodDays = days.filter(
+        (d) => d.date >= l.startDate && d.date <= (l.endDate ?? today)
+      );
       if (periodDays.length > 0) {
         for (const d of periodDays) {
-          lines.push([
-            l.type, d.date, l.endDate ?? '', String(dur),
-            d.flow ?? '', d.symptoms.join('; '), (d.moods ?? []).join('; '),
-          ].map((v) => `"${v}"`).join(','));
+          lines.push(
+            [
+              l.type,
+              d.date,
+              l.endDate ?? '',
+              String(dur),
+              d.flow ?? '',
+              d.symptoms.join('; '),
+              (d.moods ?? []).join('; '),
+            ]
+              .map((v) => `"${v}"`)
+              .join(',')
+          );
         }
       } else {
-        lines.push([l.type, l.startDate, l.endDate ?? '', String(dur), '', '', ''].map((v) => `"${v}"`).join(','));
+        lines.push(
+          [l.type, l.startDate, l.endDate ?? '', String(dur), '', '', '']
+            .map((v) => `"${v}"`)
+            .join(',')
+        );
       }
     }
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -234,13 +300,16 @@ export default function CycleAnalytics() {
           <TabNav
             items={[
               { label: t('cycleAnalytics.tabCycle', '🌸 Cycle'), to: '/cycle' },
-              { label: t('cycleAnalytics.tabAnalytics', '📊 Analytics'), to: '/cycle/analytics', active: true },
+              {
+                label: t('cycleAnalytics.tabAnalytics', '📊 Analytics'),
+                to: '/cycle/analytics',
+                active: true,
+              },
             ]}
           />
         </div>
       </div>
       <div className="max-w-2xl mx-auto px-4 pt-4 pb-16 space-y-5">
-
         {isLoading ? (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-10 grid place-items-center">
             <span className="loading loading-spinner loading-lg text-brand-pink" />
@@ -251,19 +320,34 @@ export default function CycleAnalytics() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                 <p className="text-2xl font-black text-brand-pink">{stats.haydCount}</p>
-                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('cycleAnalytics.cyclesTracked', 'cycles tracked')}</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
+                  {t('cycleAnalytics.cyclesTracked', 'cycles tracked')}
+                </p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                <p className="text-2xl font-black text-brand-pink">{stats.gaps.length ? Math.round(stats.mean) : '—'}</p>
-                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('cycleAnalytics.avgCycleDays', 'avg cycle days')}</p>
+                <p className="text-2xl font-black text-brand-pink">
+                  {stats.gaps.length ? Math.round(stats.mean) : '—'}
+                </p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
+                  {t('cycleAnalytics.avgCycleDays', 'avg cycle days')}
+                </p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                <p className="text-2xl font-black text-brand-pink">{stats.lengths.length ? Math.round(stats.meanLen) : '—'}</p>
-                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('cycleAnalytics.avgPeriodDays', 'avg period days')}</p>
+                <p className="text-2xl font-black text-brand-pink">
+                  {stats.lengths.length ? Math.round(stats.meanLen) : '—'}
+                </p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
+                  {t('cycleAnalytics.avgPeriodDays', 'avg period days')}
+                </p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                <p className={`text-sm font-black mt-1.5 ${stats.regularity.tone}`}>{t(`cycleAnalytics.regularity.${stats.regularity.key}`, stats.regularity.label)}</p>
-                <p className="text-white/30 text-[10px] font-bold uppercase mt-1.5">{t('cycleAnalytics.regularityLabel', 'regularity')} {stats.gaps.length > 1 ? `(±${Math.round(stats.sd)}d)` : ''}</p>
+                <p className={`text-sm font-black mt-1.5 ${stats.regularity.tone}`}>
+                  {t(`cycleAnalytics.regularity.${stats.regularity.key}`, stats.regularity.label)}
+                </p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1.5">
+                  {t('cycleAnalytics.regularityLabel', 'regularity')}{' '}
+                  {stats.gaps.length > 1 ? `(±${Math.round(stats.sd)}d)` : ''}
+                </p>
               </div>
             </div>
 
@@ -272,22 +356,40 @@ export default function CycleAnalytics() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                   <p className="text-2xl font-black text-brand-info">{stats.shortest ?? '—'}</p>
-                  <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('cycleAnalytics.shortestCycle', 'shortest cycle')}</p>
+                  <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
+                    {t('cycleAnalytics.shortestCycle', 'shortest cycle')}
+                  </p>
                 </div>
                 <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                   <p className="text-2xl font-black text-brand-info">{stats.longest ?? '—'}</p>
-                  <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('cycleAnalytics.longestCycle', 'longest cycle')}</p>
+                  <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
+                    {t('cycleAnalytics.longestCycle', 'longest cycle')}
+                  </p>
                 </div>
                 <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                  <p className="text-2xl font-black text-brand-info">{stats.longest != null && stats.shortest != null ? stats.longest - stats.shortest : '—'}</p>
-                  <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('cycleAnalytics.rangeDays', 'range (days)')}</p>
+                  <p className="text-2xl font-black text-brand-info">
+                    {stats.longest != null && stats.shortest != null
+                      ? stats.longest - stats.shortest
+                      : '—'}
+                  </p>
+                  <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
+                    {t('cycleAnalytics.rangeDays', 'range (days)')}
+                  </p>
                 </div>
                 {stats.trend && (
                   <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                    <p className={`text-sm font-black mt-1.5 ${stats.trend === 'stable' ? 'text-brand-emerald' : stats.trend === 'shorter' ? 'text-brand-info' : 'text-brand-gold'}`}>
-                      {stats.trend === 'shorter' ? t('cycleAnalytics.trendShorter', '↘ Getting shorter') : stats.trend === 'longer' ? t('cycleAnalytics.trendLonger', '↗ Getting longer') : t('cycleAnalytics.trendStable', '→ Stable')}
+                    <p
+                      className={`text-sm font-black mt-1.5 ${stats.trend === 'stable' ? 'text-brand-emerald' : stats.trend === 'shorter' ? 'text-brand-info' : 'text-brand-gold'}`}
+                    >
+                      {stats.trend === 'shorter'
+                        ? t('cycleAnalytics.trendShorter', '↘ Getting shorter')
+                        : stats.trend === 'longer'
+                          ? t('cycleAnalytics.trendLonger', '↗ Getting longer')
+                          : t('cycleAnalytics.trendStable', '→ Stable')}
                     </p>
-                    <p className="text-white/30 text-[10px] font-bold uppercase mt-1.5">{t('cycleAnalytics.trendLabel', 'trend')}</p>
+                    <p className="text-white/30 text-[10px] font-bold uppercase mt-1.5">
+                      {t('cycleAnalytics.trendLabel', 'trend')}
+                    </p>
                   </div>
                 )}
               </div>
@@ -298,11 +400,21 @@ export default function CycleAnalytics() {
               <div className="rounded-2xl bg-brand-gold/10 border border-brand-gold/20 p-4 text-brand-gold/90 text-xs leading-relaxed flex gap-3">
                 <span className="text-lg shrink-0">⚠️</span>
                 <div>
-                  <p className="font-bold">{t('cycleAnalytics.irregAlertTitle', 'Cycle length change noticed')}</p>
+                  <p className="font-bold">
+                    {t('cycleAnalytics.irregAlertTitle', 'Cycle length change noticed')}
+                  </p>
                   <p className="text-white/50 mt-1">
                     {stats.irregAlertDirection === 'longer'
-                      ? t('cycleAnalytics.irregAlertLonger', { defaultValue: 'Your last cycle was {{days}} days longer than average — worth noting if this continues.', days: stats.irregAlertDays })
-                      : t('cycleAnalytics.irregAlertShorter', { defaultValue: 'Your last cycle was {{days}} days shorter than average — worth noting if this continues.', days: stats.irregAlertDays })}
+                      ? t('cycleAnalytics.irregAlertLonger', {
+                          defaultValue:
+                            'Your last cycle was {{days}} days longer than average — worth noting if this continues.',
+                          days: stats.irregAlertDays,
+                        })
+                      : t('cycleAnalytics.irregAlertShorter', {
+                          defaultValue:
+                            'Your last cycle was {{days}} days shorter than average — worth noting if this continues.',
+                          days: stats.irregAlertDays,
+                        })}
                   </p>
                 </div>
               </div>
@@ -310,24 +422,42 @@ export default function CycleAnalytics() {
 
             {/* Predicted windows */}
             <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-              <h2 className="text-white font-black">{t('cycleAnalytics.expectedWindows', '🔮 Expected windows')}</h2>
+              <h2 className="text-white font-black">
+                {t('cycleAnalytics.expectedWindows', '🔮 Expected windows')}
+              </h2>
               <p className="text-white/30 text-xs mt-0.5">
-                {t('cycleAnalytics.expectedWindowsDesc', 'Mean cycle ± variability — a window, not a promise. Your body sets the truth.')}
+                {t(
+                  'cycleAnalytics.expectedWindowsDesc',
+                  'Mean cycle ± variability — a window, not a promise. Your body sets the truth.'
+                )}
               </p>
               {stats.windows.length === 0 ? (
-                <p className="text-white/40 text-sm mt-3">{t('cycleAnalytics.logOneCycle', 'Log at least one cycle and Rayhanah starts forecasting.')}</p>
+                <p className="text-white/40 text-sm mt-3">
+                  {t(
+                    'cycleAnalytics.logOneCycle',
+                    'Log at least one cycle and Rayhanah starts forecasting.'
+                  )}
+                </p>
               ) : (
                 <div className="mt-3 space-y-2">
                   {stats.windows.map((w, i) => (
                     <motion.div
                       key={w.center}
-                      initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.06 }}
                       className="flex items-center gap-3 rounded-xl bg-brand-pink/10 border border-brand-pink/15 px-4 py-2.5"
                     >
                       <span className="text-lg">{['🌸', '🌷', '🌺'][i]}</span>
                       <div className="flex-1">
-                        <p className="text-brand-pink/90 text-sm font-bold">{fmt(w.from)} – {fmt(w.to)}</p>
-                        <p className="text-white/30 text-[10px]">{t('cycleAnalytics.mostLikelyAround', 'most likely around {{date}}', { date: fmtFull(w.center) })}</p>
+                        <p className="text-brand-pink/90 text-sm font-bold">
+                          {fmt(w.from)} – {fmt(w.to)}
+                        </p>
+                        <p className="text-white/30 text-[10px]">
+                          {t('cycleAnalytics.mostLikelyAround', 'most likely around {{date}}', {
+                            date: fmtFull(w.center),
+                          })}
+                        </p>
                       </div>
                     </motion.div>
                   ))}
@@ -338,29 +468,45 @@ export default function CycleAnalytics() {
             {/* Fertile window & ovulation */}
             {stats.fertileWindows.length > 0 && (
               <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-                <h2 className="text-white font-black">{t('cycleAnalytics.fertileWindowTitle', '🌿 Fertile window')}</h2>
+                <h2 className="text-white font-black">
+                  {t('cycleAnalytics.fertileWindowTitle', '🌿 Fertile window')}
+                </h2>
                 <p className="text-white/30 text-xs mt-0.5">
-                  {t('cycleAnalytics.fertileWindowDesc', 'Estimated ovulation ~14 days before the next period. The fertile window spans ~5 days around it.')}
+                  {t(
+                    'cycleAnalytics.fertileWindowDesc',
+                    'Estimated ovulation ~14 days before the next period. The fertile window spans ~5 days around it.'
+                  )}
                 </p>
                 <div className="mt-3 space-y-2">
                   {stats.fertileWindows.map((fw, i) => (
                     <motion.div
                       key={fw.ovulation}
-                      initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.06 }}
                       className="flex items-center gap-3 rounded-xl bg-brand-info/10 border border-brand-info/15 px-4 py-2.5"
                     >
                       <span className="text-lg">{['🌿', '🌱', '🍃'][i]}</span>
                       <div className="flex-1">
-                        <p className="text-brand-info/90 text-sm font-bold">{fmt(fw.from)} – {fmt(fw.to)}</p>
+                        <p className="text-brand-info/90 text-sm font-bold">
+                          {fmt(fw.from)} – {fmt(fw.to)}
+                        </p>
                         <p className="text-white/30 text-[10px]">
-                          {t('cycleAnalytics.ovulationEstimatedAround', 'ovulation estimated around {{date}}', { date: fmtFull(fw.ovulation) })}
+                          {t(
+                            'cycleAnalytics.ovulationEstimatedAround',
+                            'ovulation estimated around {{date}}',
+                            { date: fmtFull(fw.ovulation) }
+                          )}
                         </p>
                       </div>
                     </motion.div>
                   ))}
                 </div>
                 <p className="text-white/25 text-[10px] mt-3 leading-relaxed">
-                  {t('cycleAnalytics.fertileWindowDisclaimer', 'These are estimates based on your cycle history — not medical advice. The actual ovulation day can vary. For precise tracking, consult a healthcare professional.')}
+                  {t(
+                    'cycleAnalytics.fertileWindowDisclaimer',
+                    'These are estimates based on your cycle history — not medical advice. The actual ovulation day can vary. For precise tracking, consult a healthcare professional.'
+                  )}
                 </p>
               </div>
             )}
@@ -368,9 +514,15 @@ export default function CycleAnalytics() {
             {/* PMS pattern */}
             {stats.pmsPatterns.length > 0 && (
               <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-                <h2 className="text-white font-black">{t('cycleAnalytics.prePeriodPatternTitle', '🌡️ Your pre-period pattern')}</h2>
+                <h2 className="text-white font-black">
+                  {t('cycleAnalytics.prePeriodPatternTitle', '🌡️ Your pre-period pattern')}
+                </h2>
                 <p className="text-white/30 text-xs mt-0.5">
-                  {t('cycleAnalytics.prePeriodPatternDesc', 'Symptoms and moods that tend to appear in the week before your period (based on {{count}} cycle(s)).', { count: stats.pmsPeriodsAnalyzed })}
+                  {t(
+                    'cycleAnalytics.prePeriodPatternDesc',
+                    'Symptoms and moods that tend to appear in the week before your period (based on {{count}} cycle(s)).',
+                    { count: stats.pmsPeriodsAnalyzed }
+                  )}
                 </p>
                 <div className="mt-3 space-y-1.5">
                   {stats.pmsPatterns.map((p) => (
@@ -381,7 +533,10 @@ export default function CycleAnalytics() {
                           : t(`cycleAnalytics.symptom.${p.key}`, p.label)}
                       </span>
                       <div className="flex-1 h-3 rounded-full bg-white/5 overflow-hidden">
-                        <div className="h-full rounded-full bg-brand-gold/50" style={{ width: `${p.pct}%` }} />
+                        <div
+                          className="h-full rounded-full bg-brand-gold/50"
+                          style={{ width: `${p.pct}%` }}
+                        />
                       </div>
                       <span className="text-brand-gold/80 font-bold w-10 text-right">{p.pct}%</span>
                     </div>
@@ -389,8 +544,14 @@ export default function CycleAnalytics() {
                 </div>
                 <p className="text-white/25 text-[10px] mt-3 leading-relaxed">
                   {stats.pmsPeriodsAnalyzed < 3
-                    ? t('cycleAnalytics.logMoreCycles', 'Log more cycles with daily symptoms and moods to sharpen this pattern.')
-                    : t('cycleAnalytics.patternsStrengthen', 'These patterns strengthen with every cycle you track.')}
+                    ? t(
+                        'cycleAnalytics.logMoreCycles',
+                        'Log more cycles with daily symptoms and moods to sharpen this pattern.'
+                      )
+                    : t(
+                        'cycleAnalytics.patternsStrengthen',
+                        'These patterns strengthen with every cycle you track.'
+                      )}
                 </p>
               </div>
             )}
@@ -398,13 +559,18 @@ export default function CycleAnalytics() {
             {/* Cycle & period length history */}
             {stats.gaps.length > 0 && (
               <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-                <h2 className="text-white font-black mb-3">{t('cycleAnalytics.cycleLengthHistoryTitle', '📈 Cycle length history')}</h2>
+                <h2 className="text-white font-black mb-3">
+                  {t('cycleAnalytics.cycleLengthHistoryTitle', '📈 Cycle length history')}
+                </h2>
                 <div className="space-y-1.5">
                   {stats.gaps.slice(-8).map((g) => (
                     <div key={g.from} className="flex items-center gap-2 text-xs">
                       <span className="text-white/30 w-14">{fmt(g.from)}</span>
                       <div className="flex-1 h-4 rounded-full bg-white/5 overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-brand-pink/60 to-brand-pink/60" style={{ width: `${(g.days / maxGap) * 100}%` }} />
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-brand-pink/60 to-brand-pink/60"
+                          style={{ width: `${(g.days / maxGap) * 100}%` }}
+                        />
                       </div>
                       <span className="text-brand-pink/80 font-bold w-8 text-right">{g.days}d</span>
                     </div>
@@ -412,15 +578,22 @@ export default function CycleAnalytics() {
                 </div>
                 {stats.lengths.length > 0 && (
                   <>
-                    <h3 className="text-white/60 font-bold text-xs uppercase tracking-wide mt-4 mb-2">{t('cycleAnalytics.periodLengthTitle', 'Period length')}</h3>
+                    <h3 className="text-white/60 font-bold text-xs uppercase tracking-wide mt-4 mb-2">
+                      {t('cycleAnalytics.periodLengthTitle', 'Period length')}
+                    </h3>
                     <div className="space-y-1.5">
                       {stats.lengths.slice(-8).map((l) => (
                         <div key={l.from} className="flex items-center gap-2 text-xs">
                           <span className="text-white/30 w-14">{fmt(l.from)}</span>
                           <div className="flex-1 h-4 rounded-full bg-white/5 overflow-hidden">
-                            <div className="h-full rounded-full bg-gradient-to-r from-brand-warm/50 to-brand-pink/50" style={{ width: `${(l.days / maxLen) * 100}%` }} />
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-brand-warm/50 to-brand-pink/50"
+                              style={{ width: `${(l.days / maxLen) * 100}%` }}
+                            />
                           </div>
-                          <span className="text-brand-warm/80 font-bold w-8 text-right">{l.days}d</span>
+                          <span className="text-brand-warm/80 font-bold w-8 text-right">
+                            {l.days}d
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -432,29 +605,64 @@ export default function CycleAnalytics() {
             {/* Wellness insights */}
             {(stats.topSymptoms.length > 0 || stats.flowTotal > 0) && (
               <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5 space-y-4">
-                <h2 className="text-white font-black">{t('cycleAnalytics.bodyPatternsTitle', "🌡️ Your body's patterns")} <span className="text-white/25 text-[10px] font-normal">{t('cycleAnalytics.last60Days', '(last 60 days)')}</span></h2>
+                <h2 className="text-white font-black">
+                  {t('cycleAnalytics.bodyPatternsTitle', "🌡️ Your body's patterns")}{' '}
+                  <span className="text-white/25 text-[10px] font-normal">
+                    {t('cycleAnalytics.last60Days', '(last 60 days)')}
+                  </span>
+                </h2>
                 {stats.topSymptoms.length > 0 && (
                   <div className="space-y-1.5">
                     {stats.topSymptoms.map(([sy, n]) => (
                       <div key={sy} className="flex items-center gap-2 text-xs">
-                        <span className="text-white/60 w-28">{t(`cycleAnalytics.symptom.${sy}`, SYMPTOM_LABEL[sy] ?? sy)}</span>
+                        <span className="text-white/60 w-28">
+                          {t(`cycleAnalytics.symptom.${sy}`, SYMPTOM_LABEL[sy] ?? sy)}
+                        </span>
                         <div className="flex-1 h-3 rounded-full bg-white/5 overflow-hidden">
-                          <div className="h-full rounded-full bg-brand-pink/50" style={{ width: `${Math.min(100, n * 12)}%` }} />
+                          <div
+                            className="h-full rounded-full bg-brand-pink/50"
+                            style={{ width: `${Math.min(100, n * 12)}%` }}
+                          />
                         </div>
-                        <span className="text-white/30 w-10 text-right">{t('cycleAnalytics.nDays', '{{count}} day(s)', { count: n })}</span>
+                        <span className="text-white/30 w-10 text-right">
+                          {t('cycleAnalytics.nDays', '{{count}} day(s)', { count: n })}
+                        </span>
                       </div>
                     ))}
                   </div>
                 )}
                 {stats.flowTotal > 0 && (
                   <div>
-                    <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">{t('cycleAnalytics.flowMix', 'Flow mix')}</p>
+                    <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">
+                      {t('cycleAnalytics.flowMix', 'Flow mix')}
+                    </p>
                     <div className="flex h-3 rounded-full overflow-hidden">
-                      {stats.flowLight > 0 && <div className="bg-brand-pink/60" style={{ width: `${(stats.flowLight / stats.flowTotal) * 100}%` }} />}
-                      {stats.flowMed > 0 && <div className="bg-brand-pink/70" style={{ width: `${(stats.flowMed / stats.flowTotal) * 100}%` }} />}
-                      {stats.flowHeavy > 0 && <div className="bg-brand-pink-dim/80" style={{ width: `${(stats.flowHeavy / stats.flowTotal) * 100}%` }} />}
+                      {stats.flowLight > 0 && (
+                        <div
+                          className="bg-brand-pink/60"
+                          style={{ width: `${(stats.flowLight / stats.flowTotal) * 100}%` }}
+                        />
+                      )}
+                      {stats.flowMed > 0 && (
+                        <div
+                          className="bg-brand-pink/70"
+                          style={{ width: `${(stats.flowMed / stats.flowTotal) * 100}%` }}
+                        />
+                      )}
+                      {stats.flowHeavy > 0 && (
+                        <div
+                          className="bg-brand-pink-dim/80"
+                          style={{ width: `${(stats.flowHeavy / stats.flowTotal) * 100}%` }}
+                        />
+                      )}
                     </div>
-                    <p className="text-white/25 text-[10px] mt-1">{t('cycleAnalytics.flowMixSummary', '{{light}} light · {{medium}} medium · {{heavy}} heavy', { light: stats.flowLight, medium: stats.flowMed, heavy: stats.flowHeavy })}</p>
+                    <p className="text-white/25 text-[10px] mt-1">
+                      {t(
+                        'cycleAnalytics.flowMixSummary',
+                        '{{light}} light · {{medium}} medium · {{heavy}} heavy',
+                        { light: stats.flowLight, medium: stats.flowMed, heavy: stats.flowHeavy }
+                      )}
+                    </p>
                   </div>
                 )}
               </div>
@@ -463,25 +671,53 @@ export default function CycleAnalytics() {
             {/* Fasting makeup summary */}
             {stats.totalExcusedDays > 0 && (
               <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
-                <h2 className="text-white font-black">{t('cycleAnalytics.fastingMakeupTitle', '🌙 Fasting makeup')}</h2>
+                <h2 className="text-white font-black">
+                  {t('cycleAnalytics.fastingMakeupTitle', '🌙 Fasting makeup')}
+                </h2>
                 <p className="text-white/30 text-xs mt-0.5">
-                  {t('cycleAnalytics.fastingMakeupDesc', 'Ramadan fasts missed during cycles are made up later')} (
-                  <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>).
+                  {t(
+                    'cycleAnalytics.fastingMakeupDesc',
+                    'Ramadan fasts missed during cycles are made up later'
+                  )}{' '}
+                  (
+                  <a
+                    className="underline"
+                    href="https://sunnah.com/muslim:335"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {translateReference('Muslim 335', i18n.language)}
+                  </a>
+                  ).
                 </p>
                 <div className="mt-3 grid grid-cols-3 gap-3">
                   <div className="rounded-xl bg-brand-gold/10 border border-brand-gold/15 p-3 text-center">
-                    <p className="text-xl font-black text-brand-gold">{fastingSummary?.profile?.qadaOwed ?? 0}</p>
-                    <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('cycleAnalytics.owed', 'owed')}</p>
+                    <p className="text-xl font-black text-brand-gold">
+                      {fastingSummary?.profile?.qadaOwed ?? 0}
+                    </p>
+                    <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
+                      {t('cycleAnalytics.owed', 'owed')}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-brand-emerald/10 border border-brand-emerald/15 p-3 text-center">
-                    <p className="text-xl font-black text-brand-emerald">{fastingSummary?.qadaCompleted ?? 0}</p>
-                    <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('cycleAnalytics.madeUp', 'made up')}</p>
+                    <p className="text-xl font-black text-brand-emerald">
+                      {fastingSummary?.qadaCompleted ?? 0}
+                    </p>
+                    <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
+                      {t('cycleAnalytics.madeUp', 'made up')}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-white/5 border border-brand-border p-3 text-center">
                     <p className="text-xl font-black text-white/70">
-                      {Math.max(0, (fastingSummary?.profile?.qadaOwed ?? 0) - (fastingSummary?.qadaCompleted ?? 0))}
+                      {Math.max(
+                        0,
+                        (fastingSummary?.profile?.qadaOwed ?? 0) -
+                          (fastingSummary?.qadaCompleted ?? 0)
+                      )}
                     </p>
-                    <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('cycleAnalytics.remaining', 'remaining')}</p>
+                    <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
+                      {t('cycleAnalytics.remaining', 'remaining')}
+                    </p>
                   </div>
                 </div>
                 <button
@@ -496,42 +732,77 @@ export default function CycleAnalytics() {
             {/* History + past-period backfill + export */}
             <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-white font-black">{t('cycleAnalytics.fullHistoryTitle', '🗓️ Full history')}</h2>
+                <h2 className="text-white font-black">
+                  {t('cycleAnalytics.fullHistoryTitle', '🗓️ Full history')}
+                </h2>
                 <div className="flex items-center gap-2">
                   {(summary?.logs ?? []).length > 0 && (
                     <button
                       className="btn btn-xs rounded-xl border border-brand-info/30 bg-brand-info/15 text-brand-info font-bold"
                       onClick={exportCsv}
-                    >{t('cycleAnalytics.exportCsv', '📥 Export CSV')}</button>
+                    >
+                      {t('cycleAnalytics.exportCsv', '📥 Export CSV')}
+                    </button>
                   )}
                   <button
                     className="btn btn-xs rounded-xl border border-brand-pink/30 bg-brand-pink/15 text-brand-pink font-bold"
-                    onClick={() => { setPastStart(''); setPastEnd(''); setPastType('hayd'); setPastOpen(true); }}
-                  >{t('cycleAnalytics.logPastPeriod', '＋ Log a past period')}</button>
+                    onClick={() => {
+                      setPastStart('');
+                      setPastEnd('');
+                      setPastType('hayd');
+                      setPastOpen(true);
+                    }}
+                  >
+                    {t('cycleAnalytics.logPastPeriod', '＋ Log a past period')}
+                  </button>
                 </div>
               </div>
               {(summary?.logs ?? []).length === 0 ? (
-                <p className="text-white/30 text-xs">{t('cycleAnalytics.nothingYetHistory', 'Nothing yet — add your last few periods and predictions wake up immediately.')}</p>
+                <p className="text-white/30 text-xs">
+                  {t(
+                    'cycleAnalytics.nothingYetHistory',
+                    'Nothing yet — add your last few periods and predictions wake up immediately.'
+                  )}
+                </p>
               ) : (
                 <div className="space-y-1.5">
                   {(summary?.logs ?? []).map((l) => (
-                    <div key={l._id} className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2 text-xs">
+                    <div
+                      key={l._id}
+                      className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2 text-xs"
+                    >
                       <span>{l.type === 'nifas' ? '🤱' : '🌸'}</span>
                       <span className="text-white/70 flex-1">
-                        {fmtFull(l.startDate)} — {l.endDate ? fmtFull(l.endDate) : t('cycleAnalytics.ongoing', 'ongoing')}
-                        {l.endDate && <span className="text-white/25"> · {daysBetween(l.startDate, l.endDate) + 1}d</span>}
+                        {fmtFull(l.startDate)} —{' '}
+                        {l.endDate ? fmtFull(l.endDate) : t('cycleAnalytics.ongoing', 'ongoing')}
+                        {l.endDate && (
+                          <span className="text-white/25">
+                            {' '}
+                            · {daysBetween(l.startDate, l.endDate) + 1}d
+                          </span>
+                        )}
                       </span>
                       <button
                         aria-label={t('cycleAnalytics.deleteEntry', 'Delete entry')}
                         className="text-white/25 hover:text-red-300"
-                        onClick={() => setPendingDelete({ id: l._id, label: `${fmtFull(l.startDate)} — ${l.endDate ? fmtFull(l.endDate) : t('cycleAnalytics.ongoing', 'ongoing')}` })}
-                      >🗑</button>
+                        onClick={() =>
+                          setPendingDelete({
+                            id: l._id,
+                            label: `${fmtFull(l.startDate)} — ${l.endDate ? fmtFull(l.endDate) : t('cycleAnalytics.ongoing', 'ongoing')}`,
+                          })
+                        }
+                      >
+                        🗑
+                      </button>
                     </div>
                   ))}
                 </div>
               )}
               <p className="text-white/25 text-[10px] mt-3 leading-relaxed">
-                {t('cycleAnalytics.historyDisclaimer', 'Estimates only — they help you prepare, they never define you. If bleeding patterns worry you, speak to a doctor; for the fiqh of unusual bleeding see the istiḥāḍa note on the Cycle page.')}
+                {t(
+                  'cycleAnalytics.historyDisclaimer',
+                  'Estimates only — they help you prepare, they never define you. If bleeding patterns worry you, speak to a doctor; for the fiqh of unusual bleeding see the istiḥāḍa note on the Cycle page.'
+                )}
               </p>
             </div>
           </>
@@ -540,37 +811,80 @@ export default function CycleAnalytics() {
 
       {/* Past period modal */}
       {pastOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm grid place-items-center p-4" onClick={() => setPastOpen(false)}>
-          <div className="w-full max-w-sm rounded-3xl bg-brand-deep border border-brand-pink/25 p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-white font-black text-lg">{t('cycleAnalytics.logPastPeriodTitle', '🗓️ Log a past period')}</h3>
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm grid place-items-center p-4"
+          onClick={() => setPastOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl bg-brand-deep border border-brand-pink/25 p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-white font-black text-lg">
+              {t('cycleAnalytics.logPastPeriodTitle', '🗓️ Log a past period')}
+            </h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-white/50 text-xs font-bold" htmlFor="past-start">{t('cycleAnalytics.started', 'Started')}</label>
-                <input id="past-start" type="date" value={pastStart} max={today} onChange={(e) => setPastStart(e.target.value)}
-                  className="input input-bordered input-sm w-full mt-1 bg-white/5 border-brand-emerald/10 text-white" />
+                <label className="text-white/50 text-xs font-bold" htmlFor="past-start">
+                  {t('cycleAnalytics.started', 'Started')}
+                </label>
+                <input
+                  id="past-start"
+                  type="date"
+                  value={pastStart}
+                  max={today}
+                  onChange={(e) => setPastStart(e.target.value)}
+                  className="input input-bordered input-sm w-full mt-1 bg-white/5 border-brand-emerald/10 text-white"
+                />
               </div>
               <div>
-                <label className="text-white/50 text-xs font-bold" htmlFor="past-end">{t('cycleAnalytics.ended', 'Ended')}</label>
-                <input id="past-end" type="date" value={pastEnd} max={today} onChange={(e) => setPastEnd(e.target.value)}
-                  className="input input-bordered input-sm w-full mt-1 bg-white/5 border-brand-emerald/10 text-white" />
+                <label className="text-white/50 text-xs font-bold" htmlFor="past-end">
+                  {t('cycleAnalytics.ended', 'Ended')}
+                </label>
+                <input
+                  id="past-end"
+                  type="date"
+                  value={pastEnd}
+                  max={today}
+                  onChange={(e) => setPastEnd(e.target.value)}
+                  className="input input-bordered input-sm w-full mt-1 bg-white/5 border-brand-emerald/10 text-white"
+                />
               </div>
             </div>
             <div className="flex gap-2">
               {(['hayd', 'nifas'] as const).map((item) => (
-                <button key={item}
+                <button
+                  key={item}
                   className={`flex-1 btn btn-xs rounded-xl ${pastType === item ? 'bg-brand-pink/30 border-brand-pink/40 text-brand-pink' : 'bg-white/5 border-brand-emerald/10 text-white/50'}`}
                   onClick={() => setPastType(item)}
-                >{item === 'hayd' ? t('cycleAnalytics.periodHayd', '🌸 Period') : t('cycleAnalytics.postNatal', '🤱 Nifās')}</button>
+                >
+                  {item === 'hayd'
+                    ? t('cycleAnalytics.periodHayd', '🌸 Period')
+                    : t('cycleAnalytics.postNatal', '🤱 Nifās')}
+                </button>
               ))}
             </div>
             <button
               className="w-full btn btn-sm rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-pink to-brand-pink"
               disabled={!pastStart || !pastEnd || addPast.isPending}
-              onClick={() => addPast.mutate({ startDate: pastStart, endDate: pastEnd, type: pastType }, { onSuccess: () => setPastOpen(false) })}
+              onClick={() =>
+                addPast.mutate(
+                  { startDate: pastStart, endDate: pastEnd, type: pastType },
+                  { onSuccess: () => setPastOpen(false) }
+                )
+              }
             >
-              {addPast.isPending ? <span className="loading loading-spinner loading-xs" /> : t('cycleAnalytics.addToMyHistory', 'Add to my history')}
+              {addPast.isPending ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : (
+                t('cycleAnalytics.addToMyHistory', 'Add to my history')
+              )}
             </button>
-            <p className="text-white/25 text-[10px] text-center">{t('cycleAnalytics.addPastPeriodsNote', 'Add your last 3–6 periods and the predictions become genuinely yours.')}</p>
+            <p className="text-white/25 text-[10px] text-center">
+              {t(
+                'cycleAnalytics.addPastPeriodsNote',
+                'Add your last 3–6 periods and the predictions become genuinely yours.'
+              )}
+            </p>
           </div>
         </div>
       )}
@@ -578,8 +892,19 @@ export default function CycleAnalytics() {
       <ConfirmDialog
         open={!!pendingDelete}
         title={t('cycleAnalytics.removeCycleTitle', 'Remove this cycle?')}
-        message={pendingDelete ? t('cycleAnalytics.removeCycleMessage', '{{label}} will be removed from your history and predictions.', { label: pendingDelete.label }) : ''}
-        onConfirm={() => { if (pendingDelete) deleteLog.mutate(pendingDelete.id); setPendingDelete(null); }}
+        message={
+          pendingDelete
+            ? t(
+                'cycleAnalytics.removeCycleMessage',
+                '{{label}} will be removed from your history and predictions.',
+                { label: pendingDelete.label }
+              )
+            : ''
+        }
+        onConfirm={() => {
+          if (pendingDelete) deleteLog.mutate(pendingDelete.id);
+          setPendingDelete(null);
+        }}
         onCancel={() => setPendingDelete(null)}
       />
     </AnimatedBackground>

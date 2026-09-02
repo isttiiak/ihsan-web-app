@@ -20,7 +20,11 @@ export default function ConnectFriend() {
   const { t } = useTranslation();
 
   const firedRef = useRef(false);
-  const [result, setResult] = useState<{ ok: boolean; message: string; friendName?: string } | null>(null);
+  const [result, setResult] = useState<{
+    ok: boolean;
+    message: string;
+    friendName?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (authLoading || !user || !code || firedRef.current) return;
@@ -32,12 +36,12 @@ export default function ConnectFriend() {
       },
       onError: (err: unknown) => {
         const msg =
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-          ?? t('connectFriend.invalidLink');
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          t('connectFriend.invalidLink');
         setResult({ ok: false, message: msg });
       },
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
   }, [authLoading, user, code]);
 
   return (
@@ -69,38 +73,52 @@ export default function ConnectFriend() {
                     sessionStorage.setItem('ihsan_redirect', `/connect/${code}`);
                     navigate('/login');
                   }}
-                >{t('common.signIn')}</button>
+                >
+                  {t('common.signIn')}
+                </button>
                 <button
                   className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
                   onClick={() => {
                     sessionStorage.setItem('ihsan_redirect', `/connect/${code}`);
                     navigate('/signup');
                   }}
-                >{t('connectFriend.createAccount')}</button>
+                >
+                  {t('connectFriend.createAccount')}
+                </button>
               </div>
             </>
           ) : connect.isPending || !result ? (
             <>
               <span className="loading loading-spinner loading-lg text-brand-emerald" />
               <p className="text-white/40 text-sm">{t('connectFriend.connecting')}</p>
-              <p className="text-white/25 text-xs">
-                {t('connectFriend.firstVisitNote')}
-              </p>
+              <p className="text-white/25 text-xs">{t('connectFriend.firstVisitNote')}</p>
             </>
           ) : result.ok ? (
             <>
               <motion.div
-                initial={{ scale: 0 }} animate={{ scale: 1 }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
                 transition={{ type: 'spring', damping: 12, delay: 0.1 }}
                 className="text-6xl"
-              >🎉</motion.div>
+              >
+                🎉
+              </motion.div>
               <h2 className="text-xl font-black text-brand-emerald">
-                {result.message === 'You are already connected!' ? t('connectFriend.alreadyConnected') : t('connectFriend.connected')}
+                {result.message === 'You are already connected!'
+                  ? t('connectFriend.alreadyConnected')
+                  : t('connectFriend.connected')}
               </h2>
               <p className="text-white/50 text-sm leading-relaxed">
-                {t('connectFriend.connectedPre')} <b className="text-white/80">{result.friendName ?? t('connectFriend.yourFriend')}</b> {t('connectFriend.connectedPost')}
+                {t('connectFriend.connectedPre')}{' '}
+                <b className="text-white/80">
+                  {result.friendName ?? t('connectFriend.yourFriend')}
+                </b>{' '}
+                {t('connectFriend.connectedPost')}
               </p>
-              <Link to="/friends" className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 w-full">
+              <Link
+                to="/friends"
+                className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 w-full"
+              >
                 🏁 {t('connectFriend.seeLeaderboard')}
               </Link>
             </>
@@ -109,7 +127,10 @@ export default function ConnectFriend() {
               <div className="text-5xl">🔗</div>
               <h2 className="text-xl font-black text-white">{t('connectFriend.couldntConnect')}</h2>
               <p className="text-brand-gold/80 text-sm leading-relaxed">{result.message}</p>
-              <Link to="/friends" className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full">
+              <Link
+                to="/friends"
+                className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
+              >
                 {t('connectFriend.goToFriends')}
               </Link>
             </>

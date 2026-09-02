@@ -11,7 +11,13 @@ import { useRenameZikrType } from '../hooks/useZikrTypes.js';
  * over), Arabic, meaning and reference. Used from the counter's manage modal
  * and the Settings library. Curated/predefined entries are not editable.
  */
-export default function EditZikrModal({ name, onClose }: { name: string | null; onClose: () => void }) {
+export default function EditZikrModal({
+  name,
+  onClose,
+}: {
+  name: string | null;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
   const { customMeanings, setCustomMeaning, renameType } = useZikrStore();
   const renameZikrType = useRenameZikrType();
@@ -34,13 +40,16 @@ export default function EditZikrModal({ name, onClose }: { name: string | null; 
     setTranslit(m?.transliteration ?? '');
     setSource(m?.source ?? '');
     setSourceUrl(m?.sourceUrl ?? '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
   }, [name]);
 
   const save = async () => {
     if (!name || saving) return;
     const newName = title.trim();
-    if (!newName) { toast.error(t('editZikr.titleRequired')); return; }
+    if (!newName) {
+      toast.error(t('editZikr.titleRequired'));
+      return;
+    }
     if (newName.includes('.') || newName.startsWith('$')) {
       toast.error(t('editZikr.titleInvalid'));
       return;
@@ -75,57 +84,106 @@ export default function EditZikrModal({ name, onClose }: { name: string | null; 
     <AnimatePresence>
       {name && (
         <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onClose();
+          }}
         >
           <motion.div
-            initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 40, opacity: 0 }}
             transition={{ type: 'spring', damping: 25 }}
             className="bg-brand-surface rounded-3xl p-6 w-full max-w-md shadow-2xl border border-brand-border"
           >
             <h3 className="text-xl font-bold text-brand-emerald mb-1">{t('editZikr.title')}</h3>
-            <p className="text-white/40 text-xs mb-4">
-              {t('editZikr.renameHint')}
-            </p>
+            <p className="text-white/40 text-xs mb-4">{t('editZikr.renameHint')}</p>
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">{t('editZikr.labelTitle')} <span className="text-red-400">*</span></label>
-                <input value={title} maxLength={100} onChange={(e) => setTitle(e.target.value)}
-                  className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm" />
+                <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
+                  {t('editZikr.labelTitle')} <span className="text-red-400">*</span>
+                </label>
+                <input
+                  value={title}
+                  maxLength={100}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm"
+                />
               </div>
               <div>
-                <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">{t('editZikr.labelArabic')}</label>
-                <input value={arabic} dir="rtl" onChange={(e) => setArabic(e.target.value)}
+                <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
+                  {t('editZikr.labelArabic')}
+                </label>
+                <input
+                  value={arabic}
+                  dir="rtl"
+                  onChange={(e) => setArabic(e.target.value)}
                   className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-base"
-                  style={{ fontFamily: "'Amiri', serif" }} />
+                  style={{ fontFamily: "'Amiri', serif" }}
+                />
               </div>
               <div>
-                <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">{t('editZikr.labelPronunciation')}</label>
-                <input value={translit} onChange={(e) => setTranslit(e.target.value)}
+                <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
+                  {t('editZikr.labelPronunciation')}
+                </label>
+                <input
+                  value={translit}
+                  onChange={(e) => setTranslit(e.target.value)}
                   placeholder="Astaghfiru-llāh"
-                  className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm italic" />
+                  className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm italic"
+                />
               </div>
               <div>
-                <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">{t('editZikr.labelMeaning')}</label>
-                <input value={meaning} onChange={(e) => setMeaning(e.target.value)}
-                  className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm" />
+                <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
+                  {t('editZikr.labelMeaning')}
+                </label>
+                <input
+                  value={meaning}
+                  onChange={(e) => setMeaning(e.target.value)}
+                  className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-sm"
+                />
               </div>
               <div className="border-t border-brand-border/60 pt-3 space-y-2">
-                <p className="text-white/30 text-[10px] uppercase tracking-wider">{t('editZikr.labelReference')} <span className="normal-case text-white/20">({t('common.optional')})</span></p>
-                <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="e.g. Ṣaḥīḥ Muslim 2702"
-                  className="input input-sm input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-xs" />
-                <input value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://sunnah.com/..."
-                  className="input input-sm input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-xs" />
+                <p className="text-white/30 text-[10px] uppercase tracking-wider">
+                  {t('editZikr.labelReference')}{' '}
+                  <span className="normal-case text-white/20">({t('common.optional')})</span>
+                </p>
+                <input
+                  value={source}
+                  onChange={(e) => setSource(e.target.value)}
+                  placeholder="e.g. Ṣaḥīḥ Muslim 2702"
+                  className="input input-sm input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-xs"
+                />
+                <input
+                  value={sourceUrl}
+                  onChange={(e) => setSourceUrl(e.target.value)}
+                  placeholder="https://sunnah.com/..."
+                  className="input input-sm input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-xs"
+                />
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button onClick={onClose} className="btn flex-1 btn-ghost text-white/60 border-brand-border">{t('common.cancel')}</button>
-              <button onClick={() => void save()} disabled={!title.trim() || saving}
-                className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold">
-                {saving ? <span className="loading loading-spinner loading-sm" /> : t('common.save')}
+              <button
+                onClick={onClose}
+                className="btn flex-1 btn-ghost text-white/60 border-brand-border"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={() => void save()}
+                disabled={!title.trim() || saving}
+                className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 font-bold"
+              >
+                {saving ? (
+                  <span className="loading loading-spinner loading-sm" />
+                ) : (
+                  t('common.save')
+                )}
               </button>
             </div>
           </motion.div>

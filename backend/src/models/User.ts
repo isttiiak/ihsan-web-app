@@ -7,7 +7,7 @@ export interface IZikrTypeItem {
 }
 
 export interface ILinkedProvider {
-  provider: string;    // 'google.com'
+  provider: string; // 'google.com'
   email: string;
   providerUid: string; // Google's sub-UID
 }
@@ -91,7 +91,7 @@ const userSchema = new Schema(
 
 // Ensure uniqueness of zikrTypes.name per user (case-insensitive)
 userSchema.pre('save', function (next) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Mongoose's pre-save `this` isn't typed as the hydrated document
   const doc = this as any;
   if (!doc.isModified('zikrTypes')) return next();
   const seen = new Set<string>();
