@@ -63,6 +63,18 @@ describe('PATCH /api/user/me — photo upload path', () => {
     expect(res.body.ok).toBe(false);
   });
 
+  test('rejects data:text/html photoUrl regardless of size (XSS guard)', async () => {
+    // A short text/html data: URL would have slipped through the old "> 2 KB"
+    // check — the MIME-type guard must catch it outright.
+    const res = await request(app)
+      .patch('/api/user/me')
+      .set('Authorization', `Bearer ${TOKEN}`)
+      .send({ photoUrl: 'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.ok).toBe(false);
+  });
+
   test('GET /api/user/me returns an ETag header', async () => {
     const res = await request(app).get('/api/user/me').set('Authorization', `Bearer ${TOKEN}`);
 

@@ -41,6 +41,16 @@ const cleanAll = (docs: PlainDoc[]): PlainDoc[] => docs.map((d) => clean(d)!) as
 const safeKey = (k: string) =>
   k.length > 0 && k.length <= 100 && !k.includes('.') && !k.startsWith('$');
 
+// Backup files may carry legacy base64 photos taken before the Firebase Storage
+// migration — allow image/jpeg|png|webp up to 300 KB for backward compatibility.
+// data:text/* and other executable MIME types are rejected regardless of size.
+const PHOTO_SAFE_DATA_RE = /^data:image\/(jpeg|png|webp);base64,/;
+const isValidPhotoUrl = (url: unknown): url is string =>
+  typeof url === 'string' &&
+  (url.startsWith('https://')
+    ? url.length <= 2048
+    : PHOTO_SAFE_DATA_RE.test(url) && url.length <= 300 * 1024);
+
 export async function exportAll(uid: string): Promise<PlainDoc> {
   const [
     user,
@@ -165,8 +175,12 @@ export async function importAll(uid: string, data: BackupFile): Promise<ImportCo
   // ── User + zikr lifetime state ──
   const userSet: PlainDoc = {};
   if (data.user && typeof data.user === 'object') {
-    for (const k of ['displayName', 'gender', 'birthDate', 'country', 'photoUrl'] as const) {
+    for (const k of ['displayName', 'gender', 'birthDate', 'country'] as const) {
       if (data.user[k] !== undefined && data.user[k] !== null) userSet[k] = data.user[k];
+    }
+    // Validate photoUrl from backup — reject data:text/* and other non-image MIMEs.
+    if (data.user.photoUrl !== undefined && data.user.photoUrl !== null) {
+      if (isValidPhotoUrl(data.user.photoUrl)) userSet.photoUrl = data.user.photoUrl;
     }
   }
   if (data.zikr) {

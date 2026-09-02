@@ -21,19 +21,25 @@ export const setPrimaryEmailSchema = z.object({
 
 // photoUrl must be either:
 //   (a) an https URL (≤ 2 KB) — the normal path after the Firebase Storage migration, or
-//   (b) a data URL total length ≤ 2 KB — legacy guard; new uploads go via Firebase Storage
-//       so no large data: URLs should ever arrive here again.
+//   (b) a base64 data URL with MIME image/jpeg|png|webp only, total ≤ 2 KB — tiny
+//       legacy avatars; reject data:text/* and any non-image MIME outright (XSS risk).
+//       New uploads must go through Firebase Storage; only the https URL comes here.
+const PHOTO_SAFE_DATA_RE = /^data:image\/(jpeg|png|webp);base64,/;
 const photoUrlSchema = z
   .string()
   .min(1)
   .refine(
     (val) => {
       if (val.startsWith('https://')) return val.length <= 2048;
-      // Reject data: URLs larger than 2 KB — photos must be uploaded to Firebase
-      // Storage first; only the resulting https URL is sent to PATCH /api/user/me.
-      return val.startsWith('data:') && val.length <= 2048;
+      // Reject data:text/* and any non-image MIME (SVG, HTML, etc.) — they can
+      // carry executable content and must never land in the User document.
+      if (!PHOTO_SAFE_DATA_RE.test(val)) return false;
+      return val.length <= 2048;
     },
-    { message: 'photoUrl must be an https URL (<2 KB). Upload photos to Firebase Storage first.' }
+    {
+      message:
+        'photoUrl must be an https URL (≤2 KB) or a base64 image/jpeg|png|webp (≤2 KB). Upload photos to Firebase Storage.',
+    }
   );
 
 export const updateUserSchema = z.object({
