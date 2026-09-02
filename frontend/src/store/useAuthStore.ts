@@ -21,6 +21,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   aiEnabled: false,
   redirectPath: '/',
+  // Starts true; overridden synchronously by the self-init call below so
+  // returning users with a cached session never see the "Preparing…" spinner.
   authLoading: true,
   isDemoMode: false,
 
@@ -72,3 +74,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 }));
+
+// Self-initialize synchronously at module load time — this runs before ANY
+// React component renders, so returning users with a cached session start with
+// authLoading=false and the correct user already set. The effect-based init()
+// call in App.tsx is idempotent and kept for correctness but is now a no-op
+// for the common case.
+useAuthStore.getState().init();

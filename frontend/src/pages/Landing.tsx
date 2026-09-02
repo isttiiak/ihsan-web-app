@@ -14,12 +14,54 @@ const fadeUp = {
 };
 
 const FEATURE_DEFS = [
-  { emoji: '🕌', titleKey: 'landing.featureSalat', textKey: 'landing.featureSalatDesc', grad: 'from-brand-info/20 to-brand-warm/10', border: 'border-brand-info/25', to: '/salat' },
-  { emoji: '📿', titleKey: 'landing.featureZikr', textKey: 'landing.featureZikrDesc', grad: 'from-brand-emerald/20 to-brand-info/10', border: 'border-brand-emerald/25', to: '/zikr' },
-  { emoji: '📖', titleKey: 'landing.featureQuran', textKey: 'landing.featureQuranDesc', grad: 'from-brand-info/20 to-brand-info/10', border: 'border-brand-info/25', to: '/quran' },
-  { emoji: '🌙', titleKey: 'landing.featureFasting', textKey: 'landing.featureFastingDesc', grad: 'from-brand-gold/20 to-brand-warm/10', border: 'border-brand-gold/25', to: '/fasting' },
-  { emoji: '🕐', titleKey: 'landing.featurePrayer', textKey: 'landing.featurePrayerDesc', grad: 'from-brand-info/20 to-brand-info/10', border: 'border-brand-info/25', to: '/prayer-times' },
-  { emoji: '🤝', titleKey: 'landing.featureFriends', textKey: 'landing.featureFriendsDesc', grad: 'from-brand-pink/20 to-brand-warm/10', border: 'border-brand-pink/25', to: '/friends' },
+  {
+    emoji: '🕌',
+    titleKey: 'landing.featureSalat',
+    textKey: 'landing.featureSalatDesc',
+    grad: 'from-brand-info/20 to-brand-warm/10',
+    border: 'border-brand-info/25',
+    to: '/salat',
+  },
+  {
+    emoji: '📿',
+    titleKey: 'landing.featureZikr',
+    textKey: 'landing.featureZikrDesc',
+    grad: 'from-brand-emerald/20 to-brand-info/10',
+    border: 'border-brand-emerald/25',
+    to: '/zikr',
+  },
+  {
+    emoji: '📖',
+    titleKey: 'landing.featureQuran',
+    textKey: 'landing.featureQuranDesc',
+    grad: 'from-brand-info/20 to-brand-info/10',
+    border: 'border-brand-info/25',
+    to: '/quran',
+  },
+  {
+    emoji: '🌙',
+    titleKey: 'landing.featureFasting',
+    textKey: 'landing.featureFastingDesc',
+    grad: 'from-brand-gold/20 to-brand-warm/10',
+    border: 'border-brand-gold/25',
+    to: '/fasting',
+  },
+  {
+    emoji: '🕐',
+    titleKey: 'landing.featurePrayer',
+    textKey: 'landing.featurePrayerDesc',
+    grad: 'from-brand-info/20 to-brand-info/10',
+    border: 'border-brand-info/25',
+    to: '/prayer-times',
+  },
+  {
+    emoji: '🤝',
+    titleKey: 'landing.featureFriends',
+    textKey: 'landing.featureFriendsDesc',
+    grad: 'from-brand-pink/20 to-brand-warm/10',
+    border: 'border-brand-pink/25',
+    to: '/friends',
+  },
 ];
 
 export default function Landing() {
@@ -36,66 +78,65 @@ export default function Landing() {
   return (
     <AnimatedBackground variant="dark">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-20">
-
         {/* ── Hero ── */}
         <section className="text-center pt-14 sm:pt-20 pb-10">
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
             className="text-7xl mb-5"
-          >🌙</motion.div>
+          >
+            🌙
+          </motion.div>
           <motion.h1
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
             className="text-4xl sm:text-6xl font-black text-white leading-tight"
           >
-            {t('landing.heroTitle1')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-emerald to-brand-info">{t('landing.heroTitle2')}</span>
+            {t('landing.heroTitle1')}{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-emerald to-brand-info">
+              {t('landing.heroTitle2')}
+            </span>
           </motion.h1>
           <motion.p
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
             className="text-white/50 text-base sm:text-lg max-w-2xl mx-auto mt-5 leading-relaxed"
           >
             {t('landing.heroDesc')}
           </motion.p>
           <motion.div
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32, duration: 0.5 }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.32, duration: 0.5 }}
             className="flex flex-wrap justify-center gap-3 mt-8"
           >
             <button
               className="btn h-13 px-8 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-brand-emerald to-brand-info hover:from-brand-emerald hover:to-brand-info shadow-xl shadow-brand-emerald-dim/40"
               onClick={() => navigate('/signup')}
-            >{t('landing.cta')}</button>
+            >
+              {t('landing.cta')}
+            </button>
             <button
               className="btn h-13 px-6 rounded-2xl bg-white/5 border-brand-emerald/15 text-white/80 font-bold"
               onClick={() => setShowPicker(true)}
-            >{t('landing.ctaExplore')}</button>
+            >
+              {t('landing.ctaExplore')}
+            </button>
           </motion.div>
           <motion.p
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
             className="text-white/25 text-xs mt-4"
-          >{t('landing.noAds')}</motion.p>
+          >
+            {t('landing.noAds')}
+          </motion.p>
         </section>
 
-        {/* ── Rayhanah highlight — the first ── */}
-        <motion.section {...fadeUp} className="mb-10">
-          <div className="rounded-3xl p-6 sm:p-10 border border-brand-pink/25 bg-gradient-to-br from-brand-pink/15 via-brand-pink/10 to-brand-warm/10 relative overflow-hidden">
-            <motion.div
-              className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-brand-pink/10 blur-3xl"
-              animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <div className="relative sm:flex items-center gap-8">
-              <div className="text-6xl sm:text-7xl text-center sm:text-left mb-4 sm:mb-0">🌸</div>
-              <div>
-                <p className="text-brand-pink/80 text-xs font-black uppercase tracking-widest">{t('landing.rayhanahHighlight')}</p>
-                <h2 className="text-2xl sm:text-3xl font-black text-white mt-2">{t('landing.rayhanahTitle')}</h2>
-                <p className="text-brand-pink/70 text-sm sm:text-base mt-3 leading-relaxed max-w-2xl">
-                  {t('landing.rayhanahDesc')}
-                  <span className="font-bold text-brand-pink">{t('landing.rayhanahPrivate')}</span>
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.section>
-
-        {/* ── Feature grid ── */}
+        {/* ── Feature grid — core features first ── */}
         <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
           {FEATURE_DEFS.map((f, i) => (
             <motion.div
@@ -112,11 +153,39 @@ export default function Landing() {
                 <div className="text-4xl mb-3">{f.emoji}</div>
                 <h3 className="text-white font-black text-lg">{t(f.titleKey)}</h3>
                 <p className="text-white/50 text-sm mt-2 leading-relaxed">{t(f.textKey)}</p>
-                <span className="inline-block mt-3 text-xs font-semibold text-brand-emerald/70">{t('landing.tryIt')}</span>
+                <span className="inline-block mt-3 text-xs font-semibold text-brand-emerald/70">
+                  {t('landing.tryIt')}
+                </span>
               </Link>
             </motion.div>
           ))}
         </section>
+
+        {/* ── Rayhanah highlight — after core features ── */}
+        <motion.section {...fadeUp} className="mb-10">
+          <div className="rounded-3xl p-6 sm:p-10 border border-brand-pink/25 bg-gradient-to-br from-brand-pink/15 via-brand-pink/10 to-brand-warm/10 relative overflow-hidden">
+            <motion.div
+              className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-brand-pink/10 blur-3xl"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <div className="relative sm:flex items-center gap-8">
+              <div className="text-6xl sm:text-7xl text-center sm:text-left mb-4 sm:mb-0">🌸</div>
+              <div>
+                <p className="text-brand-pink/80 text-xs font-black uppercase tracking-widest">
+                  {t('landing.rayhanahHighlight')}
+                </p>
+                <h2 className="text-2xl sm:text-3xl font-black text-white mt-2">
+                  {t('landing.rayhanahTitle')}
+                </h2>
+                <p className="text-brand-pink/70 text-sm sm:text-base mt-3 leading-relaxed max-w-2xl">
+                  {t('landing.rayhanahDesc')}
+                  <span className="font-bold text-brand-pink">{t('landing.rayhanahPrivate')}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.section>
 
         {/* ── Authenticity strip ── */}
         <motion.section {...fadeUp} className="mb-12">
@@ -148,14 +217,26 @@ export default function Landing() {
             "So compete with one another in doing good."
           </h2>
           <p className="text-white/30 text-sm mt-2">
-            <a className="underline" href="https://quran.com/2/148" target="_blank" rel="noreferrer">{translateReference('Quran 2:148', i18n.language)}</a>
+            <a
+              className="underline"
+              href="https://quran.com/2/148"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {translateReference('Quran 2:148', i18n.language)}
+            </a>
           </p>
           <div className="flex flex-wrap justify-center gap-3 mt-7">
             <button
               className="btn h-13 px-10 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-brand-emerald to-brand-info hover:from-brand-emerald hover:to-brand-info shadow-xl shadow-brand-emerald-dim/40"
               onClick={() => navigate('/signup')}
-            >{t('landing.finalCta')}</button>
-            <Link to="/about" className="btn h-13 px-6 rounded-2xl bg-white/5 border-brand-emerald/15 text-white/70 font-bold">
+            >
+              {t('landing.finalCta')}
+            </button>
+            <Link
+              to="/about"
+              className="btn h-13 px-6 rounded-2xl bg-white/5 border-brand-emerald/15 text-white/70 font-bold"
+            >
               {t('landing.readOurStory')}
             </Link>
           </div>
@@ -166,7 +247,9 @@ export default function Landing() {
       <AnimatePresence>
         {showPicker && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
             onClick={() => setShowPicker(false)}
           >

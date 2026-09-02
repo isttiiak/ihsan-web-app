@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/useAuthStore.js';
 import api from '../lib/api.js';
@@ -16,15 +16,14 @@ import type { AuthUser } from '../types/api.js';
 export default function GenderGate() {
   const { t } = useTranslation();
   const { user, setUser } = useAuthStore();
+  const { pathname } = useLocation();
   const [selected, setSelected] = useState<'male' | 'female' | ''>('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [skipped, setSkipped] = useState(
-    () => !!sessionStorage.getItem('ihsan_gender_skipped'),
-  );
+  const [skipped, setSkipped] = useState(() => !!sessionStorage.getItem('ihsan_gender_skipped'));
 
   const [guestDismissed, setGuestDismissed] = useState(
-    () => !!localStorage.getItem('ihsan_guest_gender'),
+    () => !!localStorage.getItem('ihsan_guest_gender')
   );
 
   // ── Authenticated user: skippable gate ─────────────────────────────────────
@@ -61,9 +60,14 @@ export default function GenderGate() {
             <div className="text-5xl">🌙</div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl font-black text-white">{t('genderGate.greeting', 'As-salamu alaykum!')}</h2>
+              <h2 className="text-2xl font-black text-white">
+                {t('genderGate.greeting', 'As-salamu alaykum!')}
+              </h2>
               <p className="text-white/50 text-sm leading-relaxed">
-                {t('genderGate.prompt', 'To personalise your experience — including content, greetings, and access to Rayhanah (cycle tracking for sisters) — please let us know:')}
+                {t(
+                  'genderGate.prompt',
+                  'To personalise your experience — including content, greetings, and access to Rayhanah (cycle tracking for sisters) — please let us know:'
+                )}
               </p>
             </div>
 
@@ -79,7 +83,9 @@ export default function GenderGate() {
                   }`}
                 >
                   <div className="text-2xl mb-1">{g === 'male' ? '🧔' : '🧕'}</div>
-                  {g === 'male' ? t('genderGate.brother', 'Brother') : t('genderGate.sister', 'Sister')}
+                  {g === 'male'
+                    ? t('genderGate.brother', 'Brother')
+                    : t('genderGate.sister', 'Sister')}
                 </button>
               ))}
             </div>
@@ -91,7 +97,11 @@ export default function GenderGate() {
               disabled={!selected || saving}
               className="w-full py-3 bg-brand-emerald hover:bg-brand-emerald-dim text-white rounded-xl font-semibold shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {saving ? <span className="loading loading-spinner loading-sm" /> : t('genderGate.continue', 'Continue')}
+              {saving ? (
+                <span className="loading loading-spinner loading-sm" />
+              ) : (
+                t('genderGate.continue', 'Continue')
+              )}
             </button>
 
             <div className="border-t border-brand-border/40 pt-4 space-y-2">
@@ -103,7 +113,11 @@ export default function GenderGate() {
               </button>
               <p className="text-white/25 text-[11px] leading-relaxed">
                 {t('genderGate.settingsHint', 'You can set this anytime in')}{' '}
-                <Link to="/settings" onClick={skip} className="underline text-white/40 hover:text-white/60">
+                <Link
+                  to="/settings"
+                  onClick={skip}
+                  className="underline text-white/40 hover:text-white/60"
+                >
                   {t('nav.settings', 'Settings')}
                 </Link>
               </p>
@@ -115,7 +129,9 @@ export default function GenderGate() {
   }
 
   // ── Guest/demo user: lightweight floating banner ────────────────────────────
-  if (!user && !guestDismissed) {
+  // Skip on the landing page — guests are still discovering the app there.
+  // The landing page's own "Explore" button handles gender selection for demo mode.
+  if (!user && !guestDismissed && pathname !== '/') {
     const pickGuest = (g: 'male' | 'female') => {
       localStorage.setItem('ihsan_guest_gender', g);
       setGuestDismissed(true);
