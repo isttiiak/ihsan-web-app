@@ -108,8 +108,8 @@ export async function updatePrayerStatus(
   // a past day that was simply never logged does not silently add debt,
   // matching how missedCount in analytics already works.
   const isMissed = status === 'missed';
-  if (wasMissed && !isMissed) await salatDebtService.adjustDebt(userId, prayer, -1);
-  else if (!wasMissed && isMissed) await salatDebtService.adjustDebt(userId, prayer, 1);
+  if (wasMissed && !isMissed) await salatDebtService.adjustDebt(userId, prayer, -1, d);
+  else if (!wasMissed && isMissed) await salatDebtService.adjustDebt(userId, prayer, 1, d);
 
   return log;
 }

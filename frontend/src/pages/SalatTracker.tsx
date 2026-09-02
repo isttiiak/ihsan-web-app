@@ -259,7 +259,7 @@ export default function SalatTracker() {
 
   const handleDebtAdjust = (prayer: PrayerId, delta: number) => {
     if (!user) { setShowGuestDialog(true); return; }
-    adjustDebt.mutate({ prayer, delta });
+    adjustDebt.mutate({ prayer, delta, date: todayStr() });
   };
   const openDebtEditor = (prayer: PrayerId, current: number) => {
     setEditingDebtPrayer(prayer);
@@ -268,7 +268,7 @@ export default function SalatTracker() {
   const saveDebtEditor = () => {
     if (!editingDebtPrayer) return;
     const count = Math.max(0, Math.min(9999, parseInt(editingDebtValue, 10) || 0));
-    setDebtExact.mutate({ prayer: editingDebtPrayer, count });
+    setDebtExact.mutate({ prayer: editingDebtPrayer, count, date: todayStr() });
     setEditingDebtPrayer(null);
   };
 

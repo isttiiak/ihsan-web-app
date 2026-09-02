@@ -3,7 +3,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import {
   updatePrayerSchema, updateNaflSchema, getSalatLogSchema, salatHistorySchema,
-  adjustSalatDebtSchema, setSalatDebtSchema,
+  adjustSalatDebtSchema, setSalatDebtSchema, salatDebtHistorySchema,
 } from '../validation/salat.schemas.js';
 import * as salatController from '../controllers/salat.controller.js';
 
@@ -30,6 +30,8 @@ router.get('/debt', requireAuth, salatController.getDebt);
 router.patch('/debt/adjust', requireAuth, validate(adjustSalatDebtSchema), salatController.adjustDebt);
 // PATCH /api/salat/debt/set — absolute set (initial estimate from before tracking)
 router.patch('/debt/set', requireAuth, validate(setSalatDebtSchema), salatController.setDebt);
+// GET /api/salat/debt/history — weekly accumulation-vs-payback buckets for the chart
+router.get('/debt/history', requireAuth, validate(salatDebtHistorySchema), salatController.getDebtHistory);
 
 // POST /api/salat/reset — start fresh without deleting history
 router.post('/reset', requireAuth, salatController.resetSalat);

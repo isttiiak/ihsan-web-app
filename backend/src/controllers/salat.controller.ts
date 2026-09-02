@@ -79,17 +79,26 @@ export const getDebt = async (req: Request, res: Response, next: NextFunction): 
 
 export const adjustDebt = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { prayer, delta } = req.body as { prayer: PrayerId; delta: number };
-    const debt = await salatDebtService.adjustDebt(req.user.uid, prayer, delta);
+    const { prayer, delta, date } = req.body as { prayer: PrayerId; delta: number; date?: string };
+    const debt = await salatDebtService.adjustDebt(req.user.uid, prayer, delta, date);
     res.json({ ok: true, ...debt });
   } catch (err) { next(err); }
 };
 
 export const setDebt = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { prayer, count } = req.body as { prayer: PrayerId; count: number };
-    const debt = await salatDebtService.setDebt(req.user.uid, prayer, count);
+    const { prayer, count, date } = req.body as { prayer: PrayerId; count: number; date?: string };
+    const debt = await salatDebtService.setDebt(req.user.uid, prayer, count, date);
     res.json({ ok: true, ...debt });
+  } catch (err) { next(err); }
+};
+
+export const getDebtHistory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const days = Number(req.query['days'] ?? 30);
+    const today = req.query['today'] as string | undefined;
+    const weeks = await salatDebtService.getDebtHistory(req.user.uid, days, today);
+    res.json({ ok: true, weeks });
   } catch (err) { next(err); }
 };
 

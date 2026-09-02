@@ -34,6 +34,7 @@ export const adjustSalatDebtSchema = z.object({
   body: z.object({
     prayer: prayerIdEnum,
     delta: z.number().int().min(-9999).max(9999),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   }),
 });
 
@@ -41,7 +42,16 @@ export const setSalatDebtSchema = z.object({
   body: z.object({
     prayer: prayerIdEnum,
     count: z.number().int().min(0).max(9999),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   }),
+});
+
+export const salatDebtHistorySchema = z.object({
+  query: z.object({
+    days: z.coerce.number().int().positive().max(365).default(30),
+    today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  }),
+  body: z.object({}).optional(),
 });
 
 export const updateNaflSchema = z.object({

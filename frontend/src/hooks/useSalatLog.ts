@@ -329,6 +329,7 @@ export function useUpdatePrayer() {
       void qc.invalidateQueries({ queryKey: ['salat', 'analytics'] });
       // A prayer moving into/out of 'missed' auto-adjusts the kaza debt server-side.
       void qc.invalidateQueries({ queryKey: ['salat', 'debt'] });
+      void qc.invalidateQueries({ queryKey: ['salat', 'debtHistory'] });
     },
   });
 }
@@ -389,22 +390,48 @@ export function useSalatDebt() {
 export function useAdjustSalatDebt() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (vars: { prayer: PrayerId; delta: number }) => {
+    mutationFn: async (vars: { prayer: PrayerId; delta: number; date?: string }) => {
       const { data } = await api.patch<SalatDebt & { ok: boolean }>('/api/salat/debt/adjust', vars);
       return data;
     },
-    onSuccess: (data) => qc.setQueryData(['salat', 'debt'], data),
+    onSuccess: (data) => {
+      qc.setQueryData(['salat', 'debt'], data);
+      void qc.invalidateQueries({ queryKey: ['salat', 'debtHistory'] });
+    },
   });
 }
 
 export function useSetSalatDebt() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (vars: { prayer: PrayerId; count: number }) => {
+    mutationFn: async (vars: { prayer: PrayerId; count: number; date?: string }) => {
       const { data } = await api.patch<SalatDebt & { ok: boolean }>('/api/salat/debt/set', vars);
       return data;
     },
-    onSuccess: (data) => qc.setQueryData(['salat', 'debt'], data),
+    onSuccess: (data) => {
+      qc.setQueryData(['salat', 'debt'], data);
+      void qc.invalidateQueries({ queryKey: ['salat', 'debtHistory'] });
+    },
+  });
+}
+
+export interface SalatDebtHistoryWeek {
+  weekStart: string;
+  weekEnd: string;
+  accumulated: number;
+  paidBack: number;
+}
+
+export function useSalatDebtHistory(days = 30) {
+  const user = useAuthStore((s) => s.user);
+  return useQuery({
+    queryKey: ['salat', 'debtHistory', days],
+    queryFn: async () => {
+      const { data } = await api.get<{ ok: boolean; weeks: SalatDebtHistoryWeek[] }>(`/api/salat/debt/history?days=${days}&today=${localTodayStr()}`);
+      return data.weeks;
+    },
+    enabled: !!user,
+    staleTime: 60_000,
   });
 }
 
