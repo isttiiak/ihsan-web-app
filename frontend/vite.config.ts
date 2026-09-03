@@ -31,6 +31,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // SPA offline routing: serve the cached index.html for any navigation
+        // that misses the precache (e.g. /zikr while offline).
+        navigateFallback: 'index.html',
         // Never intercept the API — worship logs must always hit the server.
         navigateFallbackDenylist: [/^\/api\//],
         // THE MOBILE STALENESS FIX. With autoUpdate alone a new service worker

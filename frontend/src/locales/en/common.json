@@ -294,15 +294,7 @@
     "pmsWindow": "PMS window",
     "prevMonth": "Previous month",
     "title": "Cycle Calendar",
-    "weekdays": [
-      "S",
-      "M",
-      "T",
-      "W",
-      "T",
-      "F",
-      "S"
-    ]
+    "weekdays": ["S", "M", "T", "W", "T", "F", "S"]
   },
   "daifExplainer": {
     "explainerParagraph": "The term <1>ḍaʿīf</1> means the chain of transmission has a flaw — a narrator with weak memory, an unknown link, or a break — so the words cannot be attributed to the Prophet ﷺ with confidence. It does not automatically mean the meaning is false. Many scholars permit acting on a weak report to encourage good deeds (faḍāʾil al-aʿmāl) provided nothing is treated as an established ruling or a guaranteed reward; others decline to use them at all. Ihsan shows the grade so you can follow your own scholars.",
@@ -655,7 +647,8 @@
     "guestPrompt": "How would you like to explore?",
     "prompt": "To personalise your experience — including content, greetings, and access to Rayhanah (cycle tracking for sisters) — please let us know:",
     "settingsHint": "You can set this anytime in",
-    "sister": "Sister"
+    "sister": "Sister",
+    "bannerPrompt": "Personalise your Ihsan — tell us who you are:"
   },
   "hijriMonths": {
     "0": "Muharram",
@@ -761,7 +754,9 @@
     "sister": "Sister",
     "tryIt": "Try it →",
     "verifiedDesc": "Each Quran verse and hadith in Ihsan links to quran.com or sunnah.com with its exact number, and grades are shown where they matter. No fabricated virtues, no folklore — if we can't verify it, we don't say it.",
-    "verifiedTitle": "Every reference, verified"
+    "verifiedTitle": "Every reference, verified",
+    "exploreAsBrother": "Explore as Brother",
+    "exploreAsSister": "Explore as Sister"
   },
   "moodComfort": {
     "heading": "A word of comfort",

@@ -38,28 +38,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuthLoading: (authLoading) => set({ authLoading }),
 
   enterDemoMode: (gender: string) => {
-    sessionStorage.setItem('ihsan_demo_mode', gender);
+    // Pure in-memory — no sessionStorage, so a page refresh always shows the landing.
     set({ user: getDemoUser(gender), isDemoMode: true, authLoading: false });
   },
 
   exitDemoMode: () => {
-    sessionStorage.removeItem('ihsan_demo_mode');
     set({ user: null, isDemoMode: false });
   },
 
   init: () => {
     const ai = localStorage.getItem('ihsan_ai_enabled');
-
-    const demoGender = sessionStorage.getItem('ihsan_demo_mode');
-    if (demoGender) {
-      set({
-        aiEnabled: ai === '1',
-        user: getDemoUser(demoGender),
-        isDemoMode: true,
-        authLoading: false,
-      });
-      return;
-    }
 
     let cachedUser: AuthUser | null = null;
     try {
@@ -70,7 +58,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (cachedUser?.uid) {
       set({ aiEnabled: ai === '1', user: cachedUser, authLoading: false });
     } else {
-      set({ aiEnabled: ai === '1' });
+      // No cached session — if there is also no token on disk, the user is
+      // definitely signed out: show the landing immediately instead of flashing
+      // a black spinner screen while Firebase confirms.
+      const hasToken = !!localStorage.getItem('ihsan_idToken');
+      set({ aiEnabled: ai === '1', ...(!hasToken && { authLoading: false }) });
     }
   },
 }));

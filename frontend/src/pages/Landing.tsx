@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { translateReference } from '../utils/localeReference.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -68,10 +67,14 @@ export default function Landing() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { enterDemoMode } = useAuthStore();
-  const [showPicker, setShowPicker] = useState(false);
 
-  const pickGender = (gender: string) => {
-    enterDemoMode(gender);
+  const exploreBrother = () => {
+    enterDemoMode('male');
+    navigate('/');
+  };
+
+  const exploreSister = () => {
+    enterDemoMode('female');
     navigate('/');
   };
 
@@ -107,25 +110,40 @@ export default function Landing() {
           >
             {t('landing.heroDesc')}
           </motion.p>
+
+          {/* Primary CTA */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.32, duration: 0.5 }}
-            className="flex flex-wrap justify-center gap-3 mt-8"
+            className="mt-8 space-y-3"
           >
-            <button
-              className="btn h-13 px-8 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-brand-emerald to-brand-info hover:from-brand-emerald hover:to-brand-info shadow-xl shadow-brand-emerald-dim/40"
-              onClick={() => navigate('/signup')}
-            >
-              {t('landing.cta')}
-            </button>
-            <button
-              className="btn h-13 px-6 rounded-2xl bg-white/5 border-brand-emerald/15 text-white/80 font-bold"
-              onClick={() => setShowPicker(true)}
-            >
-              {t('landing.ctaExplore')}
-            </button>
+            <div className="flex flex-wrap justify-center">
+              <button
+                className="btn h-13 px-10 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-brand-emerald to-brand-info hover:from-brand-emerald hover:to-brand-info shadow-xl shadow-brand-emerald-dim/40"
+                onClick={() => navigate('/signup')}
+              >
+                {t('landing.cta')}
+              </button>
+            </div>
+
+            {/* Demo explore — two explicit gender buttons, no popup */}
+            <div className="flex flex-wrap justify-center gap-2">
+              <button
+                className="btn h-10 px-5 rounded-xl bg-brand-info/10 border border-brand-info/20 text-white/70 text-sm font-semibold hover:bg-brand-info/20 hover:text-white transition-all"
+                onClick={exploreBrother}
+              >
+                🕌 {t('landing.exploreAsBrother', 'Explore as Brother')}
+              </button>
+              <button
+                className="btn h-10 px-5 rounded-xl bg-brand-pink/10 border border-brand-pink/20 text-white/70 text-sm font-semibold hover:bg-brand-pink/20 hover:text-white transition-all"
+                onClick={exploreSister}
+              >
+                🌸 {t('landing.exploreAsSister', 'Explore as Sister')}
+              </button>
+            </div>
           </motion.div>
+
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -136,8 +154,8 @@ export default function Landing() {
           </motion.p>
         </section>
 
-        {/* ── Feature grid — core features first ── */}
-        <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+        {/* ── Feature grid — core features ── */}
+        <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {FEATURE_DEFS.map((f, i) => (
             <motion.div
               key={f.titleKey}
@@ -161,17 +179,20 @@ export default function Landing() {
           ))}
         </section>
 
-        {/* ── Rayhanah highlight — after core features ── */}
-        <motion.section {...fadeUp} className="mb-10">
-          <div className="rounded-3xl p-6 sm:p-10 border border-brand-pink/25 bg-gradient-to-br from-brand-pink/15 via-brand-pink/10 to-brand-warm/10 relative overflow-hidden">
+        {/* ── Rayhanah cycle — below all feature cards ── */}
+        <motion.section {...fadeUp} className="mb-12">
+          <Link
+            to="/cycle"
+            className="block rounded-3xl p-6 sm:p-10 border border-brand-pink/25 bg-gradient-to-br from-brand-pink/15 via-brand-pink/10 to-brand-warm/10 relative overflow-hidden transition-transform hover:scale-[1.01] hover:shadow-xl"
+          >
             <motion.div
-              className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-brand-pink/10 blur-3xl"
+              className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-brand-pink/10 blur-3xl pointer-events-none"
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
             />
             <div className="relative sm:flex items-center gap-8">
               <div className="text-6xl sm:text-7xl text-center sm:text-left mb-4 sm:mb-0">🌸</div>
-              <div>
+              <div className="flex-1">
                 <p className="text-brand-pink/80 text-xs font-black uppercase tracking-widest">
                   {t('landing.rayhanahHighlight')}
                 </p>
@@ -182,9 +203,12 @@ export default function Landing() {
                   {t('landing.rayhanahDesc')}
                   <span className="font-bold text-brand-pink">{t('landing.rayhanahPrivate')}</span>
                 </p>
+                <span className="inline-block mt-4 text-xs font-semibold text-brand-pink/70">
+                  {t('landing.tryIt')}
+                </span>
               </div>
             </div>
-          </div>
+          </Link>
         </motion.section>
 
         {/* ── Authenticity strip ── */}
@@ -242,48 +266,6 @@ export default function Landing() {
           </div>
         </motion.section>
       </div>
-
-      {/* Gender picker overlay */}
-      <AnimatePresence>
-        {showPicker && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-            onClick={() => setShowPicker(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: 16 }}
-              transition={{ duration: 0.25 }}
-              className="bg-brand-deep border border-brand-border rounded-3xl p-8 max-w-sm w-full text-center"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="text-4xl mb-3">🌙</div>
-              <h3 className="text-white font-black text-xl">{t('landing.genderPickerTitle')}</h3>
-              <p className="text-white/40 text-sm mt-2 mb-6">{t('landing.genderPickerDesc')}</p>
-              <div className="flex gap-3">
-                <button
-                  className="flex-1 py-4 rounded-2xl border border-brand-info/25 bg-brand-info/10 hover:bg-brand-info/20 transition-colors"
-                  onClick={() => pickGender('male')}
-                >
-                  <div className="text-3xl mb-1">🕌</div>
-                  <div className="text-white font-bold text-sm">{t('landing.brother')}</div>
-                </button>
-                <button
-                  className="flex-1 py-4 rounded-2xl border border-brand-pink/25 bg-brand-pink/10 hover:bg-brand-pink/20 transition-colors"
-                  onClick={() => pickGender('female')}
-                >
-                  <div className="text-3xl mb-1">🌸</div>
-                  <div className="text-white font-bold text-sm">{t('landing.sister')}</div>
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </AnimatedBackground>
   );
 }
