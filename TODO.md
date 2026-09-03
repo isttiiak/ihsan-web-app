@@ -7,6 +7,7 @@
 ## Zikr Counter
 
 ### Advanced Features
+
 - [ ] **Offline sync** — queue increments in IndexedDB when offline, replay on reconnect
 - [ ] **Sound feedback** — optional subtle click/tap sound per count
 - [ ] **Daily reminder notifications** — push/browser notification to prompt zikr session
@@ -17,20 +18,22 @@
 - [ ] **Bulk custom types** — import/export custom dhikr list as JSON
 - [ ] **Arabic keyboard input** — type custom dhikr directly in Arabic
 
-*(Vibration feedback moved to **Native Mobile Features** below — it's already built.)*
+_(Vibration feedback moved to **Native Mobile Features** below — it's already built.)_
 
 ### Analytics
-- [ ] **Heatmap calendar view** — GitHub-style contribution grid per day (Salat already has this full grid; Zikr Analytics only has a 7-day mini strip so far)
-- [ ] **Time-of-day chart** — when during the day does the user count most?
-- [ ] **Per-type trend lines** — individual line per dhikr type over time
-- [ ] **Personal records** — best single session, best hour, most types in one day
-- [ ] **Export analytics** — download CSV of daily totals
+
+- [x] **Heatmap calendar view** — GitHub-style contribution grid per day (2026-09-03: full 52×7 grid from 365-day data, hover shows date+count, intensity-coded)
+- [ ] **Time-of-day chart** — when during the day does the user count most? (blocked: ZikrDaily stores only one total per day, not session timestamps — needs a ZikrSession model first)
+- [x] **Per-type trend lines** — individual line per dhikr type over time (2026-09-03: multi-line SVG from daily breakdown, up to 5 types)
+- [x] **Personal records** — best single session, best hour, most types in one day (2026-09-03: best day, longest streak, avg on active days, most active day of week)
+- [x] **Export analytics** — download CSV of daily totals (2026-09-03: CSV button in Personal records section)
 
 ---
 
 ## Salat Tracker
 
 ### Features
+
 - [x] **Prayer time integration** — auto-mark a prayer window open/closed based on adhan times (2026-09-02: amber "window closed" flag once a today prayer's adhan-derived window passes while still unlogged)
 - [x] **Missed prayer debt tracker** — count accumulated kaza prayers and track payback (2026-09-02: per-prayer counter, auto-tracked from explicit "Miss" taps + manual adjust/set)
 - [x] **Jumu'ah tracking** — Friday prayer logged separately with attendance flag (2026-09-02: Jumu'ah Attendance % stat on analytics, mosque-specific)
@@ -40,6 +43,7 @@
 - [x] **Weekly summary card** — quick glance view for the last 7 days on the tracker page (2026-09-02: 7-dot strip, tap to jump)
 
 ### Analytics
+
 - [x] **Monthly completion heatmap** — full calendar view with colour intensity (already built — `prayerCalendar` grid on `/salat/analytics`)
 - [x] **Kaza debt chart** — stacked bar showing accumulation vs payback over time (2026-09-02: new append-only `SalatDebtEvent` log, weekly stacked bars)
 - [x] **Mosque frequency trend** — weekly mosque attendance rate (2026-09-02: weekly bar chart, `weeklyMosqueTrend`)
@@ -70,12 +74,12 @@
 
 ## Fasting Tracker
 
-*(Built — the "not yet built" heading above was stale; the tracker, Ramadan mode, and analytics have all shipped.)*
+_(Built — the "not yet built" heading above was stale; the tracker, Ramadan mode, and analytics have all shipped.)_
 
 - [x] **Daily fast log** — mark fasted / broke fast / exempt
 - [x] **Ramadan mode** — automatic 30-day tracking with suhoor/iftar times (dedicated `/ramadan` tracker)
 - [x] **Qadha fasts** — track missed Ramadan fasts and payback (`qadaOwed`/`qadaDone` in FastingProfile)
-- [ ] **Streak tracking** — Monday/Thursday Sunnah fasts streak (voluntary fasting is logged, but there's no dedicated streak counter for it yet)
+- [x] **Streak tracking** — Monday/Thursday Sunnah fasts streak (2026-09-03: computeMonThuStreak() walks backward through Mon/Thu days; shown as 5th stat tile in FastingAnalytics)
 - [x] **Analytics** — monthly completion rate, total fasts this year (all-time/this-month/last-30-days stats + a 12-month trend chart exist; there's no "best streak" stat yet — same gap as the line above)
 
 ---
@@ -85,9 +89,9 @@
 - [x] **PWA support** — service worker, installable on home screen, offline shell (already built — `vite-plugin-pwa` + workbox)
 - [~] **Dark/light theme sync** — respect OS preference and auto-switch — **superseded by product decision**: the UI is intentionally fixed dark; theme selection was removed from Settings. Not a gap to fill.
 - [~] **Multi-language support** — Arabic, Bengali, Urdu UI strings — **Bengali: mostly done, not fully.** `en`/`bn` key parity is 100% (1880/1880) across every translated screen, but three areas were never wired to i18n at all: the auth flow (`AuthSignIn.tsx`, `AuthSignUp.tsx`, `AuthAction.tsx`), the AI companion components (`ai/FastingCompanion.tsx`, `ai/NaseehInsights.tsx`, `ai/StreakCoaching.tsx`, `ai/AiFlair.tsx`), and `DaifExplainer.tsx`'s scholarly content. Arabic/Urdu not started.
-- [ ] **Account deletion** — GDPR-compliant data purge endpoint + UI flow (Settings' danger zone deletes each feature's data — zikr/salat/fasting/quran/cycle — individually, but there is no "delete my whole account" flow that also removes the Firebase auth user)
+- [x] **Account deletion** — GDPR-compliant data purge endpoint + UI flow (2026-09-03: DELETE /api/user/me purges all collections + Firebase auth; Settings has a two-step confirm card)
 - [x] **Email/password reset** — Firebase password reset flow in-app (already built — `sendPasswordResetEmail` in `AuthSignIn.tsx`)
 - [ ] **Social login** — Google sign-in already works; add Apple sign-in
 - [x] **Rate limit feedback** — show toast instead of silent failure when 429 received (already built — axios interceptor in `lib/api.ts`)
-- [~] **Backend tests** — Jest integration tests for zikr + salat + analytics routes — **partial.** `zikr`, `fasting`, `quran`, `cycle`, `social`, and `user` all have e2e suites (54 tests total); **salat has no test file at all**, despite being named here and having grown a lot recently (debt tracker, debt history, streaks, mosque trend).
-- [ ] **CI pipeline** — GitHub Actions: tsc + build check on every PR
+- [x] **Backend tests** — Jest integration tests for all routes — 75 tests total across zikr, fasting, quran, cycle, social, user, auth, and salat (10 salat tests added 2026-09-03: auth guard, prayer log CRUD, nafl, debt tracking, analytics, history, delete-all).
+- [x] **CI pipeline** — GitHub Actions: tsc + build check on every PR (already fully built — lint, typecheck, test, build, audit all run on push/PR to main; verified 2026-09-03)
