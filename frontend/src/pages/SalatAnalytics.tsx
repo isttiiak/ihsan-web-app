@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
+import DemoSignInGate from '../components/DemoSignInGate.js';
+import { useAuthStore } from '../store/useAuthStore.js';
 import {
   ChartBarIcon,
   InformationCircleIcon,
@@ -59,6 +61,7 @@ function calendarCellStyle(completed: number, hasData: boolean) {
 export default function SalatAnalytics() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const isDemoMode = useAuthStore((s) => s.isDemoMode);
   const [days, setDays] = useState(30);
   // null = use the period selector; otherwise a specific calendar month
   const [selectedMonth, setSelectedMonth] = useState<MonthSel | null>(null);
@@ -96,7 +99,7 @@ export default function SalatAnalytics() {
 
   // Group calendar data into weeks (Fri–Thu, Islamic week) for the heatmap
   const calendarWeeks = (() => {
-    if (!data?.calendarData) return [];
+    if (!data?.calendarData?.length) return [];
     const cells = [...data.calendarData];
     const jsDay = new Date(cells[0].date + 'T12:00:00').getDay(); // 0=Sun
     const firstDay = (jsDay + 2) % 7; // Fri=0, Sat=1, ..., Thu=6
@@ -110,7 +113,7 @@ export default function SalatAnalytics() {
 
   // Month labels for heatmap (account for front-padding in calendarWeeks)
   const monthLabels = (() => {
-    if (!data?.calendarData) return [];
+    if (!data?.calendarData?.length) return [];
     const labels: { label: string; weekIdx: number }[] = [];
     let lastMonth = -1;
     const jsDay = new Date(data.calendarData[0].date + 'T12:00:00').getDay();
@@ -141,6 +144,29 @@ export default function SalatAnalytics() {
     t('salatAnalytics.dayWed'),
     t('salatAnalytics.dayThu'),
   ];
+
+  if (isDemoMode) {
+    return (
+      <DemoSignInGate
+        emoji="📊"
+        title={t('demoGate.analyticsTitle', 'Your personal analytics await')}
+        desc={t(
+          'demoGate.salatDesc',
+          'Your prayer log, streaks, and debt history are saved to your account.'
+        )}
+        backTo="/salat"
+        backLabel={t('demoGate.backToSalat', 'Back to salat tracker')}
+        tabs={
+          <TabNav
+            items={[
+              { label: `🕌 ${t('salat.tracker')}`, to: '/salat' },
+              { label: `📊 ${t('salat.analytics')}`, to: '/salat/analytics', active: true },
+            ]}
+          />
+        }
+      />
+    );
+  }
 
   return (
     <AnimatedBackground variant="dark">

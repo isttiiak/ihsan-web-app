@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
+import DemoSignInGate from '../components/DemoSignInGate.js';
+import { useAuthStore } from '../store/useAuthStore.js';
 import { ChartBarIcon, PlusCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import StreakCard from '../components/analytics/StreakCard.js';
 import GoalCard from '../components/analytics/GoalCard.js';
@@ -750,6 +752,7 @@ function exportCsv(data: ChartDataPointWithBreakdown[], allTypes: string[]) {
 
 export default function ZikrAnalytics() {
   const { t, i18n } = useTranslation();
+  const isDemoMode = useAuthStore((s) => s.isDemoMode);
   const [selectedPeriod, setSelectedPeriod] = useState(7);
   const [activeTab, setActiveTab] = useState<'today' | 'all'>('today');
   const [showGoalModal, setShowGoalModal] = useState(false);
@@ -831,6 +834,29 @@ export default function ZikrAnalytics() {
 
   // Last 7 days from chartData for the heatmap
   const last7Days = chartData?.slice(-7) ?? [];
+
+  if (isDemoMode) {
+    return (
+      <DemoSignInGate
+        emoji="📊"
+        title={t('demoGate.analyticsTitle', 'Your personal analytics await')}
+        desc={t(
+          'demoGate.zikrDesc',
+          'Your zikr heatmap, per-type trends, and personal records are saved to your account.'
+        )}
+        backTo="/zikr"
+        backLabel={t('demoGate.backToZikr', 'Back to zikr counter')}
+        tabs={
+          <TabNav
+            items={[
+              { label: `📿 ${t('zikr.counter')}`, to: '/zikr' },
+              { label: `📊 ${t('zikr.analytics')}`, to: '/zikr/analytics', active: true },
+            ]}
+          />
+        }
+      />
+    );
+  }
 
   return (
     <AnimatedBackground variant="dark">

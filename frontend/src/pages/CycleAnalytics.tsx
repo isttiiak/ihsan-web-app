@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
+import DemoSignInGate from '../components/DemoSignInGate.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
 import {
   useCycleSummary,
@@ -231,56 +232,28 @@ export default function CycleAnalytics() {
 
   if (isDemoMode) {
     return (
-      <AnimatedBackground variant="dark">
-        <div className="px-4 pt-3">
-          <div className="max-w-2xl mx-auto">
-            <TabNav
-              items={[
-                { label: t('cycleAnalytics.tabCycle', '🌸 Cycle'), to: '/cycle' },
-                {
-                  label: t('cycleAnalytics.tabAnalytics', '📊 Analytics'),
-                  to: '/cycle/analytics',
-                  active: true,
-                },
-              ]}
-            />
-          </div>
-        </div>
-        <div className="min-h-[60vh] grid place-items-center px-4 text-center">
-          <div className="space-y-4 max-w-xs">
-            <div className="text-5xl">📊</div>
-            <p className="text-white font-black text-lg">
-              {t('cycleAnalytics.demoGateTitle', 'Your personal analytics await')}
-            </p>
-            <p className="text-white/50 text-sm leading-relaxed">
-              {t(
-                'cycleAnalytics.demoGateDesc',
-                'Cycle analytics — your patterns, predictions, and wellness insights — are available once you sign in.'
-              )}
-            </p>
-            <div className="flex flex-col gap-2.5">
-              <button
-                className="btn bg-brand-emerald hover:bg-brand-emerald text-white border-0 w-full"
-                onClick={() => navigate('/signup')}
-              >
-                {t('common.createAccount', 'Create free account')}
-              </button>
-              <button
-                className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
-                onClick={() => navigate('/login')}
-              >
-                {t('common.signIn', 'Sign in')}
-              </button>
-              <button
-                className="text-white/30 text-xs hover:text-white/60"
-                onClick={() => navigate('/cycle')}
-              >
-                ← {t('cycleAnalytics.backToCycle', 'Back to cycle tracker')}
-              </button>
-            </div>
-          </div>
-        </div>
-      </AnimatedBackground>
+      <DemoSignInGate
+        emoji="📊"
+        title={t('demoGate.analyticsTitle', 'Your personal analytics await')}
+        desc={t(
+          'demoGate.cycleDesc',
+          'Cycle analytics — your patterns, predictions, and wellness insights — are available once you sign in.'
+        )}
+        backTo="/cycle"
+        backLabel={t('demoGate.backToCycle', 'Back to cycle tracker')}
+        tabs={
+          <TabNav
+            items={[
+              { label: t('cycleAnalytics.tabCycle', '🌸 Cycle'), to: '/cycle' },
+              {
+                label: t('cycleAnalytics.tabAnalytics', '📊 Analytics'),
+                to: '/cycle/analytics',
+                active: true,
+              },
+            ]}
+          />
+        }
+      />
     );
   }
 

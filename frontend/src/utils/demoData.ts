@@ -168,6 +168,10 @@ function buildSalatAnalytics(days: number) {
     },
     last7Days: cal.slice(-7),
     calendarData: cal,
+    weeklyMosqueTrend: Array.from({ length: 4 }, (_, i) => ({
+      week: dateStr(28 - i * 7),
+      mosqueRate: Math.round(20 + seedInt(i + 900, 0, 50)),
+    })),
   };
 }
 

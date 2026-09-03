@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
+import DemoSignInGate from '../components/DemoSignInGate.js';
 import DaifExplainer from '../components/DaifExplainer.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useFastingHistory } from '../hooks/useFasting.js';
@@ -31,14 +32,25 @@ const ASHRA = [
   { from: 21, to: 30, label: 'ʿItq min an-Nār', tone: '#c9a96e' },
 ];
 
-function Stat({ label, value, suffix, hint, tone }: {
-  label: string; value: string | number; suffix?: string; hint?: string; tone: string;
+function Stat({
+  label,
+  value,
+  suffix,
+  hint,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  suffix?: string;
+  hint?: string;
+  tone: string;
 }) {
   return (
     <div className="rounded-2xl border border-brand-emerald/10 bg-white/[0.03] p-4">
       <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">{label}</p>
       <p className="font-black text-2xl leading-tight mt-1" style={{ color: tone }}>
-        {value}{suffix && <span className="text-white/25 text-sm font-bold">{suffix}</span>}
+        {value}
+        {suffix && <span className="text-white/25 text-sm font-bold">{suffix}</span>}
       </p>
       {hint && <p className="text-white/30 text-[11px] mt-0.5">{hint}</p>}
     </div>
@@ -48,6 +60,7 @@ function Stat({ label, value, suffix, hint, tone }: {
 export default function RamadanAnalytics() {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const isDemoMode = useAuthStore((s) => s.isDemoMode);
   const today = getTrackingDay();
   const window_ = useMemo(() => getRamadanWindow(), []);
   const { data: history } = useFastingHistory(400, true);
@@ -92,9 +105,15 @@ export default function RamadanAnalytics() {
     const tarawih = days.filter((d) => d.tarawih).length;
 
     // Longest run of consecutive fasted days.
-    let best = 0, run = 0;
+    let best = 0,
+      run = 0;
     for (const d of days) {
-      if (d.fasted) { run += 1; best = Math.max(best, run); } else if (d.elapsed) { run = 0; }
+      if (d.fasted) {
+        run += 1;
+        best = Math.max(best, run);
+      } else if (d.elapsed) {
+        run = 0;
+      }
     }
 
     // Obligated = elapsed days that were not excused. Excused days are NOT a
@@ -106,8 +125,16 @@ export default function RamadanAnalytics() {
     const oddNights = lastTen.filter((d) => d.isOdd);
 
     return {
-      days, elapsed: elapsed.length, fasted, broken, excused, unlogged, tarawih,
-      best, rate, obligated,
+      days,
+      elapsed: elapsed.length,
+      fasted,
+      broken,
+      excused,
+      unlogged,
+      tarawih,
+      best,
+      rate,
+      obligated,
       byAshra: ASHRA.map((a) => {
         const group = days.filter((d) => d.dayNumber >= a.from && d.dayNumber <= a.to);
         const groupElapsed = group.filter((d) => d.elapsed && !d.excused).length;
@@ -130,6 +157,29 @@ export default function RamadanAnalytics() {
 
   const noData = model.elapsed === 0;
 
+  if (isDemoMode) {
+    return (
+      <DemoSignInGate
+        emoji="🌙"
+        title={t('demoGate.analyticsTitle', 'Your personal analytics await')}
+        desc={t(
+          'demoGate.ramadanDesc',
+          'Your Ramadan log and analytics are saved to your account.'
+        )}
+        backTo="/ramadan"
+        backLabel={t('demoGate.backToRamadan', 'Back to Ramadan')}
+        tabs={
+          <TabNav
+            items={[
+              { label: t('ramadanAnalytics.tabTracker'), to: '/ramadan' },
+              { label: t('ramadanAnalytics.tabAnalytics'), to: '/ramadan/analytics', active: true },
+            ]}
+          />
+        }
+      />
+    );
+  }
+
   return (
     <AnimatedBackground variant="dark">
       <h1 className="sr-only">{t('ramadanAnalytics.title')}</h1>
@@ -150,7 +200,10 @@ export default function RamadanAnalytics() {
             <p className="text-white/40 text-sm mt-1.5 leading-relaxed">
               {t('ramadanAnalytics.nothingYetDesc', { year: window_.hijriYear ?? '' })}
             </p>
-            <Link to="/ramadan" className="inline-block mt-4 text-brand-gold/80 hover:text-brand-gold text-sm underline underline-offset-2">
+            <Link
+              to="/ramadan"
+              className="inline-block mt-4 text-brand-gold/80 hover:text-brand-gold text-sm underline underline-offset-2"
+            >
               {t('ramadanAnalytics.goToTracker')}
             </Link>
           </div>
@@ -158,7 +211,8 @@ export default function RamadanAnalytics() {
           <>
             {/* Headline */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               className="rounded-3xl p-6 border border-brand-gold/25 bg-gradient-to-br from-brand-gold/15 via-brand-gold/10 to-brand-info/10"
             >
               <p className="text-brand-gold/80 text-xs font-bold uppercase tracking-widest">
@@ -180,16 +234,52 @@ export default function RamadanAnalytics() {
               </div>
               <p className="text-white/40 text-xs mt-1.5">
                 {t('ramadanAnalytics.rateDescription', { rate: model.rate })}
-                {model.excused > 0 && <> · {t('ramadanAnalytics.excusedNote', { count: model.excused })}</>}
+                {model.excused > 0 && (
+                  <> · {t('ramadanAnalytics.excusedNote', { count: model.excused })}</>
+                )}
               </p>
             </motion.div>
 
             {/* Stat tiles */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <Stat label={t('ramadanAnalytics.longestRun')} value={formatLocaleNumber(model.best)} suffix={` ${t('common.days')}`} tone="#fbbf24" hint={t('ramadanAnalytics.backToBack')} />
-              <Stat label={t('ramadanAnalytics.tarawihNights')} value={formatLocaleNumber(model.tarawih)} suffix={`/${formatLocaleNumber(model.elapsed)}`} tone="#a5b4fc" hint={t('ramadanAnalytics.soFar')} />
-              <Stat label={t('ramadanAnalytics.broken')} value={formatLocaleNumber(model.broken)} tone="#f87171" hint={model.broken ? t('ramadanAnalytics.makeTheseUp') : t('ramadanAnalytics.noneAlhamdulillah')} />
-              <Stat label={t('ramadanAnalytics.notLogged')} value={formatLocaleNumber(model.unlogged)} tone="#94a3b8" hint={model.unlogged ? t('ramadanAnalytics.pastDaysNoEntry', { count: formatLocaleNumber(model.unlogged) }) : t('ramadanAnalytics.allDaysAccounted', { total: formatLocaleNumber(model.elapsed) })} />
+              <Stat
+                label={t('ramadanAnalytics.longestRun')}
+                value={formatLocaleNumber(model.best)}
+                suffix={` ${t('common.days')}`}
+                tone="#fbbf24"
+                hint={t('ramadanAnalytics.backToBack')}
+              />
+              <Stat
+                label={t('ramadanAnalytics.tarawihNights')}
+                value={formatLocaleNumber(model.tarawih)}
+                suffix={`/${formatLocaleNumber(model.elapsed)}`}
+                tone="#a5b4fc"
+                hint={t('ramadanAnalytics.soFar')}
+              />
+              <Stat
+                label={t('ramadanAnalytics.broken')}
+                value={formatLocaleNumber(model.broken)}
+                tone="#f87171"
+                hint={
+                  model.broken
+                    ? t('ramadanAnalytics.makeTheseUp')
+                    : t('ramadanAnalytics.noneAlhamdulillah')
+                }
+              />
+              <Stat
+                label={t('ramadanAnalytics.notLogged')}
+                value={formatLocaleNumber(model.unlogged)}
+                tone="#94a3b8"
+                hint={
+                  model.unlogged
+                    ? t('ramadanAnalytics.pastDaysNoEntry', {
+                        count: formatLocaleNumber(model.unlogged),
+                      })
+                    : t('ramadanAnalytics.allDaysAccounted', {
+                        total: formatLocaleNumber(model.elapsed),
+                      })
+                }
+              />
             </div>
 
             {/* Per-ashra breakdown */}
@@ -204,9 +294,12 @@ export default function RamadanAnalytics() {
                   return (
                     <div key={a.label}>
                       <div className="flex items-baseline justify-between gap-2 mb-1.5">
-                        <span className="font-bold text-sm" style={{ color: a.tone }}>{a.label}</span>
+                        <span className="font-bold text-sm" style={{ color: a.tone }}>
+                          {a.label}
+                        </span>
                         <span className="text-white/30 text-[11px] tabular-nums">
-                          {a.fasted}/{a.elapsed || a.total} {t('ramadanAnalytics.fasted')} · {a.tarawih} {t('ramadanAnalytics.tarawih')}
+                          {a.fasted}/{a.elapsed || a.total} {t('ramadanAnalytics.fasted')} ·{' '}
+                          {a.tarawih} {t('ramadanAnalytics.tarawih')}
                         </span>
                       </div>
                       <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
@@ -229,20 +322,33 @@ export default function RamadanAnalytics() {
               <h2 className="text-white font-black">{t('ramadanAnalytics.lastTenTitle')}</h2>
               <p className="text-brand-info/60 text-xs mt-1 leading-relaxed">
                 {t('ramadanAnalytics.lastTenHadith')}{' '}
-                <a className="underline" href="https://sunnah.com/bukhari:2017" target="_blank" rel="noreferrer">{translateReference('Ṣaḥīḥ al-Bukhārī 2017', i18n.language)}</a>.
-                {t('ramadanAnalytics.lastTenNote')}
+                <a
+                  className="underline"
+                  href="https://sunnah.com/bukhari:2017"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {translateReference('Ṣaḥīḥ al-Bukhārī 2017', i18n.language)}
+                </a>
+                .{t('ramadanAnalytics.lastTenNote')}
               </p>
               <div className="grid grid-cols-2 gap-2.5 mt-3">
                 <div className="rounded-2xl bg-black/25 border border-brand-info/20 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">{t('ramadanAnalytics.tarawihLastTen')}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">
+                    {t('ramadanAnalytics.tarawihLastTen')}
+                  </p>
                   <p className="text-brand-info font-black text-xl mt-0.5">
-                    {model.lastTenTarawih}<span className="text-white/25 text-sm">/{model.lastTenTotal}</span>
+                    {model.lastTenTarawih}
+                    <span className="text-white/25 text-sm">/{model.lastTenTotal}</span>
                   </p>
                 </div>
                 <div className="rounded-2xl bg-black/25 border border-brand-info/20 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">{t('ramadanAnalytics.oddNightsKept')}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-white/30">
+                    {t('ramadanAnalytics.oddNightsKept')}
+                  </p>
                   <p className="text-brand-info font-black text-xl mt-0.5">
-                    {model.oddNightsTarawih}<span className="text-white/25 text-sm">/{model.oddNightsTotal}</span>
+                    {model.oddNightsTarawih}
+                    <span className="text-white/25 text-sm">/{model.oddNightsTotal}</span>
                   </p>
                 </div>
               </div>
@@ -264,22 +370,43 @@ export default function RamadanAnalytics() {
                       title={`${t('ramadanAnalytics.ramadanDayTitle', { day: d.dayNumber })}${d.fasted ? ` · ${t('ramadanAnalytics.fasted')}` : d.broken ? ` · ${t('ramadanAnalytics.broken')}` : d.excused ? ` · ${t('ramadanAnalytics.excused')}` : d.unlogged ? ` · ${t('ramadanAnalytics.notLoggedShort')}` : ''}${d.tarawih ? ` · ${t('ramadanAnalytics.tarawih')}` : ''}`}
                       className={`relative aspect-square rounded ${cls}`}
                     >
-                      {d.tarawih && <span className="absolute inset-0 grid place-items-center text-[7px]">🕌</span>}
+                      {d.tarawih && (
+                        <span className="absolute inset-0 grid place-items-center text-[7px]">
+                          🕌
+                        </span>
+                      )}
                     </div>
                   );
                 })}
               </div>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[10px] text-white/30">
-                <span>🟩 {t('ramadanAnalytics.fasted')}</span><span>🟥 {t('ramadanAnalytics.broken')}</span><span>🌸 {t('ramadanAnalytics.excused')}</span>
-                <span>⬜ {t('ramadanAnalytics.notLoggedShort')}</span><span>🕌 {t('ramadanAnalytics.tarawih')}</span>
+                <span>🟩 {t('ramadanAnalytics.fasted')}</span>
+                <span>🟥 {t('ramadanAnalytics.broken')}</span>
+                <span>🌸 {t('ramadanAnalytics.excused')}</span>
+                <span>⬜ {t('ramadanAnalytics.notLoggedShort')}</span>
+                <span>🕌 {t('ramadanAnalytics.tarawih')}</span>
               </div>
             </div>
 
             <p className="text-white/30 text-[11px] leading-relaxed">
-              {t('ramadanAnalytics.excusedFootnote')}{' '}
-              (<a className="underline hover:text-white/50" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>).
+              {t('ramadanAnalytics.excusedFootnote')} (
+              <a
+                className="underline hover:text-white/50"
+                href="https://sunnah.com/muslim:335"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {translateReference('Muslim 335', i18n.language)}
+              </a>
+              ).
               {t('ramadanAnalytics.somethingWrong')}{' '}
-              <Link to="/feedback" className="text-brand-emerald/70 hover:text-brand-emerald underline underline-offset-2">{t('ramadanAnalytics.tellUs')}</Link>.
+              <Link
+                to="/feedback"
+                className="text-brand-emerald/70 hover:text-brand-emerald underline underline-offset-2"
+              >
+                {t('ramadanAnalytics.tellUs')}
+              </Link>
+              .
             </p>
           </>
         )}
