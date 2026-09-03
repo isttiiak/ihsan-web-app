@@ -9,8 +9,12 @@ export interface FriendStats {
   uid: string;
   displayName: string;
   photoUrl?: string;
+  /** Full country name from the user's profile (e.g. "Bangladesh") */
+  country?: string;
   isMe: boolean;
   salatToday: number;
+  /** How many fard prayer windows have opened so far today (0–5) */
+  prayersDue?: number;
   zikrStreak: number;
   zikrState: 'active' | 'grace' | 'none' | 'paused';
   zikrToday: number;
@@ -118,7 +122,9 @@ export function useFriendsList(enabled: boolean) {
   return useQuery({
     queryKey: ['social', 'friends'],
     queryFn: async () => {
-      const { data } = await api.get<{ ok: boolean; friends: FriendListItem[] }>('/api/social/friends');
+      const { data } = await api.get<{ ok: boolean; friends: FriendListItem[] }>(
+        '/api/social/friends'
+      );
       return data.friends;
     },
     enabled: !!user && enabled,

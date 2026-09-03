@@ -5,18 +5,121 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import { streakVisual } from '../components/StatusBadges.js';
-import { ClipboardDocumentIcon, CheckIcon, XMarkIcon, ChevronDownIcon, UserPlusIcon, UsersIcon, TrashIcon } from '@heroicons/react/24/outline';
+import {
+  ClipboardDocumentIcon,
+  CheckIcon,
+  XMarkIcon,
+  ChevronDownIcon,
+  UserPlusIcon,
+  UsersIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
 import { useSocialSummary, useUnfriend, useFriendsList } from '../hooks/useSocial.js';
+import { useAuthStore } from '../store/useAuthStore.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
+
+const COUNTRY_CODES: Record<string, string> = {
+  Afghanistan: 'AF',
+  Algeria: 'DZ',
+  Australia: 'AU',
+  Azerbaijan: 'AZ',
+  Bangladesh: 'BD',
+  Belgium: 'BE',
+  'Bosnia and Herzegovina': 'BA',
+  Brazil: 'BR',
+  Brunei: 'BN',
+  Canada: 'CA',
+  China: 'CN',
+  Egypt: 'EG',
+  France: 'FR',
+  Germany: 'DE',
+  Ghana: 'GH',
+  India: 'IN',
+  Indonesia: 'ID',
+  Iran: 'IR',
+  Iraq: 'IQ',
+  Jordan: 'JO',
+  Kazakhstan: 'KZ',
+  Kenya: 'KE',
+  Kuwait: 'KW',
+  Kyrgyzstan: 'KG',
+  Lebanon: 'LB',
+  Libya: 'LY',
+  Malaysia: 'MY',
+  Maldives: 'MV',
+  Mali: 'ML',
+  Mauritania: 'MR',
+  Morocco: 'MA',
+  Netherlands: 'NL',
+  Niger: 'NE',
+  Nigeria: 'NG',
+  Oman: 'OM',
+  Pakistan: 'PK',
+  Palestine: 'PS',
+  Philippines: 'PH',
+  Qatar: 'QA',
+  Russia: 'RU',
+  'Saudi Arabia': 'SA',
+  Senegal: 'SN',
+  'Sierra Leone': 'SL',
+  Somalia: 'SO',
+  'South Africa': 'ZA',
+  Spain: 'ES',
+  Sudan: 'SD',
+  Syria: 'SY',
+  Tajikistan: 'TJ',
+  Tanzania: 'TZ',
+  Tunisia: 'TN',
+  Turkey: 'TR',
+  Turkmenistan: 'TM',
+  Uganda: 'UG',
+  'United Arab Emirates': 'AE',
+  'United Kingdom': 'GB',
+  'United States': 'US',
+  Uzbekistan: 'UZ',
+  Yemen: 'YE',
+};
+
+function CountryFlag({ country }: { country?: string }) {
+  if (!country) return null;
+  const code = COUNTRY_CODES[country]?.toLowerCase();
+  if (!code) return null;
+  return (
+    <img
+      src={`https://flagcdn.com/w20/${code}.png`}
+      srcSet={`https://flagcdn.com/w40/${code}.png 2x`}
+      width="16"
+      alt={country}
+      title={country}
+      className="inline-block rounded-sm align-middle ml-1.5 shrink-0"
+    />
+  );
+}
 
 const RANK_BADGE = ['🥇', '🥈', '🥉'];
 
-function Avatar({ name, photoUrl, size = 'w-10 h-10' }: { name: string; photoUrl?: string; size?: string }) {
+function Avatar({
+  name,
+  photoUrl,
+  size = 'w-10 h-10',
+}: {
+  name: string;
+  photoUrl?: string;
+  size?: string;
+}) {
   if (photoUrl) {
-    return <img src={photoUrl} alt="" className={`${size} rounded-full object-cover ring-2 ring-white/15 shrink-0`} />;
+    return (
+      <img
+        src={photoUrl}
+        alt=""
+        className={`${size} rounded-full object-cover ring-2 ring-white/15 shrink-0`}
+      />
+    );
   }
   return (
-    <div className={`${size} rounded-full bg-brand-emerald/20 ring-2 ring-brand-emerald/30 grid place-items-center shrink-0`}>
+    <div
+      className={`${size} rounded-full bg-brand-emerald/20 ring-2 ring-brand-emerald/30 grid place-items-center shrink-0`}
+    >
       <span className="text-sm font-black text-brand-emerald">
         {name?.[0]?.toUpperCase() ?? '؟'}
       </span>
@@ -24,10 +127,15 @@ function Avatar({ name, photoUrl, size = 'w-10 h-10' }: { name: string; photoUrl
   );
 }
 
-function formatConnectedSince(iso: string | null, translate: (key: string, opts?: Record<string, unknown>) => string): string {
+function formatConnectedSince(
+  iso: string | null,
+  translate: (key: string, opts?: Record<string, unknown>) => string
+): string {
   if (!iso) return translate('friends.connectedAWhileAgo');
   const d = new Date(iso);
-  return translate('friends.connectedSince', { date: formatLocaleDate(d, { month: 'short', day: 'numeric', year: 'numeric' }) });
+  return translate('friends.connectedSince', {
+    date: formatLocaleDate(d, { month: 'short', day: 'numeric', year: 'numeric' }),
+  });
 }
 
 /** Manage-friends modal: full list, connected-since date, two-step confirm delete. */
@@ -48,12 +156,18 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <motion.div
-        initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+        initial={{ y: 60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', damping: 26 }}
         className="bg-brand-surface rounded-3xl p-6 w-full max-w-md shadow-2xl border border-brand-emerald/30 space-y-4 max-h-[80vh] overflow-y-auto"
       >
@@ -61,13 +175,21 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
           <div className="flex items-center gap-2.5">
             <span className="text-3xl">👥</span>
             <div>
-              <h3 className="text-lg font-black text-white leading-tight">{t('friends.yourFriends')}</h3>
+              <h3 className="text-lg font-black text-white leading-tight">
+                {t('friends.yourFriends')}
+              </h3>
               <p className="text-white/30 text-[11px]">
-                {friends ? t('friends.connectedCount', { count: friends.length }) : t('common.loading')}
+                {friends
+                  ? t('friends.connectedCount', { count: friends.length })
+                  : t('common.loading')}
               </p>
             </div>
           </div>
-          <button onClick={onClose} aria-label={t('common.close')} className="text-white/30 hover:text-white p-1">
+          <button
+            onClick={onClose}
+            aria-label={t('common.close')}
+            className="text-white/30 hover:text-white p-1"
+          >
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
@@ -89,14 +211,18 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
                 <div
                   key={f.uid}
                   className={`rounded-2xl border p-3 transition-colors ${
-                    confirming ? 'border-red-500/40 bg-red-500/[0.06]' : 'border-brand-emerald/10 bg-white/[0.04]'
+                    confirming
+                      ? 'border-red-500/40 bg-red-500/[0.06]'
+                      : 'border-brand-emerald/10 bg-white/[0.04]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <Avatar name={f.displayName} photoUrl={f.photoUrl} />
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-bold text-sm truncate">{f.displayName}</p>
-                      <p className="text-white/30 text-[11px]">{formatConnectedSince(f.connectedSince, t)}</p>
+                      <p className="text-white/30 text-[11px]">
+                        {formatConnectedSince(f.connectedSince, t)}
+                      </p>
                     </div>
                     {!confirming && (
                       <button
@@ -113,24 +239,37 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
                   <AnimatePresence>
                     {confirming && confirmStep?.step === 1 && (
                       <motion.div
-                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                       >
                         <div className="mt-3 pt-3 border-t border-brand-emerald/10 flex items-center justify-between gap-2">
-                          <p className="text-white/60 text-xs">{t('friends.removeConfirm', { name: f.displayName })}</p>
+                          <p className="text-white/60 text-xs">
+                            {t('friends.removeConfirm', { name: f.displayName })}
+                          </p>
                           <div className="flex gap-1.5 shrink-0">
-                            <button onClick={cancelConfirm} className="btn btn-xs btn-ghost text-white/50">{t('common.cancel')}</button>
+                            <button
+                              onClick={cancelConfirm}
+                              className="btn btn-xs btn-ghost text-white/50"
+                            >
+                              {t('common.cancel')}
+                            </button>
                             <button
                               onClick={() => advanceConfirm(f.uid)}
                               className="btn btn-xs bg-red-500/80 hover:bg-red-500 text-white border-0"
-                            >{t('common.remove')}</button>
+                            >
+                              {t('common.remove')}
+                            </button>
                           </div>
                         </div>
                       </motion.div>
                     )}
                     {confirming && confirmStep?.step === 2 && (
                       <motion.div
-                        initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                       >
                         <div className="mt-3 pt-3 border-t border-red-500/20 space-y-2">
@@ -138,13 +277,22 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
                             {t('friends.removeWarning', { name: f.displayName })}
                           </p>
                           <div className="flex gap-1.5 justify-end">
-                            <button onClick={cancelConfirm} className="btn btn-xs btn-ghost text-white/50">{t('common.cancel')}</button>
+                            <button
+                              onClick={cancelConfirm}
+                              className="btn btn-xs btn-ghost text-white/50"
+                            >
+                              {t('common.cancel')}
+                            </button>
                             <button
                               onClick={() => finalizeRemove(f.uid)}
                               disabled={unfriend.isPending}
                               className="btn btn-xs bg-red-500 hover:bg-red-600 text-white border-0"
                             >
-                              {unfriend.isPending ? <span className="loading loading-spinner loading-xs" /> : t('friends.yesRemove')}
+                              {unfriend.isPending ? (
+                                <span className="loading loading-spinner loading-xs" />
+                              ) : (
+                                t('friends.yesRemove')
+                              )}
                             </button>
                           </div>
                         </div>
@@ -163,6 +311,7 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
 
 export default function Friends() {
   const { t } = useTranslation();
+  const isDemoMode = useAuthStore((s) => s.isDemoMode);
   const { data, isLoading, isError, refetch } = useSocialSummary();
   const [searchParams, setSearchParams] = useSearchParams();
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -178,15 +327,11 @@ export default function Friends() {
     }
   }, [searchParams, setSearchParams]);
 
-  const inviteLink = data?.inviteCode
-    ? `${window.location.origin}/connect/${data.inviteCode}`
-    : '';
+  const inviteLink = data?.inviteCode ? `${window.location.origin}/connect/${data.inviteCode}` : '';
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(
-        t('friends.shareMessage', { link: inviteLink })
-      );
+      await navigator.clipboard.writeText(t('friends.shareMessage', { link: inviteLink }));
       setCopied(true);
       toast.success(t('friends.inviteCopied'), { id: 'invite-copy' });
       setTimeout(() => setCopied(false), 2000);
@@ -204,10 +349,10 @@ export default function Friends() {
       <h1 className="sr-only">{t('friends.srTitle')}</h1>
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-xl mx-auto space-y-4">
-
           {/* ── Verse banner ── */}
           <motion.div
-            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
             className="text-center py-4 space-y-1.5"
           >
             <motion.p
@@ -218,8 +363,12 @@ export default function Friends() {
             >
               {t('friends.verseCompete')}
             </motion.p>
-            <a href="https://quran.com/2/148" target="_blank" rel="noopener noreferrer"
-              className="text-brand-gold/60 text-xs underline underline-offset-4 hover:text-brand-gold/90">
+            <a
+              href="https://quran.com/2/148"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-gold/60 text-xs underline underline-offset-4 hover:text-brand-gold/90"
+            >
               {t('friends.quranRef')}
             </a>
           </motion.div>
@@ -231,7 +380,9 @@ export default function Friends() {
             </div>
           ) : friendsCount === 0 ? (
             <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
               className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-8 text-center space-y-3"
             >
               <p className="text-4xl">🌱</p>
@@ -250,17 +401,25 @@ export default function Friends() {
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
                 <p className="text-white/30 text-xs font-semibold uppercase tracking-wide">
-                  {t('friends.todaysCircle')} <span className="normal-case font-normal">— {t(friendsCount === 1 ? 'friends.circleCount' : 'friends.circleCountPlural', { count: friendsCount })}</span>
+                  {t('friends.todaysCircle')}{' '}
+                  <span className="normal-case font-normal">
+                    —{' '}
+                    {t(friendsCount === 1 ? 'friends.circleCount' : 'friends.circleCountPlural', {
+                      count: friendsCount,
+                    })}
+                  </span>
                 </p>
                 <div className="flex items-center gap-3 shrink-0">
+                  {!isDemoMode && (
+                    <button
+                      onClick={() => setManageOpen(true)}
+                      className="flex items-center gap-1 text-white/40 hover:text-white text-xs font-bold"
+                    >
+                      <UsersIcon className="w-3.5 h-3.5" /> {t('friends.seeFriends')}
+                    </button>
+                  )}
                   <button
-                    onClick={() => setManageOpen(true)}
-                    className="flex items-center gap-1 text-white/40 hover:text-white text-xs font-bold"
-                  >
-                    <UsersIcon className="w-3.5 h-3.5" /> {t('friends.seeFriends')}
-                  </button>
-                  <button
-                    onClick={() => setInviteOpen(true)}
+                    onClick={() => (isDemoMode ? void null : setInviteOpen(true))}
                     className="flex items-center gap-1 text-brand-emerald/70 hover:text-brand-emerald text-xs font-bold"
                   >
                     <UserPlusIcon className="w-3.5 h-3.5" /> {t('friends.inviteFriend')}
@@ -283,47 +442,73 @@ export default function Friends() {
                   >
                     <div className="flex items-center gap-3">
                       <span className="w-7 text-center text-lg font-black shrink-0">
-                        {RANK_BADGE[i] ?? <span className="text-white/30 text-sm">{formatLocaleNumber(i + 1)}</span>}
+                        {RANK_BADGE[i] ?? (
+                          <span className="text-white/30 text-sm">{formatLocaleNumber(i + 1)}</span>
+                        )}
                       </span>
                       <Avatar name={f.displayName} photoUrl={f.photoUrl} />
                       <div className="flex-1 min-w-0">
                         <p className="text-white font-bold text-sm truncate">
                           {f.displayName}
-                          {f.isMe && <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-brand-emerald/25 text-brand-emerald align-middle">{t('friends.you')}</span>}
+                          <CountryFlag country={f.country} />
+                          {f.isMe && (
+                            <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-brand-emerald/25 text-brand-emerald align-middle">
+                              {t('friends.you')}
+                            </span>
+                          )}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex-1 bg-white/10 rounded-full h-1.5 overflow-hidden">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${(f.score / maxScore) * 100}%` }}
-                              transition={{ duration: 0.7, delay: 0.15 + i * 0.06, ease: 'easeOut' }}
+                              transition={{
+                                duration: 0.7,
+                                delay: 0.15 + i * 0.06,
+                                ease: 'easeOut',
+                              }}
                               className={`h-full rounded-full ${i === 0 ? 'bg-gradient-to-r from-brand-gold to-brand-gold' : 'bg-brand-emerald/80'}`}
                             />
                           </div>
-                          <span className="text-white/70 text-xs font-black tabular-nums w-10 text-right">✨{formatLocaleNumber(f.score)}</span>
+                          <span className="text-white/70 text-xs font-black tabular-nums w-10 text-right">
+                            ✨{formatLocaleNumber(f.score)}
+                          </span>
                         </div>
                       </div>
                     </div>
                     {/* Stat chips — prayer, zikr streak, today's zikr, fasted today, quran pages */}
                     <div className="flex flex-wrap gap-1.5 mt-2.5 pl-10">
                       <span className="px-2 py-0.5 rounded-full bg-white/10 border border-brand-emerald/10 text-[10px] font-bold text-white/60">
-                        🕌 {t('friends.prayersStat', { count: formatLocaleNumber(f.salatToday) })}
+                        🕌 {formatLocaleNumber(f.salatToday)}
+                        {f.prayersDue !== undefined && f.prayersDue < 5 ? (
+                          <span className="text-white/35">/{formatLocaleNumber(f.prayersDue)}</span>
+                        ) : null}{' '}
+                        {t('friends.prayers', 'prayers')}
                       </span>
-                      <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold text-white/70 ${sv.cls}`}>
-                        <span className={sv.iconCls}>{sv.icon}</span> {t('friends.zikrStreakStat', { count: formatLocaleNumber(f.zikrStreak) })}
+                      <span
+                        className={`px-2 py-0.5 rounded-full border text-[10px] font-bold text-white/70 ${sv.cls}`}
+                      >
+                        <span className={sv.iconCls}>{sv.icon}</span>{' '}
+                        {t('friends.zikrStreakStat', { count: formatLocaleNumber(f.zikrStreak) })}
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-white/10 border border-brand-emerald/10 text-[10px] font-bold text-white/60">
                         📿 {t('friends.zikrTodayStat', { count: formatLocaleNumber(f.zikrToday) })}
                       </span>
-                      <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
-                        f.fastedToday
-                          ? 'bg-brand-gold/15 border-brand-gold/40 text-brand-gold'
-                          : 'bg-white/10 border-brand-emerald/10 text-white/30'
-                      }`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
+                          f.fastedToday
+                            ? 'bg-brand-gold/15 border-brand-gold/40 text-brand-gold'
+                            : 'bg-white/10 border-brand-emerald/10 text-white/30'
+                        }`}
+                      >
                         🌙 {f.fastedToday ? t('friends.fastingToday') : t('friends.notFasting')}
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-white/10 border border-brand-emerald/10 text-[10px] font-bold text-white/60">
-                        📖 {t('friends.quranPagesStat', { current: formatLocaleNumber(f.quranPagesToday), goal: formatLocaleNumber(f.quranGoal) })}
+                        📖{' '}
+                        {t('friends.quranPagesStat', {
+                          current: formatLocaleNumber(f.quranPagesToday),
+                          goal: formatLocaleNumber(f.quranGoal),
+                        })}
                       </span>
                     </div>
                   </motion.div>
@@ -347,27 +532,46 @@ export default function Friends() {
             <AnimatePresence>
               {howOpen && (
                 <motion.div
-                  initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }} className="overflow-hidden"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
                 >
                   <div className="px-4 pb-4 pt-1 space-y-1.5 text-xs text-white/40 border-t border-brand-emerald/5">
                     <p>
-                      {t('friends.noorPrefix')}<span className="text-white/60">نور</span>{t('friends.noorSuffix')}<b className="text-white/70">{formatLocaleNumber(100)}</b>:
+                      {t('friends.noorPrefix')}
+                      <span className="text-white/60">نور</span>
+                      {t('friends.noorSuffix')}
+                      <b className="text-white/70">{formatLocaleNumber(100)}</b>:
                     </p>
-                    <p>🕌 <b className="text-white/60">{formatLocaleNumber(50)}</b> — {t('friends.noorPrayers')}</p>
-                    <p>🔥 <b className="text-white/60">{formatLocaleNumber(20)}</b> — {t('friends.noorZikr')}</p>
-                    <p>📖 <b className="text-white/60">{formatLocaleNumber(20)}</b> — {t('friends.noorQuran')}</p>
-                    <p>🌙 <b className="text-white/60">{formatLocaleNumber(10)}</b> — {t('friends.noorFasting')}</p>
+                    <p>
+                      🕌 <b className="text-white/60">{formatLocaleNumber(50)}</b> —{' '}
+                      {t('friends.noorPrayers')}{' '}
+                      <span className="text-white/25">
+                        (optimistic: full score if all elapsed prayers are done)
+                      </span>
+                    </p>
+                    <p>
+                      🔥 <b className="text-white/60">{formatLocaleNumber(20)}</b> —{' '}
+                      {t('friends.noorZikr')}
+                    </p>
+                    <p>
+                      📖 <b className="text-white/60">{formatLocaleNumber(20)}</b> —{' '}
+                      {t('friends.noorQuran')}
+                    </p>
+                    <p>
+                      🌙 <b className="text-white/60">{formatLocaleNumber(10)}</b> —{' '}
+                      {t('friends.noorFasting')}
+                    </p>
+                    <p className="pt-1">🌸 {t('friends.noorExcused')}</p>
                     <p className="pt-1">
-                      🌸 {t('friends.noorExcused')}
+                      <b className="text-white/60">{t('friends.noorTodayLabel')}</b>{' '}
+                      {t('friends.noorTodayDesc')}{' '}
+                      <b className="text-white/60">{t('friends.noorAllTimeLabel')}</b>{' '}
+                      {t('friends.noorAllTimeDesc')}
                     </p>
-                    <p className="pt-1">
-                      <b className="text-white/60">{t('friends.noorTodayLabel')}</b> {t('friends.noorTodayDesc')}{' '}
-                      <b className="text-white/60">{t('friends.noorAllTimeLabel')}</b> {t('friends.noorAllTimeDesc')}
-                    </p>
-                    <p className="text-white/25 pt-1 italic">
-                      {t('friends.noorDisclaimer')}
-                    </p>
+                    <p className="text-white/25 pt-1 italic">{t('friends.noorDisclaimer')}</p>
                   </div>
                 </motion.div>
               )}
@@ -380,12 +584,18 @@ export default function Friends() {
       <AnimatePresence>
         {inviteOpen && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
-            onClick={(e) => { if (e.target === e.currentTarget) setInviteOpen(false); }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setInviteOpen(false);
+            }}
           >
             <motion.div
-              initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+              initial={{ y: 60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
               transition={{ type: 'spring', damping: 26 }}
               className="bg-brand-surface rounded-3xl p-6 w-full max-w-md shadow-2xl border border-brand-emerald/30 space-y-4"
             >
@@ -393,30 +603,42 @@ export default function Friends() {
                 <div className="flex items-center gap-2.5">
                   <span className="text-3xl">🤝</span>
                   <div>
-                    <h3 className="text-lg font-black text-white leading-tight">{t('friends.connectFriend')}</h3>
+                    <h3 className="text-lg font-black text-white leading-tight">
+                      {t('friends.connectFriend')}
+                    </h3>
                     <p className="text-white/30 text-[11px]">{t('friends.inviteSubtitle')}</p>
                   </div>
                 </div>
-                <button onClick={() => setInviteOpen(false)} aria-label={t('common.close')} className="text-white/30 hover:text-white p-1">
+                <button
+                  onClick={() => setInviteOpen(false)}
+                  aria-label={t('common.close')}
+                  className="text-white/30 hover:text-white p-1"
+                >
                   <XMarkIcon className="w-5 h-5" />
                 </button>
               </div>
 
               <p className="text-center text-sm font-bold text-brand-emerald/90 italic px-2">
                 {t('friends.verseCompete')}
-                <a href="https://quran.com/2/148" target="_blank" rel="noopener noreferrer"
-                  className="block text-brand-gold/60 text-[10px] underline not-italic mt-1">{t('friends.quranRef')}</a>
+                <a
+                  href="https://quran.com/2/148"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-brand-gold/60 text-[10px] underline not-italic mt-1"
+                >
+                  {t('friends.quranRef')}
+                </a>
               </p>
 
               {isError ? (
                 <div className="text-center space-y-3 py-2">
-                  <p className="text-brand-gold/80 text-sm">
-                    {t('friends.inviteError')}
-                  </p>
+                  <p className="text-brand-gold/80 text-sm">{t('friends.inviteError')}</p>
                   <button
                     onClick={() => void refetch()}
                     className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0"
-                  >{t('friends.tryAgain')}</button>
+                  >
+                    {t('friends.tryAgain')}
+                  </button>
                 </div>
               ) : inviteLink ? (
                 <>
@@ -429,7 +651,11 @@ export default function Friends() {
                       onClick={() => void copyLink()}
                       className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 gap-1.5 shrink-0 h-auto"
                     >
-                      {copied ? <CheckIcon className="w-4 h-4" /> : <ClipboardDocumentIcon className="w-4 h-4" />}
+                      {copied ? (
+                        <CheckIcon className="w-4 h-4" />
+                      ) : (
+                        <ClipboardDocumentIcon className="w-4 h-4" />
+                      )}
                       {copied ? t('friends.copied') : t('friends.copy')}
                     </motion.button>
                   </div>

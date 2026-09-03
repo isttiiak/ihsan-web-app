@@ -6,8 +6,16 @@ import toast from 'react-hot-toast';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import {
-  useCycleSummary, useStartCycle, useEndCycle, useSetMadhab, useDeleteCycleLog, useIsFemale,
-  useUpsertCycleDay, useEditCycleLog, type CycleFlow, type CycleMood,
+  useCycleSummary,
+  useStartCycle,
+  useEndCycle,
+  useSetMadhab,
+  useDeleteCycleLog,
+  useIsFemale,
+  useUpsertCycleDay,
+  useEditCycleLog,
+  type CycleFlow,
+  type CycleMood,
 } from '../hooks/useCycle.js';
 import CycleCalendar from '../components/CycleCalendar.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
@@ -38,7 +46,12 @@ function phraseOfDayIdx(offset = 0): number {
 }
 
 // ─── Garden of Light — daily checklist (device-local, never sent anywhere) ────
-interface GardenItem { id: string; icon: string; label: string; link?: string }
+interface GardenItem {
+  id: string;
+  icon: string;
+  label: string;
+  link?: string;
+}
 const GARDEN_ITEMS: GardenItem[] = [
   { id: 'adhkar', icon: '🌅', label: 'Morning & evening adhkār' },
   { id: 'dhikr', icon: '📿', label: 'A dhikr session (any amount counts)', link: '/zikr' },
@@ -53,8 +66,11 @@ function gardenKey(): string {
   return `ihsan_rayhanah_garden_${getTrackingDay()}`;
 }
 function loadGarden(): Record<string, boolean> {
-  try { return JSON.parse(localStorage.getItem(gardenKey()) ?? '{}') as Record<string, boolean>; }
-  catch { return {}; }
+  try {
+    return JSON.parse(localStorage.getItem(gardenKey()) ?? '{}') as Record<string, boolean>;
+  } catch {
+    return {};
+  }
 }
 
 // ─── Ghusl steps (Bukhari 248 — Maimunah's description) ───────────────────────
@@ -93,7 +109,9 @@ const MOOD_OPTIONS: Array<{ id: CycleMood; label: string }> = [
 
 function formatDay(dateStr: string): string {
   return formatLocaleDate(new Date(dateStr + 'T12:00:00'), {
-    month: 'short', day: 'numeric', year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   });
 }
 function shiftStr(dateStr: string, delta: number): string {
@@ -102,48 +120,57 @@ function shiftStr(dateStr: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 function daysBetween(a: string, b: string): number {
-  return Math.round((new Date(b + 'T12:00:00').getTime() - new Date(a + 'T12:00:00').getTime()) / 86_400_000);
+  return Math.round(
+    (new Date(b + 'T12:00:00').getTime() - new Date(a + 'T12:00:00').getTime()) / 86_400_000
+  );
 }
 
 // ─── Curated du'a/adhkar for excused days (verified references) ──────────────
 const EXCUSED_ADHKAR = [
   {
-    icon: '🤲', label: 'Sayyid al-Istighfār',
+    icon: '🤲',
+    label: 'Sayyid al-Istighfār',
     arabic: 'اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَٰهَ إِلَّا أَنْتَ خَلَقْتَنِي وَأَنَا عَبْدُكَ',
     transliteration: 'Allāhumma anta rabbī, lā ilāha illā anta, khalaqtanī wa ana ʿabduka…',
     note: 'The master of seeking forgiveness',
     ref: { text: 'Bukhārī 6306', url: 'https://sunnah.com/bukhari:6306' },
   },
   {
-    icon: '💚', label: 'Ṣalawāt upon the Prophet ﷺ',
+    icon: '💚',
+    label: 'Ṣalawāt upon the Prophet ﷺ',
     arabic: 'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ',
     transliteration: 'Allāhumma ṣalli ʿalā Muḥammad wa ʿalā āli Muḥammad…',
     note: 'Especially on Friday — open to you always',
     ref: { text: 'Bukhārī 3370', url: 'https://sunnah.com/bukhari:3370' },
   },
   {
-    icon: '🛡️', label: 'Morning/evening protection',
-    arabic: 'بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ',
+    icon: '🛡️',
+    label: 'Morning/evening protection',
+    arabic:
+      'بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ',
     transliteration: 'Bismillāhilladhī lā yaḍurru maʿasmihi shayʾun fil-arḍi wa lā fis-samāʾ…',
     note: 'Say 3× morning and evening',
     ref: { text: 'Abū Dāwūd 5088', url: 'https://sunnah.com/abudawud:5088' },
   },
   {
-    icon: '🌿', label: 'When in pain or discomfort',
+    icon: '🌿',
+    label: 'When in pain or discomfort',
     arabic: 'أَعُوذُ بِاللَّهِ وَقُدْرَتِهِ مِنْ شَرِّ مَا أَجِدُ وَأُحَاذِرُ',
-    transliteration: "Aʿūdhu billāhi wa qudratihi min sharri mā ajidu wa uḥādhiru",
-    note: "Place hand on the area of pain, say Bismillāh (3×), then this (7×)",
+    transliteration: 'Aʿūdhu billāhi wa qudratihi min sharri mā ajidu wa uḥādhiru',
+    note: 'Place hand on the area of pain, say Bismillāh (3×), then this (7×)',
     ref: { text: 'Muslim 2202', url: 'https://sunnah.com/muslim:2202a' },
   },
   {
-    icon: '🌧️', label: 'Istighfār — constant forgiveness',
+    icon: '🌧️',
+    label: 'Istighfār — constant forgiveness',
     arabic: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ',
     transliteration: 'Astaghfirullāha wa atūbu ilayh',
     note: 'The Prophet ﷺ sought forgiveness 100× daily',
     ref: { text: 'Muslim 2702', url: 'https://sunnah.com/muslim:2702a' },
   },
   {
-    icon: '✨', label: 'SubḥānAllāh wa biḥamdih',
+    icon: '✨',
+    label: 'SubḥānAllāh wa biḥamdih',
     arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ',
     transliteration: 'SubḥānAllāhi wa biḥamdih, SubḥānAllāhil-ʿAẓīm',
     note: 'Two phrases heavy on the scales, light on the tongue',
@@ -192,11 +219,17 @@ export default function RayhanahCycle() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   // Edit an episode (dates) or reopen the most recent one ("I'm not done yet")
   const editCycle = useEditCycleLog();
-  const [editTarget, setEditTarget] = useState<{ _id: string; startDate: string; endDate: string | null } | null>(null);
+  const [editTarget, setEditTarget] = useState<{
+    _id: string;
+    startDate: string;
+    endDate: string | null;
+  } | null>(null);
   const [editStart, setEditStart] = useState('');
   const [editEnd, setEditEnd] = useState('');
 
-  useEffect(() => { setGarden(loadGarden()); }, [today]);
+  useEffect(() => {
+    setGarden(loadGarden());
+  }, [today]);
 
   const toggleGarden = (id: string) => {
     const next = { ...garden, [id]: !garden[id] };
@@ -217,7 +250,10 @@ export default function RayhanahCycle() {
     const done = (summary?.logs ?? []).filter((l) => l.endDate);
     if (!done.length) return null;
     const latest = [...done].sort((a, b) => (a.startDate < b.startDate ? 1 : -1))[0]!;
-    const diffDays = Math.round((new Date(today + 'T12:00:00').getTime() - new Date(latest.endDate + 'T12:00:00').getTime()) / 86_400_000);
+    const diffDays = Math.round(
+      (new Date(today + 'T12:00:00').getTime() - new Date(latest.endDate + 'T12:00:00').getTime()) /
+        86_400_000
+    );
     return diffDays >= 0 && diffDays <= 3 ? latest : null;
   }, [summary, active, today]);
 
@@ -231,37 +267,55 @@ export default function RayhanahCycle() {
     upsertDay.mutate({ date: today, flow: todayNote?.flow === flow ? null : flow });
   const toggleSymptom = (id: string) => {
     const cur = todayNote?.symptoms ?? [];
-    upsertDay.mutate({ date: today, symptoms: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] });
+    upsertDay.mutate({
+      date: today,
+      symptoms: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
+    });
   };
   // Moods are multi-select — a day can hold several feelings (Istiak).
   const toggleMood = (mood: CycleMood) => {
     const cur = todayNote?.moods ?? [];
-    upsertDay.mutate({ date: today, moods: cur.includes(mood) ? cur.filter((m) => m !== mood) : [...cur, mood] });
+    upsertDay.mutate({
+      date: today,
+      moods: cur.includes(mood) ? cur.filter((m) => m !== mood) : [...cur, mood],
+    });
   };
 
   const handleEndConfirmed = () => {
     const startedOn = active?.startDate;
-    endCycle.mutate({ date: today }, {
-      onSuccess: () => {
-        setGhuslOpen(true);
-        setGhuslChecked(GHUSL_STEPS.map(() => false));
-        if (startedOn) {
-          const n = ramadanDaysIn(startedOn, today);
-          if (n > 0) setQadaPrompt({ days: n });
-        }
-      },
-    });
+    endCycle.mutate(
+      { date: today },
+      {
+        onSuccess: () => {
+          setGhuslOpen(true);
+          setGhuslChecked(GHUSL_STEPS.map(() => false));
+          if (startedOn) {
+            const n = ramadanDaysIn(startedOn, today);
+            if (n > 0) setQadaPrompt({ days: n });
+          }
+        },
+      }
+    );
   };
 
   const addQada = () => {
     if (!qadaPrompt) return;
     const current = fastingSummary?.profile?.qadaOwed ?? 0;
-    updateFastingProfile.mutate({ qadaOwed: current + qadaPrompt.days }, {
-      onSuccess: () => {
-        toast.success(t('rayhanah.qadaAddedToast', '{{count}} qaḍā day(s) added — the tracker will guide you 🌸', { count: qadaPrompt.days }));
-        setQadaPrompt(null);
-      },
-    });
+    updateFastingProfile.mutate(
+      { qadaOwed: current + qadaPrompt.days },
+      {
+        onSuccess: () => {
+          toast.success(
+            t(
+              'rayhanah.qadaAddedToast',
+              '{{count}} qaḍā day(s) added — the tracker will guide you 🌸',
+              { count: qadaPrompt.days }
+            )
+          );
+          setQadaPrompt(null);
+        },
+      }
+    );
   };
 
   const nextStartLabel = useMemo(() => {
@@ -290,7 +344,14 @@ export default function RayhanahCycle() {
         <div>
           <div className="text-5xl mb-4">🌸</div>
           <p className="text-white/60 text-sm max-w-sm">
-            {t('rayhanah.genderGate', 'Rayhanah Cycle is a private space for our sisters. Set your gender to female in')} <button className="text-brand-emerald underline" onClick={() => navigate('/profile')}>{t('rayhanah.genderGateLink', 'your profile')}</button> {t('rayhanah.genderGateSuffix', 'to open it.')}
+            {t(
+              'rayhanah.genderGate',
+              'Rayhanah Cycle is a private space for our sisters. Set your gender to female in'
+            )}{' '}
+            <button className="text-brand-emerald underline" onClick={() => navigate('/profile')}>
+              {t('rayhanah.genderGateLink', 'your profile')}
+            </button>{' '}
+            {t('rayhanah.genderGateSuffix', 'to open it.')}
           </p>
         </div>
       </div>
@@ -311,7 +372,6 @@ export default function RayhanahCycle() {
         </div>
       </div>
       <div className="relative max-w-2xl mx-auto px-4 pt-4 pb-16 space-y-5">
-
         {/* ── Hero ─────────────────────────────────────────────────────────── */}
         {isLoading ? (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-10 grid place-items-center">
@@ -319,32 +379,66 @@ export default function RayhanahCycle() {
           </div>
         ) : isError ? (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-8 text-center space-y-3">
-            <p className="text-white/60 text-sm">{t('rayhanah.loadError', "Couldn't load your cycle data.")}</p>
-            <button className="btn btn-sm bg-brand-pink/20 border-brand-pink/30 text-brand-pink" onClick={() => void refetch()}>
+            <p className="text-white/60 text-sm">
+              {t('rayhanah.loadError', "Couldn't load your cycle data.")}
+            </p>
+            <button
+              className="btn btn-sm bg-brand-pink/20 border-brand-pink/30 text-brand-pink"
+              onClick={() => void refetch()}
+            >
               {t('rayhanah.tryAgain', 'Try again')}
             </button>
           </div>
         ) : active ? (
           <motion.div
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             className="rounded-3xl p-6 sm:p-8 border border-brand-pink/25 bg-gradient-to-br from-brand-pink/15 via-brand-pink/10 to-brand-info/10 relative overflow-hidden"
           >
             <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-brand-pink/15 blur-2xl animate-pulse" />
             <div className="relative">
               <div className="flex items-center gap-2 text-brand-pink/90 text-xs font-bold uppercase tracking-widest">
-                {active.type === 'nifas' ? `🤱 ${t('rayhanah.nifasHeader', 'Nifās — post-natal rest')}` : `🌸 ${t('rayhanah.haydHeader', 'Rayhanah days')}`}
+                {active.type === 'nifas'
+                  ? `🤱 ${t('rayhanah.nifasHeader', 'Nifās — post-natal rest')}`
+                  : `🌸 ${t('rayhanah.haydHeader', 'Rayhanah days')}`}
               </div>
               <h1 className="text-3xl font-black text-white mt-2">
                 {t('rayhanah.dayCount', 'Day {{count}}', { count: active.dayCount })}
-                <span className="text-white/40 text-lg font-semibold"> · {t('rayhanah.sinceDate', 'since {{date}}', { date: formatDay(active.startDate) })}</span>
+                <span className="text-white/40 text-lg font-semibold">
+                  {' '}
+                  ·{' '}
+                  {t('rayhanah.sinceDate', 'since {{date}}', { date: formatDay(active.startDate) })}
+                </span>
               </h1>
-              <p className="text-brand-pink/80 text-sm mt-3 leading-relaxed">{t(`rayhanah.phrase${phraseOfDayIdx()}`, PHRASES[phraseOfDayIdx()]!)}</p>
+              <p className="text-brand-pink/80 text-sm mt-3 leading-relaxed">
+                {t(`rayhanah.phrase${phraseOfDayIdx()}`, PHRASES[phraseOfDayIdx()]!)}
+              </p>
 
               {active.beyondMax && (
                 <div className="mt-4 rounded-2xl bg-brand-gold/15 border border-brand-gold/30 p-4 text-brand-gold/90 text-xs leading-relaxed">
-                  <span className="font-bold">{t('rayhanah.beyondMaxWarning', 'Day {{dayCount}} has passed the {{maxDays}}-day maximum ({{madhab}} view{{nifas}}).', { dayCount: active.dayCount, maxDays: active.maxDays, madhab: summary?.madhab === 'hanafi' ? 'Ḥanafī' : 'majority', nifas: active.type === 'nifas' ? ', nifās' : '' })}</span>{' '}
-                  {t('rayhanah.istihadaNote', 'Bleeding beyond the maximum is usually')} <span className="font-bold">{t('rayhanah.istihadaLabel', 'istiḥāḍa')}</span> — {t('rayhanah.istihadaResume', 'prayer resumes with fresh wuḍū for each prayer')} (
-                  <a className="underline" href="https://sunnah.com/bukhari:306" target="_blank" rel="noreferrer">{translateReference('Bukhārī 306', i18n.language)}</a>
+                  <span className="font-bold">
+                    {t(
+                      'rayhanah.beyondMaxWarning',
+                      'Day {{dayCount}} has passed the {{maxDays}}-day maximum ({{madhab}} view{{nifas}}).',
+                      {
+                        dayCount: active.dayCount,
+                        maxDays: active.maxDays,
+                        madhab: summary?.madhab === 'hanafi' ? 'Ḥanafī' : 'majority',
+                        nifas: active.type === 'nifas' ? ', nifās' : '',
+                      }
+                    )}
+                  </span>{' '}
+                  {t('rayhanah.istihadaNote', 'Bleeding beyond the maximum is usually')}{' '}
+                  <span className="font-bold">{t('rayhanah.istihadaLabel', 'istiḥāḍa')}</span> —{' '}
+                  {t('rayhanah.istihadaResume', 'prayer resumes with fresh wuḍū for each prayer')} (
+                  <a
+                    className="underline"
+                    href="https://sunnah.com/bukhari:306"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {translateReference('Bukhārī 306', i18n.language)}
+                  </a>
                   ). {t('rayhanah.scholarAdvice', 'Please confirm with a scholar you trust.')}
                 </div>
               )}
@@ -354,51 +448,100 @@ export default function RayhanahCycle() {
                 onClick={handleEndConfirmed}
                 disabled={endCycle.isPending}
               >
-                {endCycle.isPending ? <span className="loading loading-spinner" /> : `🕊️ ${t('rayhanah.endPeriod', 'My period has ended')}`}
+                {endCycle.isPending ? (
+                  <span className="loading loading-spinner" />
+                ) : (
+                  `🕊️ ${t('rayhanah.endPeriod', 'My period has ended')}`
+                )}
               </button>
               <p className="text-white/30 text-[11px] text-center mt-2">
-                {t('rayhanah.endPeriodHelp', 'Tap when the bleeding has fully stopped — the ghusl guide opens next.')}
+                {t(
+                  'rayhanah.endPeriodHelp',
+                  'Tap when the bleeding has fully stopped — the ghusl guide opens next.'
+                )}
               </p>
             </div>
           </motion.div>
         ) : (
           <motion.div
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             className="rounded-3xl p-6 sm:p-8 border border-brand-border bg-brand-deep/80 relative overflow-hidden"
           >
             <div className="flex items-center gap-2 text-brand-emerald/80 text-xs font-bold uppercase tracking-widest">
               ✨ {t('rayhanah.daysOfPurity', 'Days of purity')}
             </div>
-            <h1 className="text-2xl font-black text-white mt-2">{t('rayhanah.greeting', 'Assalamu alaikum, {{name}}', { name: user.displayName?.split(' ')[0] ?? t('rayhanah.sister', 'sister') })} 🌷</h1>
+            <h1 className="text-2xl font-black text-white mt-2">
+              {t('rayhanah.greeting', 'Assalamu alaikum, {{name}}', {
+                name: user.displayName?.split(' ')[0] ?? t('rayhanah.sister', 'sister'),
+              })}{' '}
+              🌷
+            </h1>
             <p className="text-white/50 text-sm mt-2 leading-relaxed">
-              {nextStartLabel
-                ? <>{t('rayhanah.nextPeriodPrediction', 'Based on your history, your next period is expected around')} <span className="text-brand-pink font-semibold">{nextStartLabel}</span> {t('rayhanah.avgCycleNote', '(avg cycle {{days}} days).', { days: summary?.prediction.avgCycleDays })}</>
-                : t('rayhanah.firstCycleNote', 'Log your first cycle and Rayhanah will learn your rhythm to predict the next one.')}
+              {nextStartLabel ? (
+                <>
+                  {t(
+                    'rayhanah.nextPeriodPrediction',
+                    'Based on your history, your next period is expected around'
+                  )}{' '}
+                  <span className="text-brand-pink font-semibold">{nextStartLabel}</span>{' '}
+                  {t('rayhanah.avgCycleNote', '(avg cycle {{days}} days).', {
+                    days: summary?.prediction.avgCycleDays,
+                  })}
+                </>
+              ) : (
+                t(
+                  'rayhanah.firstCycleNote',
+                  'Log your first cycle and Rayhanah will learn your rhythm to predict the next one.'
+                )
+              )}
             </p>
             {pmsAlert && (
               <div className="mt-3 rounded-2xl bg-brand-gold/10 border border-brand-gold/20 p-3 text-xs leading-relaxed">
                 <span className="font-bold text-brand-gold/90">
-                  {daysUntilNext === 0 ? t('rayhanah.pmsToday', '🌸 Your period may start today')
-                    : daysUntilNext === 1 ? t('rayhanah.pmsTomorrow', '🌸 Your period may start tomorrow')
-                    : t('rayhanah.pmsCountdown', '🌸 ~{{days}} days until your expected period', { days: daysUntilNext })}
+                  {daysUntilNext === 0
+                    ? t('rayhanah.pmsToday', '🌸 Your period may start today')
+                    : daysUntilNext === 1
+                      ? t('rayhanah.pmsTomorrow', '🌸 Your period may start tomorrow')
+                      : t('rayhanah.pmsCountdown', '🌸 ~{{days}} days until your expected period', {
+                          days: daysUntilNext,
+                        })}
                 </span>
                 <p className="text-white/40 mt-1">
-                  {t('rayhanah.pmsSymptomNote', 'You may notice PMS symptoms. Be gentle with yourself — extra dhikr and rest are your friends.')}
+                  {t(
+                    'rayhanah.pmsSymptomNote',
+                    'You may notice PMS symptoms. Be gentle with yourself — extra dhikr and rest are your friends.'
+                  )}
                 </p>
               </div>
             )}
-            {summary?.prediction?.nextStart && summary?.prediction.basedOnCycles > 0 && !pmsAlert && (
-              <div className="mt-3 rounded-2xl bg-brand-info/10 border border-brand-info/15 p-3 text-xs leading-relaxed">
-                <span className="font-bold text-brand-info/90">{t('rayhanah.fertileWindowEstimate', '🌿 Fertile window estimate')}</span>
-                <p className="text-white/40 mt-1">
-                  ~{formatDay(shiftStr(summary.prediction.nextStart, -16))} – {formatDay(shiftStr(summary.prediction.nextStart, -12))}
-                  <span className="text-white/25"> · {t('rayhanah.ovulationApprox', 'ovulation ~{{date}}', { date: formatDay(shiftStr(summary.prediction.nextStart, -14)) })}</span>
-                </p>
-              </div>
-            )}
+            {summary?.prediction?.nextStart &&
+              (summary?.prediction?.basedOnCycles ?? 0) > 0 &&
+              !pmsAlert && (
+                <div className="mt-3 rounded-2xl bg-brand-info/10 border border-brand-info/15 p-3 text-xs leading-relaxed">
+                  <span className="font-bold text-brand-info/90">
+                    {t('rayhanah.fertileWindowEstimate', '🌿 Fertile window estimate')}
+                  </span>
+                  <p className="text-white/40 mt-1">
+                    ~{formatDay(shiftStr(summary.prediction.nextStart, -16))} –{' '}
+                    {formatDay(shiftStr(summary.prediction.nextStart, -12))}
+                    <span className="text-white/25">
+                      {' '}
+                      ·{' '}
+                      {t('rayhanah.ovulationApprox', 'ovulation ~{{date}}', {
+                        date: formatDay(shiftStr(summary.prediction.nextStart, -14)),
+                      })}
+                    </span>
+                  </p>
+                </div>
+              )}
             <button
               className="mt-5 w-full btn h-14 rounded-2xl border border-brand-pink/30 bg-brand-pink/15 hover:bg-brand-pink/25 text-brand-pink text-base font-black"
-              onClick={() => { setStartDate(today); setStartType('hayd'); setStartOpen(true); }}
+              onClick={() => {
+                setStartDate(today);
+                setStartType('hayd');
+                setStartOpen(true);
+              }}
             >
               {t('rayhanah.myPeriodStarted', '🌸 My period started')}
             </button>
@@ -409,18 +552,40 @@ export default function RayhanahCycle() {
         {active && (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-white font-black">{t('rayhanah.gardenOfLight', '🪻 Garden of Light')}</h2>
-              <span className="text-xs font-bold text-brand-pink/80">{t('rayhanah.gardenProgress', '{{done}}/{{total}} today', { done: gardenDone, total: GARDEN_ITEMS.length })}</span>
+              <h2 className="text-white font-black">
+                {t('rayhanah.gardenOfLight', '🪻 Garden of Light')}
+              </h2>
+              <span className="text-xs font-bold text-brand-pink/80">
+                {t('rayhanah.gardenProgress', '{{done}}/{{total}} today', {
+                  done: gardenDone,
+                  total: GARDEN_ITEMS.length,
+                })}
+              </span>
             </div>
             <p className="text-white/40 text-xs mt-1">
-              {t('rayhanah.gardenIntro', 'Everything here remains fully open to you — the Prophet ﷺ remembered Allah in all states')}
-              (<a className="underline" href="https://sunnah.com/muslim:373" target="_blank" rel="noreferrer">{translateReference('Muslim 373', i18n.language)}</a>).
+              {t(
+                'rayhanah.gardenIntro',
+                'Everything here remains fully open to you — the Prophet ﷺ remembered Allah in all states'
+              )}
+              (
+              <a
+                className="underline"
+                href="https://sunnah.com/muslim:373"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {translateReference('Muslim 373', i18n.language)}
+              </a>
+              ).
             </p>
             <div className="mt-3 space-y-1.5">
               {GARDEN_ITEMS.map((g) => {
                 const gLabel = t(`rayhanah.garden.${g.id}`, g.label);
                 return (
-                  <div key={g.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-white/5 hover:bg-white/5 transition-colors">
+                  <div
+                    key={g.id}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-white/5 hover:bg-white/5 transition-colors"
+                  >
                     <button
                       aria-label={t('rayhanah.markItem', 'Mark {{label}}', { label: gLabel })}
                       onClick={() => toggleGarden(g.id)}
@@ -428,11 +593,16 @@ export default function RayhanahCycle() {
                     >
                       ✓
                     </button>
-                    <span className={`text-sm flex-1 ${garden[g.id] ? 'text-white/40 line-through' : 'text-white/80'}`}>
+                    <span
+                      className={`text-sm flex-1 ${garden[g.id] ? 'text-white/40 line-through' : 'text-white/80'}`}
+                    >
                       {g.icon} {gLabel}
                     </span>
                     {g.link && (
-                      <button className="text-xs text-brand-pink/80 hover:text-brand-pink" onClick={() => navigate(g.link!)}>
+                      <button
+                        className="text-xs text-brand-pink/80 hover:text-brand-pink"
+                        onClick={() => navigate(g.link!)}
+                      >
                         {t('rayhanah.openArrow', 'Open →')}
                       </button>
                     )}
@@ -441,7 +611,9 @@ export default function RayhanahCycle() {
               })}
             </div>
             {gardenDone === GARDEN_ITEMS.length && (
-              <p className="text-center text-brand-pink/90 text-sm font-semibold mt-3">{t('rayhanah.gardenComplete', '🌺 Mā shāʾ Allāh — a full garden today!')}</p>
+              <p className="text-center text-brand-pink/90 text-sm font-semibold mt-3">
+                {t('rayhanah.gardenComplete', '🌺 Mā shāʾ Allāh — a full garden today!')}
+              </p>
             )}
           </div>
         )}
@@ -450,67 +622,109 @@ export default function RayhanahCycle() {
         {active && (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-white font-black">{t('rayhanah.howAreYouToday', '🌷 How are you today?')}</h2>
-              <span className="text-[10px] text-white/25">{t('rayhanah.privateNote', 'private — only you can see this')}</span>
+              <h2 className="text-white font-black">
+                {t('rayhanah.howAreYouToday', '🌷 How are you today?')}
+              </h2>
+              <span className="text-[10px] text-white/25">
+                {t('rayhanah.privateNote', 'private — only you can see this')}
+              </span>
             </div>
             <div>
               <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">
-                {t('rayhanah.flowLabel', 'Flow')} <span className="normal-case font-normal text-white/25">· {t('rayhanah.pickOne', 'pick one')}</span>
+                {t('rayhanah.flowLabel', 'Flow')}{' '}
+                <span className="normal-case font-normal text-white/25">
+                  · {t('rayhanah.pickOne', 'pick one')}
+                </span>
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {FLOW_OPTIONS.map((f) => {
                   const on = todayNote?.flow === f.id;
                   return (
-                    <button key={f.id}
+                    <button
+                      key={f.id}
                       aria-pressed={on}
                       className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-brand-pink/30 border-brand-pink/70 text-white ring-1 ring-brand-pink/50' : 'bg-white/5 border-brand-emerald/10 text-white/50 hover:text-white'}`}
                       onClick={() => setFlow(f.id)}
-                    >{on && '✓ '}{t(`rayhanah.flow.${f.id}`, f.label)}</button>
+                    >
+                      {on && '✓ '}
+                      {t(`rayhanah.flow.${f.id}`, f.label)}
+                    </button>
                   );
                 })}
               </div>
             </div>
             <div>
               <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">
-                {t('rayhanah.bodyLabel', 'Body')} <span className="normal-case font-normal text-white/25">· {t('rayhanah.pickAnyThatFit', 'pick any that fit')}</span>
+                {t('rayhanah.bodyLabel', 'Body')}{' '}
+                <span className="normal-case font-normal text-white/25">
+                  · {t('rayhanah.pickAnyThatFit', 'pick any that fit')}
+                </span>
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {SYMPTOM_OPTIONS.map((sy) => {
                   const on = !!todayNote?.symptoms?.includes(sy.id);
                   return (
-                    <button key={sy.id}
+                    <button
+                      key={sy.id}
                       aria-pressed={on}
                       className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-brand-pink/30 border-brand-pink/70 text-white ring-1 ring-brand-pink/50' : 'bg-white/5 border-brand-emerald/10 text-white/50 hover:text-white'}`}
                       onClick={() => toggleSymptom(sy.id)}
-                    >{on && '✓ '}{t(`rayhanah.symptom.${sy.id}`, sy.label)}</button>
+                    >
+                      {on && '✓ '}
+                      {t(`rayhanah.symptom.${sy.id}`, sy.label)}
+                    </button>
                   );
                 })}
               </div>
             </div>
             <div>
               <p className="text-white/40 text-[11px] font-bold uppercase tracking-wide mb-1.5">
-                {t('rayhanah.heartLabel', 'Heart')} <span className="normal-case font-normal text-white/25">· {t('rayhanah.pickAnyThatFit', 'pick any that fit')}</span>
+                {t('rayhanah.heartLabel', 'Heart')}{' '}
+                <span className="normal-case font-normal text-white/25">
+                  · {t('rayhanah.pickAnyThatFit', 'pick any that fit')}
+                </span>
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {MOOD_OPTIONS.map((mo) => {
                   const on = !!todayNote?.moods?.includes(mo.id);
                   return (
-                    <button key={mo.id}
+                    <button
+                      key={mo.id}
                       aria-pressed={on}
                       className={`btn btn-xs rounded-full border font-bold ${on ? 'bg-brand-info/30 border-brand-info/70 text-white ring-1 ring-brand-info/50' : 'bg-white/5 border-brand-emerald/10 text-white/50 hover:text-white'}`}
                       onClick={() => toggleMood(mo.id)}
-                    >{on && '✓ '}{t(`rayhanah.mood.${mo.id}`, mo.label)}</button>
+                    >
+                      {on && '✓ '}
+                      {t(`rayhanah.mood.${mo.id}`, mo.label)}
+                    </button>
                   );
                 })}
               </div>
             </div>
 
             {/* A gentle line tuned to exactly the feelings she named */}
-            <MoodComfort day={today} moods={todayNote?.moods ?? []} symptoms={todayNote?.symptoms} />
+            <MoodComfort
+              day={today}
+              moods={todayNote?.moods ?? []}
+              symptoms={todayNote?.symptoms}
+            />
 
             {(todayNote?.symptoms?.length ?? 0) > 0 && (
               <p className="text-brand-pink/70 text-xs leading-relaxed border-t border-brand-emerald/5 pt-2.5">
-                {t('rayhanah.easeHadith', 'May Allah give you ease — no fatigue or pain touches a Muslim except that Allah wipes away sins with it')} (<a className="underline" href="https://sunnah.com/bukhari:5641" target="_blank" rel="noreferrer">{translateReference('Bukhārī 5641', i18n.language)}</a>). 🌸
+                {t(
+                  'rayhanah.easeHadith',
+                  'May Allah give you ease — no fatigue or pain touches a Muslim except that Allah wipes away sins with it'
+                )}{' '}
+                (
+                <a
+                  className="underline"
+                  href="https://sunnah.com/bukhari:5641"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {translateReference('Bukhārī 5641', i18n.language)}
+                </a>
+                ). 🌸
               </p>
             )}
           </div>
@@ -519,24 +733,51 @@ export default function RayhanahCycle() {
         {/* ── Du'a & adhkar for excused days ────────────────────────────── */}
         {active && (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5 space-y-3">
-            <h2 className="text-white font-black">{t('rayhanah.adhkarGardenTitle', '🤲 Your adhkār garden')}</h2>
+            <h2 className="text-white font-black">
+              {t('rayhanah.adhkarGardenTitle', '🤲 Your adhkār garden')}
+            </h2>
             <p className="text-white/40 text-xs leading-relaxed">
-              {t('rayhanah.adhkarGardenIntro', "Curated authentic du'a you can recite right now — dhikr, istighfār and ṣalawāt are fully open to you in every state")} (
-              <a className="underline" href="https://sunnah.com/muslim:373" target="_blank" rel="noreferrer">{translateReference('Muslim 373', i18n.language)}</a>).
+              {t(
+                'rayhanah.adhkarGardenIntro',
+                "Curated authentic du'a you can recite right now — dhikr, istighfār and ṣalawāt are fully open to you in every state"
+              )}{' '}
+              (
+              <a
+                className="underline"
+                href="https://sunnah.com/muslim:373"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {translateReference('Muslim 373', i18n.language)}
+              </a>
+              ).
             </p>
             <div className="space-y-2">
               {EXCUSED_ADHKAR.map((dua, i) => (
-                <details key={dua.label} className="group rounded-2xl bg-white/[0.03] border border-brand-emerald/10 overflow-hidden">
+                <details
+                  key={dua.label}
+                  className="group rounded-2xl bg-white/[0.03] border border-brand-emerald/10 overflow-hidden"
+                >
                   <summary className="flex items-center gap-3 px-4 py-3 cursor-pointer list-none">
                     <span className="text-lg shrink-0">{dua.icon}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white/80 text-sm font-bold">{t(`rayhanah.adhkar.${i}.label`, dua.label)}</p>
-                      <p className="text-white/30 text-[10px]">{t(`rayhanah.adhkar.${i}.note`, dua.note)}</p>
+                      <p className="text-white/80 text-sm font-bold">
+                        {t(`rayhanah.adhkar.${i}.label`, dua.label)}
+                      </p>
+                      <p className="text-white/30 text-[10px]">
+                        {t(`rayhanah.adhkar.${i}.note`, dua.note)}
+                      </p>
                     </div>
-                    <span className="text-white/20 text-xs group-open:rotate-180 transition-transform">▾</span>
+                    <span className="text-white/20 text-xs group-open:rotate-180 transition-transform">
+                      ▾
+                    </span>
                   </summary>
                   <div className="px-4 pb-4 space-y-2">
-                    <p className="text-xl text-white/90 font-semibold leading-loose text-right" dir="rtl" lang="ar">
+                    <p
+                      className="text-xl text-white/90 font-semibold leading-loose text-right"
+                      dir="rtl"
+                      lang="ar"
+                    >
                       {dua.arabic}
                     </p>
                     <p className="text-white/50 text-xs italic">{dua.transliteration}</p>
@@ -545,17 +786,33 @@ export default function RayhanahCycle() {
                       href={dua.ref.url}
                       target="_blank"
                       rel="noreferrer"
-                    >📖 {translateReference(dua.ref.text, i18n.language)}</a>
+                    >
+                      📖 {translateReference(dua.ref.text, i18n.language)}
+                    </a>
                   </div>
                 </details>
               ))}
             </div>
             <div className="rounded-2xl bg-brand-info/10 border border-brand-info/15 p-3 space-y-1.5">
-              <p className="text-brand-info/90 text-xs font-bold">{t('rayhanah.reciteQuranQ', '📖 Can I recite the Quran?')}</p>
+              <p className="text-brand-info/90 text-xs font-bold">
+                {t('rayhanah.reciteQuranQ', '📖 Can I recite the Quran?')}
+              </p>
               <p className="text-white/50 text-[11px] leading-relaxed">
-                <span className="font-semibold text-white/60">{t('rayhanah.listening', 'Listening')}</span> {t('rayhanah.listeningAgreed', 'is agreed upon by all scholars.')}{' '}
-                <span className="font-semibold text-white/60">{t('rayhanah.recitingFromMemory', 'Reciting from memory')}</span> {t('rayhanah.recitingDifference', 'is a matter of scholarly difference: the majority (Ḥanafī, Shāfiʿī, Ḥanbalī) say it is not permitted during menses, while the Mālikī school and Ibn Taymiyyah permit it.')}{' '}
-                {t('rayhanah.duaConsensus', "Du'ā using Quranic phrases is permitted by consensus. Ask a scholar you trust for your situation.")}
+                <span className="font-semibold text-white/60">
+                  {t('rayhanah.listening', 'Listening')}
+                </span>{' '}
+                {t('rayhanah.listeningAgreed', 'is agreed upon by all scholars.')}{' '}
+                <span className="font-semibold text-white/60">
+                  {t('rayhanah.recitingFromMemory', 'Reciting from memory')}
+                </span>{' '}
+                {t(
+                  'rayhanah.recitingDifference',
+                  'is a matter of scholarly difference: the majority (Ḥanafī, Shāfiʿī, Ḥanbalī) say it is not permitted during menses, while the Mālikī school and Ibn Taymiyyah permit it.'
+                )}{' '}
+                {t(
+                  'rayhanah.duaConsensus',
+                  "Du'ā using Quranic phrases is permitted by consensus. Ask a scholar you trust for your situation."
+                )}
               </p>
             </div>
           </div>
@@ -565,35 +822,57 @@ export default function RayhanahCycle() {
         {qadaOwed > 0 && (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-white font-black">{t('rayhanah.fastingMakeupTitle', '🌙 Fasting makeup')}</h2>
+              <h2 className="text-white font-black">
+                {t('rayhanah.fastingMakeupTitle', '🌙 Fasting makeup')}
+              </h2>
               <button
                 className="text-brand-info text-xs font-bold hover:underline"
                 onClick={() => navigate('/fasting')}
-              >{t('rayhanah.openTrackerArrow', 'Open tracker →')}</button>
+              >
+                {t('rayhanah.openTrackerArrow', 'Open tracker →')}
+              </button>
             </div>
             <p className="text-white/30 text-xs mt-1">
               {t('rayhanah.missedFastsMadeUp', 'Missed Ramadan fasts are made up after')} (
-              <a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>).
+              <a
+                className="underline"
+                href="https://sunnah.com/muslim:335"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {translateReference('Muslim 335', i18n.language)}
+              </a>
+              ).
             </p>
             <div className="mt-3 grid grid-cols-3 gap-3">
               <div className="rounded-xl bg-brand-gold/10 border border-brand-gold/15 p-3 text-center">
                 <p className="text-xl font-black text-brand-gold">{qadaOwed}</p>
-                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('rayhanah.owed', 'owed')}</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
+                  {t('rayhanah.owed', 'owed')}
+                </p>
               </div>
               <div className="rounded-xl bg-brand-emerald/10 border border-brand-emerald/15 p-3 text-center">
                 <p className="text-xl font-black text-brand-emerald">{qadaCompleted}</p>
-                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('rayhanah.madeUp', 'made up')}</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
+                  {t('rayhanah.madeUp', 'made up')}
+                </p>
               </div>
               <div className="rounded-xl bg-white/5 border border-brand-border p-3 text-center">
                 <p className="text-xl font-black text-white/70">{qadaRemaining}</p>
-                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">{t('rayhanah.remaining', 'remaining')}</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
+                  {t('rayhanah.remaining', 'remaining')}
+                </p>
               </div>
             </div>
             {qadaRemaining > 0 && (
               <p className="text-white/25 text-[10px] mt-3 leading-relaxed">
                 {qadaRemaining === 1
                   ? t('rayhanah.oneDayToGo', 'One more day to go — you can do it!')
-                  : t('rayhanah.daysRemainingNote', '{{count}} days remaining. Take your time — every made-up fast counts.', { count: qadaRemaining })}
+                  : t(
+                      'rayhanah.daysRemainingNote',
+                      '{{count}} days remaining. Take your time — every made-up fast counts.',
+                      { count: qadaRemaining }
+                    )}
               </p>
             )}
           </div>
@@ -603,22 +882,37 @@ export default function RayhanahCycle() {
                she sees after ending too early (Istiak's spec) ── */}
         {lastEnded && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
             className="rounded-2xl border border-brand-pink/25 bg-brand-pink/[0.06] p-4 flex flex-col sm:flex-row sm:items-center gap-3"
           >
             <div className="flex-1 min-w-0">
-              <p className="text-brand-pink/90 text-sm font-bold">{t('rayhanah.endedTooEarly', 'Ended too early?')}</p>
+              <p className="text-brand-pink/90 text-sm font-bold">
+                {t('rayhanah.endedTooEarly', 'Ended too early?')}
+              </p>
               <p className="text-white/40 text-xs mt-0.5 leading-relaxed">
-                {t('rayhanah.endedTooEarlyDesc', 'If the flow returned after you marked {{date}} as the end, you can reopen that cycle — all your daily notes stay exactly where they are.', { date: formatDay(lastEnded.endDate!) })}
+                {t(
+                  'rayhanah.endedTooEarlyDesc',
+                  'If the flow returned after you marked {{date}} as the end, you can reopen that cycle — all your daily notes stay exactly where they are.',
+                  { date: formatDay(lastEnded.endDate!) }
+                )}
               </p>
             </div>
             <button
               className="btn btn-sm rounded-xl border border-brand-pink/40 bg-brand-pink/15 text-brand-pink hover:bg-brand-pink/25 shrink-0"
               disabled={editCycle.isPending}
-              onClick={() => editCycle.mutate(
-                { logId: lastEnded._id, endDate: null },
-                { onSuccess: () => toast.success(t('rayhanah.cycleReopenedToast', 'Cycle reopened — take your time 🌸'), { id: 'cycle-reopen' }) }
-              )}
+              onClick={() =>
+                editCycle.mutate(
+                  { logId: lastEnded._id, endDate: null },
+                  {
+                    onSuccess: () =>
+                      toast.success(
+                        t('rayhanah.cycleReopenedToast', 'Cycle reopened — take your time 🌸'),
+                        { id: 'cycle-reopen' }
+                      ),
+                  }
+                )
+              }
             >
               {t('rayhanah.notDoneYet', "🌸 I'm not done yet")}
             </button>
@@ -627,80 +921,240 @@ export default function RayhanahCycle() {
 
         {/* ── Cycle calendar + stats ────────────────────────────────────────── */}
         {summary && <CycleCalendar summary={summary} today={today} />}
-        {summary && summary.prediction.basedOnCycles > 0 && (
+        {summary && (summary.prediction?.basedOnCycles ?? 0) > 0 && (
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-              <p className="text-2xl font-black text-brand-pink">{summary.prediction.avgCycleDays}</p>
-              <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">{t('rayhanah.avgCycleDays', 'avg cycle days')}</p>
+              <p className="text-2xl font-black text-brand-pink">
+                {summary.prediction?.avgCycleDays}
+              </p>
+              <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">
+                {t('rayhanah.avgCycleDays', 'avg cycle days')}
+              </p>
             </div>
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-              <p className="text-2xl font-black text-brand-pink">{summary.prediction.avgPeriodDays}</p>
-              <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">{t('rayhanah.avgPeriodDays', 'avg period days')}</p>
+              <p className="text-2xl font-black text-brand-pink">
+                {summary.prediction?.avgPeriodDays}
+              </p>
+              <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">
+                {t('rayhanah.avgPeriodDays', 'avg period days')}
+              </p>
             </div>
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-              <p className="text-2xl font-black text-brand-pink">{summary.prediction.basedOnCycles + 1}</p>
-              <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">{t('rayhanah.cyclesLearned', 'cycles learned')}</p>
+              <p className="text-2xl font-black text-brand-pink">
+                {(summary.prediction?.basedOnCycles ?? 0) + 1}
+              </p>
+              <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">
+                {t('rayhanah.cyclesLearned', 'cycles learned')}
+              </p>
             </div>
           </div>
         )}
 
         {/* ── What changes / what stays (education) ─────────────────────────── */}
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5 space-y-4">
-          <h2 className="text-white font-black">{t('rayhanah.fiqhCompanionTitle', '📖 Your fiqh companion')}</h2>
+          <h2 className="text-white font-black">
+            {t('rayhanah.fiqhCompanionTitle', '📖 Your fiqh companion')}
+          </h2>
           <div className="grid sm:grid-cols-2 gap-3 text-xs leading-relaxed">
             <div className="rounded-2xl bg-brand-pink/10 border border-brand-pink/20 p-4">
-              <p className="font-bold text-brand-pink mb-1.5">{t('rayhanah.pausedForNow', 'Paused for now 🌙')}</p>
+              <p className="font-bold text-brand-pink mb-1.5">
+                {t('rayhanah.pausedForNow', 'Paused for now 🌙')}
+              </p>
               <ul className="space-y-1 text-white/60">
-                <li>• {t('rayhanah.salatExcusedPre', 'Ṣalāt — fully excused,')} <span className="font-semibold text-brand-pink/90">{t('rayhanah.neverMadeUp', 'never made up')}</span> (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>)</li>
-                <li>• {t('rayhanah.fastingExcusedLater', 'Fasting — excused now, made up later')} (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>)</li>
-                <li>• {t('rayhanah.tawafExcused', 'Ṭawāf around the Kaʿbah')} (<a className="underline" href="https://sunnah.com/bukhari:305" target="_blank" rel="noreferrer">{translateReference('Bukhārī 305', i18n.language)}</a>)</li>
-                <li>• {t('rayhanah.intimacyExcused', 'Intimacy during menses')} (<a className="underline" href="https://quran.com/2/222" target="_blank" rel="noreferrer">{translateReference('Quran 2:222', i18n.language)}</a>)</li>
+                <li>
+                  • {t('rayhanah.salatExcusedPre', 'Ṣalāt — fully excused,')}{' '}
+                  <span className="font-semibold text-brand-pink/90">
+                    {t('rayhanah.neverMadeUp', 'never made up')}
+                  </span>{' '}
+                  (
+                  <a
+                    className="underline"
+                    href="https://sunnah.com/muslim:335"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {translateReference('Muslim 335', i18n.language)}
+                  </a>
+                  )
+                </li>
+                <li>
+                  • {t('rayhanah.fastingExcusedLater', 'Fasting — excused now, made up later')} (
+                  <a
+                    className="underline"
+                    href="https://sunnah.com/muslim:335"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {translateReference('Muslim 335', i18n.language)}
+                  </a>
+                  )
+                </li>
+                <li>
+                  • {t('rayhanah.tawafExcused', 'Ṭawāf around the Kaʿbah')} (
+                  <a
+                    className="underline"
+                    href="https://sunnah.com/bukhari:305"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {translateReference('Bukhārī 305', i18n.language)}
+                  </a>
+                  )
+                </li>
+                <li>
+                  • {t('rayhanah.intimacyExcused', 'Intimacy during menses')} (
+                  <a
+                    className="underline"
+                    href="https://quran.com/2/222"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {translateReference('Quran 2:222', i18n.language)}
+                  </a>
+                  )
+                </li>
               </ul>
             </div>
             <div className="rounded-2xl bg-brand-emerald/10 border border-brand-emerald/20 p-4">
-              <p className="font-bold text-brand-emerald mb-1.5">{t('rayhanah.fullyOpenToYou', 'Fully open to you 🌸')}</p>
+              <p className="font-bold text-brand-emerald mb-1.5">
+                {t('rayhanah.fullyOpenToYou', 'Fully open to you 🌸')}
+              </p>
               <ul className="space-y-1 text-white/60">
-                <li>• {t('rayhanah.dhikrDuaSalawat', 'All dhikr, duʿā & ṣalawāt')} (<a className="underline" href="https://sunnah.com/muslim:373" target="_blank" rel="noreferrer">{translateReference('Muslim 373', i18n.language)}</a>)</li>
-                <li>• {t('rayhanah.listeningQuranTafsir', 'Listening to the Quran, tafsīr & knowledge')}</li>
-                <li>• {t('rayhanah.attendingGatherings', 'Attending gatherings of good & duʿā')} (<a className="underline" href="https://sunnah.com/bukhari:971" target="_blank" rel="noreferrer">{translateReference('Bukhārī 971', i18n.language)}</a>)</li>
+                <li>
+                  • {t('rayhanah.dhikrDuaSalawat', 'All dhikr, duʿā & ṣalawāt')} (
+                  <a
+                    className="underline"
+                    href="https://sunnah.com/muslim:373"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {translateReference('Muslim 373', i18n.language)}
+                  </a>
+                  )
+                </li>
+                <li>
+                  •{' '}
+                  {t('rayhanah.listeningQuranTafsir', 'Listening to the Quran, tafsīr & knowledge')}
+                </li>
+                <li>
+                  • {t('rayhanah.attendingGatherings', 'Attending gatherings of good & duʿā')} (
+                  <a
+                    className="underline"
+                    href="https://sunnah.com/bukhari:971"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {translateReference('Bukhārī 971', i18n.language)}
+                  </a>
+                  )
+                </li>
                 <li>• {t('rayhanah.charityKindness', 'Charity, kindness, and serving others')}</li>
               </ul>
             </div>
           </div>
           <p className="text-white/30 text-[11px] leading-relaxed">
-            {t('rayhanah.aishahHajjStory', 'The Prophet ﷺ told ʿĀʾishah (may Allah be pleased with her) during Hajj: do everything the pilgrim does, except ṭawāf')} —{' '}
-            <a className="underline" href="https://sunnah.com/bukhari:305" target="_blank" rel="noreferrer">{translateReference('Ṣaḥīḥ al-Bukhārī 305', i18n.language)}</a>.
-            {' '}{t('rayhanah.recitingScholarlyDifference', 'Reciting Quran from memory is a matter of scholarly difference; listening is agreed upon. Ask a scholar you trust.')}
+            {t(
+              'rayhanah.aishahHajjStory',
+              'The Prophet ﷺ told ʿĀʾishah (may Allah be pleased with her) during Hajj: do everything the pilgrim does, except ṭawāf'
+            )}{' '}
+            —{' '}
+            <a
+              className="underline"
+              href="https://sunnah.com/bukhari:305"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {translateReference('Ṣaḥīḥ al-Bukhārī 305', i18n.language)}
+            </a>
+            .{' '}
+            {t(
+              'rayhanah.recitingScholarlyDifference',
+              'Reciting Quran from memory is a matter of scholarly difference; listening is agreed upon. Ask a scholar you trust.'
+            )}
           </p>
 
           {/* Istihadah guide */}
           <details className="group rounded-2xl bg-brand-gold/[0.06] border border-brand-gold/20 p-4 cursor-pointer">
             <summary className="list-none flex items-center justify-between">
-              <p className="font-bold text-brand-gold text-sm">{t('rayhanah.istihadaQ', '🩸 What is istiḥāḍa?')}</p>
-              <span className="text-white/20 text-xs group-open:rotate-180 transition-transform">▾</span>
+              <p className="font-bold text-brand-gold text-sm">
+                {t('rayhanah.istihadaQ', '🩸 What is istiḥāḍa?')}
+              </p>
+              <span className="text-white/20 text-xs group-open:rotate-180 transition-transform">
+                ▾
+              </span>
             </summary>
             <div className="mt-3 space-y-2 text-xs leading-relaxed text-white/60">
               <p>
-                <span className="font-bold text-white/80">{t('rayhanah.istihadaTerm', 'Istiḥāḍa')}</span> {t('rayhanah.istihadaDefinition', '(irregular/non-menstrual bleeding) is bleeding that goes beyond the maximum period length (Ḥanafī: 10 days, majority: 15 days), or that occurs outside the normal menstrual pattern.')}
+                <span className="font-bold text-white/80">
+                  {t('rayhanah.istihadaTerm', 'Istiḥāḍa')}
+                </span>{' '}
+                {t(
+                  'rayhanah.istihadaDefinition',
+                  '(irregular/non-menstrual bleeding) is bleeding that goes beyond the maximum period length (Ḥanafī: 10 days, majority: 15 days), or that occurs outside the normal menstrual pattern.'
+                )}
               </p>
               <p>
-                {t('rayhanah.fatimahHadithIntro', 'The Prophet ﷺ told')} <span className="font-semibold">{t('rayhanah.fatimahName', 'Fāṭimah bint Abī Ḥubaysh')}</span>:{' '}
+                {t('rayhanah.fatimahHadithIntro', 'The Prophet ﷺ told')}{' '}
+                <span className="font-semibold">
+                  {t('rayhanah.fatimahName', 'Fāṭimah bint Abī Ḥubaysh')}
+                </span>
+                :{' '}
                 <span className="italic text-white/70">
-                  {t('rayhanah.fatimahHadithQuote', '"That is a vein, not menstruation. When your period comes, stop praying, and when it ends, wash the blood off and pray."')}
+                  {t(
+                    'rayhanah.fatimahHadithQuote',
+                    '"That is a vein, not menstruation. When your period comes, stop praying, and when it ends, wash the blood off and pray."'
+                  )}
                 </span>{' '}
-                (<a className="underline text-brand-gold/80" href="https://sunnah.com/bukhari:306" target="_blank" rel="noreferrer">{translateReference('Bukhārī 306', i18n.language)}</a>)
+                (
+                <a
+                  className="underline text-brand-gold/80"
+                  href="https://sunnah.com/bukhari:306"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {translateReference('Bukhārī 306', i18n.language)}
+                </a>
+                )
               </p>
               <div className="rounded-xl bg-white/[0.04] p-3 space-y-1.5">
-                <p className="font-bold text-brand-gold/90">{t('rayhanah.duringIstihada', 'During istiḥāḍa:')}</p>
+                <p className="font-bold text-brand-gold/90">
+                  {t('rayhanah.duringIstihada', 'During istiḥāḍa:')}
+                </p>
                 <ul className="space-y-1 ml-3">
-                  <li>• <span className="font-semibold text-white/70">{t('rayhanah.salatResumes', 'Ṣalāt resumes')}</span> — {t('rayhanah.salatResumesDesc', 'perform wuḍū for each prayer time')}</li>
-                  <li>• <span className="font-semibold text-white/70">{t('rayhanah.fastingValid', 'Fasting is valid')}</span> — {t('rayhanah.fastingValidDesc', 'no makeup needed for these days')}</li>
-                  <li>• <span className="font-semibold text-white/70">{t('rayhanah.intimacyPermitted', 'Intimacy is permitted')}</span> {t('rayhanah.majorityView', '(majority view)')}</li>
-                  <li>• <span className="font-semibold text-white/70">{t('rayhanah.quranRecitationPermitted', 'Quran recitation is permitted')}</span></li>
+                  <li>
+                    •{' '}
+                    <span className="font-semibold text-white/70">
+                      {t('rayhanah.salatResumes', 'Ṣalāt resumes')}
+                    </span>{' '}
+                    — {t('rayhanah.salatResumesDesc', 'perform wuḍū for each prayer time')}
+                  </li>
+                  <li>
+                    •{' '}
+                    <span className="font-semibold text-white/70">
+                      {t('rayhanah.fastingValid', 'Fasting is valid')}
+                    </span>{' '}
+                    — {t('rayhanah.fastingValidDesc', 'no makeup needed for these days')}
+                  </li>
+                  <li>
+                    •{' '}
+                    <span className="font-semibold text-white/70">
+                      {t('rayhanah.intimacyPermitted', 'Intimacy is permitted')}
+                    </span>{' '}
+                    {t('rayhanah.majorityView', '(majority view)')}
+                  </li>
+                  <li>
+                    •{' '}
+                    <span className="font-semibold text-white/70">
+                      {t('rayhanah.quranRecitationPermitted', 'Quran recitation is permitted')}
+                    </span>
+                  </li>
                 </ul>
               </div>
               <p className="text-white/30 text-[10px]">
-                {t('rayhanah.istihadaAutoFlag', "Rayhanah automatically flags when your cycle exceeds the maximum for your chosen madhab. If you're unsure, consult a scholar you trust.")}
+                {t(
+                  'rayhanah.istihadaAutoFlag',
+                  "Rayhanah automatically flags when your cycle exceeds the maximum for your chosen madhab. If you're unsure, consult a scholar you trust."
+                )}
               </p>
             </div>
           </details>
@@ -710,8 +1164,15 @@ export default function RayhanahCycle() {
         <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-white font-bold text-sm">{t('rayhanah.haydMaximumTitle', 'Hayd maximum (madhab)')}</p>
-              <p className="text-white/30 text-xs">{t('rayhanah.haydMaximumDesc', 'Ḥanafī: 10 days · Majority (Shāfiʿī/Ḥanbalī/Mālikī): 15 days')}</p>
+              <p className="text-white font-bold text-sm">
+                {t('rayhanah.haydMaximumTitle', 'Hayd maximum (madhab)')}
+              </p>
+              <p className="text-white/30 text-xs">
+                {t(
+                  'rayhanah.haydMaximumDesc',
+                  'Ḥanafī: 10 days · Majority (Shāfiʿī/Ḥanbalī/Mālikī): 15 days'
+                )}
+              </p>
             </div>
             <div className="join">
               {(['hanafi', 'majority'] as const).map((m) => (
@@ -720,7 +1181,9 @@ export default function RayhanahCycle() {
                   className={`join-item btn btn-xs ${summary?.madhab === m ? 'bg-brand-pink/30 border-brand-pink/40 text-brand-pink' : 'bg-white/5 border-brand-emerald/10 text-white/50'}`}
                   onClick={() => setMadhab.mutate(m)}
                 >
-                  {m === 'hanafi' ? t('rayhanah.madhabHanafi', 'Ḥanafī') : t('rayhanah.madhabMajority', 'Majority')}
+                  {m === 'hanafi'
+                    ? t('rayhanah.madhabHanafi', 'Ḥanafī')
+                    : t('rayhanah.madhabMajority', 'Majority')}
                 </button>
               ))}
             </div>
@@ -730,24 +1193,51 @@ export default function RayhanahCycle() {
             className="w-full text-left text-sm text-white/60 hover:text-white flex items-center justify-between"
             onClick={() => setHistoryOpen((v) => !v)}
           >
-            <span>{t('rayhanah.cycleHistoryCount', '🗓️ Cycle history ({{count}})', { count: summary?.logs.length ?? 0 })}</span>
+            <span>
+              {t('rayhanah.cycleHistoryCount', '🗓️ Cycle history ({{count}})', {
+                count: summary?.logs.length ?? 0,
+              })}
+            </span>
             <span className="text-white/30">{historyOpen ? '▴' : '▾'}</span>
           </button>
           <AnimatePresence>
             {historyOpen && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
                 {(summary?.logs ?? []).length === 0 ? (
-                  <p className="text-white/30 text-xs py-2">{t('rayhanah.noCyclesLogged', 'No cycles logged yet.')}</p>
+                  <p className="text-white/30 text-xs py-2">
+                    {t('rayhanah.noCyclesLogged', 'No cycles logged yet.')}
+                  </p>
                 ) : (
                   <div className="space-y-1.5 pt-1">
                     {(summary?.logs ?? []).map((l) => (
-                      <div key={l._id} className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2 text-xs">
+                      <div
+                        key={l._id}
+                        className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2 text-xs"
+                      >
                         <span>{l.type === 'nifas' ? '🤱' : '🌸'}</span>
                         <span className="text-white/70 flex-1">
-                          {formatDay(l.startDate)} — {l.endDate ? formatDay(l.endDate) : t('rayhanah.ongoing', 'ongoing')}
+                          {formatDay(l.startDate)} —{' '}
+                          {l.endDate ? formatDay(l.endDate) : t('rayhanah.ongoing', 'ongoing')}
                         </span>
-                        <button aria-label={t('rayhanah.editEntry', 'Edit entry')} className="text-white/25 hover:text-brand-pink" onClick={() => openEdit(l)}>✏️</button>
-                        <button aria-label={t('rayhanah.deleteEntry', 'Delete entry')} className="text-white/25 hover:text-red-300" onClick={() => setConfirmDelete(l._id)}>🗑</button>
+                        <button
+                          aria-label={t('rayhanah.editEntry', 'Edit entry')}
+                          className="text-white/25 hover:text-brand-pink"
+                          onClick={() => openEdit(l)}
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          aria-label={t('rayhanah.deleteEntry', 'Delete entry')}
+                          className="text-white/25 hover:text-red-300"
+                          onClick={() => setConfirmDelete(l._id)}
+                        >
+                          🗑
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -757,7 +1247,10 @@ export default function RayhanahCycle() {
           </AnimatePresence>
 
           <p className="text-white/25 text-[10px] leading-relaxed border-t border-brand-emerald/5 pt-3">
-            {t('rayhanah.privacyNote', '🔒 Your cycle data is visible only to you. It is never shown to friends — on the leaderboard your Noor simply flows from the dhikr, Quran and ṣalawāt you do, exactly like any other day.')}
+            {t(
+              'rayhanah.privacyNote',
+              '🔒 Your cycle data is visible only to you. It is never shown to friends — on the leaderboard your Noor simply flows from the dhikr, Quran and ṣalawāt you do, exactly like any other day.'
+            )}
           </p>
         </div>
       </div>
@@ -765,43 +1258,70 @@ export default function RayhanahCycle() {
       {/* ── Start modal ──────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {startOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm grid place-items-center p-4"
             onClick={() => setStartOpen(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
               className="w-full max-w-sm rounded-3xl bg-brand-deep border border-brand-pink/25 p-6 space-y-4"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-white font-black text-lg">{t('rayhanah.logTheStart', '🌸 Log the start')}</h3>
+              <h3 className="text-white font-black text-lg">
+                {t('rayhanah.logTheStart', '🌸 Log the start')}
+              </h3>
               <div>
-                <label className="text-white/50 text-xs font-bold" htmlFor="cycle-start-date">{t('rayhanah.startDate', 'Start date')}</label>
+                <label className="text-white/50 text-xs font-bold" htmlFor="cycle-start-date">
+                  {t('rayhanah.startDate', 'Start date')}
+                </label>
                 <input
-                  id="cycle-start-date" type="date" value={startDate} max={today}
+                  id="cycle-start-date"
+                  type="date"
+                  value={startDate}
+                  max={today}
                   onChange={(e) => setStartDate(e.target.value)}
                   className="input input-bordered w-full mt-1 bg-white/5 border-brand-emerald/10 text-white"
                 />
               </div>
               <div className="flex gap-2">
                 {(['hayd', 'nifas'] as const).map((item) => (
-                  <button key={item}
+                  <button
+                    key={item}
                     className={`flex-1 btn btn-sm rounded-xl ${startType === item ? 'bg-brand-pink/30 border-brand-pink/40 text-brand-pink' : 'bg-white/5 border-brand-emerald/10 text-white/50'}`}
                     onClick={() => setStartType(item)}
                   >
-                    {item === 'hayd' ? t('rayhanah.periodHayd', '🌸 Period (hayd)') : t('rayhanah.postNatal', '🤱 Post-natal (nifās)')}
+                    {item === 'hayd'
+                      ? t('rayhanah.periodHayd', '🌸 Period (hayd)')
+                      : t('rayhanah.postNatal', '🤱 Post-natal (nifās)')}
                   </button>
                 ))}
               </div>
               <button
                 className="w-full btn rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-pink to-brand-pink"
                 disabled={startCycle.isPending}
-                onClick={() => startCycle.mutate({ date: startDate, type: startType }, { onSuccess: () => setStartOpen(false) })}
+                onClick={() =>
+                  startCycle.mutate(
+                    { date: startDate, type: startType },
+                    { onSuccess: () => setStartOpen(false) }
+                  )
+                }
               >
-                {startCycle.isPending ? <span className="loading loading-spinner loading-sm" /> : t('rayhanah.beginRayhanahDays', 'Begin Rayhanah days')}
+                {startCycle.isPending ? (
+                  <span className="loading loading-spinner loading-sm" />
+                ) : (
+                  t('rayhanah.beginRayhanahDays', 'Begin Rayhanah days')
+                )}
               </button>
               <p className="text-white/30 text-[11px] text-center leading-relaxed">
-                {t('rayhanah.startModalFooter', 'Salat & fasting pause automatically — your Noor continues from dhikr, Quran & ṣalawāt. 🌷')}
+                {t(
+                  'rayhanah.startModalFooter',
+                  'Salat & fasting pause automatically — your Noor continues from dhikr, Quran & ṣalawāt. 🌷'
+                )}
               </p>
             </motion.div>
           </motion.div>
@@ -811,37 +1331,75 @@ export default function RayhanahCycle() {
       {/* ── Ghusl modal ─────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {ghuslOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm grid place-items-center p-4"
           >
             <motion.div
-              initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
               className="w-full max-w-sm rounded-3xl bg-brand-deep border border-brand-emerald/25 p-6 space-y-4 max-h-[85vh] overflow-y-auto"
             >
-              <h3 className="text-white font-black text-lg">{t('rayhanah.welcomeBackToSalat', '🕊️ Welcome back to salat')}</h3>
+              <h3 className="text-white font-black text-lg">
+                {t('rayhanah.welcomeBackToSalat', '🕊️ Welcome back to salat')}
+              </h3>
               <p className="text-white/50 text-xs leading-relaxed">
                 {t('rayhanah.performGhuslIntro', 'Perform ghusl the way the Prophet ﷺ did')} (
-                <a className="underline" href="https://sunnah.com/bukhari:248" target="_blank" rel="noreferrer">{translateReference('Bukhārī 248', i18n.language)}</a>):
+                <a
+                  className="underline"
+                  href="https://sunnah.com/bukhari:248"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {translateReference('Bukhārī 248', i18n.language)}
+                </a>
+                ):
               </p>
               <div className="space-y-1.5">
                 {GHUSL_STEPS.map((step, i) => (
-                  <button key={step} className="w-full flex items-start gap-3 rounded-xl px-3 py-2.5 bg-white/5 hover:bg-white/5 text-left"
+                  <button
+                    key={step}
+                    className="w-full flex items-start gap-3 rounded-xl px-3 py-2.5 bg-white/5 hover:bg-white/5 text-left"
                     onClick={() => setGhuslChecked((c) => c.map((v, j) => (j === i ? !v : v)))}
                   >
-                    <span className={`w-5 h-5 rounded-full grid place-items-center border text-[10px] flex-shrink-0 mt-0.5 ${ghuslChecked[i] ? 'bg-brand-emerald border-brand-emerald text-white' : 'border-brand-emerald/20 text-white/30'}`}>
+                    <span
+                      className={`w-5 h-5 rounded-full grid place-items-center border text-[10px] flex-shrink-0 mt-0.5 ${ghuslChecked[i] ? 'bg-brand-emerald border-brand-emerald text-white' : 'border-brand-emerald/20 text-white/30'}`}
+                    >
                       {ghuslChecked[i] ? '✓' : i + 1}
                     </span>
-                    <span className={`text-xs leading-relaxed ${ghuslChecked[i] ? 'text-white/40 line-through' : 'text-white/75'}`}>{t(`rayhanah.ghuslStep${i}`, step)}</span>
+                    <span
+                      className={`text-xs leading-relaxed ${ghuslChecked[i] ? 'text-white/40 line-through' : 'text-white/75'}`}
+                    >
+                      {t(`rayhanah.ghuslStep${i}`, step)}
+                    </span>
                   </button>
                 ))}
               </div>
               <p className="text-brand-emerald/80 text-xs leading-relaxed">
-                {t('rayhanah.prayCurrentTime', "Then pray the ṣalāt of the time you're now in — no past prayers to make up")}
-                {' '}(<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>). {t('rayhanah.welcomeBackShort', 'Welcome back 🌸')}
+                {t(
+                  'rayhanah.prayCurrentTime',
+                  "Then pray the ṣalāt of the time you're now in — no past prayers to make up"
+                )}{' '}
+                (
+                <a
+                  className="underline"
+                  href="https://sunnah.com/muslim:335"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {translateReference('Muslim 335', i18n.language)}
+                </a>
+                ). {t('rayhanah.welcomeBackShort', 'Welcome back 🌸')}
               </p>
               <button
                 className="w-full btn rounded-2xl border-0 text-white font-black bg-gradient-to-r from-brand-emerald to-brand-info"
-                onClick={() => { setGhuslOpen(false); celebrateSmall(); }}
+                onClick={() => {
+                  setGhuslOpen(false);
+                  celebrateSmall();
+                }}
               >
                 {t('rayhanah.alhamdulillah', 'Alhamdulillah 🤲')}
               </button>
@@ -854,8 +1412,14 @@ export default function RayhanahCycle() {
       <ConfirmDialog
         open={!!confirmDelete}
         title={t('rayhanah.removeCycleTitle', 'Remove this cycle?')}
-        message={t('rayhanah.removeCycleMessage', 'This entry will be removed from your history and predictions.')}
-        onConfirm={() => { if (confirmDelete) deleteLog.mutate(confirmDelete); setConfirmDelete(null); }}
+        message={t(
+          'rayhanah.removeCycleMessage',
+          'This entry will be removed from your history and predictions.'
+        )}
+        onConfirm={() => {
+          if (confirmDelete) deleteLog.mutate(confirmDelete);
+          setConfirmDelete(null);
+        }}
         onCancel={() => setConfirmDelete(null)}
       />
 
@@ -863,61 +1427,117 @@ export default function RayhanahCycle() {
       <AnimatePresence>
         {editTarget && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm grid place-items-center p-4"
-            onClick={(e) => { if (e.target === e.currentTarget) setEditTarget(null); }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setEditTarget(null);
+            }}
           >
             <motion.div
-              initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
               className="w-full max-w-sm rounded-3xl bg-brand-deep border border-brand-pink/25 p-6 space-y-4"
-              role="dialog" aria-label={t('rayhanah.editCycleAriaLabel', 'Edit cycle')}
+              role="dialog"
+              aria-label={t('rayhanah.editCycleAriaLabel', 'Edit cycle')}
             >
               <div>
-                <h3 className="text-white font-black">{t('rayhanah.editThisCycle', '✏️ Edit this cycle')}</h3>
+                <h3 className="text-white font-black">
+                  {t('rayhanah.editThisCycle', '✏️ Edit this cycle')}
+                </h3>
                 <p className="text-white/40 text-xs mt-1 leading-relaxed">
-                  {t('rayhanah.editCycleDesc', "Adjust the dates, or clear the end date if it hasn't truly finished. Your daily notes belong to their days — they are never lost.")}
+                  {t(
+                    'rayhanah.editCycleDesc',
+                    "Adjust the dates, or clear the end date if it hasn't truly finished. Your daily notes belong to their days — they are never lost."
+                  )}
                 </p>
               </div>
               <div className="space-y-2.5">
                 <div>
-                  <label className="text-white/50 text-xs font-bold" htmlFor="edit-cycle-start">{t('rayhanah.startDate', 'Start date')}</label>
-                  <input id="edit-cycle-start" type="date" value={editStart} max={today}
+                  <label className="text-white/50 text-xs font-bold" htmlFor="edit-cycle-start">
+                    {t('rayhanah.startDate', 'Start date')}
+                  </label>
+                  <input
+                    id="edit-cycle-start"
+                    type="date"
+                    value={editStart}
+                    max={today}
                     onChange={(e) => setEditStart(e.target.value)}
-                    className="input input-sm w-full mt-1 bg-white/5 border-brand-pink/20 text-white rounded-xl" />
+                    className="input input-sm w-full mt-1 bg-white/5 border-brand-pink/20 text-white rounded-xl"
+                  />
                 </div>
                 <div>
-                  <label className="text-white/50 text-xs font-bold" htmlFor="edit-cycle-end">{t('rayhanah.endDate', 'End date')}</label>
-                  <input id="edit-cycle-end" type="date" value={editEnd} min={editStart} max={today}
+                  <label className="text-white/50 text-xs font-bold" htmlFor="edit-cycle-end">
+                    {t('rayhanah.endDate', 'End date')}
+                  </label>
+                  <input
+                    id="edit-cycle-end"
+                    type="date"
+                    value={editEnd}
+                    min={editStart}
+                    max={today}
                     onChange={(e) => setEditEnd(e.target.value)}
-                    className="input input-sm w-full mt-1 bg-white/5 border-brand-pink/20 text-white rounded-xl" />
+                    className="input input-sm w-full mt-1 bg-white/5 border-brand-pink/20 text-white rounded-xl"
+                  />
                   {editTarget.endDate && (
                     <button
                       className="mt-1.5 text-brand-pink/70 hover:text-brand-pink text-[11px] underline"
                       onClick={() => setEditEnd('')}
-                    >{t('rayhanah.clearEndDate', 'Clear the end date — this cycle is still ongoing')}</button>
+                    >
+                      {t(
+                        'rayhanah.clearEndDate',
+                        'Clear the end date — this cycle is still ongoing'
+                      )}
+                    </button>
                   )}
                   {editEnd === '' && (
-                    <p className="text-brand-pink/60 text-[11px] mt-1">{t('rayhanah.savingReopensCycle', '🌸 Saving without an end date reopens the cycle.')}</p>
+                    <p className="text-brand-pink/60 text-[11px] mt-1">
+                      {t(
+                        'rayhanah.savingReopensCycle',
+                        '🌸 Saving without an end date reopens the cycle.'
+                      )}
+                    </p>
                   )}
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className="flex-1 btn btn-sm rounded-xl bg-white/5 border-white/20 text-white/60"
-                  onClick={() => setEditTarget(null)}>{t('rayhanah.cancel', 'Cancel')}</button>
+                <button
+                  className="flex-1 btn btn-sm rounded-xl bg-white/5 border-white/20 text-white/60"
+                  onClick={() => setEditTarget(null)}
+                >
+                  {t('rayhanah.cancel', 'Cancel')}
+                </button>
                 <button
                   className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-brand-pink/80 hover:bg-brand-pink"
                   disabled={editCycle.isPending || !editStart}
-                  onClick={() => editCycle.mutate(
-                    { logId: editTarget._id, startDate: editStart, endDate: editEnd === '' ? null : editEnd },
-                    {
-                      onSuccess: () => {
-                        toast.success(editEnd === '' ? t('rayhanah.cycleReopenedShort', 'Cycle reopened 🌸') : t('rayhanah.cycleUpdated', 'Cycle updated ✏️'), { id: 'cycle-edit' });
-                        setEditTarget(null);
+                  onClick={() =>
+                    editCycle.mutate(
+                      {
+                        logId: editTarget._id,
+                        startDate: editStart,
+                        endDate: editEnd === '' ? null : editEnd,
                       },
-                    }
-                  )}
+                      {
+                        onSuccess: () => {
+                          toast.success(
+                            editEnd === ''
+                              ? t('rayhanah.cycleReopenedShort', 'Cycle reopened 🌸')
+                              : t('rayhanah.cycleUpdated', 'Cycle updated ✏️'),
+                            { id: 'cycle-edit' }
+                          );
+                          setEditTarget(null);
+                        },
+                      }
+                    )
+                  }
                 >
-                  {editCycle.isPending ? <span className="loading loading-spinner loading-xs" /> : t('rayhanah.save', 'Save')}
+                  {editCycle.isPending ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : (
+                    t('rayhanah.save', 'Save')
+                  )}
                 </button>
               </div>
             </motion.div>
@@ -928,26 +1548,50 @@ export default function RayhanahCycle() {
       {/* ── Ramadan qada prompt ─────────────────────────────────────────────── */}
       <AnimatePresence>
         {qadaPrompt && !ghuslOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm grid place-items-center p-4"
           >
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
               className="w-full max-w-sm rounded-3xl bg-brand-deep border border-brand-gold/25 p-6 space-y-4"
             >
-              <h3 className="text-white font-black text-lg">{t('rayhanah.ramadanDaysToMakeUp', '🌙 Ramadan days to make up')}</h3>
+              <h3 className="text-white font-black text-lg">
+                {t('rayhanah.ramadanDaysToMakeUp', '🌙 Ramadan days to make up')}
+              </h3>
               <p className="text-white/60 text-sm leading-relaxed">
-                {t('rayhanah.qadaPromptCount', '{{count}} day(s) of this cycle fell in Ramadan.', { count: qadaPrompt.days })}{' '}
-                {t('rayhanah.missedFastsMadeUp', 'Missed Ramadan fasts are made up after')} (<a className="underline" href="https://sunnah.com/muslim:335" target="_blank" rel="noreferrer">{translateReference('Muslim 335', i18n.language)}</a>).{' '}
+                {t('rayhanah.qadaPromptCount', '{{count}} day(s) of this cycle fell in Ramadan.', {
+                  count: qadaPrompt.days,
+                })}{' '}
+                {t('rayhanah.missedFastsMadeUp', 'Missed Ramadan fasts are made up after')} (
+                <a
+                  className="underline"
+                  href="https://sunnah.com/muslim:335"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {translateReference('Muslim 335', i18n.language)}
+                </a>
+                ).{' '}
                 {qadaPrompt.days > 1
                   ? t('rayhanah.addThemToQada', 'Add them to your qaḍā counter?')
                   : t('rayhanah.addItToQada', 'Add it to your qaḍā counter?')}
               </p>
               <div className="flex gap-2">
-                <button className="flex-1 btn btn-sm rounded-xl bg-white/5 border-brand-emerald/10 text-white/60" onClick={() => setQadaPrompt(null)}>
+                <button
+                  className="flex-1 btn btn-sm rounded-xl bg-white/5 border-brand-emerald/10 text-white/60"
+                  onClick={() => setQadaPrompt(null)}
+                >
                   {t('rayhanah.notNow', 'Not now')}
                 </button>
-                <button className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-gold to-brand-warm"
-                  disabled={updateFastingProfile.isPending} onClick={addQada}
+                <button
+                  className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-gold to-brand-warm"
+                  disabled={updateFastingProfile.isPending}
+                  onClick={addQada}
                 >
                   {t('rayhanah.addToQada', 'Add to qaḍā ✓')}
                 </button>

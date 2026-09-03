@@ -227,6 +227,63 @@ export default function CycleAnalytics() {
     };
   }, [summary, today]);
 
+  const isDemoMode = useAuthStore((s) => s.isDemoMode);
+
+  if (isDemoMode) {
+    return (
+      <AnimatedBackground variant="dark">
+        <div className="px-4 pt-3">
+          <div className="max-w-2xl mx-auto">
+            <TabNav
+              items={[
+                { label: t('cycleAnalytics.tabCycle', '🌸 Cycle'), to: '/cycle' },
+                {
+                  label: t('cycleAnalytics.tabAnalytics', '📊 Analytics'),
+                  to: '/cycle/analytics',
+                  active: true,
+                },
+              ]}
+            />
+          </div>
+        </div>
+        <div className="min-h-[60vh] grid place-items-center px-4 text-center">
+          <div className="space-y-4 max-w-xs">
+            <div className="text-5xl">📊</div>
+            <p className="text-white font-black text-lg">
+              {t('cycleAnalytics.demoGateTitle', 'Your personal analytics await')}
+            </p>
+            <p className="text-white/50 text-sm leading-relaxed">
+              {t(
+                'cycleAnalytics.demoGateDesc',
+                'Cycle analytics — your patterns, predictions, and wellness insights — are available once you sign in.'
+              )}
+            </p>
+            <div className="flex flex-col gap-2.5">
+              <button
+                className="btn bg-brand-emerald hover:bg-brand-emerald text-white border-0 w-full"
+                onClick={() => navigate('/signup')}
+              >
+                {t('common.createAccount', 'Create free account')}
+              </button>
+              <button
+                className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
+                onClick={() => navigate('/login')}
+              >
+                {t('common.signIn', 'Sign in')}
+              </button>
+              <button
+                className="text-white/30 text-xs hover:text-white/60"
+                onClick={() => navigate('/cycle')}
+              >
+                ← {t('cycleAnalytics.backToCycle', 'Back to cycle tracker')}
+              </button>
+            </div>
+          </div>
+        </div>
+      </AnimatedBackground>
+    );
+  }
+
   if (!user || !isFemale) {
     return (
       <div className="min-h-[60vh] grid place-items-center px-4 text-center">

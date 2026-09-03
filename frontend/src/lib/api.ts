@@ -43,7 +43,8 @@ api.interceptors.request.use((config) => {
   if (useAuthStore.getState().isDemoMode) {
     const method = (config.method ?? 'get').toLowerCase();
     const url = config.url ?? '';
-    const mock = getDemoResponse(url, method);
+    const gender = useAuthStore.getState().user?.gender ?? 'male';
+    const mock = getDemoResponse(url, method, gender);
     config.adapter = () =>
       Promise.resolve({
         data: mock,
@@ -82,7 +83,10 @@ api.interceptors.response.use(
     // Rate limited — tell the user instead of failing silently.
     // Fixed toast id so a burst of 429s shows a single message.
     if (axios.isAxiosError(err) && err.response?.status === 429) {
-      toast.error('Too many requests — please wait a moment and try again.', { id: 'rate-limit', duration: 4000 });
+      toast.error('Too many requests — please wait a moment and try again.', {
+        id: 'rate-limit',
+        duration: 4000,
+      });
     }
     return Promise.reject(err);
   }
