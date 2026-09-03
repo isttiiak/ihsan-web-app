@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useTranslation, Trans } from 'react-i18next';
@@ -8,7 +8,13 @@ import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { celebrateSmall, celebrateAllPrayers } from '../utils/celebrate.js';
-import { ChevronLeftIcon, ChevronRightIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  Cog6ToothIcon,
+  CalendarDaysIcon,
+} from '@heroicons/react/24/outline';
+import { getTrackingDay } from '../utils/trackingDay.js';
 import {
   useSalatLog,
   useUpdatePrayer,
@@ -71,12 +77,10 @@ function isRamadanNow(): boolean {
 }
 
 function todayStr() {
-  // Salat uses the CIVIL local day (midnight boundary), NOT the Fajr tracking
-  // day. Istiak's spec: at 12:40 AM the day has already turned, and a nafl /
-  // tahajjud prayed after midnight belongs to the new date. Salat has no
-  // strict real-time streak, so the Fajr boundary only got in the way.
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // Fajr boundary: before today's Fajr the "tracking day" is still yesterday.
+  // Isha at 2 AM and Tahajjud before Fajr belong to the closing Islamic day.
+  // Fallback to civil midnight when no location is saved.
+  return getTrackingDay();
 }
 function offsetDate(base: string, delta: number): string {
   const d = new Date(base + 'T12:00:00');
@@ -156,17 +160,19 @@ const STATUS_STYLE: Record<
 
 // ─── component ───────────────────────────────────────────────────────────────
 
-function getDefaultDate(): string {
-  // Always open on the civil "today" (no pre-Fajr shift — salat is civil-dated).
-  return todayStr();
-}
-
 export default function SalatTracker() {
   const { t, i18n } = useTranslation();
   const cycleActive = useCycleActive();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
-  const [selectedDate, setSelectedDate] = useState(getDefaultDate);
+
+  // ?date=YYYY-MM-DD lets the analytics heatmap navigate here directly.
+  const dateFromUrl = searchParams.get('date');
+  const [selectedDate, setSelectedDate] = useState(() => {
+    if (dateFromUrl && /^\d{4}-\d{2}-\d{2}$/.test(dateFromUrl)) return dateFromUrl;
+    return todayStr(); // Fajr-boundary tracking day
+  });
   const [expandedPrayer, setExpandedPrayer] = useState<PrayerId | null>(null);
   const [showGuestDialog, setShowGuestDialog] = useState(false);
 
@@ -188,13 +194,17 @@ export default function SalatTracker() {
     return () => clearInterval(timer);
   }, []);
 
-  // Prayer times for current-prayer detection (only needed for today)
+  // Prayer times for current-prayer detection.
+  // Use selectedDate's noon (not minuteNow's civil date) to get the right
+  // times when the tracking day ≠ civil date (i.e., before Fajr the tracking
+  // day is still "yesterday", so we compute yesterday's prayer times).
   const todayPrayerTimes = useMemo(() => {
     const stored = localStorage.getItem('ihsan_location');
     if (!stored) return null;
     try {
       const loc = JSON.parse(stored) as { latitude: number; longitude: number };
-      const times = calcPrayerTimes(loc.latitude, loc.longitude, minuteNow);
+      const prayerDate = new Date(selectedDate + 'T12:00:00');
+      const times = calcPrayerTimes(loc.latitude, loc.longitude, prayerDate);
       const info = getCurrentAndNextPrayer(times, minuteNow);
       return {
         times: {
@@ -211,7 +221,11 @@ export default function SalatTracker() {
     } catch {
       return null;
     }
-  }, [minuteNow]);
+  }, [selectedDate, minuteNow]);
+
+  // Month calendar state — full-month view for navigating to any past day
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calMonth, setCalMonth] = useState(() => selectedDate.substring(0, 7));
 
   // A prayer's window has auto-closed (adhan-time-derived) for today while
   // still logged pending — flag it so nobody forgets to mark it, without
@@ -226,9 +240,16 @@ export default function SalatTracker() {
   const updatePrayer = useUpdatePrayer();
   const updateNafl = useUpdateNafl();
 
-  // Weekly summary strip — quick glance at the last 7 days, tap to jump.
-  const { data: weekAnalytics } = useSalatAnalytics(7);
+  // Weekly summary strip + calendar data (90-day window always fetched).
+  // Pass the Fajr-boundary tracking day so the 7-day strip matches the tracker.
+  const { data: weekAnalytics } = useSalatAnalytics(7, todayStr());
   const weekDays = weekAnalytics?.last7Days ?? [];
+  // Build a lookup from calendarData for the month calendar (90 days).
+  const calendarDataMap = useMemo(() => {
+    const m = new Map<string, number>();
+    (weekAnalytics?.calendarData ?? []).forEach((d) => m.set(d.date, d.completed));
+    return m;
+  }, [weekAnalytics]);
 
   // Tarawih during Ramadan lives on the FastingLog row (category 'ramadan'),
   // the same record /ramadan writes — one source of truth, two places to tap.
@@ -711,7 +732,7 @@ export default function SalatTracker() {
 
           {/* Weekly summary — quick glance at the last 7 days, tap a day to jump */}
           {weekDays.length > 0 && (
-            <div className="flex justify-between gap-1 [&>*]:min-w-0">
+            <div className="flex items-stretch gap-1">
               {weekDays.map((d) => {
                 const isSel = d.date === selectedDate;
                 const isTod = d.date === todayStr();
@@ -725,6 +746,7 @@ export default function SalatTracker() {
                     onClick={() => {
                       setSelectedDate(d.date);
                       setExpandedPrayer(null);
+                      setCalendarOpen(false);
                     }}
                     aria-label={t('salatTracker.selectDay', 'Select {{day}}', {
                       day: friendlyDate(d.date, t),
@@ -750,8 +772,136 @@ export default function SalatTracker() {
                   </motion.button>
                 );
               })}
+              {/* Calendar toggle button — opens the full-month view */}
+              <button
+                onClick={() => {
+                  setCalMonth(selectedDate.substring(0, 7));
+                  setCalendarOpen((o) => !o);
+                }}
+                aria-label={t('salatTracker.openCalendar', 'Open month calendar')}
+                title={t('salatTracker.openCalendar', 'Open month calendar')}
+                className={`flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-xl border transition-all ${
+                  calendarOpen
+                    ? 'bg-brand-emerald/20 border-brand-emerald/40 text-brand-emerald'
+                    : 'bg-white/[0.03] border-brand-emerald/5 text-white/40 hover:border-brand-emerald/20 hover:text-white/70'
+                }`}
+              >
+                <CalendarDaysIcon className="w-4 h-4" />
+                <span className="text-[9px] font-bold uppercase">
+                  {formatLocaleDate(new Date(selectedDate.substring(0, 7) + '-15T12:00:00'), {
+                    month: 'narrow',
+                  })}
+                </span>
+              </button>
             </div>
           )}
+
+          {/* Month calendar — full month view, tap any day to navigate there */}
+          <AnimatePresence>
+            {calendarOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.22 }}
+                className="overflow-hidden"
+              >
+                <div className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <button
+                      onClick={() => {
+                        const [y, m] = calMonth.split('-').map(Number);
+                        const d = new Date(y!, m! - 2, 1);
+                        setCalMonth(
+                          `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+                        );
+                      }}
+                      className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10"
+                    >
+                      <ChevronLeftIcon className="w-4 h-4" />
+                    </button>
+                    <p className="text-white font-bold text-sm">
+                      {formatLocaleDate(new Date(calMonth + '-15T12:00:00'), {
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </p>
+                    <button
+                      onClick={() => {
+                        const [y, m] = calMonth.split('-').map(Number);
+                        const d = new Date(y!, m!, 1);
+                        setCalMonth(
+                          `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+                        );
+                      }}
+                      disabled={calMonth >= todayStr().substring(0, 7)}
+                      className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-20"
+                    >
+                      <ChevronRightIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-7 gap-1 text-center">
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                      <span key={i} className="text-white/25 text-[9px] font-bold uppercase">
+                        {d}
+                      </span>
+                    ))}
+                    {(() => {
+                      const [y, m] = calMonth.split('-').map(Number);
+                      const first = new Date(y!, m! - 1, 1);
+                      const daysInMonth = new Date(y!, m!, 0).getDate();
+                      const blanks = first.getDay();
+                      const cells = [];
+                      for (let i = 0; i < blanks; i++) cells.push(<span key={`b${i}`} />);
+                      for (let d = 1; d <= daysInMonth; d++) {
+                        const dateStr = `${calMonth}-${String(d).padStart(2, '0')}`;
+                        const completed = calendarDataMap.get(dateStr);
+                        const isFuture = dateStr > todayStr();
+                        const isSel = dateStr === selectedDate;
+                        const isTod = dateStr === todayStr();
+                        const salatStart = localStorage.getItem('ihsan_salat_start_date');
+                        const isBeforeStart = salatStart ? dateStr < salatStart : false;
+                        const dot =
+                          completed === 5
+                            ? '#7a9e6e'
+                            : completed != null && completed >= 3
+                              ? '#c9a96e'
+                              : completed != null && completed >= 1
+                                ? '#f59e0b'
+                                : completed === 0
+                                  ? '#ef4444'
+                                  : undefined;
+                        cells.push(
+                          <button
+                            key={dateStr}
+                            disabled={isFuture || isBeforeStart}
+                            onClick={() => {
+                              setSelectedDate(dateStr);
+                              setExpandedPrayer(null);
+                              setCalendarOpen(false);
+                            }}
+                            className={`relative aspect-square rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center gap-0.5 ${
+                              isFuture || isBeforeStart
+                                ? 'opacity-20 cursor-not-allowed'
+                                : 'hover:bg-white/10 cursor-pointer'
+                            } ${isSel ? 'bg-brand-emerald/25 border border-brand-emerald/50' : ''} ${isTod && !isSel ? 'border border-brand-emerald/30' : ''}`}
+                          >
+                            <span className={isTod ? 'text-brand-emerald' : 'text-white/70'}>
+                              {formatLocaleNumber(d)}
+                            </span>
+                            {dot && !isFuture && !isBeforeStart && (
+                              <span className="w-1 h-1 rounded-full" style={{ background: dot }} />
+                            )}
+                          </button>
+                        );
+                      }
+                      return cells;
+                    })()}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Rayhanah days — salat fully excused (never made up) */}
           {cycleActive && selectedDate >= cycleActive.startDate ? (

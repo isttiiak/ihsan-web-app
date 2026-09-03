@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import TabNav from '../components/TabNav.js';
-import { ChartBarIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import {
+  ChartBarIcon,
+  InformationCircleIcon,
+  CalendarDaysIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from '@heroicons/react/24/outline';
 import { useSalatAnalytics, useSalatDebt, useSalatDebtHistory } from '../hooks/useSalatLog.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
@@ -13,6 +20,11 @@ const PERIOD_OPTIONS = [
   { label: '90d', value: 90 },
   { label: '1y', value: 365 },
 ];
+
+interface MonthSel {
+  year: number;
+  month: number;
+} // 1-based month
 
 const PRAYER_GRADIENTS: Record<string, string> = {
   fajr: 'from-brand-info to-brand-info-dim',
@@ -40,10 +52,38 @@ function calendarCellStyle(completed: number, hasData: boolean) {
 
 export default function SalatAnalytics() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [days, setDays] = useState(30);
-  const { data, isLoading, isError } = useSalatAnalytics(days);
+  // null = use the period selector; otherwise a specific calendar month
+  const [selectedMonth, setSelectedMonth] = useState<MonthSel | null>(null);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
+
+  const civilToday = (() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+  })();
+
+  // When a calendar month is selected, derive days + todayOverride so the
+  // analytics endpoint returns exactly that month's data.
+  const { analyticsDays, analyticsToday } = useMemo(() => {
+    if (!selectedMonth) return { analyticsDays: days, analyticsToday: undefined };
+    const { year, month } = selectedMonth;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const lastDay = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+    const today = civilToday;
+    const isCurrentMonth = today.startsWith(`${year}-${String(month).padStart(2, '0')}`);
+    return {
+      analyticsDays: isCurrentMonth
+        ? parseInt(today.slice(8), 10) // days elapsed so far this month
+        : daysInMonth,
+      analyticsToday: isCurrentMonth ? today : lastDay,
+    };
+  }, [selectedMonth, days, civilToday]);
+
+  const { data, isLoading, isError } = useSalatAnalytics(analyticsDays, analyticsToday);
   const { data: debt } = useSalatDebt();
-  const { data: debtHistory } = useSalatDebtHistory(days);
+  const { data: debtHistory } = useSalatDebtHistory(analyticsDays);
 
   // Group calendar data into weeks (Fri–Thu, Islamic week) for the heatmap
   const calendarWeeks = (() => {
@@ -81,10 +121,7 @@ export default function SalatAnalytics() {
     return labels;
   })();
 
-  const todayStr = (() => {
-    const n = new Date();
-    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
-  })();
+  const todayStr = civilToday;
 
   const DAY_LABELS = [
     t('salatAnalytics.dayFri'),
@@ -113,18 +150,102 @@ export default function SalatAnalytics() {
             <h1 className="text-white font-black text-sm flex items-center gap-2">
               <ChartBarIcon className="w-4 h-4 text-brand-emerald" /> {t('salatAnalytics.title')}
             </h1>
-            <div className="tabs tabs-boxed tabs-sm bg-brand-deep border border-brand-border">
-              {PERIOD_OPTIONS.map((p) => (
-                <button
-                  key={p.value}
-                  className={`tab text-xs ${days === p.value ? 'tab-active bg-brand-emerald text-white font-bold' : 'text-white/60'}`}
-                  onClick={() => setDays(p.value)}
-                >
-                  {t(`salatAnalytics.period${p.value}`)}
-                </button>
-              ))}
+            <div className="flex items-center gap-1">
+              <div className="tabs tabs-boxed tabs-sm bg-brand-deep border border-brand-border">
+                {PERIOD_OPTIONS.map((p) => (
+                  <button
+                    key={p.value}
+                    className={`tab text-xs ${!selectedMonth && days === p.value ? 'tab-active bg-brand-emerald text-white font-bold' : 'text-white/60'}`}
+                    onClick={() => {
+                      setDays(p.value);
+                      setSelectedMonth(null);
+                      setShowMonthPicker(false);
+                    }}
+                  >
+                    {t(`salatAnalytics.period${p.value}`)}
+                  </button>
+                ))}
+              </div>
+              {/* Divider + month picker toggle */}
+              <div className="w-px h-5 bg-brand-border mx-1" />
+              <button
+                onClick={() => setShowMonthPicker((v) => !v)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                  selectedMonth || showMonthPicker
+                    ? 'bg-brand-emerald/20 border-brand-emerald/40 text-brand-emerald'
+                    : 'bg-brand-deep border-brand-border text-white/60 hover:text-white'
+                }`}
+              >
+                <CalendarDaysIcon className="w-3.5 h-3.5" />
+                {selectedMonth
+                  ? formatLocaleDate(new Date(selectedMonth.year, selectedMonth.month - 1, 15), {
+                      month: 'short',
+                      year: 'numeric',
+                    })
+                  : t('salatAnalytics.monthPicker', 'Month')}
+              </button>
             </div>
           </div>
+
+          {/* Month picker panel */}
+          {showMonthPicker &&
+            (() => {
+              const now = new Date();
+              const currentYear = now.getFullYear();
+              const currentMonth = now.getMonth() + 1;
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-2xl border border-brand-emerald/20 bg-brand-deep/90 p-4 space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => setPickerYear((y) => y - 1)}
+                      className="p-1.5 text-white/40 hover:text-white hover:bg-white/10 rounded-lg"
+                    >
+                      <ChevronLeftIcon className="w-4 h-4" />
+                    </button>
+                    <span className="text-white font-bold text-sm">{pickerYear}</span>
+                    <button
+                      onClick={() => setPickerYear((y) => y + 1)}
+                      disabled={pickerYear >= currentYear}
+                      className="p-1.5 text-white/40 hover:text-white hover:bg-white/10 rounded-lg disabled:opacity-20"
+                    >
+                      <ChevronRightIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+                      const isFuture =
+                        pickerYear > currentYear ||
+                        (pickerYear === currentYear && m > currentMonth);
+                      const isSelected =
+                        selectedMonth?.year === pickerYear && selectedMonth?.month === m;
+                      return (
+                        <button
+                          key={m}
+                          disabled={isFuture}
+                          onClick={() => {
+                            setSelectedMonth({ year: pickerYear, month: m });
+                            setShowMonthPicker(false);
+                          }}
+                          className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                            isSelected
+                              ? 'bg-brand-emerald text-white'
+                              : isFuture
+                                ? 'opacity-20 cursor-not-allowed text-white/30'
+                                : 'text-white/70 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          {formatLocaleDate(new Date(pickerYear, m - 1, 15), { month: 'short' })}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              );
+            })()}
 
           {isLoading && (
             <div className="flex justify-center py-20">
@@ -141,20 +262,15 @@ export default function SalatAnalytics() {
 
           {data && !isLoading && (
             <>
-              {/* Period note */}
+              {/* Period note — only shown when a reset shortened the window */}
               {data.totalDays < data.periodDays && (
                 <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-brand-emerald/10 border border-brand-emerald/20">
-                  <span className="text-lg shrink-0">📅</span>
+                  <span className="text-lg shrink-0">🔄</span>
                   <p className="text-sm text-white/50">
-                    {t('salatAnalytics.periodNoteStart', {
-                      total: formatLocaleNumber(data.periodDays),
-                    })}{' '}
-                    <span className="text-brand-emerald font-semibold">
-                      {formatLocaleNumber(data.totalDays)}
-                    </span>{' '}
-                    {t('salatAnalytics.periodNoteEnd', {
-                      total: formatLocaleNumber(data.periodDays),
-                    })}
+                    {t(
+                      'salatAnalytics.resetNote',
+                      `Showing ${formatLocaleNumber(data.totalDays)} days — your tracking was reset within the ${formatLocaleNumber(data.periodDays)}-day window. Analytics count from the reset date.`
+                    )}
                   </p>
                 </div>
               )}
@@ -304,6 +420,13 @@ export default function SalatAnalytics() {
                       <strong className="text-white/30">
                         {formatLocaleNumber(data.completionRate)}%
                       </strong>
+                    </p>
+                    <p className="text-white/20 text-xs flex items-center gap-1">
+                      <InformationCircleIcon className="w-3 h-3 shrink-0" />
+                      {t(
+                        'salatAnalytics.missedNote',
+                        'Missed includes prayers left unmarked on past days — not only those explicitly tapped "missed".'
+                      )}
                     </p>
                     <p className="text-white/20 text-xs flex items-center gap-1">
                       <InformationCircleIcon className="w-3 h-3 shrink-0" />
@@ -608,6 +731,7 @@ export default function SalatAnalytics() {
                               const isLogged = data.calendarData.some((c) => c.date === cell.date);
                               const isPerfect = cell.completed === 5;
                               const isToday = cell.date === todayStr;
+                              const isFuture = cell.date > todayStr;
                               return (
                                 <motion.div
                                   key={di}
@@ -617,14 +741,21 @@ export default function SalatAnalytics() {
                                     delay: (wi + di * calendarWeeks.length) * 0.004,
                                     duration: 0.25,
                                   }}
-                                  className="tooltip cursor-default"
+                                  className="tooltip"
                                   data-tip={t('salatAnalytics.calendarTip', {
                                     date: cell.date,
                                     completed: formatLocaleNumber(cell.completed),
                                   })}
                                 >
-                                  <div
-                                    className={`w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold transition-transform hover:scale-110 ${
+                                  <button
+                                    onClick={() =>
+                                      !isFuture && navigate(`/salat?date=${cell.date}`)
+                                    }
+                                    disabled={isFuture}
+                                    aria-label={`${cell.date}: ${cell.completed}/5`}
+                                    className={`w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold transition-transform ${
+                                      isFuture ? 'cursor-default' : 'hover:scale-110 cursor-pointer'
+                                    } ${
                                       isToday
                                         ? 'ring-2 ring-brand-emerald ring-offset-1 ring-offset-brand-surface'
                                         : ''
@@ -651,7 +782,7 @@ export default function SalatAnalytics() {
                                         {formatLocaleNumber(cell.completed)}
                                       </span>
                                     )}
-                                  </div>
+                                  </button>
                                 </motion.div>
                               );
                             })}

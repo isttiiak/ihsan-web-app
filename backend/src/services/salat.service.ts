@@ -32,8 +32,8 @@ function normaliseLegacyPrayers(log: InstanceType<typeof SalatLog>) {
   }
   // Normalise nafl types array too
   if (log.nafl?.types) {
-    log.nafl.types = (log.nafl.types as string[]).filter(
-      (t) => VALID_NAFL_TYPES.has(t)
+    log.nafl.types = (log.nafl.types as string[]).filter((t) =>
+      VALID_NAFL_TYPES.has(t)
     ) as NaflType[];
   }
 }
@@ -68,8 +68,11 @@ export async function getLogReadOnly(userId: string, date?: string) {
     userId,
     date: d,
     prayers: {
-      fajr: EMPTY_ENTRY, dhuhr: EMPTY_ENTRY, asr: EMPTY_ENTRY,
-      maghrib: EMPTY_ENTRY, isha: EMPTY_ENTRY,
+      fajr: EMPTY_ENTRY,
+      dhuhr: EMPTY_ENTRY,
+      asr: EMPTY_ENTRY,
+      maghrib: EMPTY_ENTRY,
+      isha: EMPTY_ENTRY,
     },
     nafl: { completed: false, types: [] as NaflType[], rakat: 2 },
   };
@@ -167,24 +170,57 @@ export interface SalatAnalyticsResult {
   completionRate: number;
   currentStreak: number;
   bestStreak: number;
-  perPrayer: Record<string, {
-    completed: number; kaza: number; missed: number; pending: number;
-    mosque: number; jamat: number; tasbeeh: number;
-    currentStreak: number; bestStreak: number;
-  }>;
+  perPrayer: Record<
+    string,
+    {
+      completed: number;
+      kaza: number;
+      missed: number;
+      pending: number;
+      mosque: number;
+      jamat: number;
+      tasbeeh: number;
+      currentStreak: number;
+      bestStreak: number;
+    }
+  >;
   last7Days: Array<{ date: string; completed: number; total: number }>;
   calendarData: Array<{ date: string; completed: number; total: number }>;
-  weeklyMosqueTrend: Array<{ weekStart: string; weekEnd: string; mosqueCount: number; prayedCount: number; rate: number }>;
+  weeklyMosqueTrend: Array<{
+    weekStart: string;
+    weekEnd: string;
+    mosqueCount: number;
+    prayedCount: number;
+    rate: number;
+  }>;
 }
 
-export async function getSalatAnalytics(userId: string, days: number, clientToday?: string, resetDate?: string): Promise<SalatAnalyticsResult> {
+export async function getSalatAnalytics(
+  userId: string,
+  days: number,
+  clientToday?: string,
+  resetDate?: string
+): Promise<SalatAnalyticsResult> {
   const today = clientToday ?? todayDateString();
   const calendarDays = Math.max(days, 90);
   const logs = await getSalatHistory(userId, calendarDays, today);
 
   const rawCutoff = shiftDateStr(today, -(days - 1));
   const statsCutoff = resetDate && resetDate > rawCutoff ? resetDate : rawCutoff;
-  const statsLogs = logs.filter((l) => l.date >= statsCutoff);
+
+  // Full window: all dates from statsCutoff to today (inclusive), whether or
+  // not the user created a log row for them. A day with no row = 5 pending
+  // prayers; on past days those count as missed. This gives an honest picture
+  // of prayers skipped, not just prayers explicitly marked.
+  const effectiveDays = Math.max(
+    1,
+    Math.round(
+      (new Date(today + 'T12:00:00').getTime() - new Date(statsCutoff + 'T12:00:00').getTime()) /
+        86_400_000
+    ) + 1
+  );
+
+  const logMap = new Map(logs.map((l) => [l.date, l]));
 
   let completedCount = 0;
   let kazaCount = 0;
@@ -199,45 +235,91 @@ export async function getSalatAnalytics(userId: string, days: number, clientToda
 
   const perPrayer: SalatAnalyticsResult['perPrayer'] = {};
   for (const pid of PRAYER_IDS) {
-    perPrayer[pid] = { completed: 0, kaza: 0, missed: 0, pending: 0, mosque: 0, jamat: 0, tasbeeh: 0, currentStreak: 0, bestStreak: 0 };
+    perPrayer[pid] = {
+      completed: 0,
+      kaza: 0,
+      missed: 0,
+      pending: 0,
+      mosque: 0,
+      jamat: 0,
+      tasbeeh: 0,
+      currentStreak: 0,
+      bestStreak: 0,
+    };
   }
 
-  for (const log of statsLogs) {
+  // Iterate every date in the analytics window. Unlogged past days count as 5
+  // missed prayers. Pending prayers on past logged days also count as missed.
+  for (let i = 0; i < effectiveDays; i++) {
+    const dateStr = shiftDateStr(statsCutoff, i);
+    const isPast = dateStr < today;
+    const log = logMap.get(dateStr);
+
+    if (!log) {
+      // No log row for this date. Past days = fully missed; today = all pending.
+      if (isPast) {
+        missedCount += 5;
+        for (const pid of PRAYER_IDS) perPrayer[pid].missed++;
+      }
+      // (today with no log: 5 pending — don't count against completion)
+      continue;
+    }
+
     for (const pid of PRAYER_IDS) {
       const entry = log.prayers[pid];
       const s = entry?.status ?? 'pending';
       const loc = entry?.location;
+      // On past days, an unresolved pending prayer counts as missed.
+      const effective = s === 'pending' && isPast ? 'missed' : s;
 
-      if (s === 'completed') { completedCount++; perPrayer[pid].completed++; }
-      else if (s === 'kaza') { kazaCount++; perPrayer[pid].kaza++; }
-      else if (s === 'missed') { missedCount++; perPrayer[pid].missed++; }
-      else { perPrayer[pid].pending++; }
+      if (effective === 'completed') {
+        completedCount++;
+        perPrayer[pid].completed++;
+      } else if (effective === 'kaza') {
+        kazaCount++;
+        perPrayer[pid].kaza++;
+      } else if (effective === 'missed') {
+        missedCount++;
+        perPrayer[pid].missed++;
+      } else {
+        perPrayer[pid].pending++;
+      }
 
-      if (s === 'completed' || s === 'kaza') {
-        if (loc === 'mosque') { mosqueCount++; jamaatCount++; perPrayer[pid].mosque++; }
-        else if (loc === 'jamat') { jamaatCount++; perPrayer[pid].jamat++; }
-        else { homeCount++; }
-        if (entry?.tasbeeh) { tasbeehCount++; perPrayer[pid].tasbeeh++; }
+      if (effective === 'completed' || effective === 'kaza') {
+        if (loc === 'mosque') {
+          mosqueCount++;
+          jamaatCount++;
+          perPrayer[pid].mosque++;
+        } else if (loc === 'jamat') {
+          jamaatCount++;
+          perPrayer[pid].jamat++;
+        } else {
+          homeCount++;
+        }
+        if (entry?.tasbeeh) {
+          tasbeehCount++;
+          perPrayer[pid].tasbeeh++;
+        }
       }
     }
     if (log.nafl?.completed) naflDays++;
 
-    // Jumu'ah — Friday's Dhuhr, prayed specifically at the mosque (the
-    // obligation Jumu'ah adds on top of an ordinary Dhuhr).
-    if (new Date(log.date + 'T12:00:00').getDay() === 5) {
+    // Jumu'ah — Friday's Dhuhr, prayed specifically at the mosque.
+    if (new Date(dateStr + 'T12:00:00').getDay() === 5) {
       fridayCount++;
       const dhuhr = log.prayers.dhuhr;
-      if ((dhuhr?.status === 'completed' || dhuhr?.status === 'kaza') && dhuhr.location === 'mosque') {
+      if (
+        (dhuhr?.status === 'completed' || dhuhr?.status === 'kaza') &&
+        dhuhr.location === 'mosque'
+      ) {
         jumuahAttendedCount++;
       }
     }
   }
 
-  const totalDays = statsLogs.length;
+  const totalDays = effectiveDays;
   const totalPossiblePrayers = totalDays * 5;
   const prayedTotal = completedCount + kazaCount;
-
-  const logMap = new Map(logs.map((l) => [l.date, l]));
 
   const isAllDone = (date: string): boolean => {
     const log = logMap.get(date);
@@ -247,11 +329,6 @@ export async function getSalatAnalytics(userId: string, days: number, clientToda
       return s === 'completed' || s === 'kaza';
     });
   };
-
-  // Effective window size (may be smaller than requested when resetDate is set)
-  const effectiveDays = resetDate && resetDate > rawCutoff
-    ? Math.max(1, Math.round((new Date(today + 'T12:00:00').getTime() - new Date(statsCutoff + 'T12:00:00').getTime()) / 86_400_000) + 1)
-    : days;
 
   let bestStreak = 0;
   let runStreak = 0;
@@ -347,13 +424,12 @@ export async function getSalatAnalytics(userId: string, days: number, clientToda
     calendarData.push({ date: dateStr, completed: countDone(dateStr), total: 5 });
   }
 
-  const completionRate = totalPossiblePrayers > 0
-    ? Math.round((prayedTotal / totalPossiblePrayers) * 100)
-    : 0;
+  const completionRate =
+    totalPossiblePrayers > 0 ? Math.round((prayedTotal / totalPossiblePrayers) * 100) : 0;
 
   return {
-    periodDays: effectiveDays,
-    totalDays,
+    periodDays: days, // the originally-requested window (before reset clamp)
+    totalDays, // actual days counted = effectiveDays (after reset clamp)
     totalPossiblePrayers,
     completedCount,
     kazaCount,
