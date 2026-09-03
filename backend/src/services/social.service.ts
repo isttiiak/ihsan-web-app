@@ -1,4 +1,8 @@
-import SocialProfile, { generateInviteCode, ISocialProfile, MAX_FRIENDS } from '../models/SocialProfile.js';
+import SocialProfile, {
+  generateInviteCode,
+  ISocialProfile,
+  MAX_FRIENDS,
+} from '../models/SocialProfile.js';
 import User from '../models/User.js';
 import SalatLog, { PRAYER_IDS } from '../models/SalatLog.js';
 import FastingLog from '../models/FastingLog.js';
@@ -52,7 +56,8 @@ export interface ConnectResult {
 export async function connectByCode(userId: string, code: string): Promise<ConnectResult> {
   const owner = await SocialProfile.findOne({ inviteCode: code });
   if (!owner) return { ok: false, message: 'This invite link is not valid.' };
-  if (owner.userId === userId) return { ok: false, message: 'That is your own invite link — share it with a friend!' };
+  if (owner.userId === userId)
+    return { ok: false, message: 'That is your own invite link — share it with a friend!' };
 
   const mine = await getOrCreateProfile(userId);
   const alreadyFriends = mine.friends.includes(owner.userId);
@@ -111,7 +116,9 @@ export async function getFriendsList(userId: string): Promise<FriendListItem[]> 
   const profile = await getOrCreateProfile(userId);
   if (profile.friends.length === 0) return [];
 
-  const users = await User.find({ uid: { $in: profile.friends } }).select('uid displayName photoUrl');
+  const users = await User.find({ uid: { $in: profile.friends } }).select(
+    'uid displayName photoUrl'
+  );
   const byUid = new Map(users.map((u) => [u.uid, u]));
 
   const list = profile.friends.map((uid) => {
@@ -144,10 +151,14 @@ export interface FriendStats {
   displayName: string;
   /** Only http(s) URLs — base64 data-URL photos are skipped to keep the payload small */
   photoUrl?: string;
+  /** Full country name from the user's profile (e.g. "Bangladesh") */
+  country?: string;
   isMe: boolean;
-  salatToday: number;      // 0..5 fard prayers completed/kaza today
+  salatToday: number; // 0..5 fard prayers completed/kaza today
+  /** How many fard prayer windows have opened so far today (0–5, time-of-day aware) */
+  prayersDue: number;
   zikrStreak: number;
-  zikrState: string;       // active | grace | none | paused
+  zikrState: string; // active | grace | none | paused
   zikrToday: number;
   zikrGoal: number;
   zikrGoalMet: boolean;
@@ -157,22 +168,55 @@ export interface FriendStats {
   quranStreak: number;
   quranPagesToday: number;
   quranGoal: number;
-  score: number;           // Noor, 0..100
+  score: number; // Noor, 0..100
+}
+
+/**
+ * Approximate number of fard prayer windows that have opened at the current
+ * local time. timezoneOffset is POSITIVE EAST (frontend -getTimezoneOffset()).
+ * Fixed-hour thresholds are a fair global approximation; actual adhan times
+ * vary by location and season, but give a consistent ranking basis.
+ */
+function prayersDueNow(timezoneOffset: number): number {
+  const nowUtc = new Date();
+  const localMinutes =
+    (((nowUtc.getUTCHours() * 60 + nowUtc.getUTCMinutes() + timezoneOffset) % 1440) + 1440) % 1440;
+  const h = localMinutes / 60;
+  if (h >= 20) return 5; // Isha has opened
+  if (h >= 18.5) return 4; // Maghrib has opened
+  if (h >= 16) return 3; // Asr has opened
+  if (h >= 12.5) return 2; // Dhuhr has opened
+  if (h >= 5) return 1; // Fajr has opened
+  return 0;
 }
 
 /**
  * Daily Noor (max 100) — deliberately transparent (Istiak's spec, 2026-07-09):
- *   up to 50  — today's fard prayers (10 each)
+ *   up to 50  — today's fard prayers, scaled to prayers elapsed today
  *   up to 20  — zikr STREAK (2 per day, capped at 10 days)
  *   up to 20  — today's Quran reading vs the user's daily goal (full 20 when met)
  *   +10       — fasting today (completed, or intended while the day runs)
- * Resets naturally every day (it is computed from "today"); All-time Noor
- * accumulates day scores and never resets.
+ *
+ * The prayer score is "optimistic": if 3 of 5 prayers have passed today and
+ * all 3 are complete, that earns the full 50 Noor — the Ummah is not penalised
+ * for prayers whose time has not yet arrived. This keeps the leaderboard fair
+ * and encouraging throughout the day.
  */
-function computeScore(s: Omit<FriendStats, 'score' | 'uid' | 'displayName' | 'photoUrl' | 'isMe'>): number {
-  const salatPts = Math.min(5, s.salatToday) * 10;
+function computeScore(
+  s: Omit<
+    FriendStats,
+    'score' | 'uid' | 'displayName' | 'photoUrl' | 'isMe' | 'country' | 'prayersDue'
+  >,
+  prayersDue: number
+): number {
+  // Optimistic salat scoring: 50 pts if all elapsed prayers are done; pro-rated otherwise
+  const due = Math.max(1, Math.min(5, prayersDue));
+  const done = Math.min(due, s.salatToday);
+  const salatPts = Math.round((done / due) * 50);
   const zikrStreakPts = Math.min(10, s.zikrStreak) * 2;
-  const quranPts = Math.round(Math.min(1, s.quranGoal > 0 ? s.quranPagesToday / s.quranGoal : 0) * 20);
+  const quranPts = Math.round(
+    Math.min(1, s.quranGoal > 0 ? s.quranPagesToday / s.quranGoal : 0) * 20
+  );
   const fastPts = s.fastedToday ? 10 : 0;
   return salatPts + zikrStreakPts + quranPts + fastPts;
 }
@@ -196,9 +240,13 @@ function computeExcusedScore(input: {
   quranGoal: number;
   salawatDone: boolean;
 }): number {
-  const zikrPts = Math.round(Math.min(1, input.zikrGoal > 0 ? input.zikrToday / input.zikrGoal : 0) * 40);
+  const zikrPts = Math.round(
+    Math.min(1, input.zikrGoal > 0 ? input.zikrToday / input.zikrGoal : 0) * 40
+  );
   const streakPts = Math.min(10, input.zikrStreak) * 2;
-  const quranPts = Math.round(Math.min(1, input.quranGoal > 0 ? input.quranPagesToday / input.quranGoal : 0) * 30);
+  const quranPts = Math.round(
+    Math.min(1, input.quranGoal > 0 ? input.quranPagesToday / input.quranGoal : 0) * 30
+  );
   const salawatPts = input.salawatDone ? 10 : 0;
   return zikrPts + streakPts + quranPts + salawatPts;
 }
@@ -213,15 +261,22 @@ async function statsForUser(
   const monthStart = today.substring(0, 8) + '01';
   const quranSince = shiftDateStr(today, -30);
 
-  const [user, zikr, salatLog, fastsThisMonth, todayFastLog, quranLogs, quranProfile] = await Promise.all([
-    User.findOne({ uid }).select('displayName photoUrl'),
-    getStreakStatus(uid, timezoneOffset, today),
-    SalatLog.findOne({ userId: uid, date: today }),
-    FastingLog.countDocuments({ userId: uid, status: 'completed', date: { $gte: monthStart, $lte: today } }),
-    FastingLog.findOne({ userId: uid, date: today }).select('status'),
-    QuranLog.find({ userId: uid, date: { $gte: quranSince, $lte: today } }).select('date pages ayat'),
-    QuranProfile.findOne({ userId: uid }).select('dailyGoalAyat'),
-  ]);
+  const [user, zikr, salatLog, fastsThisMonth, todayFastLog, quranLogs, quranProfile] =
+    await Promise.all([
+      User.findOne({ uid }).select('displayName photoUrl country'),
+      getStreakStatus(uid, timezoneOffset, today),
+      SalatLog.findOne({ userId: uid, date: today }),
+      FastingLog.countDocuments({
+        userId: uid,
+        status: 'completed',
+        date: { $gte: monthStart, $lte: today },
+      }),
+      FastingLog.findOne({ userId: uid, date: today }).select('status'),
+      QuranLog.find({ userId: uid, date: { $gte: quranSince, $lte: today } }).select(
+        'date pages ayat'
+      ),
+      QuranProfile.findOne({ userId: uid }).select('dailyGoalAyat'),
+    ]);
 
   let salatToday = 0;
   if (salatLog) {
@@ -232,7 +287,9 @@ async function statsForUser(
   }
 
   // v4 units: ayat + pages·10 — reading and listening both count
-  const quranByDate = new Map(quranLogs.map((l) => [l.date, Math.round((l.ayat ?? 0) + (l.pages ?? 0) * 10)]));
+  const quranByDate = new Map(
+    quranLogs.map((l) => [l.date, Math.round((l.ayat ?? 0) + (l.pages ?? 0) * 10)])
+  );
   const quranPagesToday = quranByDate.get(today) ?? 0;
   let quranStreak = 0;
   let cursor = quranPagesToday > 0 ? today : shiftDateStr(today, -1);
@@ -241,9 +298,12 @@ async function statsForUser(
     cursor = shiftDateStr(cursor, -1);
   }
 
+  const prayersDue = prayersDueNow(timezoneOffset);
+
   const base = {
     isMe: uid === viewerUid,
     salatToday,
+    prayersDue,
     zikrStreak: zikr.currentStreak,
     zikrState: zikr.state,
     zikrToday: zikr.todayTotal,
@@ -256,7 +316,7 @@ async function statsForUser(
     quranGoal: quranProfile?.dailyGoalAyat ?? 20,
   };
 
-  let score = computeScore(base);
+  let score = computeScore(base, prayersDue);
 
   if (excusedToday) {
     // Rayhanah Cycle substitution. Check for salawat/istighfar in today's
@@ -283,9 +343,12 @@ async function statsForUser(
     // goal). Coarse fixed windows; friends overwhelmingly share a locale.
     // timezoneOffset is POSITIVE EAST here (frontend sends -getTimezoneOffset())
     const nowUtc = new Date();
-    const localMinutes = (((nowUtc.getUTCHours() * 60 + nowUtc.getUTCMinutes() + timezoneOffset) % 1440) + 1440) % 1440;
+    const localMinutes =
+      (((nowUtc.getUTCHours() * 60 + nowUtc.getUTCMinutes() + timezoneOffset) % 1440) + 1440) %
+      1440;
     const h = localMinutes / 60;
-    const prayersElapsed = h >= 20 ? 5 : h >= 18.5 ? 4 : h >= 16 ? 3 : h >= 12.5 ? 2 : h >= 5 ? 1 : 0;
+    const prayersElapsed =
+      h >= 20 ? 5 : h >= 18.5 ? 4 : h >= 16 ? 3 : h >= 12.5 ? 2 : h >= 5 ? 1 : 0;
     base.salatToday = Math.min(prayersElapsed, Math.round(5 * Math.min(1, score / 100)));
     base.fastedToday = base.zikrGoalMet;
   }
@@ -295,6 +358,7 @@ async function statsForUser(
     uid,
     displayName: user?.displayName || 'Ihsan user',
     ...(photo && /^https?:\/\//.test(photo) ? { photoUrl: photo } : {}),
+    ...(user?.country ? { country: user.country } : {}),
     ...base,
     score,
   };
@@ -321,10 +385,9 @@ export async function getSummary(
     uids.map((uid) => statsForUser(uid, userId, end, timezoneOffset, excused.has(uid)))
   );
 
-  stats.sort((a, b) =>
-    b.score - a.score
-    || b.zikrStreak - a.zikrStreak
-    || a.displayName.localeCompare(b.displayName)
+  stats.sort(
+    (a, b) =>
+      b.score - a.score || b.zikrStreak - a.zikrStreak || a.displayName.localeCompare(b.displayName)
   );
 
   return { inviteCode: profile.inviteCode, leaderboard: stats };
@@ -354,34 +417,45 @@ export async function getNoor(
 
   const excusedIntervals = await getExcusedIntervals(userId);
   const isExcusedDay = (day: string): boolean =>
-    excusedIntervals.some((iv) => iv.start <= day && (iv.end === null ? day <= end : day <= iv.end));
+    excusedIntervals.some(
+      (iv) => iv.start <= day && (iv.end === null ? day <= end : day <= iv.end)
+    );
 
-  const [me, salatLogs, zikrRows, quranLogs, fastLogs, zikrGoalDoc, quranProfile] = await Promise.all([
-    statsForUser(userId, userId, end, timezoneOffset, isExcusedDay(end)),
-    SalatLog.find({ userId, date: { $gte: since, $lte: end } }).select('date prayers'),
-    ZikrDaily.aggregate([
-      { $match: { userId, date: { $gte: new Date(since + 'T00:00:00.000Z') } } },
-      {
-        $group: {
-          _id: '$date',
-          total: { $sum: '$count' },
-          salawat: {
-            $sum: {
-              $cond: [
-                { $regexMatch: { input: '$zikrType', regex: 'salawat|durud|darood|istighfar|astaghfir', options: 'i' } },
-                '$count',
-                0,
-              ],
+  const [me, salatLogs, zikrRows, quranLogs, fastLogs, zikrGoalDoc, quranProfile] =
+    await Promise.all([
+      statsForUser(userId, userId, end, timezoneOffset, isExcusedDay(end)),
+      SalatLog.find({ userId, date: { $gte: since, $lte: end } }).select('date prayers'),
+      ZikrDaily.aggregate([
+        { $match: { userId, date: { $gte: new Date(since + 'T00:00:00.000Z') } } },
+        {
+          $group: {
+            _id: '$date',
+            total: { $sum: '$count' },
+            salawat: {
+              $sum: {
+                $cond: [
+                  {
+                    $regexMatch: {
+                      input: '$zikrType',
+                      regex: 'salawat|durud|darood|istighfar|astaghfir',
+                      options: 'i',
+                    },
+                  },
+                  '$count',
+                  0,
+                ],
+              },
             },
           },
         },
-      },
-    ]) as Promise<Array<{ _id: Date; total: number; salawat: number }>>,
-    QuranLog.find({ userId, date: { $gte: since, $lte: end } }).select('date pages ayat'),
-    FastingLog.find({ userId, status: 'completed', date: { $gte: since, $lte: end } }).select('date'),
-    ZikrGoal.findOne({ userId }),
-    QuranProfile.findOne({ userId }).select('dailyGoalAyat'),
-  ]);
+      ]) as Promise<Array<{ _id: Date; total: number; salawat: number }>>,
+      QuranLog.find({ userId, date: { $gte: since, $lte: end } }).select('date pages ayat'),
+      FastingLog.find({ userId, status: 'completed', date: { $gte: since, $lte: end } }).select(
+        'date'
+      ),
+      ZikrGoal.findOne({ userId }),
+      QuranProfile.findOne({ userId }).select('dailyGoalAyat'),
+    ]);
 
   const zikrGoal = zikrGoalDoc?.dailyTarget ?? 100;
   const quranGoal = quranProfile?.dailyGoalAyat ?? 20;
@@ -403,11 +477,16 @@ export async function getNoor(
     zikrByDay.set(k, (zikrByDay.get(k) ?? 0) + r.total);
     salawatByDay.set(k, (salawatByDay.get(k) ?? 0) + (r.salawat ?? 0));
   }
-  const quranByDay = new Map(quranLogs.map((l) => [l.date, Math.round((l.ayat ?? 0) + (l.pages ?? 0) * 10)]));
+  const quranByDay = new Map(
+    quranLogs.map((l) => [l.date, Math.round((l.ayat ?? 0) + (l.pages ?? 0) * 10)])
+  );
   const fastDays = new Set(fastLogs.map((l) => l.date));
 
   const allDays = new Set<string>([
-    ...salatByDay.keys(), ...zikrByDay.keys(), ...quranByDay.keys(), ...fastDays,
+    ...salatByDay.keys(),
+    ...zikrByDay.keys(),
+    ...quranByDay.keys(),
+    ...fastDays,
   ]);
 
   let allTime = 0;
