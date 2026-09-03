@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import i18n, { LANGUAGES } from '../i18n.js';
 import { useQueryClient } from '@tanstack/react-query';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase.js';
 import api, { API_BASE, getIdToken } from '../lib/api.js';
 import {
   getHijriAdjustment,
@@ -279,6 +281,9 @@ export default function Settings() {
   const [importing, setImporting] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteAccountStep, setDeleteAccountStep] = useState<'idle' | 'confirm' | 'deleting'>(
+    'idle'
+  );
 
   const applyHijriAdj = (days: number) => {
     setHijriAdjustment(days);
@@ -416,6 +421,19 @@ export default function Settings() {
       toast.error('Import failed — the file may be damaged, or the connection dropped.');
     } finally {
       setImporting(false);
+    }
+  };
+
+  // ── Delete account: full GDPR purge + Firebase auth removal ─────────────
+  const runDeleteAccount = async () => {
+    setDeleteAccountStep('deleting');
+    try {
+      await api.delete('/api/user/me');
+      localStorage.removeItem('ihsan_idToken');
+      await signOut(auth);
+    } catch {
+      toast.error('Account deletion failed — please try again or contact support.');
+      setDeleteAccountStep('idle');
     }
   };
 
@@ -746,6 +764,52 @@ export default function Settings() {
               ))}
             </div>
             <p className="text-white/25 text-[10px] mt-3">{t('settings.accountNote')}</p>
+
+            {/* Delete entire account */}
+            <div className="mt-4 rounded-2xl border border-red-500/40 bg-red-900/20 p-4">
+              <p className="text-red-300 font-bold text-sm mb-1">
+                {t('settings.deleteAccount', 'Delete account')}
+              </p>
+              <p className="text-red-300/50 text-[11px] mb-3">
+                {t(
+                  'settings.deleteAccountDetail',
+                  'Permanently removes all your data and your login — this cannot be undone.'
+                )}
+              </p>
+              {deleteAccountStep === 'idle' && (
+                <button
+                  onClick={() => setDeleteAccountStep('confirm')}
+                  className="btn btn-xs bg-red-700/60 hover:bg-red-600 text-red-100 border-0"
+                >
+                  {t('settings.deleteAccount', 'Delete account')}
+                </button>
+              )}
+              {deleteAccountStep === 'confirm' && (
+                <div className="flex gap-2 items-center flex-wrap">
+                  <span className="text-red-300 text-xs">
+                    {t(
+                      'settings.deleteAccountConfirm',
+                      'This will erase everything. Are you sure?'
+                    )}
+                  </span>
+                  <button
+                    onClick={() => void runDeleteAccount()}
+                    className="btn btn-xs bg-red-600 hover:bg-red-700 text-white border-0"
+                  >
+                    {t('settings.yesDeleteAccount', 'Yes, delete my account')}
+                  </button>
+                  <button
+                    onClick={() => setDeleteAccountStep('idle')}
+                    className="btn btn-xs btn-ghost text-white/50"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              )}
+              {deleteAccountStep === 'deleting' && (
+                <span className="loading loading-spinner loading-sm text-red-400" />
+              )}
+            </div>
           </SectionCard>
         </div>
       </div>

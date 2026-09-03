@@ -1,4 +1,19 @@
+import admin from 'firebase-admin';
 import User, { IUser, ILinkedProvider } from '../models/User.js';
+import ZikrDaily from '../models/ZikrDaily.js';
+import ZikrGoal from '../models/ZikrGoal.js';
+import ZikrStreak from '../models/ZikrStreak.js';
+import SalatLog from '../models/SalatLog.js';
+import SalatDebt from '../models/SalatDebt.js';
+import SalatDebtEvent from '../models/SalatDebtEvent.js';
+import FastingLog from '../models/FastingLog.js';
+import FastingProfile from '../models/FastingProfile.js';
+import QuranLog from '../models/QuranLog.js';
+import QuranProfile from '../models/QuranProfile.js';
+import CycleLog from '../models/CycleLog.js';
+import CycleDay from '../models/CycleDay.js';
+import CycleProfile from '../models/CycleProfile.js';
+import SocialProfile from '../models/SocialProfile.js';
 
 // Belt-and-braces: the Zod schema catches invalid photoUrls at the HTTP boundary;
 // this helper protects direct service calls (backup restore, future callers).
@@ -66,6 +81,34 @@ export async function unlinkGoogleProvider(
 
 export async function setPrimaryEmail(uid: string, email: string): Promise<IUser | null> {
   return User.findOneAndUpdate({ uid }, { $set: { primaryEmail: email } }, { new: true });
+}
+
+export async function deleteAccount(uid: string): Promise<void> {
+  await Promise.all([
+    ZikrDaily.deleteMany({ userId: uid }),
+    ZikrGoal.deleteMany({ userId: uid }),
+    ZikrStreak.deleteMany({ userId: uid }),
+    SalatLog.deleteMany({ userId: uid }),
+    SalatDebt.deleteMany({ userId: uid }),
+    SalatDebtEvent.deleteMany({ userId: uid }),
+    FastingLog.deleteMany({ userId: uid }),
+    FastingProfile.deleteMany({ userId: uid }),
+    QuranLog.deleteMany({ userId: uid }),
+    QuranProfile.deleteMany({ userId: uid }),
+    CycleLog.deleteMany({ userId: uid }),
+    CycleDay.deleteMany({ userId: uid }),
+    CycleProfile.deleteMany({ userId: uid }),
+    SocialProfile.deleteMany({ userId: uid }),
+    User.deleteOne({ uid }),
+  ]);
+
+  try {
+    await admin.auth().deleteUser(uid);
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code;
+    // AUTH_USER_NOT_FOUND is fine — Firebase user may have already been deleted
+    if (code !== 'auth/user-not-found') throw err;
+  }
 }
 
 export async function updateUser(uid: string, fields: UserUpdateFields): Promise<IUser | null> {

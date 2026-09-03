@@ -120,6 +120,19 @@ export const setPrimaryEmailHandler = async (
   }
 };
 
+export const deleteAccountHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    await userService.deleteAccount(req.user.uid);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ── Full-account backup & restore (Istiak's spec, v4.9) ─────────────────────
 
 export const exportAllHandler = async (

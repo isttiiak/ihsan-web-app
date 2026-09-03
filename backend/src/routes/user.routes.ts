@@ -35,6 +35,9 @@ router.patch(
   userController.setPrimaryEmailHandler
 );
 
+// GDPR: delete all user data + Firebase auth account
+router.delete('/me', requireAuth, userController.deleteAccountHandler);
+
 // Full-account backup (one JSON of every domain) + merge-restore of that file
 router.get('/export', requireAuth, userController.exportAllHandler);
 // UID-keyed limiter after requireAuth — prevents backup-flood abuse
