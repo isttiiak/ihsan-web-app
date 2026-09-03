@@ -177,7 +177,7 @@ function buildFastingSummary() {
     profile: { qadaOwed: 3, kaffarah: { active: false, targetDays: 0 }, vows: [] },
     qadaCompleted: 7,
     kaffarah: { completed: 0, currentRun: 0, runStale: false },
-    stats: { total: 28, thisMonth: 3, last30: 5, voluntaryTotal: 18 },
+    stats: { total: 28, thisMonth: 3, last30: 5, voluntaryTotal: 18, monThuStreak: 7 },
     recentLogs: [],
   };
 }

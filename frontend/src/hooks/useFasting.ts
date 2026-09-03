@@ -4,7 +4,6 @@ import api from '../lib/api.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import type { FastingCategory, FastingStatus, VoluntaryKind } from '../utils/fastingRules.js';
 
-
 export interface FastingLog {
   _id: string;
   tarawih?: boolean;
@@ -33,7 +32,13 @@ export interface FastingSummary {
   };
   qadaCompleted: number;
   kaffarah: { completed: number; currentRun: number; runStale: boolean };
-  stats: { total: number; thisMonth: number; last30: number; voluntaryTotal: number };
+  stats: {
+    total: number;
+    thisMonth: number;
+    last30: number;
+    voluntaryTotal: number;
+    monThuStreak: number;
+  };
   recentLogs: FastingLog[];
 }
 
@@ -49,7 +54,9 @@ export function useFastingLog(date: string) {
   return useQuery({
     queryKey: ['fasting', 'log', date],
     queryFn: async () => {
-      const { data } = await api.get<{ ok: boolean; log: FastingLog | null }>(`/api/fasting?date=${date}`);
+      const { data } = await api.get<{ ok: boolean; log: FastingLog | null }>(
+        `/api/fasting?date=${date}`
+      );
       return data.log;
     },
     enabled: !!user,
@@ -63,7 +70,9 @@ export function useFastingSummary() {
   return useQuery({
     queryKey: ['fasting', 'summary', today],
     queryFn: async () => {
-      const { data } = await api.get<FastingSummary & { ok: boolean }>(`/api/fasting/summary?today=${today}`);
+      const { data } = await api.get<FastingSummary & { ok: boolean }>(
+        `/api/fasting/summary?today=${today}`
+      );
       return data;
     },
     enabled: !!user,
@@ -110,7 +119,9 @@ export function useUpsertFastingLog() {
     onError: (_e, _v, ctx) => {
       // Roll back AND tell the user — a silent revert looks like a broken button
       if (ctx) qc.setQueryData(ctx.key, ctx.previous);
-      toast.error('Could not save your fast — check your connection and try again.', { id: 'fasting-save' });
+      toast.error('Could not save your fast — check your connection and try again.', {
+        id: 'fasting-save',
+      });
     },
     onSettled: (_d, _e, vars) => {
       void qc.invalidateQueries({ queryKey: ['fasting', 'log', vars.date] });

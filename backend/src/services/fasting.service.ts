@@ -18,6 +18,25 @@ function shiftDateStr(dateStr: string, delta: number): string {
   return dt.toISOString().substring(0, 10);
 }
 
+function computeMonThuStreak(monThuDates: Set<string>, today: string): number {
+  let streak = 0;
+  const d = new Date(today + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() - 1);
+  for (let i = 0; i < 365; i++) {
+    const dow = d.getUTCDay();
+    if (dow === 1 || dow === 4) {
+      const dateStr = d.toISOString().substring(0, 10);
+      if (monThuDates.has(dateStr)) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    d.setUTCDate(d.getUTCDate() - 1);
+  }
+  return streak;
+}
+
 export interface UpsertLogInput {
   date: string;
   category: FastingCategory;
@@ -76,7 +95,11 @@ export async function clearLog(userId: string, date: string): Promise<{ deleted:
   return { deleted: (result.deletedCount ?? 0) > 0 };
 }
 
-export async function getHistory(userId: string, days: number, today?: string): Promise<IFastingLog[]> {
+export async function getHistory(
+  userId: string,
+  days: number,
+  today?: string
+): Promise<IFastingLog[]> {
   const end = today ?? todayDateString();
   const since = shiftDateStr(end, -(days - 1));
   // +1 day past "today" so a logged intention for tomorrow shows up too
@@ -95,7 +118,10 @@ export interface ProfileUpdateInput {
   kaffarah?: { active: boolean; targetDays: number; startDate?: string };
 }
 
-export async function updateProfile(userId: string, input: ProfileUpdateInput): Promise<IFastingProfile> {
+export async function updateProfile(
+  userId: string,
+  input: ProfileUpdateInput
+): Promise<IFastingProfile> {
   const profile = await getOrCreateProfile(userId);
   if (input.qadaOwed !== undefined) profile.qadaOwed = input.qadaOwed;
   if (input.kaffarah !== undefined) {
@@ -109,7 +135,11 @@ export async function updateProfile(userId: string, input: ProfileUpdateInput): 
   return profile;
 }
 
-export async function addVow(userId: string, title: string, targetDays: number): Promise<IFastingProfile> {
+export async function addVow(
+  userId: string,
+  title: string,
+  targetDays: number
+): Promise<IFastingProfile> {
   const profile = await getOrCreateProfile(userId);
   profile.vows.push({ title, targetDays } as never);
   await profile.save();
@@ -143,6 +173,7 @@ export interface FastingSummary {
     thisMonth: number;
     last30: number;
     voluntaryTotal: number;
+    monThuStreak: number;
   };
   /** Last 60 days of logs (plus tomorrow's intention if any) for the calendar strip */
   recentLogs: IFastingLog[];
@@ -162,11 +193,20 @@ export async function getSummary(userId: string, today?: string): Promise<Fastin
     { $set: { status: 'completed' } }
   );
 
-  const [profile, completedLogs, recentLogs] = await Promise.all([
+  const [profile, completedLogs, monThuLogs, recentLogs] = await Promise.all([
     getOrCreateProfile(userId),
-    FastingLog.find({ userId, status: 'completed' }).select('date category vowId').sort({ date: 1 }),
+    FastingLog.find({ userId, status: 'completed' })
+      .select('date category vowId')
+      .sort({ date: 1 }),
+    FastingLog.find({
+      userId,
+      status: 'completed',
+      category: 'voluntary',
+      voluntaryKind: 'mon_thu',
+    }).select('date'),
     getHistory(userId, 60, end),
   ]);
+  const monThuDateSet = new Set(monThuLogs.map((l) => l.date));
 
   let qadaCompleted = 0;
   let voluntaryTotal = 0;
@@ -230,6 +270,7 @@ export async function getSummary(userId: string, today?: string): Promise<Fastin
       thisMonth,
       last30,
       voluntaryTotal,
+      monThuStreak: computeMonThuStreak(monThuDateSet, end),
     },
     recentLogs,
   };
@@ -245,7 +286,10 @@ export type { FastingCategory };
 
 /** Partial deletion (Istiak's unified danger zone): remove one obligation's
  * logs AND its related profile bookkeeping, leaving everything else intact. */
-export async function deleteFastingCategory(userId: string, category: FastingCategory): Promise<{ deletedCount: number }> {
+export async function deleteFastingCategory(
+  userId: string,
+  category: FastingCategory
+): Promise<{ deletedCount: number }> {
   const result = await FastingLog.deleteMany({ userId, category });
   if (category === 'qada') {
     await FastingProfile.updateOne({ userId }, { $set: { qadaOwed: 0 } });
