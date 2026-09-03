@@ -487,6 +487,48 @@ export function useSalatDebtHistory(days = 30) {
   });
 }
 
+export interface JourneyPhase {
+  index: number;
+  from: string;
+  to: string | null;
+  days: number;
+  done: number;
+  missed: number;
+  kaza: number;
+  completionRate: number;
+  resetNote: string | null;
+}
+
+export function useSalatJourney(today?: string) {
+  const user = useAuthStore((s) => s.user);
+  const todayParam = today ?? localTodayStr();
+  return useQuery({
+    queryKey: ['salat', 'journey', todayParam],
+    queryFn: async () => {
+      const { data } = await api.get<{ ok: boolean; phases: JourneyPhase[] }>(
+        `/api/salat/journey?today=${todayParam}`
+      );
+      return data.phases;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useResetSalat() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { today: string; note?: string }) => {
+      const { data } = await api.post<{ ok: boolean; resetDate: string }>('/api/salat/reset', vars);
+      return data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['salat', 'analytics'] });
+      void qc.invalidateQueries({ queryKey: ['salat', 'journey'] });
+    },
+  });
+}
+
 export function useSalatAnalytics(days = 30, todayOverride?: string) {
   const user = useAuthStore((s) => s.user);
   const todayParam = todayOverride ?? localTodayStr();

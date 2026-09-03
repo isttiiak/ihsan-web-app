@@ -452,6 +452,65 @@ export async function getSalatAnalytics(
   };
 }
 
+export interface JourneyPhase {
+  index: number;
+  from: string; // inclusive start date (YYYY-MM-DD)
+  to: string | null; // inclusive end date, null = ongoing
+  days: number;
+  done: number; // completed + kaza
+  missed: number;
+  kaza: number;
+  completionRate: number;
+  resetNote: string | null;
+}
+
+export async function getSalatJourney(
+  userId: string,
+  userCreatedAt: Date,
+  resetHistory: Array<{ date: string; note: string }>,
+  today: string
+): Promise<JourneyPhase[]> {
+  const accountStart = userCreatedAt.toISOString().substring(0, 10);
+
+  // Build phase windows: [accountStart, r0), [r0, r1), …, [rN, today]
+  const resets = [...resetHistory].sort((a, b) => a.date.localeCompare(b.date));
+  const boundaries: string[] = [accountStart, ...resets.map((r) => r.date)];
+
+  const phases: JourneyPhase[] = [];
+  for (let i = 0; i < boundaries.length; i++) {
+    const from = boundaries[i]!;
+    const to = i < boundaries.length - 1 ? shiftDateStr(boundaries[i + 1]!, -1) : null;
+    const phaseEnd = to ?? today;
+    if (from > today) continue; // skip future phases
+
+    const dayCount = Math.max(
+      0,
+      Math.round(
+        (new Date(phaseEnd + 'T12:00:00').getTime() - new Date(from + 'T12:00:00').getTime()) /
+          86_400_000
+      ) + 1
+    );
+
+    // Reuse existing analytics — pass `from` as the resetDate so it acts as cutoff
+    const stats = await getSalatAnalytics(userId, Math.max(1, dayCount), phaseEnd, from);
+    const resetNote = i < resets.length ? resets[i]!.note || null : null;
+
+    phases.push({
+      index: i,
+      from,
+      to,
+      days: stats.totalDays,
+      done: stats.prayedTotal,
+      missed: stats.missedCount,
+      kaza: stats.kazaCount,
+      completionRate: stats.completionRate,
+      resetNote,
+    });
+  }
+
+  return phases.reverse(); // newest first
+}
+
 export async function deleteAllUserSalatLogs(userId: string): Promise<{ deletedCount: number }> {
   const result = await SalatLog.deleteMany({ userId });
   await salatDebtService.deleteDebt(userId);

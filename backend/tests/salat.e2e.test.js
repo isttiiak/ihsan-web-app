@@ -175,4 +175,34 @@ describe('Salat API', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.logs ?? res.body.calendar)).toBe(true);
   });
+
+  test('GET /journey returns phase list; POST /reset appends a phase with note', async () => {
+    const token6 = fakeJwt({ uid: 'sal6', email: 'sal6@test.dev', name: 'Sal6' });
+    const auth6 = (r) => r.set('Authorization', `Bearer ${token6}`);
+
+    // Ensure user exists
+    await auth6(request(app).post('/api/auth/verify').send({ token: token6 }));
+
+    // Journey with no resets: one phase from account creation
+    const j1 = await auth6(request(app).get(`/api/salat/journey?today=${today}`));
+    expect(j1.status).toBe(200);
+    expect(Array.isArray(j1.body.phases)).toBe(true);
+    expect(j1.body.phases.length).toBe(1);
+    expect(j1.body.phases[0].to).toBeNull(); // current phase
+
+    // Reset with a note
+    const reset = await auth6(
+      request(app).post('/api/salat/reset').send({ today, note: 'Fresh start' })
+    );
+    expect(reset.status).toBe(200);
+    expect(reset.body.resetDate).toBe(today);
+
+    // Journey should now have two phases (current + pre-reset)
+    const j2 = await auth6(request(app).get(`/api/salat/journey?today=${today}`));
+    expect(j2.status).toBe(200);
+    // Current phase (newest) is first; pre-reset phase has a resetNote
+    expect(j2.body.phases[0].to).toBeNull(); // current
+    const closedPhase = j2.body.phases.find((p) => p.to !== null);
+    expect(closedPhase?.resetNote).toBe('Fresh start');
+  });
 });

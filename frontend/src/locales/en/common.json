@@ -1557,7 +1557,16 @@
     "mosqueTrendHint": "Weekly mosque attendance rate — the share of completed/kaza fard prayers prayed at the mosque, week by week.",
     "tasbeehStat": "{{count}} tasbeeh",
     "title": "Salat Analytics",
-    "totalSummary": "{{days}} days · {{total}} total prayers"
+    "totalSummary": "{{days}} days · {{total}} total prayers",
+    "viewStats": "Stats",
+    "viewJourney": "Journey",
+    "journeyEmpty": "Start tracking your prayers to see your journey here.",
+    "journeyReset": "Reset",
+    "journeyCurrent": "Current journey",
+    "journeyPhase": "Phase {{n}}",
+    "journeyNow": "now",
+    "journeyDays": "{{n}} days",
+    "journeyNote": "Missed includes prayers left unmarked on past days."
   },
   "salatSettings": {
     "asrDesc": "Madhabs differ on when ʿAṣr begins. Because Ẓuhr lasts until ʿAṣr starts, this moves both. Follow your local mosque.",

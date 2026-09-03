@@ -12,6 +12,12 @@ export interface ILinkedProvider {
   providerUid: string; // Google's sub-UID
 }
 
+export interface ISalatResetEntry {
+  date: string; // YYYY-MM-DD — first day of the new phase
+  note: string;
+  resetAt: Date;
+}
+
 export interface IUser extends Document {
   uid: string;
   email: string;
@@ -30,6 +36,7 @@ export interface IUser extends Document {
   hijriOffset: number;
   aiEnabled: boolean;
   salatResetDate?: string;
+  salatResetHistory: ISalatResetEntry[];
   totalCount: number;
   zikrTotals: Map<string, number>;
   zikrTypes: mongoose.Types.DocumentArray<IZikrTypeItem & Document>;
@@ -69,6 +76,16 @@ const userSchema = new Schema(
     hijriOffset: { type: Number, default: 0, min: -1, max: 1 },
     aiEnabled: { type: Boolean, default: false },
     salatResetDate: { type: String, default: undefined },
+    salatResetHistory: {
+      type: [
+        {
+          date: { type: String, required: true },
+          note: { type: String, default: '' },
+          resetAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
     totalCount: { type: Number, default: 0 },
     zikrTotals: { type: Map, of: Number, default: {} },
     zikrTypes: {
