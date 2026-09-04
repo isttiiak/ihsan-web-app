@@ -12,6 +12,7 @@ import { useCycleActive } from '../hooks/useCycle.js';
 import ExcusedCard from '../components/ExcusedCard.js';
 import FastingCompanion from '../components/ai/FastingCompanion.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
+import Seo from '../components/Seo.js';
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -441,6 +442,11 @@ export default function FastingTracker() {
 
   return (
     <AnimatedBackground variant="dark">
+      <Seo
+        title="Fasting Tracker — Ramadan, Qada & Voluntary Sawm"
+        description="Log obligatory, qada (makeup) and voluntary fasts with a fiqh-aware calendar, streaks and progress stats. Track your Ramadan and Sunnah fasting in one place."
+        path="/fasting"
+      />
       <h1 className="sr-only">{t('fasting.title', 'Fasting Tracker')}</h1>
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-xl mx-auto space-y-4">

@@ -44,6 +44,7 @@ import { useFastingHistory, useUpsertFastingLog } from '../hooks/useFasting.js';
 import ExcusedCard from '../components/ExcusedCard.js';
 import SalatSettings from '../components/SalatSettings.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
+import Seo from '../components/Seo.js';
 import { useZikrStore } from '../store/useZikrStore.js';
 import {
   getTasbihMode,
@@ -612,6 +613,11 @@ export default function SalatTracker() {
 
   return (
     <AnimatedBackground variant="dark">
+      <Seo
+        title="Salat Tracker — Log Your 5 Daily Prayers"
+        description="Track Fajr, Dhuhr, Asr, Maghrib and Isha with on-time/late/kaza logging, Jumu'ah tracking, streaks and automatic missed-prayer (kaza) debt accrual."
+        path="/salat"
+      />
       {/* ── Tab navigation ── */}
       <h1 className="sr-only">{t('salatTracker.title', 'Salat Tracker')}</h1>
       <div className="px-4 pt-3 pb-0 flex items-center gap-2">

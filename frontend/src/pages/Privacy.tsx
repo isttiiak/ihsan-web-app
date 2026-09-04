@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import Seo from '../components/Seo.js';
 
 const SECTION_KEYS = [
   { emoji: '📥', key: 'whatWeStore', bodyCount: 4 },
@@ -24,11 +25,19 @@ export default function Privacy() {
 
   return (
     <AnimatedBackground variant="dark">
+      <Seo
+        title="Privacy Policy"
+        description="How Ihsan stores and protects your data: what we collect, what stays on your device, what friends can see, and your control over deletion."
+        path="/privacy"
+      />
       <h1 className="sr-only">{t('privacy.srTitle')}</h1>
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto space-y-4 pb-10">
-
-          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="text-center py-6 space-y-2">
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-6 space-y-2"
+          >
             <p className="text-5xl">🔒</p>
             <h2 className="text-3xl font-black text-white">{t('privacy.heading')}</h2>
             <p className="text-white/40 text-sm max-w-md mx-auto leading-relaxed">
@@ -40,25 +49,42 @@ export default function Privacy() {
           {sections.map((s, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 + i * 0.05 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.06 + i * 0.05 }}
               className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-5"
             >
-              <p className="text-white font-bold text-sm mb-2">{s.emoji} {s.title}</p>
+              <p className="text-white font-bold text-sm mb-2">
+                {s.emoji} {s.title}
+              </p>
               <ul className="space-y-1.5">
                 {s.body.map((line, j) => (
-                  <li key={j} className="text-white/40 text-xs leading-relaxed pl-3 border-l-2 border-brand-emerald/10">{line}</li>
+                  <li
+                    key={j}
+                    className="text-white/40 text-xs leading-relaxed pl-3 border-l-2 border-brand-emerald/10"
+                  >
+                    {line}
+                  </li>
                 ))}
               </ul>
             </motion.div>
           ))}
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-            className="text-center pt-4 space-y-2">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-center pt-4 space-y-2"
+          >
             <p className="text-white/40 text-xs">
               {t('privacy.contactText')}{' '}
-              <a href="mailto:isttiiak@gmail.com" className="text-brand-emerald underline">isttiiak@gmail.com</a>
+              <a href="mailto:isttiiak@gmail.com" className="text-brand-emerald underline">
+                isttiiak@gmail.com
+              </a>
             </p>
-            <Link to="/about" className="text-white/30 text-xs underline hover:text-white/60">{t('privacy.aboutLink')}</Link>
+            <Link to="/about" className="text-white/30 text-xs underline hover:text-white/60">
+              {t('privacy.aboutLink')}
+            </Link>
           </motion.div>
         </div>
       </div>

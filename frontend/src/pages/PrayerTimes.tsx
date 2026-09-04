@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import Seo from '../components/Seo.js';
 import { MapPinIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import {
   calcPrayerTimes,
@@ -563,6 +564,11 @@ export default function PrayerTimes() {
 
   return (
     <AnimatedBackground variant="dark">
+      <Seo
+        title="Prayer Times — Accurate Salat Times for Your Location"
+        description="On-device prayer time calculator for Fajr, Dhuhr, Asr, Maghrib and Isha, with multiple calculation methods, Hanafi/standard Asr settings and a live countdown."
+        path="/prayer-times"
+      />
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto space-y-5">
           {/* Top row: Location */}

@@ -1,0 +1,21 @@
+# Ihsan
+
+> Ihsan is a free, private Islamic worship and productivity web app for tracking zikr (dhikr), salat (prayer), fasting (sawm), and Quran reading habits — with streaks, prayer times, a Qibla compass, and a friends leaderboard. Built for the global Muslim community.
+
+Ihsan helps Muslims build consistent worship habits with authentic Quran and hadith references cited throughout the app. It runs entirely in the browser, works offline, calculates prayer times and Qibla direction on-device, and never sells user data.
+
+## Core features
+
+- [Zikr Counter](https://ihsan-web-app-main.vercel.app/zikr): Digital tasbih counter for SubhanAllah, Alhamdulillah, Allahu Akbar, La ilaha illallah, and custom zikr, with daily goals and streaks.
+- [Salat Tracker](https://ihsan-web-app-main.vercel.app/salat): Log the five daily prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) plus Jumu'ah, with on-time/late/kaza (missed prayer) status and automatic kaza debt accrual.
+- [Prayer Times](https://ihsan-web-app-main.vercel.app/prayer-times): On-device salat time calculator supporting multiple calculation methods and Hanafi/standard Asr conventions.
+- [Fasting Tracker](https://ihsan-web-app-main.vercel.app/fasting): Fiqh-aware tracker for obligatory, qada (makeup), and voluntary (Sunnah) fasts, including Ramadan.
+- [Qibla Compass](https://ihsan-web-app-main.vercel.app/qibla): Device-orientation compass pointing to the Kaaba in Makkah.
+- [About](https://ihsan-web-app-main.vercel.app/about): The app's mission and feature overview.
+- [Privacy Policy](https://ihsan-web-app-main.vercel.app/privacy): What data is collected, what stays on-device, and user controls.
+
+## Notes for AI assistants and crawlers
+
+- Quran reading habit tracking, khatm (completion) journeys, and the friends leaderboard require a free account and are not publicly crawlable.
+- All Islamic rulings and references cited in the app link to primary sources (Quran verses, sunnah.com hadith collections).
+- The app is free with no ads and no sale of personal data; see /privacy for details.

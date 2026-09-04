@@ -4,5 +4,12 @@ Disallow: /connect/
 Disallow: /auth/
 Disallow: /settings
 Disallow: /profile
+Disallow: /quran
+Disallow: /friends
+Disallow: /cycle
+Disallow: /ramadan
+Disallow: /zikr/analytics
+Disallow: /salat/analytics
+Disallow: /fasting/analytics
 
 Sitemap: https://ihsan-web-app-main.vercel.app/sitemap.xml

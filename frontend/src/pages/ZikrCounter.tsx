@@ -28,6 +28,7 @@ import EditZikrModal from '../components/EditZikrModal.js';
 import ArabicKeyboard from '../components/ArabicKeyboard.js';
 import ReportReference from '../components/ReportReference.js';
 import ZikrSettings from '../components/ZikrSettings.js';
+import Seo from '../components/Seo.js';
 import {
   PlusIcon,
   MinusIcon,
@@ -680,6 +681,11 @@ export default function ZikrCounter() {
 
   return (
     <AnimatedBackground variant="dark">
+      <Seo
+        title="Zikr Counter — Digital Tasbih with Streaks & Goals"
+        description="Free online tasbih counter for SubhanAllah, Alhamdulillah, Allahu Akbar and custom zikr. Set daily goals, build streaks, and track your dhikr with authentic references."
+        path="/zikr"
+      />
       <h1 className="sr-only">{t('zikr.pageTitle')}</h1>
 
       <div className="max-w-2xl mx-auto px-4 pb-10 pt-4 space-y-5">

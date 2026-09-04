@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { translateReference } from '../utils/localeReference.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import Seo from '../components/Seo.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 
 const fadeUp = {
@@ -80,6 +81,11 @@ export default function Landing() {
 
   return (
     <AnimatedBackground variant="dark">
+      <Seo
+        title="Ihsan — Muslim Worship & Productivity Tracker"
+        description="Track your zikr, salat, fasting and Quran reading — with authentic references, streaks, prayer times and a friends leaderboard. Free, private, and built for the Muslim community."
+        path="/"
+      />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-20">
         {/* ── Hero ── */}
         <section className="text-center pt-14 sm:pt-20 pb-10">
