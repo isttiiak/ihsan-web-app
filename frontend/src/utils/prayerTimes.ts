@@ -29,22 +29,46 @@ export interface PrayerInfo {
 }
 
 export const PRAYER_META: PrayerInfo[] = [
-  { id: 'fajr',    name: 'Fajr',    icon: '🌅', isTrackable: true },
+  { id: 'fajr', name: 'Fajr', icon: '🌅', isTrackable: true },
   { id: 'sunrise', name: 'Sunrise', icon: '🌄', isTrackable: false },
-  { id: 'dhuhr',   name: 'Dhuhr',   icon: '☀️', isTrackable: true },
-  { id: 'asr',     name: 'Asr',     icon: '🌤️', isTrackable: true },
+  { id: 'dhuhr', name: 'Dhuhr', icon: '☀️', isTrackable: true },
+  { id: 'asr', name: 'Asr', icon: '🌤️', isTrackable: true },
   { id: 'maghrib', name: 'Maghrib', icon: '🌆', isTrackable: true },
-  { id: 'isha',    name: 'Isha',    icon: '🌙', isTrackable: true },
+  { id: 'isha', name: 'Isha', icon: '🌙', isTrackable: true },
 ];
 
-export function calcPrayerTimes(lat: number, lng: number, date: Date = new Date()): PrayerTimesResult {
+/**
+ * adhan.js reads the calendar day off the Date object using LOCAL getters
+ * (getFullYear/getMonth/getDate) — i.e. the device's own timezone, not the
+ * coordinates passed alongside it. For a saved location far from the
+ * device's actual timezone (e.g. a Bangladeshi phone with a Los Angeles
+ * location set), that silently computes prayer times for the wrong
+ * calendar day, producing nonsensical times (Fajr in the evening, etc).
+ * We approximate the location's own calendar day from its longitude
+ * (15° ≈ 1 hour) and shift the instant so the device's local getters read
+ * that day instead. This is a longitude-based approximation (no DST/political
+ * timezone-boundary awareness) but is far more correct than using the
+ * device's calendar day outright.
+ */
+function calendarDateAtLocation(lng: number, date: Date): Date {
+  const targetOffsetMin = Math.round(lng / 15) * 60;
+  const systemOffsetMin = -date.getTimezoneOffset();
+  const shiftMin = targetOffsetMin - systemOffsetMin;
+  return new Date(date.getTime() + shiftMin * 60_000);
+}
+
+export function calcPrayerTimes(
+  lat: number,
+  lng: number,
+  date: Date = new Date()
+): PrayerTimesResult {
   const coords = new adhan.Coordinates(lat, lng);
   const params = adhan.CalculationMethod.MoonsightingCommittee(); // worldwide-friendly
   // ʿAṣr (and therefore the end of Ẓuhr) differs by school — see
   // utils/salatPrefs.ts. Read per call so a settings change takes effect on
   // the next minute tick without a reload.
   if (getAsrMadhab() === 'hanafi') params.madhab = adhan.Madhab.Hanafi;
-  const times = new adhan.PrayerTimes(coords, date, params);
+  const times = new adhan.PrayerTimes(coords, calendarDateAtLocation(lng, date), params);
   // sunset: adhan exposes it; fall back to maghrib if missing
   const sunset: Date = (times as unknown as { sunset?: Date }).sunset ?? times.maghrib;
   return {
@@ -93,19 +117,35 @@ export function getForbiddenWindows(times: PrayerTimesResult): ForbiddenWindow[]
 
 export function formatTime(date: Date): string {
   const lang = (i18n.language || 'en').split('-')[0]!;
-  return date.toLocaleTimeString(lang === 'bn' ? 'bn' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  return date.toLocaleTimeString(lang === 'bn' ? 'bn' : 'en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
 }
 
 /** English display name → `salatNames.*` locale key, for names that don't
  * carry their own `id` field (NaflWindow below). */
 const SALAT_NAME_TO_KEY: Record<string, string> = {
-  Fajr: 'fajr', Sunrise: 'sunrise', Dhuhr: 'dhuhr', Asr: 'asr', Maghrib: 'maghrib', Isha: 'isha',
-  Tahajjud: 'tahajjud', Ishraq: 'ishraq', Dhuha: 'duha', Awabeen: 'awwabin',
+  Fajr: 'fajr',
+  Sunrise: 'sunrise',
+  Dhuhr: 'dhuhr',
+  Asr: 'asr',
+  Maghrib: 'maghrib',
+  Isha: 'isha',
+  Tahajjud: 'tahajjud',
+  Ishraq: 'ishraq',
+  Dhuha: 'duha',
+  Awabeen: 'awwabin',
 };
 
 /** Translate a salat/nafl id (or English display name, via lookup) through
  * the `salatNames.*` namespace, falling back to the given English text. */
-export function translateSalatName(idOrName: string, fallback: string, t: (key: string, fallback: string) => string): string {
+export function translateSalatName(
+  idOrName: string,
+  fallback: string,
+  t: (key: string, fallback: string) => string
+): string {
   const key = SALAT_NAME_TO_KEY[idOrName] ?? idOrName;
   return t(`salatNames.${key}`, fallback);
 }
@@ -126,7 +166,10 @@ export interface NaflWindow {
  *  3. Dhuha    — 45 min after sunrise until 15 min before Dhuhr
  *  4. Awabeen  — after Maghrib until Isha
  */
-export function getCurrentNaflWindow(times: PrayerTimesResult, now: Date = new Date()): NaflWindow | null {
+export function getCurrentNaflWindow(
+  times: PrayerTimesResult,
+  now: Date = new Date()
+): NaflWindow | null {
   const MIN = 60_000;
   const { fajr, sunrise, dhuhr, maghrib, isha } = times;
 
@@ -146,20 +189,26 @@ export function getCurrentNaflWindow(times: PrayerTimesResult, now: Date = new D
     const nightDuration = nextDayFajr.getTime() - isha.getTime();
     const tahajjudStart = new Date(isha.getTime() + (2 / 3) * nightDuration);
     if (now >= tahajjudStart) {
-      return { id: 'tahajjud', name: 'Tahajjud', icon: '🌙', start: tahajjudStart, end: nextDayFajr };
+      return {
+        id: 'tahajjud',
+        name: 'Tahajjud',
+        icon: '🌙',
+        start: tahajjudStart,
+        end: nextDayFajr,
+      };
     }
   }
 
   // Ishraq: 20–45 min after sunrise
   const ishraakStart = new Date(sunrise.getTime() + 20 * MIN);
-  const ishraakEnd   = new Date(sunrise.getTime() + 45 * MIN);
+  const ishraakEnd = new Date(sunrise.getTime() + 45 * MIN);
   if (now >= ishraakStart && now < ishraakEnd) {
     return { id: 'ishraq', name: 'Ishraq', icon: '🌅', start: ishraakStart, end: ishraakEnd };
   }
 
   // Dhuha: 45 min after sunrise → 15 min before Dhuhr
   const dhuhaStart = new Date(sunrise.getTime() + 45 * MIN);
-  const dhuhaEnd   = new Date(dhuhr.getTime() - 15 * MIN);
+  const dhuhaEnd = new Date(dhuhr.getTime() - 15 * MIN);
   if (now >= dhuhaStart && now < dhuhaEnd) {
     return { id: 'duha', name: 'Dhuha', icon: '☀️', start: dhuhaStart, end: dhuhaEnd };
   }
@@ -179,16 +228,21 @@ export function getCurrentNaflWindow(times: PrayerTimesResult, now: Date = new D
 export function getPrayerEndTime(prayer: PrayerKey, times: PrayerTimesResult): Date {
   const MIN = 60_000;
   switch (prayer) {
-    case 'fajr':    return times.sunrise;
-    case 'dhuhr':   return times.asr;
-    case 'asr':     return new Date(times.sunset.getTime() - 17 * MIN);
-    case 'maghrib': return times.isha;
+    case 'fajr':
+      return times.sunrise;
+    case 'dhuhr':
+      return times.asr;
+    case 'asr':
+      return new Date(times.sunset.getTime() - 17 * MIN);
+    case 'maghrib':
+      return times.isha;
     case 'isha': {
       const nextFajr = new Date(times.fajr.getTime() + 86_400_000);
       // Best to complete before midnight (midpoint between Isha & next Fajr)
       return new Date((times.isha.getTime() + nextFajr.getTime()) / 2);
     }
-    default: return times.fajr;
+    default:
+      return times.fajr;
   }
 }
 
@@ -197,22 +251,25 @@ function getCurrentMandatoryPeriod(times: PrayerTimesResult, now: Date): PrayerK
   // Before today's Fajr → we are in last night's Isha period (valid until Fajr)
   if (now < times.fajr) return 'isha';
   const asrEnd = getPrayerEndTime('asr', times);
-  if (now >= times.fajr    && now < times.sunrise) return 'fajr';
-  if (now >= times.dhuhr   && now < times.asr)     return 'dhuhr';
-  if (now >= times.asr     && now < asrEnd)         return 'asr';
-  if (now >= times.maghrib && now < times.isha)     return 'maghrib';
-  if (now >= times.isha)                            return 'isha';
+  if (now >= times.fajr && now < times.sunrise) return 'fajr';
+  if (now >= times.dhuhr && now < times.asr) return 'dhuhr';
+  if (now >= times.asr && now < asrEnd) return 'asr';
+  if (now >= times.maghrib && now < times.isha) return 'maghrib';
+  if (now >= times.isha) return 'isha';
   return null;
 }
 
 /** Next mandatory prayer (fajr/dhuhr/asr/maghrib/isha), wraps to tomorrow's fajr */
-function getNextMandatoryPrayer(times: PrayerTimesResult, now: Date): { id: PrayerKey; time: Date } {
+function getNextMandatoryPrayer(
+  times: PrayerTimesResult,
+  now: Date
+): { id: PrayerKey; time: Date } {
   const ordered: { id: PrayerKey; time: Date }[] = [
-    { id: 'fajr',    time: times.fajr },
-    { id: 'dhuhr',   time: times.dhuhr },
-    { id: 'asr',     time: times.asr },
+    { id: 'fajr', time: times.fajr },
+    { id: 'dhuhr', time: times.dhuhr },
+    { id: 'asr', time: times.asr },
     { id: 'maghrib', time: times.maghrib },
-    { id: 'isha',    time: times.isha },
+    { id: 'isha', time: times.isha },
   ];
   for (const p of ordered) {
     if (now < p.time) return p;
@@ -221,30 +278,37 @@ function getNextMandatoryPrayer(times: PrayerTimesResult, now: Date): { id: Pray
 }
 
 export interface MandatoryWidgetData {
-  forbiddenWindow:     ForbiddenWindow | null;
-  currentMandatory:    PrayerKey | null;
+  forbiddenWindow: ForbiddenWindow | null;
+  currentMandatory: PrayerKey | null;
   currentMandatoryEnd: Date | null;
-  naflWindow:          NaflWindow | null;
-  nextMandatory:       PrayerKey;
-  nextMandatoryTime:   Date;
-  nextHh: number; nextMm: number; nextSs: number;
+  naflWindow: NaflWindow | null;
+  nextMandatory: PrayerKey;
+  nextMandatoryTime: Date;
+  nextHh: number;
+  nextMm: number;
+  nextSs: number;
 }
 
 /** All data needed by the compact prayer widget on the Home page */
-export function getMandatoryWidget(times: PrayerTimesResult, now: Date = new Date()): MandatoryWidgetData {
-  const forbidden       = getForbiddenWindows(times);
+export function getMandatoryWidget(
+  times: PrayerTimesResult,
+  now: Date = new Date()
+): MandatoryWidgetData {
+  const forbidden = getForbiddenWindows(times);
   const forbiddenWindow = forbidden.find((w) => now >= w.start && now < w.end) ?? null;
 
-  const currentMandatory    = getCurrentMandatoryPeriod(times, now);
+  const currentMandatory = getCurrentMandatoryPeriod(times, now);
   // Before Fajr we are in last night's Isha — it ends at today's Fajr, not at
   // tonight's Islamic midnight (which getPrayerEndTime would compute).
   const currentMandatoryEnd = currentMandatory
-    ? (currentMandatory === 'isha' && now < times.fajr ? times.fajr : getPrayerEndTime(currentMandatory, times))
+    ? currentMandatory === 'isha' && now < times.fajr
+      ? times.fajr
+      : getPrayerEndTime(currentMandatory, times)
     : null;
-  const naflWindow          = getCurrentNaflWindow(times, now);
+  const naflWindow = getCurrentNaflWindow(times, now);
 
-  const next     = getNextMandatoryPrayer(times, now);
-  const ms       = Math.max(0, next.time.getTime() - now.getTime());
+  const next = getNextMandatoryPrayer(times, now);
+  const ms = Math.max(0, next.time.getTime() - now.getTime());
   const totalSec = Math.floor(ms / 1000);
 
   return {
@@ -252,7 +316,7 @@ export function getMandatoryWidget(times: PrayerTimesResult, now: Date = new Dat
     currentMandatory,
     currentMandatoryEnd,
     naflWindow,
-    nextMandatory:     next.id,
+    nextMandatory: next.id,
     nextMandatoryTime: next.time,
     nextHh: Math.floor(totalSec / 3600),
     nextMm: Math.floor((totalSec % 3600) / 60),
@@ -263,12 +327,12 @@ export function getMandatoryWidget(times: PrayerTimesResult, now: Date = new Dat
 /** Returns the current prayer period and the next upcoming prayer */
 export function getCurrentAndNextPrayer(times: PrayerTimesResult, now: Date = new Date()) {
   const ordered: { id: PrayerKey; time: Date }[] = [
-    { id: 'fajr',    time: times.fajr },
+    { id: 'fajr', time: times.fajr },
     { id: 'sunrise', time: times.sunrise },
-    { id: 'dhuhr',   time: times.dhuhr },
-    { id: 'asr',     time: times.asr },
+    { id: 'dhuhr', time: times.dhuhr },
+    { id: 'asr', time: times.asr },
     { id: 'maghrib', time: times.maghrib },
-    { id: 'isha',    time: times.isha },
+    { id: 'isha', time: times.isha },
   ];
 
   let current: PrayerKey = 'isha'; // default: after isha, still "isha time"
@@ -287,9 +351,10 @@ export function getCurrentAndNextPrayer(times: PrayerTimesResult, now: Date = ne
     }
   }
 
-  const next = nextIdx === -1
-    ? { id: 'fajr' as PrayerKey, time: new Date(times.fajr.getTime() + 86400_000) }
-    : ordered[nextIdx];
+  const next =
+    nextIdx === -1
+      ? { id: 'fajr' as PrayerKey, time: new Date(times.fajr.getTime() + 86400_000) }
+      : ordered[nextIdx];
 
   const msUntilNext = next.time.getTime() - now.getTime();
   const totalSec = Math.max(0, Math.floor(msUntilNext / 1000));
