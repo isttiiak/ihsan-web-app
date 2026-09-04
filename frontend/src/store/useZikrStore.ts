@@ -115,7 +115,7 @@ export const useZikrStore = create<ZikrState>()(
       renameType: (oldName, newName) =>
         set((s) => {
           const types = s.types.map((t) => (t === oldName ? newName : t));
-          const move = <T,>(rec: Record<string, T>): Record<string, T> => {
+          const move = <T>(rec: Record<string, T>): Record<string, T> => {
             if (!(oldName in rec)) return rec;
             const next = { ...rec };
             const v = next[oldName];
@@ -160,7 +160,7 @@ export const useZikrStore = create<ZikrState>()(
             { headers: { Authorization: `Bearer ${idToken}` } }
           );
           if (!res.ok) return;
-          const data = await res.json() as {
+          const data = (await res.json()) as {
             totalCount?: number;
             perType?: Array<{ zikrType: string; total: number }>;
             types?: Array<{ name: string } | string>;
@@ -220,7 +220,10 @@ export const useZikrStore = create<ZikrState>()(
           if (current <= 0) return {};
           return {
             counts: { ...s.counts, [type]: current - 1 },
-            lifetimeTotals: { ...s.lifetimeTotals, [type]: Math.max(0, (s.lifetimeTotals[type] ?? 0) - 1) },
+            lifetimeTotals: {
+              ...s.lifetimeTotals,
+              [type]: Math.max(0, (s.lifetimeTotals[type] ?? 0) - 1),
+            },
             // Pending may go NEGATIVE — that's how a decrement of an
             // already-flushed count reaches the server (clamping at 0 here
             // silently dropped the minus button's effect on the DB).
@@ -289,6 +292,11 @@ export const useZikrStore = create<ZikrState>()(
         const entries = Object.entries(snapshot).filter(([, a]) => a !== 0);
         if (!entries.length) return;
 
+        // Offline: don't burn a failed request — pending stays queued
+        // (already durable via the debounced localStorage persist) and the
+        // App-level `online` listener replays it the moment we reconnect.
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+
         const idToken = await getIdToken();
         if (!idToken) return;
 
@@ -309,7 +317,11 @@ export const useZikrStore = create<ZikrState>()(
           const res = await fetch(`${API_BASE}/api/zikr/increment/batch`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-            body: JSON.stringify({ increments: payload, timezoneOffset: resolvedOffset, today: getTrackingDay() }),
+            body: JSON.stringify({
+              increments: payload,
+              timezoneOffset: resolvedOffset,
+              today: getTrackingDay(),
+            }),
           });
 
           if (!res.ok) {

@@ -268,6 +268,16 @@ export default function App() {
     };
   }, [checkAndResetIfNewDay]);
 
+  // Offline sync: zikr taps made while offline stay queued in `pending`
+  // (persisted to localStorage, so a reload doesn't lose them either) — this
+  // listener replays them the moment the connection comes back, instead of
+  // waiting for the user's next tap to trigger a flush.
+  useEffect(() => {
+    const onOnline = () => void useZikrStore.getState().flush();
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, []);
+
   useEffect(() => {
     checkAndResetIfNewDay();
   }, [checkAndResetIfNewDay, location.pathname]);
