@@ -91,6 +91,7 @@
   "authSignIn": {
     "backToSignIn": "Back to sign in",
     "checkEmail": "Check your email",
+    "continueWithApple": "Continue with Apple",
     "continueWithGoogle": "Continue with Google",
     "didntReceive": "Didn't receive it? Check your spam folder or try again.",
     "email": "Email",
@@ -149,6 +150,7 @@
     "passwordPlaceholder": "Create a strong password",
     "passwordStrengthLabel": "{{strength}} password",
     "sending": "Sending…",
+    "signUpWithApple": "Sign up with Apple",
     "signUpWithGoogle": "Sign up with Google",
     "sister": "Sister",
     "strengthFair": "Fair",

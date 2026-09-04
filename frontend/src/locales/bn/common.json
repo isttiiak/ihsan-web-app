@@ -91,6 +91,7 @@
   "authSignIn": {
     "backToSignIn": "সাইন ইনে ফিরে যান",
     "checkEmail": "আপনার ইমেইল দেখুন",
+    "continueWithApple": "Apple দিয়ে চালিয়ে যান",
     "continueWithGoogle": "Google দিয়ে চালিয়ে যান",
     "didntReceive": "পাননি? স্প্যাম ফোল্ডার দেখুন অথবা আবার চেষ্টা করুন।",
     "email": "ইমেইল",
@@ -149,6 +150,7 @@
     "passwordPlaceholder": "একটি শক্তিশালী পাসওয়ার্ড তৈরি করুন",
     "passwordStrengthLabel": "{{strength}} পাসওয়ার্ড",
     "sending": "পাঠানো হচ্ছে…",
+    "signUpWithApple": "Apple দিয়ে সাইন আপ করুন",
     "signUpWithGoogle": "Google দিয়ে সাইন আপ করুন",
     "sister": "বোন",
     "strengthFair": "মোটামুটি",
