@@ -61,6 +61,15 @@ export const setSalatDebtSchema = z.object({
   }),
 });
 
+export const resetSalatDebtSchema = z.object({
+  body: z.object({
+    today: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+  }),
+});
+
 export const salatDebtHistorySchema = z.object({
   query: z.object({
     days: z.coerce.number().int().positive().max(365).default(30),

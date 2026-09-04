@@ -2,6 +2,15 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../src/app.js';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import SalatDebtModel from '../src/models/SalatDebt.js';
+import SalatLogModel from '../src/models/SalatLog.js';
+
+const shiftDateStr = (dateStr, delta) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + delta);
+  return dt.toISOString().substring(0, 10);
+};
 
 const fakeJwt = (payload) => {
   const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
@@ -204,5 +213,78 @@ describe('Salat API', () => {
     expect(j2.body.phases[0].to).toBeNull(); // current
     const closedPhase = j2.body.phases.find((p) => p.to !== null);
     expect(closedPhase?.resetNote).toBe('Fresh start');
+  });
+
+  test('ensureCaughtUp auto-marks past pending prayers as missed and accrues debt', async () => {
+    const token7 = fakeJwt({ uid: 'sal7', email: 'sal7@test.dev', name: 'Sal7' });
+    const auth7 = (r) => r.set('Authorization', `Bearer ${token7}`);
+    await request(app).post('/api/auth/verify').send({ idToken: token7 });
+
+    const yesterday = shiftDateStr(today, -1);
+    const twoDaysAgo = shiftDateStr(today, -2);
+    const threeDaysAgo = shiftDateStr(today, -3);
+
+    // Simulate a debt doc that was last swept 3 days ago — so twoDaysAgo and
+    // yesterday still need catching up, threeDaysAgo does not.
+    await SalatDebtModel.create({
+      userId: 'sal7',
+      owed: {},
+      since: threeDaysAgo,
+      lastAccrualDate: threeDaysAgo,
+    });
+
+    // twoDaysAgo: fajr was prayed, the other 4 fards were left pending.
+    // yesterday: no log row at all (never opened the app) — all 5 pending.
+    await SalatLogModel.create({
+      userId: 'sal7',
+      date: twoDaysAgo,
+      prayers: { fajr: { status: 'completed' } },
+    });
+
+    const debtRes = await auth7(request(app).get('/api/salat/debt'));
+    expect(debtRes.status).toBe(200);
+    expect(debtRes.body.owed.fajr).toBe(1); // only yesterday's unlogged day
+    expect(debtRes.body.owed.dhuhr).toBe(2);
+    expect(debtRes.body.owed.asr).toBe(2);
+    expect(debtRes.body.owed.maghrib).toBe(2);
+    expect(debtRes.body.owed.isha).toBe(2);
+    expect(debtRes.body.totalOwed).toBe(9);
+    expect(debtRes.body.since).toBe(threeDaysAgo);
+
+    // The existing log's pending prayers are now persisted as 'missed';
+    // fajr (already completed) is untouched.
+    const logDoc = await SalatLogModel.findOne({ userId: 'sal7', date: twoDaysAgo });
+    expect(logDoc.prayers.dhuhr.status).toBe('missed');
+    expect(logDoc.prayers.fajr.status).toBe('completed');
+
+    // A day with no log at all stays lazy — no row gets created for it.
+    const yesterdayLog = await SalatLogModel.findOne({ userId: 'sal7', date: yesterday });
+    expect(yesterdayLog).toBeNull();
+
+    // Idempotent: a second read must not double-count the same days.
+    const debtRes2 = await auth7(request(app).get('/api/salat/debt'));
+    expect(debtRes2.body.owed.fajr).toBe(1);
+    expect(debtRes2.body.totalOwed).toBe(9);
+  });
+
+  test('POST /debt/reset zeroes debt and restarts the counting period', async () => {
+    const token8 = fakeJwt({ uid: 'sal8', email: 'sal8@test.dev', name: 'Sal8' });
+    const auth8 = (r) => r.set('Authorization', `Bearer ${token8}`);
+    await request(app).post('/api/auth/verify').send({ idToken: token8 });
+
+    await auth8(
+      request(app).patch('/api/salat/debt/adjust').send({ prayer: 'fajr', delta: 5, date: today })
+    );
+    const before = await auth8(request(app).get('/api/salat/debt'));
+    expect(before.body.owed.fajr).toBe(5);
+
+    const reset = await auth8(request(app).post('/api/salat/debt/reset').send({ today }));
+    expect(reset.status).toBe(200);
+    expect(reset.body.totalOwed).toBe(0);
+    expect(reset.body.since).toBe(today);
+
+    const after = await auth8(request(app).get('/api/salat/debt'));
+    expect(after.body.totalOwed).toBe(0);
+    expect(after.body.since).toBe(today);
   });
 });

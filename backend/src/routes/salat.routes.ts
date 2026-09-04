@@ -8,6 +8,7 @@ import {
   salatHistorySchema,
   adjustSalatDebtSchema,
   setSalatDebtSchema,
+  resetSalatDebtSchema,
   salatDebtHistorySchema,
   resetSalatSchema,
 } from '../validation/salat.schemas.js';
@@ -41,6 +42,8 @@ router.patch(
 );
 // PATCH /api/salat/debt/set — absolute set (initial estimate from before tracking)
 router.patch('/debt/set', requireAuth, validate(setSalatDebtSchema), salatController.setDebt);
+// POST /api/salat/debt/reset — zero the running debt and start counting fresh from today
+router.post('/debt/reset', requireAuth, validate(resetSalatDebtSchema), salatController.resetDebt);
 // GET /api/salat/debt/history — weekly accumulation-vs-payback buckets for the chart
 router.get(
   '/debt/history',

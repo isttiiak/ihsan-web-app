@@ -21,8 +21,8 @@ import {
   useUpdateNafl,
   useSalatAnalytics,
   useSalatDebt,
-  useAdjustSalatDebt,
   useSetSalatDebt,
+  useResetSalatDebt,
   PrayerId,
   PrayerStatus,
   PrayerLocation,
@@ -43,6 +43,7 @@ import { useCycleActive } from '../hooks/useCycle.js';
 import { useFastingHistory, useUpsertFastingLog } from '../hooks/useFasting.js';
 import ExcusedCard from '../components/ExcusedCard.js';
 import SalatSettings from '../components/SalatSettings.js';
+import ConfirmDialog from '../components/ConfirmDialog.js';
 import { useZikrStore } from '../store/useZikrStore.js';
 import {
   getTasbihMode,
@@ -294,31 +295,50 @@ export default function SalatTracker() {
   const [naflInfoExpanded, setNaflInfoExpanded] = useState<NaflType | null>(null);
   const [rakatOverrides, setRakatOverrides] = useState<Record<string, number>>({});
 
-  // Kaza debt — auto-tracked from explicit 'missed' taps, adjustable by hand
-  // for debt owed from before the user started tracking.
+  // Kaza debt — fully automatic: a day that passes with a prayer still
+  // pending is folded into these counters server-side (see ensureCaughtUp in
+  // salatDebt.service.ts), no manual ❌ Miss tap required. One plain number
+  // field per prayer stays as the correction path — for debt owed from
+  // before tracking started, or to hand-correct after a reset — instead of
+  // separate +/- steppers, so there's exactly one way to change a count.
+  // "Reset" gives a demotivated user a clean slate without losing history.
   const { data: debt } = useSalatDebt();
-  const adjustDebt = useAdjustSalatDebt();
   const setDebtExact = useSetSalatDebt();
+  const resetDebt = useResetSalatDebt();
   const [debtExpanded, setDebtExpanded] = useState(false);
-  const [editingDebtPrayer, setEditingDebtPrayer] = useState<PrayerId | null>(null);
-  const [editingDebtValue, setEditingDebtValue] = useState('');
+  const [debtDrafts, setDebtDrafts] = useState<Partial<Record<PrayerId, string>>>({});
+  const [confirmDebtReset, setConfirmDebtReset] = useState(false);
 
-  const handleDebtAdjust = (prayer: PrayerId, delta: number) => {
+  const commitDebtEdit = (prayer: PrayerId, rawValue: string) => {
+    setDebtDrafts((d) => {
+      const next = { ...d };
+      delete next[prayer];
+      return next;
+    });
+    const current = debt?.owed[prayer] ?? 0;
+    const count = Math.max(0, Math.min(9999, parseInt(rawValue, 10) || 0));
+    if (count === current) return; // no real change — don't spam a request
     if (!user) {
       setShowGuestDialog(true);
       return;
     }
-    adjustDebt.mutate({ prayer, delta, date: todayStr() });
+    setDebtExact.mutate({ prayer, count, date: todayStr() });
   };
-  const openDebtEditor = (prayer: PrayerId, current: number) => {
-    setEditingDebtPrayer(prayer);
-    setEditingDebtValue(String(current));
-  };
-  const saveDebtEditor = () => {
-    if (!editingDebtPrayer) return;
-    const count = Math.max(0, Math.min(9999, parseInt(editingDebtValue, 10) || 0));
-    setDebtExact.mutate({ prayer: editingDebtPrayer, count, date: todayStr() });
-    setEditingDebtPrayer(null);
+  const handleDebtReset = () => {
+    resetDebt.mutate(
+      { today: todayStr() },
+      {
+        onSuccess: () => {
+          toast.success(
+            t('salatTracker.kazaDebtResetDone', 'Kaza debt reset — counting fresh from today'),
+            { icon: '🌱' }
+          );
+        },
+        onError: () =>
+          toast.error(t('salatTracker.kazaDebtResetFail', 'Could not reset — try again')),
+      }
+    );
+    setConfirmDebtReset(false);
   };
 
   const naflEntry = log?.nafl ?? { completed: false, types: [], rakat: 2 };
@@ -1603,6 +1623,14 @@ export default function SalatTracker() {
                                 count: debt?.totalOwed ?? 0,
                               })
                             : t('salatTracker.kazaDebtNone', 'Nothing owed — MashaAllah')}
+                          {debt?.since && (
+                            <span className="text-white/15">
+                              {' · '}
+                              {t('salatTracker.kazaDebtSince', 'since {{date}}', {
+                                date: friendlyDate(debt.since, t),
+                              })}
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -1626,13 +1654,13 @@ export default function SalatTracker() {
                           <p className="text-white/30 text-[11px] leading-relaxed">
                             {t(
                               'salatTracker.kazaDebtHint',
-                              'Tap ❌ Miss on a prayer above to add it here automatically. Owe some from before you started tracking? Set a starting count for each below.'
+                              "Added automatically once a prayer's day passes without it being logged — no need to tap ❌ Miss yourself. Owe some from before you started tracking? Set a starting count for each below."
                             )}
                           </p>
                           {trackablePrayers.map((prayer) => {
                             const prayerId = prayer.id as PrayerId;
                             const owed = debt?.owed[prayerId] ?? 0;
-                            const isEditing = editingDebtPrayer === prayerId;
+                            const draft = debtDrafts[prayerId];
                             return (
                               <div
                                 key={prayerId}
@@ -1642,64 +1670,75 @@ export default function SalatTracker() {
                                 <span className="text-white/60 text-xs font-semibold flex-1 min-w-0 truncate">
                                   {translateSalatName(prayer.id, prayer.name, t)}
                                 </span>
-                                {isEditing ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <input
-                                      type="number"
-                                      inputMode="numeric"
-                                      min={0}
-                                      max={9999}
-                                      autoFocus
-                                      value={editingDebtValue}
-                                      onChange={(e) => setEditingDebtValue(e.target.value)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') saveDebtEditor();
-                                        if (e.key === 'Escape') setEditingDebtPrayer(null);
-                                      }}
-                                      className="w-16 px-2 py-1 rounded-lg bg-brand-deep border border-brand-gold/40 text-white text-xs text-center"
-                                    />
-                                    <button
-                                      onClick={saveDebtEditor}
-                                      className="px-2 py-1 rounded-lg bg-brand-gold text-white text-[11px] font-bold"
-                                    >
-                                      {t('salatTracker.kazaDebtSave', 'Save')}
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-1.5 shrink-0">
-                                    <button
-                                      onClick={() => handleDebtAdjust(prayerId, -1)}
-                                      disabled={owed <= 0}
-                                      title={t('salatTracker.kazaDebtPaidBack', 'Prayed one back')}
-                                      className="w-6 h-6 rounded-md bg-brand-deep border border-brand-border text-white/50 font-bold text-sm flex items-center justify-center disabled:opacity-20 hover:border-brand-gold/40 transition-all"
-                                    >
-                                      −
-                                    </button>
-                                    <button
-                                      onClick={() => openDebtEditor(prayerId, owed)}
-                                      className="w-9 text-center text-brand-gold font-black text-sm tabular-nums"
-                                      title={t('salatTracker.kazaDebtSetCount', 'Set exact count')}
-                                    >
-                                      {formatLocaleNumber(owed)}
-                                    </button>
-                                    <button
-                                      onClick={() => handleDebtAdjust(prayerId, 1)}
-                                      title={t('salatTracker.kazaDebtAddOwed', 'Add one owed')}
-                                      className="w-6 h-6 rounded-md bg-brand-deep border border-brand-border text-white/50 font-bold text-sm flex items-center justify-center hover:border-brand-gold/40 transition-all"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
-                                )}
+                                <input
+                                  type="number"
+                                  inputMode="numeric"
+                                  min={0}
+                                  max={9999}
+                                  value={draft ?? String(owed)}
+                                  title={t('salatTracker.kazaDebtSetCount', 'Set exact count')}
+                                  onChange={(e) =>
+                                    setDebtDrafts((d) => ({ ...d, [prayerId]: e.target.value }))
+                                  }
+                                  onBlur={(e) => commitDebtEdit(prayerId, e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') e.currentTarget.blur();
+                                    if (e.key === 'Escape') {
+                                      setDebtDrafts((d) => {
+                                        const next = { ...d };
+                                        delete next[prayerId];
+                                        return next;
+                                      });
+                                      e.currentTarget.blur();
+                                    }
+                                  }}
+                                  className={`w-14 px-2 py-1 rounded-lg bg-brand-deep border text-xs text-center font-bold tabular-nums ${
+                                    owed > 0
+                                      ? 'border-brand-gold/40 text-brand-gold'
+                                      : 'border-brand-border text-white/50'
+                                  }`}
+                                />
                               </div>
                             );
                           })}
+                          {(debt?.totalOwed ?? 0) > 0 && (
+                            <div className="pt-2.5 mt-1 border-t border-brand-emerald/5">
+                              <p className="text-white/25 text-[11px] leading-relaxed mb-2">
+                                {t(
+                                  'salatTracker.kazaDebtResetHint',
+                                  "Fallen behind for a while? A running total can feel discouraging rather than useful — reset it and count fresh from today. Your prayer history isn't affected, and you can always add debt back above if you need to."
+                                )}
+                              </p>
+                              <button
+                                onClick={() => setConfirmDebtReset(true)}
+                                className="btn btn-xs border border-brand-gold/25 bg-brand-gold/5 text-brand-gold/80 hover:bg-brand-gold/15 gap-1"
+                              >
+                                🌱 {t('salatTracker.kazaDebtReset', 'Reset kaza debt')}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </motion.div>
               )}
+
+              <ConfirmDialog
+                open={confirmDebtReset}
+                title={t('salatTracker.kazaDebtResetConfirmTitle', 'Reset kaza debt?')}
+                message={t(
+                  'salatTracker.kazaDebtResetConfirmMsg',
+                  'All prayers owed will be set to 0 and counting restarts from today. Nothing is deleted — your logged prayers stay as they are, and you can add debt back by hand afterward if you need to.'
+                )}
+                confirmLabel={
+                  resetDebt.isPending
+                    ? t('salatTracker.kazaDebtResetting', 'Resetting…')
+                    : t('salatTracker.kazaDebtResetConfirm', 'Yes, start fresh')
+                }
+                onConfirm={handleDebtReset}
+                onCancel={() => setConfirmDebtReset(false)}
+              />
 
               {/* Legend */}
               <div className="card bg-brand-surface border border-brand-border rounded-2xl">

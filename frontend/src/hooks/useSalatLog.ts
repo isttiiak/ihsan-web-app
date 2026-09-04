@@ -422,6 +422,9 @@ export function useUpdateNafl() {
 export interface SalatDebt {
   owed: Record<PrayerId, number>;
   totalOwed: number;
+  /** Civil date (YYYY-MM-DD) the current counting period started, or null
+   * for a user with no debt doc yet. */
+  since: string | null;
 }
 
 export function useSalatDebt() {
@@ -470,6 +473,20 @@ export interface SalatDebtHistoryWeek {
   weekEnd: string;
   accumulated: number;
   paidBack: number;
+}
+
+export function useResetSalatDebt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { today?: string }) => {
+      const { data } = await api.post<SalatDebt & { ok: boolean }>('/api/salat/debt/reset', vars);
+      return data;
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(['salat', 'debt'], data);
+      void qc.invalidateQueries({ queryKey: ['salat', 'debtHistory'] });
+    },
+  });
 }
 
 export function useSalatDebtHistory(days = 30) {
