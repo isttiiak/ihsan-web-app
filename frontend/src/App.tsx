@@ -31,6 +31,7 @@ const SalatAnalytics = lazy(() => import('./pages/SalatAnalytics.js'));
 const FastingTracker = lazy(() => import('./pages/FastingTracker.js'));
 const FastingAnalytics = lazy(() => import('./pages/FastingAnalytics.js'));
 const PrayerTimes = lazy(() => import('./pages/PrayerTimes.js'));
+const QiblaCompass = lazy(() => import('./pages/QiblaCompass.js'));
 const QuranHabit = lazy(() => import('./pages/QuranHabit.js'));
 const IslamicSpecialDay = lazy(() => import('./pages/IslamicSpecialDay.js'));
 const Friends = lazy(() => import('./pages/Friends.js'));
@@ -427,7 +428,15 @@ export default function App() {
 
   const { authLoading } = useAuthStore();
   const isAuthPage = ['/login', '/signup', '/auth/action'].includes(location.pathname);
-  const noFooterPrefixes = ['/zikr', '/salat', '/fasting', '/prayer-times', '/quran', '/friends'];
+  const noFooterPrefixes = [
+    '/zikr',
+    '/salat',
+    '/fasting',
+    '/prayer-times',
+    '/qibla',
+    '/quran',
+    '/friends',
+  ];
   const showFooter =
     !isAuthPage &&
     !noFooterPrefixes.some((p) => location.pathname === p || location.pathname.startsWith(p + '/'));
@@ -473,6 +482,7 @@ export default function App() {
                   }
                 />
                 <Route path="/prayer-times" element={<PrayerTimes />} />
+                <Route path="/qibla" element={<QiblaCompass />} />
                 <Route
                   path="/quran"
                   element={

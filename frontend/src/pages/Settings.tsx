@@ -260,10 +260,12 @@ export default function Settings() {
     highContrast,
     showNoorAllTime,
     showNoorToday,
+    vibrationEnabled,
     setReduceMotion,
     setHighContrast,
     setShowNoorAllTime,
     setShowNoorToday,
+    setVibrationEnabled,
   } = useUiStore();
   const queryClient = useQueryClient();
 
@@ -582,6 +584,12 @@ export default function Settings() {
                 title={t('settings.highContrast')}
                 detail={t('settings.highContrastDetail')}
                 accent="toggle-warning"
+              />
+              <Toggle
+                checked={vibrationEnabled}
+                onChange={setVibrationEnabled}
+                title={t('settings.vibration')}
+                detail={t('settings.vibrationDetail')}
               />
             </div>
           </SectionCard>

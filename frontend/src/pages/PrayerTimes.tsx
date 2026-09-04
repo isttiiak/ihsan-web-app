@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
@@ -565,7 +566,13 @@ export default function PrayerTimes() {
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto space-y-5">
           {/* Top row: Location */}
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <Link
+              to="/qibla"
+              className="btn btn-xs bg-brand-surface border border-brand-border text-white/50 hover:text-brand-emerald shrink-0"
+            >
+              🧭 {t('qibla.title', 'Qibla Compass')}
+            </Link>
             <div className="flex items-center gap-2 min-w-0">
               {location && (
                 <div className="flex items-center gap-1.5 text-white/50 text-xs min-w-0">

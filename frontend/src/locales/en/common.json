@@ -802,6 +802,7 @@
     "myProfile": "My Profile",
     "prayerTimes": "Prayer Times",
     "privacy": "Privacy",
+    "qibla": "Qibla Compass",
     "quranHabit": "Quran Habit",
     "rayhanahCycle": "Rayhanah Cycle",
     "salatAnalytics": "Salat Analytics",
@@ -1005,6 +1006,19 @@
     "uploadedNotSaved": "Uploaded but could not save — click \"Save Changes\" to retry.",
     "useGooglePhoto": "Use Google Account Photo",
     "useThisPhoto": "Use This Photo"
+  },
+  "qibla": {
+    "bearingLabel": "Qibla is {{deg}}° from true North",
+    "enableCompass": "Enable compass",
+    "geoFailed": "Could not get your location — allow location access and try again",
+    "geoUnsupported": "Geolocation is not supported on this device",
+    "locating": "Locating…",
+    "needLocation": "Set your location to find the Qibla direction.",
+    "noSensor": "No compass sensor detected — this works best on a mobile phone. Use the angle above with a physical compass instead.",
+    "refreshLocation": "Refresh my location",
+    "subtitle": "Point your phone flat and turn until the Kaaba marker points straight up.",
+    "title": "Qibla Compass",
+    "useLocation": "Use my location"
   },
   "quran": {
     "analytics": "Analytics",
@@ -1743,6 +1757,8 @@
     "restoreBackup": "Restore backup",
     "subtitle": "Everything under your control",
     "title": "Settings",
+    "vibration": "Vibration feedback",
+    "vibrationDetail": "Haptic pulse on each zikr tap (supported mobile browsers)",
     "yesDoIt": "Yes, do it",
     "zikrLibrary": "Zikr library",
     "zikrLibrarySubtitle": "Ṣalawāt, istighfār, the weighty words — verified adhkār to add to your counter"
