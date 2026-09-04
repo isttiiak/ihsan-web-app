@@ -68,8 +68,26 @@ jobs:
 
       - name: Audit backend (production deps, high+)
         working-directory: backend
-        run: npm audit --production --audit-level=high
+        run: |
+          for attempt in 1 2 3; do
+            npm audit --production --audit-level=high && exit 0
+            if [ "$attempt" -lt 3 ]; then
+              echo "npm audit failed, retrying in 15s (attempt $((attempt + 1))/3)..."
+              sleep 15
+            fi
+          done
+          echo "npm audit failed after 3 attempts."
+          exit 1
 
       - name: Audit frontend (production deps, high+)
         working-directory: frontend
-        run: npm audit --production --audit-level=high
+        run: |
+          for attempt in 1 2 3; do
+            npm audit --production --audit-level=high && exit 0
+            if [ "$attempt" -lt 3 ]; then
+              echo "npm audit failed, retrying in 15s (attempt $((attempt + 1))/3)..."
+              sleep 15
+            fi
+          done
+          echo "npm audit failed after 3 attempts."
+          exit 1
