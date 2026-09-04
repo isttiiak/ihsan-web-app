@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import ZikrDaily from '../models/ZikrDaily.js';
+import ZikrEvent from '../models/ZikrEvent.js';
 import {
   truncateToTimezone,
   bucketDateForDayString,
@@ -28,10 +29,11 @@ async function applyIncrements(
 ): Promise<IncrementResult> {
   const userInc: Record<string, number> = {};
   const newTypeNames = new Set<string>();
+  const events: { userId: string; zikrType: string; amount: number; ts: Date }[] = [];
   let totalAdded = 0;
 
   for (const item of increments) {
-    const { zikrType, amount = 1, ts } = item;
+    const { zikrType, amount = 1, ts, realTs } = item;
     if (!zikrType || !Number.isFinite(amount) || amount === 0) continue;
 
     const date = truncateToTimezone(ts ?? Date.now(), timezoneOffset);
@@ -66,11 +68,21 @@ async function applyIncrements(
       userInc[`zikrTotals.${zikrType}`] = (userInc[`zikrTotals.${zikrType}`] ?? 0) + applied;
       totalAdded += applied;
     }
-    if (amount > 0) newTypeNames.add(zikrType);
+    if (amount > 0) {
+      newTypeNames.add(zikrType);
+      // Log the real tap moment for time-of-day/session analytics — `ts`
+      // above is anchored to the tracking day's midday and can't tell us when
+      // during the day this actually happened.
+      events.push({ userId, zikrType, amount, ts: new Date(realTs ?? ts ?? Date.now()) });
+    }
   }
 
   if (totalAdded !== 0 || Object.keys(userInc).length) {
     await User.updateOne({ uid: userId }, { $inc: { ...userInc, totalCount: totalAdded } });
+  }
+  if (events.length) {
+    // Best-effort — never let analytics logging fail the actual increment.
+    await ZikrEvent.insertMany(events).catch(() => {});
   }
 
   const user = await User.findOne({ uid: userId }).select(ZIKR_PROJECTION);
@@ -97,9 +109,10 @@ export async function incrementZikr(
   zikrType: string,
   amount: number,
   timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET,
-  ts?: number
+  ts?: number,
+  realTs?: number
 ): Promise<IncrementResult> {
-  return applyIncrements(userId, [{ zikrType, amount, ts }], timezoneOffset);
+  return applyIncrements(userId, [{ zikrType, amount, ts, realTs }], timezoneOffset);
 }
 
 export async function batchIncrementZikr(
@@ -151,6 +164,91 @@ export async function getZikrSummary(
     types: user.zikrTypes,
     today: { total: todayTotal, perType: todayPerType },
   };
+}
+
+function offsetToUtcTzString(offsetMinutes: number): string {
+  const sign = offsetMinutes >= 0 ? '+' : '-';
+  const abs = Math.abs(offsetMinutes);
+  const hh = String(Math.floor(abs / 60)).padStart(2, '0');
+  const mm = String(abs % 60).padStart(2, '0');
+  return `${sign}${hh}:${mm}`;
+}
+
+/** Total counts by local hour-of-day (0-23) over the last `days` — "when
+ * during the day do I count most?". Only positive taps are logged as events. */
+export async function getTimeOfDayDistribution(
+  userId: string,
+  days: number = 30,
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+): Promise<Array<{ hour: number; total: number }>> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const rows = (await ZikrEvent.aggregate([
+    { $match: { userId, ts: { $gte: since } } },
+    {
+      $group: {
+        _id: { $hour: { date: '$ts', timezone: offsetToUtcTzString(timezoneOffset) } },
+        total: { $sum: '$amount' },
+      },
+    },
+  ])) as Array<{ _id: number; total: number }>;
+
+  const hours = Array.from({ length: 24 }, (_, hour) => ({ hour, total: 0 }));
+  for (const r of rows) {
+    if (r._id >= 0 && r._id < 24) hours[r._id]!.total = r.total;
+  }
+  return hours;
+}
+
+const SESSION_GAP_MS = 20 * 60 * 1000; // a 20-min quiet gap starts a new session
+
+export interface ZikrSession {
+  start: Date;
+  end: Date;
+  total: number;
+  perType: Record<string, number>;
+}
+
+/** Groups the day's raw taps into sessions (a run of taps with no gap longer
+ * than SESSION_GAP_MS) — "what did I count, and when, today?". `date` is the
+ * LOCAL CIVIL day (midnight-to-midnight in `timezoneOffset`), not the
+ * Fajr-anchored tracking day ZikrDaily uses — a calendar-date picker is the
+ * expected UI for this, so civil days are the intuitive boundary here. */
+export async function getSessionsForDay(
+  userId: string,
+  dateStr: string,
+  timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
+): Promise<ZikrSession[]> {
+  // NOTE: bucketDateForDayString's anchor is a symbolic bucket KEY (chosen so
+  // its ISO date part equals dateStr), not a real "local midnight" instant —
+  // wrong tool for range-filtering raw timestamps. Compute the actual UTC
+  // instant of local midnight directly instead.
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  if (!m) return [];
+  const [, y, mo, d] = m;
+  const start = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d)) - timezoneOffset * 60_000);
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+
+  const events = await ZikrEvent.find({ userId, ts: { $gte: start, $lt: end } })
+    .sort({ ts: 1 })
+    .select('zikrType amount ts');
+
+  const sessions: ZikrSession[] = [];
+  let current: ZikrSession | null = null;
+  let lastTs = 0;
+
+  for (const e of events) {
+    const t = e.ts.getTime();
+    if (!current || t - lastTs > SESSION_GAP_MS) {
+      current = { start: e.ts, end: e.ts, total: 0, perType: {} };
+      sessions.push(current);
+    }
+    current.end = e.ts;
+    current.total += e.amount;
+    current.perType[e.zikrType] = (current.perType[e.zikrType] ?? 0) + e.amount;
+    lastTs = t;
+  }
+
+  return sessions;
 }
 
 export async function getZikrTypes(userId: string): Promise<unknown[]> {

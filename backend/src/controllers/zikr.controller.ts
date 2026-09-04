@@ -3,19 +3,38 @@ import * as zikrService from '../services/zikr.service.js';
 import * as streakService from '../services/streak.service.js';
 import { DEFAULT_TIMEZONE_OFFSET } from '../utils/timezone-flexible.js';
 
-export const incrementHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const incrementHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const userId = req.user.uid;
-    const { zikrType, amount = 1, ts, timezoneOffset, today } = req.body as {
+    const {
+      zikrType,
+      amount = 1,
+      ts,
+      realTs,
+      timezoneOffset,
+      today,
+    } = req.body as {
       zikrType: string;
       amount?: number;
       ts?: number;
+      realTs?: number;
       timezoneOffset?: number;
       today?: string;
     };
 
     const userOffset = timezoneOffset ?? DEFAULT_TIMEZONE_OFFSET;
-    const result = await zikrService.incrementZikr(userId, zikrType, amount, userOffset, ts);
+    const result = await zikrService.incrementZikr(
+      userId,
+      zikrType,
+      amount,
+      userOffset,
+      ts,
+      realTs
+    );
     const streakResult = await streakService.checkAndUpdateStreak(userId, userOffset, today);
 
     res.json({
@@ -30,11 +49,15 @@ export const incrementHandler = async (req: Request, res: Response, next: NextFu
   }
 };
 
-export const batchIncrementHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const batchIncrementHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const userId = req.user.uid;
     const { increments, timezoneOffset, today } = req.body as {
-      increments: Array<{ zikrType: string; amount?: number; ts?: number }>;
+      increments: Array<{ zikrType: string; amount?: number; ts?: number; realTs?: number }>;
       timezoneOffset?: number;
       today?: string;
     };
@@ -55,7 +78,11 @@ export const batchIncrementHandler = async (req: Request, res: Response, next: N
   }
 };
 
-export const getSummaryHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getSummaryHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const rawOffset = Number(req.query.timezoneOffset);
     const timezoneOffset = Number.isFinite(rawOffset) ? rawOffset : undefined;
@@ -67,7 +94,43 @@ export const getSummaryHandler = async (req: Request, res: Response, next: NextF
   }
 };
 
-export const getTypesHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getTimeOfDayHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const days = req.query.days !== undefined ? Number(req.query.days) : undefined;
+    const timezoneOffset =
+      req.query.timezoneOffset !== undefined ? Number(req.query.timezoneOffset) : undefined;
+    const hours = await zikrService.getTimeOfDayDistribution(req.user.uid, days, timezoneOffset);
+    res.json({ ok: true, hours });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getSessionsHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const date = req.query.date as string;
+    const timezoneOffset =
+      req.query.timezoneOffset !== undefined ? Number(req.query.timezoneOffset) : undefined;
+    const sessions = await zikrService.getSessionsForDay(req.user.uid, date, timezoneOffset);
+    res.json({ ok: true, sessions });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getTypesHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const types = await zikrService.getZikrTypes(req.user.uid);
     res.json({ ok: true, types });
@@ -76,7 +139,11 @@ export const getTypesHandler = async (req: Request, res: Response, next: NextFun
   }
 };
 
-export const addTypeHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const addTypeHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { name } = req.body as { name: string };
     const types = await zikrService.addZikrType(req.user.uid, name.trim());
@@ -85,7 +152,11 @@ export const addTypeHandler = async (req: Request, res: Response, next: NextFunc
     next(err);
   }
 };
-export const renameTypeHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const renameTypeHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { oldName, newName } = req.body as { oldName: string; newName: string };
     const types = await zikrService.renameZikrType(req.user.uid, oldName, newName);
@@ -100,11 +171,18 @@ export const renameTypeHandler = async (req: Request, res: Response, next: NextF
   }
 };
 
-export const removeTypeHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const removeTypeHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const rawName = req.params.name;
     const name = decodeURIComponent((Array.isArray(rawName) ? rawName[0] : rawName) ?? '').trim();
-    if (!name) { res.status(400).json({ ok: false, error: 'Name required' }); return; }
+    if (!name) {
+      res.status(400).json({ ok: false, error: 'Name required' });
+      return;
+    }
     const types = await zikrService.removeZikrType(req.user.uid, name);
     res.json({ ok: true, types });
   } catch (err) {
@@ -112,7 +190,11 @@ export const removeTypeHandler = async (req: Request, res: Response, next: NextF
   }
 };
 
-export const deleteAllZikrData = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const deleteAllZikrData = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     await zikrService.deleteAllUserZikrData(req.user.uid);
     res.json({ ok: true });
@@ -121,7 +203,11 @@ export const deleteAllZikrData = async (req: Request, res: Response, next: NextF
   }
 };
 
-export const resetZikrCounters = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const resetZikrCounters = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     await zikrService.resetZikrCounters(req.user.uid);
     res.json({ ok: true });

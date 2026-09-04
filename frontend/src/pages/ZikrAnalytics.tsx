@@ -12,11 +12,14 @@ import { ChartBarIcon, PlusCircleIcon, XMarkIcon } from '@heroicons/react/24/out
 import StreakCard from '../components/analytics/StreakCard.js';
 import GoalCard from '../components/analytics/GoalCard.js';
 import TrendChart from '../components/analytics/TrendChart.js';
+import TimeOfDayChart from '../components/analytics/TimeOfDayChart.js';
 import {
   useAnalytics,
   useUpdateGoal,
   usePauseStreak,
   useResumeStreak,
+  useZikrTimeOfDay,
+  useZikrSessions,
 } from '../hooks/useAnalytics.js';
 import { useZikrTypes, useAddZikrType } from '../hooks/useZikrTypes.js';
 import { useZikrStore } from '../store/useZikrStore.js';
@@ -26,7 +29,7 @@ import { formatLocaleNumber } from '../utils/localeDate.js';
 import api from '../lib/api.js';
 import { getUserTimezoneOffset } from '../utils/timezone.js';
 import { getTrackingDay, getTrackingDayMiddayTs } from '../utils/trackingDay.js';
-import { formatLocaleDate } from '../utils/localeDate.js';
+import { formatLocaleDate, formatLocaleTime } from '../utils/localeDate.js';
 
 // ─── Manual Entry Modal ───────────────────────────────────────────────────────
 
@@ -758,10 +761,13 @@ export default function ZikrAnalytics() {
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [newGoal, setNewGoal] = useState(100);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [sessionsDate, setSessionsDate] = useState(() => getTrackingDay());
 
   const { counts: localCounts } = useZikrStore();
   const { data: analyticsData, isLoading, isError, error, refetch } = useAnalytics(selectedPeriod);
   const { data: yearData } = useAnalytics(365);
+  const { data: timeOfDayData } = useZikrTimeOfDay(30);
+  const { data: sessionsData, isLoading: sessionsLoading } = useZikrSessions(sessionsDate);
   const updateGoal = useUpdateGoal();
   const pauseStreak = usePauseStreak();
   const resumeStreak = useResumeStreak();
@@ -1074,6 +1080,18 @@ export default function ZikrAnalytics() {
             );
           })()}
 
+          {/* ── Time of day ───────────────────────────────────────────────────── */}
+          <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 sm:p-5 space-y-3">
+            <h2 className="text-white font-black text-sm flex items-center gap-2">
+              <ChartBarIcon className="w-4 h-4 text-brand-gold" />
+              {t('zikrAnalytics.timeOfDay.title', 'Time of day')}
+              <span className="text-white/25 text-[10px] font-normal">
+                {t('zikrAnalytics.timeOfDay.subtitle', 'last 30 days')}
+              </span>
+            </h2>
+            <TimeOfDayChart data={timeOfDayData} />
+          </div>
+
           {/* ── Contribution heatmap ─────────────────────────────────────────── */}
           {yearData?.chartData && yearData.chartData.length > 0 && (
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 sm:p-5 space-y-2">
@@ -1180,6 +1198,65 @@ export default function ZikrAnalytics() {
               </div>
             );
           })()}
+
+          {/* ── Session history ───────────────────────────────────────────────── */}
+          <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 sm:p-5 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-white font-black text-sm flex items-center gap-2">
+                <ChartBarIcon className="w-4 h-4 text-brand-info" />
+                {t('zikrAnalytics.sessions.title', 'Session history')}
+              </h2>
+              <input
+                type="date"
+                value={sessionsDate}
+                max={getTrackingDay()}
+                onChange={(e) => setSessionsDate(e.target.value)}
+                className="input input-xs input-bordered bg-brand-surface border-brand-border text-white/80 text-xs"
+              />
+            </div>
+            {sessionsLoading ? (
+              <p className="text-white/30 text-xs text-center py-4">
+                {t('common.loading', 'Loading…')}
+              </p>
+            ) : sessionsData && sessionsData.length > 0 ? (
+              <div className="space-y-2">
+                {sessionsData.map((s, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-3 rounded-xl bg-white/5 border border-brand-border p-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-white/80 text-sm font-semibold tabular-nums">
+                        {formatLocaleTime(new Date(s.start), {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                        {' – '}
+                        {formatLocaleTime(new Date(s.end), { hour: 'numeric', minute: '2-digit' })}
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {Object.entries(s.perType).map(([type, count]) => (
+                          <span
+                            key={type}
+                            className="px-1.5 py-0.5 rounded-md bg-black/30 border border-brand-border text-[10px] text-white/50"
+                          >
+                            {zikrDisplayName(type, i18n.language)} ×{formatLocaleNumber(count)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-brand-emerald font-black text-lg shrink-0">
+                      {formatLocaleNumber(s.total)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-white/30 text-xs text-center py-4">
+                {t('zikrAnalytics.sessions.empty', 'No sessions logged for this day')}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Set Goal modal */}

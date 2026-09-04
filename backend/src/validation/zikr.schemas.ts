@@ -35,13 +35,30 @@ const tsField = z
     { message: 'ts out of allowed range (max 2 days back)' }
   );
 
-const todayField = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional();
+const todayField = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .optional();
+
+// Real wall-clock moment of the tap (for time-of-day/session analytics) —
+// same bounds as `ts` but not used for day-bucketing, so no Fajr-boundary
+// backfill reasoning applies, just "recent enough to be real".
+const realTsField = z
+  .number()
+  .optional()
+  .refine(
+    (ts) =>
+      ts === undefined ||
+      (ts > Date.now() - 3 * 24 * 60 * 60 * 1000 && ts < Date.now() + 24 * 60 * 60 * 1000),
+    { message: 'realTs out of allowed range' }
+  );
 
 export const incrementSchema = z.object({
   body: z.object({
     zikrType: zikrTypeName,
     amount: amountField,
     ts: tsField,
+    realTs: realTsField,
     timezoneOffset: z.number().min(-720).max(840).optional(),
     today: todayField,
   }),
@@ -55,12 +72,27 @@ export const batchIncrementSchema = z.object({
           zikrType: zikrTypeName,
           amount: amountField,
           ts: tsField,
+          realTs: realTsField,
         })
       )
       .min(1)
       .max(100),
     timezoneOffset: z.number().min(-720).max(840).optional(),
     today: todayField,
+  }),
+});
+
+export const timeOfDaySchema = z.object({
+  query: z.object({
+    days: z.coerce.number().int().min(1).max(90).optional(),
+    timezoneOffset: z.coerce.number().min(-720).max(840).optional(),
+  }),
+});
+
+export const sessionsSchema = z.object({
+  query: z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    timezoneOffset: z.coerce.number().min(-720).max(840).optional(),
   }),
 });
 

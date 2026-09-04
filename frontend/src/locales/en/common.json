@@ -2423,6 +2423,14 @@
       "noData": "No data available",
       "dayTrend": "{{period}}-Day Trend"
     },
+    "timeOfDay": {
+      "title": "Time of day",
+      "subtitle": "last 30 days"
+    },
+    "sessions": {
+      "title": "Session history",
+      "empty": "No sessions logged for this day"
+    },
     "noZikrToday": "No zikr logged today yet",
     "noZikrAllTime": "No zikr logged yet"
   },

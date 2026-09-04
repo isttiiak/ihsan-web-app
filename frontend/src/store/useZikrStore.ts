@@ -305,10 +305,15 @@ export const useZikrStore = create<ZikrState>()(
         // with the Fajr boundary, a 1 AM tap belongs to the CLOSING day's
         // bucket — Date.now() would land it in the next civil day.
         const anchorTs = getTrackingDayMiddayTs();
+        const flushedAt = Date.now();
         const payload = entries.map(([zikrType, amount]) => ({
           zikrType,
           amount,
           ts: anchorTs,
+          // Real wall-clock moment (for time-of-day/session analytics) — `ts`
+          // above is anchored to the tracking day's midday and can't tell us
+          // when during the day this actually happened.
+          realTs: flushedAt,
           timezoneOffset: resolvedOffset,
         }));
 

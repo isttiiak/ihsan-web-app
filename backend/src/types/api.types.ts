@@ -10,6 +10,10 @@ export interface ZikrIncrementItem {
   zikrType: string;
   amount?: number;
   ts?: number;
+  /** Real wall-clock moment of the tap, for time-of-day/session analytics —
+   * `ts` above is anchored to the tracking day's midday and can't be used for
+   * that (see utils/trackingDay.ts on the frontend). Falls back to `ts`. */
+  realTs?: number;
 }
 
 export interface ZikrSummaryResponse {

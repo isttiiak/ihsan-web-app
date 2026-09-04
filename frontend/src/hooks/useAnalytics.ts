@@ -3,7 +3,13 @@ import api from '../lib/api.js';
 import { getUserTimezoneOffset } from '../utils/timezone.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
 import { useAuthStore } from '../store/useAuthStore.js';
-import type { AnalyticsResponse, ZikrGoal, ZikrStreak } from '../types/api.js';
+import type {
+  AnalyticsResponse,
+  ZikrGoal,
+  ZikrStreak,
+  ZikrTimeOfDayResponse,
+  ZikrSessionsResponse,
+} from '../types/api.js';
 
 export function useAnalytics(days = 7) {
   const user = useAuthStore((s) => s.user);
@@ -21,6 +27,38 @@ export function useAnalytics(days = 7) {
     staleTime: 60_000, // analytics: 1-min staleness keeps charts responsive without flooding the API
     placeholderData: keepPreviousData,
     retry: 1,
+  });
+}
+
+export function useZikrTimeOfDay(days = 30) {
+  const user = useAuthStore((s) => s.user);
+  const timezoneOffset = getUserTimezoneOffset();
+  return useQuery({
+    queryKey: ['zikr', 'time-of-day', days, timezoneOffset],
+    queryFn: async () => {
+      const res = await api.get<ZikrTimeOfDayResponse>('/api/zikr/time-of-day', {
+        params: { days, timezoneOffset },
+      });
+      return res.data.hours;
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+}
+
+export function useZikrSessions(dateStr: string) {
+  const user = useAuthStore((s) => s.user);
+  const timezoneOffset = getUserTimezoneOffset();
+  return useQuery({
+    queryKey: ['zikr', 'sessions', dateStr, timezoneOffset],
+    queryFn: async () => {
+      const res = await api.get<ZikrSessionsResponse>('/api/zikr/sessions', {
+        params: { date: dateStr, timezoneOffset },
+      });
+      return res.data.sessions;
+    },
+    enabled: !!user && !!dateStr,
+    staleTime: 30_000,
   });
 }
 

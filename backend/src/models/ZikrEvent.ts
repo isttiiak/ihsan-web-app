@@ -1,0 +1,34 @@
+import mongoose, { Document, Schema } from 'mongoose';
+
+/**
+ * Append-only log of individual (positive) zikr taps, real wall-clock time —
+ * unlike ZikrDaily (one cumulative count per user+day+type, bucketed to the
+ * Fajr-anchored tracking day), this preserves WHEN during the day a count
+ * happened. Powers the time-of-day chart and session history; decrements are
+ * corrections and are never logged here.
+ *
+ * TTL-capped at 90 days — this is a UX feature (recent patterns), not
+ * long-term history like ZikrDaily, so it doesn't need to grow forever.
+ */
+export interface IZikrEvent extends Document {
+  userId: string;
+  zikrType: string;
+  amount: number;
+  ts: Date;
+  createdAt: Date;
+}
+
+const zikrEventSchema = new Schema<IZikrEvent>(
+  {
+    userId: { type: String, required: true },
+    zikrType: { type: String, required: true },
+    amount: { type: Number, required: true, min: 1 },
+    ts: { type: Date, required: true },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } }
+);
+
+zikrEventSchema.index({ userId: 1, ts: 1 });
+zikrEventSchema.index({ ts: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 });
+
+export default mongoose.model<IZikrEvent>('ZikrEvent', zikrEventSchema);

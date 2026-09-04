@@ -69,6 +69,23 @@ export interface AnalyticsResponse {
   perType: Array<{ zikrType: string; total: number }>;
 }
 
+export interface ZikrTimeOfDayResponse {
+  ok: boolean;
+  hours: Array<{ hour: number; total: number }>;
+}
+
+export interface ZikrSession {
+  start: string;
+  end: string;
+  total: number;
+  perType: Record<string, number>;
+}
+
+export interface ZikrSessionsResponse {
+  ok: boolean;
+  sessions: ZikrSession[];
+}
+
 export interface UserProfile {
   uid: string;
   email: string;
