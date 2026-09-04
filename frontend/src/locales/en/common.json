@@ -1712,7 +1712,9 @@
     "kazaDebtSave": "Save",
     "kazaDebtPaidBack": "Prayed one back",
     "kazaDebtSetCount": "Set exact count",
-    "kazaDebtAddOwed": "Add one owed"
+    "kazaDebtAddOwed": "Add one owed",
+    "jumuahAutoMosque": "🕌 Marked at the mosque automatically — Jumu'ah is only valid in congregation.",
+    "jumuahKazaAlone": "⏰ Made up as an ordinary Dhuhr, prayed alone — Jumu'ah itself has no kaza."
   },
   "settings": {
     "accessibilitySection": "Accessibility",

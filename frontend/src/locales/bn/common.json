@@ -1712,7 +1712,9 @@
     "kazaDebtSave": "সংরক্ষণ",
     "kazaDebtPaidBack": "একটি আদায় করা হয়েছে",
     "kazaDebtSetCount": "সঠিক সংখ্যা সেট করুন",
-    "kazaDebtAddOwed": "একটি বাকি যোগ করুন"
+    "kazaDebtAddOwed": "একটি বাকি যোগ করুন",
+    "jumuahAutoMosque": "🕌 স্বয়ংক্রিয়ভাবে মসজিদ হিসেবে চিহ্নিত করা হয়েছে — জুমু'আ শুধু জামাতেই সহীহ।",
+    "jumuahKazaAlone": "⏰ সাধারণ যোহর হিসেবে একা আদায় করা হয়েছে — জুমু'আর কোনো কাযা নেই।"
   },
   "settings": {
     "accessibilitySection": "সহায়ক ব্যবস্থা",

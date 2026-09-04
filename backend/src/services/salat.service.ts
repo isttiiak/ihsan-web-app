@@ -95,8 +95,17 @@ export async function updatePrayerStatus(
   entry.status = status;
   entry.prayedAt = status !== 'pending' ? new Date() : undefined;
 
+  // Jumu'ah — Friday's Dhuhr is only valid as a congregational mosque prayer,
+  // so "Done" always means "at the mosque". If it's missed on time, it can
+  // only be made up as an ordinary (alone) Dhuhr — Jumu'ah itself has no kaza.
+  const isFridayDhuhr = prayer === 'dhuhr' && new Date(d + 'T12:00:00').getDay() === 5;
+
   if (status === 'completed' || status === 'kaza') {
-    entry.location = location ?? 'home';
+    entry.location = isFridayDhuhr
+      ? status === 'completed'
+        ? 'mosque'
+        : 'home'
+      : (location ?? 'home');
     entry.tasbeeh = tasbeeh ?? false;
     entry.ayatulKursi = ayatulKursi ?? false;
   } else {

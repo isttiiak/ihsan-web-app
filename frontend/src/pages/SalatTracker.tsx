@@ -1092,36 +1092,58 @@ export default function SalatTracker() {
                               className="overflow-hidden border-t border-brand-emerald/10"
                             >
                               <div className="px-3 py-2.5 space-y-2">
-                                {/* Location tags — only for completed (kaza is always prayed alone) */}
-                                {status === 'completed' && (
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-white/30 text-[11px] sm:text-xs">
-                                      {t('salatTracker.whereLabel', 'Where:')}
-                                    </span>
-                                    {LOCATION_TAGS.map((tag) => {
-                                      const { label, note } = locationTagText(tag.value);
-                                      return (
-                                        <motion.button
-                                          key={tag.value}
-                                          whileTap={{ scale: 0.9 }}
-                                          onClick={() =>
-                                            handleSubTag(prayerId, 'location', tag.value)
-                                          }
-                                          className={`flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold border transition-all ${
-                                            entry?.location === tag.value ||
-                                            (!entry?.location && tag.value === 'home')
-                                              ? 'bg-brand-emerald/20 border-brand-emerald/60 text-brand-emerald'
-                                              : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
-                                          }`}
-                                        >
-                                          <span>{tag.emoji}</span> {label}
-                                          <span className="text-white/25 text-xs hidden sm:inline">
-                                            ({note})
-                                          </span>
-                                        </motion.button>
-                                      );
-                                    })}
-                                  </div>
+                                {/* Location tags — only for completed (kaza is always prayed alone).
+                                Friday's Dhuhr (Jumu'ah) is skipped entirely: it's only valid as a
+                                mosque congregation prayer, so the location is set automatically
+                                instead of asking the user to pick it. */}
+                                {status === 'completed' &&
+                                  prayerId === 'dhuhr' &&
+                                  isCivilFriday && (
+                                    <p className="text-brand-emerald/60 text-[11px] sm:text-xs">
+                                      {t(
+                                        'salatTracker.jumuahAutoMosque',
+                                        "🕌 Marked at the mosque automatically — Jumu'ah is only valid in congregation."
+                                      )}
+                                    </p>
+                                  )}
+                                {status === 'completed' &&
+                                  !(prayerId === 'dhuhr' && isCivilFriday) && (
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="text-white/30 text-[11px] sm:text-xs">
+                                        {t('salatTracker.whereLabel', 'Where:')}
+                                      </span>
+                                      {LOCATION_TAGS.map((tag) => {
+                                        const { label, note } = locationTagText(tag.value);
+                                        return (
+                                          <motion.button
+                                            key={tag.value}
+                                            whileTap={{ scale: 0.9 }}
+                                            onClick={() =>
+                                              handleSubTag(prayerId, 'location', tag.value)
+                                            }
+                                            className={`flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold border transition-all ${
+                                              entry?.location === tag.value ||
+                                              (!entry?.location && tag.value === 'home')
+                                                ? 'bg-brand-emerald/20 border-brand-emerald/60 text-brand-emerald'
+                                                : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
+                                            }`}
+                                          >
+                                            <span>{tag.emoji}</span> {label}
+                                            <span className="text-white/25 text-xs hidden sm:inline">
+                                              ({note})
+                                            </span>
+                                          </motion.button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                {status === 'kaza' && prayerId === 'dhuhr' && isCivilFriday && (
+                                  <p className="text-brand-gold/60 text-[11px] sm:text-xs">
+                                    {t(
+                                      'salatTracker.jumuahKazaAlone',
+                                      "⏰ Made up as an ordinary Dhuhr, prayed alone — Jumu'ah itself has no kaza."
+                                    )}
+                                  </p>
                                 )}
                                 {/* After-salat toggles */}
                                 <div className="flex items-center gap-2 flex-wrap">
