@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, OAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -14,10 +14,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-// Requires "Sign in with Apple" configured in both the Apple Developer
-// Console (Services ID, domain/return-URL verification, private key) and the
-// Firebase Console's Apple provider — the button is inert until that's done.
-export const appleProvider = new OAuthProvider('apple.com');
 
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
