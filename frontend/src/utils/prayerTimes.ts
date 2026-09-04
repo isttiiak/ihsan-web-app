@@ -1,5 +1,5 @@
 import * as adhan from 'adhan';
-import { getAsrMadhab } from './salatPrefs.js';
+import { getAsrMadhab, getCalcMethod } from './salatPrefs.js';
 import i18n from '../i18n.js';
 
 export type PrayerKey = 'fajr' | 'sunrise' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
@@ -63,7 +63,9 @@ export function calcPrayerTimes(
   date: Date = new Date()
 ): PrayerTimesResult {
   const coords = new adhan.Coordinates(lat, lng);
-  const params = adhan.CalculationMethod.MoonsightingCommittee(); // worldwide-friendly
+  // Read per call (not cached) so a settings change takes effect on the next
+  // minute tick without a reload — same reasoning as the Asr madhab below.
+  const params = adhan.CalculationMethod[getCalcMethod()]();
   // ʿAṣr (and therefore the end of Ẓuhr) differs by school — see
   // utils/salatPrefs.ts. Read per call so a settings change takes effect on
   // the next minute tick without a reload.

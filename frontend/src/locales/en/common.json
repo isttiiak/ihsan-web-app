@@ -1590,6 +1590,8 @@
     "asrTitle": "🕌 ʿAṣr timing (madhab)",
     "ayatulKursiDesc": "Tapping \"Ayatul Kursi\" on a prayer adds one count to that dhikr.",
     "ayatulKursiTitle": "📖 Ayatul Kursi",
+    "calcMethodDesc": "Sets the Fajr/Isha twilight angles — the main source of disagreement between prayer-time apps. Match your local mosque if times feel off.",
+    "calcMethodTitle": "🌐 Calculation method",
     "close": "Close salat settings",
     "dangerZoneHint": "Looking for data deletion? Everything lives in",
     "locationNote": "Your saved location never leaves this device — prayer times are computed here.",

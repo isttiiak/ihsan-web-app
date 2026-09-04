@@ -80,7 +80,11 @@ export function getTasbihMode(): TasbihMode {
 }
 
 export function setTasbihMode(mode: TasbihMode): void {
-  try { localStorage.setItem(TASBIH_KEY, mode); } catch { /* private mode */ }
+  try {
+    localStorage.setItem(TASBIH_KEY, mode);
+  } catch {
+    /* private mode */
+  }
 }
 
 export function tasbihModeMeta(mode: TasbihMode): TasbihModeMeta {
@@ -104,7 +108,7 @@ export function tasbihDeltas(mode: TasbihMode, sign: 1 | -1 = 1): Record<string,
  * (Silsilah aṣ-Ṣaḥīḥah 972). */
 export const AYATUL_KURSI_ZIKR = 'Ayatul Kursi';
 export const AYATUL_KURSI_REF = {
-  source: 'an-Nasāʾī, ʿAmal al-Yawm wa\'l-Layla 100',
+  source: "an-Nasāʾī, ʿAmal al-Yawm wa'l-Layla 100",
   grade: 'Ṣaḥīḥ (al-Albānī, Silsilah aṣ-Ṣaḥīḥah 972)',
   virtue: 'Nothing prevents him from entering Paradise except death.',
 };
@@ -128,12 +132,14 @@ export const ASR_MADHABS: { id: AsrMadhab; label: string; detail: string }[] = [
   {
     id: 'standard',
     label: 'Standard',
-    detail: 'Shāfiʿī · Mālikī · Ḥanbalī — ʿAṣr when the shadow equals the object\'s length. Ẓuhr ends earlier.',
+    detail:
+      "Shāfiʿī · Mālikī · Ḥanbalī — ʿAṣr when the shadow equals the object's length. Ẓuhr ends earlier.",
   },
   {
     id: 'hanafi',
     label: 'Ḥanafī',
-    detail: 'ʿAṣr when the shadow is twice the object\'s length — ʿAṣr starts later, so Ẓuhr runs longer.',
+    detail:
+      "ʿAṣr when the shadow is twice the object's length — ʿAṣr starts later, so Ẓuhr runs longer.",
   },
 ];
 
@@ -147,5 +153,89 @@ export function getAsrMadhab(): AsrMadhab {
 }
 
 export function setAsrMadhab(m: AsrMadhab): void {
-  try { localStorage.setItem(ASR_KEY, m); } catch { /* private mode */ }
+  try {
+    localStorage.setItem(ASR_KEY, m);
+  } catch {
+    /* private mode */
+  }
+}
+
+/**
+ * Which astronomical convention sets the Fajr/Isha twilight angles — the
+ * biggest source of disagreement between prayer-time apps/mosques. Names
+ * match adhan.js's `CalculationMethod.*()` factories (utils/prayerTimes.ts
+ * reads this and picks the matching one).
+ */
+export type CalculationMethodId =
+  | 'MoonsightingCommittee'
+  | 'MuslimWorldLeague'
+  | 'Egyptian'
+  | 'Karachi'
+  | 'UmmAlQura'
+  | 'Dubai'
+  | 'NorthAmerica'
+  | 'Kuwait'
+  | 'Qatar'
+  | 'Singapore'
+  | 'Tehran'
+  | 'Turkey';
+
+const CALC_METHOD_KEY = 'ihsan_calc_method';
+/** Existing behaviour, unchanged for anyone who never touches the setting. */
+export const DEFAULT_CALC_METHOD: CalculationMethodId = 'MoonsightingCommittee';
+
+export const CALC_METHODS: { id: CalculationMethodId; label: string; detail: string }[] = [
+  {
+    id: 'MoonsightingCommittee',
+    label: 'Moonsighting Committee',
+    detail: 'Worldwide-friendly default — used by this app since launch.',
+  },
+  {
+    id: 'MuslimWorldLeague',
+    label: 'Muslim World League',
+    detail: 'Widely used across Europe, the Far East and parts of the US.',
+  },
+  {
+    id: 'Egyptian',
+    label: 'Egyptian General Authority',
+    detail: 'Used in Egypt, parts of Africa, Syria, Iraq, Lebanon, Malaysia.',
+  },
+  {
+    id: 'Karachi',
+    label: 'University of Islamic Sciences, Karachi',
+    detail: 'Used across Pakistan, Bangladesh, India, Afghanistan.',
+  },
+  {
+    id: 'UmmAlQura',
+    label: 'Umm al-Qura, Makkah',
+    detail: 'Used in Saudi Arabia — fixed 90-minute Isha interval.',
+  },
+  { id: 'Dubai', label: 'Dubai', detail: 'Used in the UAE.' },
+  {
+    id: 'NorthAmerica',
+    label: 'ISNA (North America)',
+    detail: 'Islamic Society of North America.',
+  },
+  { id: 'Kuwait', label: 'Kuwait', detail: 'Used in Kuwait.' },
+  { id: 'Qatar', label: 'Qatar', detail: 'Used in Qatar.' },
+  { id: 'Singapore', label: 'Singapore', detail: 'Majlis Ugama Islam Singapura (MUIS).' },
+  { id: 'Tehran', label: 'Tehran', detail: 'Institute of Geophysics, University of Tehran.' },
+  { id: 'Turkey', label: 'Turkey (Diyanet)', detail: 'Presidency of Religious Affairs, Turkey.' },
+];
+
+export function getCalcMethod(): CalculationMethodId {
+  try {
+    const v = localStorage.getItem(CALC_METHOD_KEY);
+    return CALC_METHODS.some((m) => m.id === v) ? (v as CalculationMethodId) : DEFAULT_CALC_METHOD;
+  } catch {
+    return DEFAULT_CALC_METHOD;
+  }
+}
+
+export function setCalcMethod(m: CalculationMethodId): void {
+  try {
+    localStorage.setItem(CALC_METHOD_KEY, m);
+  } catch {
+    /* private mode */
+  }
 }
