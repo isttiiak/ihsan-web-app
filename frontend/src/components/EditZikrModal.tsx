@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useZikrStore } from '../store/useZikrStore.js';
 import { useRenameZikrType } from '../hooks/useZikrTypes.js';
+import ArabicKeyboard from './ArabicKeyboard.js';
 
 /**
  * Edit a CUSTOM zikr — title (server rename carries lifetime + daily counts
@@ -29,6 +30,7 @@ export default function EditZikrModal({
   const [source, setSource] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showArabicKb, setShowArabicKb] = useState(false);
 
   // Prefill whenever a zikr is opened
   useEffect(() => {
@@ -115,9 +117,18 @@ export default function EditZikrModal({
                 />
               </div>
               <div>
-                <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
-                  {t('editZikr.labelArabic')}
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs text-white/60 uppercase tracking-wider block">
+                    {t('editZikr.labelArabic')}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowArabicKb((v) => !v)}
+                    className="text-[11px] text-brand-emerald/70 hover:text-brand-emerald underline underline-offset-2"
+                  >
+                    {t('zikr.arabicKeyboard', 'Arabic keyboard')}
+                  </button>
+                </div>
                 <input
                   value={arabic}
                   dir="rtl"
@@ -125,6 +136,13 @@ export default function EditZikrModal({
                   className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-base"
                   style={{ fontFamily: "'Amiri', serif" }}
                 />
+                {showArabicKb && (
+                  <ArabicKeyboard
+                    value={arabic}
+                    onChange={setArabic}
+                    onClose={() => setShowArabicKb(false)}
+                  />
+                )}
               </div>
               <div>
                 <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">

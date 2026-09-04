@@ -25,6 +25,7 @@ import {
 import { formatLocaleNumber } from '../utils/localeDate.js';
 import { translateReference } from '../utils/localeReference.js';
 import EditZikrModal from '../components/EditZikrModal.js';
+import ArabicKeyboard from '../components/ArabicKeyboard.js';
 import ReportReference from '../components/ReportReference.js';
 import ZikrSettings from '../components/ZikrSettings.js';
 import {
@@ -37,6 +38,8 @@ import {
   PencilSquareIcon,
   ChevronDownIcon,
   Cog6ToothIcon,
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline';
 
 // Meanings for all built-in dhikr — transliteration/meaning are i18n KEYS with
@@ -239,6 +242,10 @@ const FULL_PREDEFINED: Record<
   },
 };
 
+// Classic Tasbih Fatima cycle — tasbih mode auto-advances through these three
+// at 33 each (99 total) before looping back to the start.
+const TASBIH_CYCLE = ['SubhanAllah', 'Alhamdulillah', 'Allahu Akbar'];
+
 const GLOW_PALETTE = [
   {
     glow: 'rgba(122,158,110,0.9)',
@@ -298,8 +305,11 @@ export default function ZikrCounter() {
     setTypes,
     setCustomMeaning,
     removeType,
+    addCounts,
   } = useZikrStore();
   const reduceMotion = useUiStore((s) => s.reduceMotion);
+  const vibrationEnabled = useUiStore((s) => s.vibrationEnabled);
+  const tasbihMode = useUiStore((s) => s.tasbihMode);
   const [hiddenTypes, setHiddenTypes] = useState<string[]>(getHiddenZikr);
   const { data: fetchedTypes } = useZikrTypes();
   const addZikrType = useAddZikrType();
@@ -320,6 +330,10 @@ export default function ZikrCounter() {
   const [showManage, setShowManage] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [editZikr, setEditZikr] = useState<string | null>(null);
+  const [showSetCount, setShowSetCount] = useState(false);
+  const [setCountValue, setSetCountValue] = useState('');
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [showArabicKb, setShowArabicKb] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [refExpanded, setRefExpanded] = useState(false);
 
@@ -454,8 +468,24 @@ export default function ZikrCounter() {
     scheduleFlush();
     setColorIdx((i) => (i + 1) % GLOW_PALETTE.length);
     // Subtle haptic pulse on supported mobile browsers
-    if ('vibrate' in navigator) navigator.vibrate(10);
-  }, [increment, scheduleFlush]);
+    if (vibrationEnabled && 'vibrate' in navigator) navigator.vibrate(10);
+    // Tasbih mode: every 33rd count on a cycle dhikr auto-advances to the next one
+    if (tasbihMode) {
+      const cycleIdx = TASBIH_CYCLE.indexOf(selected);
+      if (cycleIdx !== -1 && (currentCount + 1) % 33 === 0) {
+        selectType(TASBIH_CYCLE[(cycleIdx + 1) % TASBIH_CYCLE.length]!);
+      }
+    }
+  }, [increment, scheduleFlush, vibrationEnabled, tasbihMode, selected, currentCount, selectType]);
+
+  // Entering tasbih mode mid-session jumps to the start of the cycle so the
+  // 33-count boundaries line up correctly.
+  useEffect(() => {
+    if (tasbihMode && !TASBIH_CYCLE.includes(selected)) {
+      selectType(TASBIH_CYCLE[0]!);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to tasbihMode flipping on
+  }, [tasbihMode]);
 
   // Decrements must flush too — they queue a negative pending delta so the
   // minus button reaches the database, not just the local count.
@@ -514,6 +544,86 @@ export default function ZikrCounter() {
         style: { background: 'white', padding: '16px', borderRadius: '12px' },
       }
     );
+  };
+
+  const exportCustomZikr = () => {
+    const customTypes = types.filter(
+      (typ) =>
+        !PREDEFINED_TYPES.some((p) => p.toLowerCase() === typ.toLowerCase()) &&
+        !findLibraryZikr(typ)
+    );
+    if (!customTypes.length) {
+      toast(t('zikr.toast.exportNone', 'No custom dhikr to export'));
+      return;
+    }
+    const data = customTypes.map((name) => ({ name, ...customMeanings[name] }));
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ihsan-custom-zikr.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const importCustomZikr = async (file: File) => {
+    try {
+      const parsed = JSON.parse(await file.text()) as Array<{
+        name?: string;
+        arabic?: string;
+        transliteration?: string;
+        meaning?: string;
+        source?: string;
+        sourceUrl?: string;
+      }>;
+      if (!Array.isArray(parsed)) throw new Error('bad format');
+      const existing = new Set(useZikrStore.getState().types.map((n) => n.toLowerCase()));
+      const added: string[] = [];
+      for (const item of parsed) {
+        const name = (item?.name ?? '').trim();
+        const meaning = (item?.meaning ?? '').trim();
+        if (!name || !meaning || existing.has(name.toLowerCase())) continue;
+        await addZikrType.mutateAsync(name);
+        setCustomMeaning(name, {
+          arabic: item.arabic?.trim() || undefined,
+          transliteration: item.transliteration?.trim() || undefined,
+          meaning,
+          source: item.source?.trim() || undefined,
+          sourceUrl: item.sourceUrl?.trim() || undefined,
+        });
+        added.push(name);
+        existing.add(name.toLowerCase());
+      }
+      if (added.length) {
+        setTypes([...useZikrStore.getState().types, ...added]);
+        toast.success(t('zikr.toast.imported', { count: added.length }), {
+          icon: '📥',
+          duration: 3000,
+        });
+      } else {
+        toast(t('zikr.toast.importNone', 'Nothing new to import'));
+      }
+    } catch {
+      toast.error(t('zikr.toast.importFailed', 'Could not import — check the file format'));
+    }
+  };
+
+  const submitSetCount = () => {
+    const target = Number(setCountValue);
+    if (!Number.isFinite(target) || target < 0 || !Number.isInteger(target)) return;
+    const delta = target - currentCount;
+    if (delta !== 0) {
+      addCounts({ [selected]: delta });
+      scheduleFlush();
+    }
+    toast.success(t('zikr.toast.countSet', { count: formatLocaleNumber(target) }), {
+      icon: '🔢',
+      duration: 2000,
+    });
+    setShowSetCount(false);
+    setSetCountValue('');
   };
 
   const submitCustomZikr = () => {
@@ -725,6 +835,15 @@ export default function ZikrCounter() {
                 {formatLocaleNumber(currentCount)}
               </div>
             </motion.div>
+            <button
+              onClick={() => {
+                setSetCountValue(String(currentCount));
+                setShowSetCount(true);
+              }}
+              className="mt-1 text-[11px] text-white/30 hover:text-brand-emerald underline underline-offset-2 transition-colors"
+            >
+              {t('zikr.setCountBtn', 'Set')}
+            </button>
           </div>
 
           {/* Divider */}
@@ -1224,6 +1343,66 @@ export default function ZikrCounter() {
         document.body
       )}
 
+      {/* ── Set starting count modal ── */}
+      {createPortal(
+        <AnimatePresence>
+          {showSetCount && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-4"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setShowSetCount(false);
+              }}
+            >
+              <motion.div
+                initial={{ y: 40, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 40, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25 }}
+                className="bg-brand-surface rounded-3xl p-6 w-full max-w-xs shadow-2xl border border-brand-border"
+              >
+                <h3 className="text-xl font-bold text-brand-emerald mb-1">
+                  {t('zikr.setCountTitle', 'Set starting count')}
+                </h3>
+                <p className="text-white/40 text-xs mb-4">
+                  {t(
+                    'zikr.setCountDesc',
+                    'Jump straight to a number — start from 33, 99, or wherever you left off.'
+                  )}
+                </p>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  value={setCountValue}
+                  onChange={(e) => setSetCountValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') submitSetCount();
+                  }}
+                  placeholder={t('zikr.setCountPlaceholder', 'Enter a number')}
+                  className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-lg text-center"
+                  autoFocus
+                />
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={submitSetCount}
+                    className="btn flex-1 bg-brand-emerald hover:bg-brand-emerald/80 border-0 text-white"
+                  >
+                    {t('zikr.setCountBtn', 'Set')}
+                  </button>
+                  <button onClick={() => setShowSetCount(false)} className="btn btn-ghost flex-1">
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
       {/* ── Add custom dhikr modal — portaled so the sticky navbar can never
              float over the form (page ancestors create stacking contexts) ── */}
       {createPortal(
@@ -1292,10 +1471,19 @@ export default function ZikrCounter() {
 
                   {/* Arabic */}
                   <div>
-                    <label className="text-xs text-white/60 uppercase tracking-wider mb-1 block">
-                      {t('zikr.arabicText', 'Arabic Text')}{' '}
-                      <span className="text-white/30">({t('zikr.optional', 'optional')})</span>
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs text-white/60 uppercase tracking-wider block">
+                        {t('zikr.arabicText', 'Arabic Text')}{' '}
+                        <span className="text-white/30">({t('zikr.optional', 'optional')})</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowArabicKb((v) => !v)}
+                        className="text-[11px] text-brand-emerald/70 hover:text-brand-emerald underline underline-offset-2"
+                      >
+                        {t('zikr.arabicKeyboard', 'Arabic keyboard')}
+                      </button>
+                    </div>
                     <input
                       value={customArabic}
                       onChange={(e) => setCustomArabic(e.target.value)}
@@ -1304,6 +1492,13 @@ export default function ZikrCounter() {
                       className="input input-bordered w-full bg-brand-deep border-brand-border text-white focus:border-brand-emerald text-base"
                       style={{ fontFamily: "'Amiri', serif" }}
                     />
+                    {showArabicKb && (
+                      <ArabicKeyboard
+                        value={customArabic}
+                        onChange={setCustomArabic}
+                        onClose={() => setShowArabicKb(false)}
+                      />
+                    )}
                   </div>
 
                   {/* Transliteration */}
@@ -1556,6 +1751,31 @@ export default function ZikrCounter() {
                 >
                   <PlusIcon className="w-4 h-4" /> {t('zikr.addNewZikr', 'Add a new zikr')}
                 </button>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={exportCustomZikr}
+                    className="btn btn-xs flex-1 btn-ghost border border-brand-border text-white/50 hover:text-white gap-1"
+                  >
+                    <ArrowDownTrayIcon className="w-3.5 h-3.5" /> {t('zikr.exportCustom', 'Export')}
+                  </button>
+                  <button
+                    onClick={() => importInputRef.current?.click()}
+                    className="btn btn-xs flex-1 btn-ghost border border-brand-border text-white/50 hover:text-white gap-1"
+                  >
+                    <ArrowUpTrayIcon className="w-3.5 h-3.5" /> {t('zikr.importCustom', 'Import')}
+                  </button>
+                  <input
+                    ref={importInputRef}
+                    type="file"
+                    accept="application/json"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void importCustomZikr(file);
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
               </motion.div>
             </motion.div>
           )}
