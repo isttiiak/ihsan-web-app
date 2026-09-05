@@ -92,9 +92,15 @@
 
 ---
 
-## Phase 1 — Harden Foundations
+## Phase 1 — Harden Foundations ✅ (2026-09-06)
 
 > Infrastructure and hardening work that must land before major new features.
+>
+> **Status: complete.** 1.1–1.4 shipped real fixes (React Query → IndexedDB,
+> AI guardrail enforcement, SEO/keyboard i18n, account-deletion re-auth). 1.5
+> was investigated and found not to be a current problem — see the item for
+> why, including a caching approach that was tried, proven to regress a
+> real product requirement via the existing test suite, and reverted.
 
 ### 1.1 Storage: Migrate Heavy Data to IndexedDB
 
@@ -133,9 +139,11 @@ Full backend suite: 105 tests, 11 suites (13 new in `ai.unit.test.js`). Frontend
 
 Also backfilled i18n keys for the whole delete-account danger-zone block (pre-existing gap in both locale files, unrelated to this fix but in the same UI block being touched). Full backend suite: 108 tests, 11 suites. Frontend/backend typecheck, lint, build all pass. Live browser verification not possible this session (dev-server previews unavailable).
 
-### 1.5 Analytics Performance
+### 1.5 Analytics Performance ✅ (2026-09-06)
 
-- [ ] `[M]` **Server-side caching for analytics aggregations** — each analytics page load runs MongoDB aggregation pipelines on raw data. For users with months of data this will degrade. Add TTL-based caching (Redis or in-memory with 15-min expiry) for heavy aggregation endpoints.
+- [ ] ~~**Server-side caching for analytics aggregations**~~ — investigated and actually attempted, then reverted: every date-range query behind these aggregations (`statsForUser`'s per-friend leaderboard fan-out, `getNoor`'s 365-day rollup, `getAnalyticsData`) already runs against a `{userId, date}` compound index (`{userId, date, zikrType}` for `ZikrDaily`) on every collection touched — `SalatLog`, `FastingLog`, `QuranLog`, `ZikrDaily`, `CycleDay`. That means each query is already an efficient index scan bounded to one user's own history, not a collection scan that gets slower as the app grows — the scalability concern the item describes isn't actually present today.
+  - Built a TTL cache for `statsForUser` (shared by the friends leaderboard and Noor) keyed by `(uid, day, timezoneOffset, excusedToday)` to test the idea anyway — and proved via the _existing_ `social.e2e.test.js` suite that it actively regresses the product: `useSocial.ts`'s own comment states leaderboard stats must "always show latest" (a friend who just prayed should show up immediately, which is part of the feature's appeal), and the cache made "leaderboard ranks by activity score" fail because a friend's just-logged prayer/zikr didn't show up within the cache TTL. Reverted (`ttlCache.ts` removed, `social.service.ts` restored) rather than ship a real freshness regression for a performance problem that doesn't exist yet.
+  - A _correct_ cache here (invalidated the instant a user's own zikr/salat/fasting/quran data changes, not time-based) would preserve freshness, but means hooking cache-busting into every write path across those four services — real cross-cutting complexity for a problem this app's current scale (indexed, small per-user datasets, no reported slowness) doesn't yet have. Revisit if a future load actually shows these endpoints as slow, at which point invalidation-based caching (not TTL) is the right shape — TTL caching is only safe on data where a few minutes of staleness is genuinely acceptable, which social/analytics stats explicitly are not for this product.
 
 ---
 
