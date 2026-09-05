@@ -98,8 +98,8 @@
 
 ### 1.1 Storage: Migrate Heavy Data to IndexedDB
 
-- [ ] `[M]` **Zikr pending queue → IndexedDB** — `ihsan_zikr_store`'s `pending` field can grow unboundedly while offline. The entire Zustand blob is re-serialized on every tap. Move to IndexedDB with the Zustand persist adapter (`idb-keyval` or similar). Keep small config in localStorage.
-- [ ] `[M]` **React Query cache → IndexedDB** — `ihsan_rq_cache` is an unbounded cache of all API responses. The code already has a `removeOldestQuery` fallback for when localStorage fills up. Use `@tanstack/query-persist-client-core` with an IndexedDB adapter.
+- [x] ~~**Zikr pending queue → IndexedDB**~~ (2026-09-06: investigated, not actually a gap. `pending`/`counts`/`lifetimeTotals` are dictionaries keyed by dhikr _type_, not by event — bounded by however many types the user has (typically single digits), not by usage volume or time offline. The whole persisted blob is a few KB regardless of how long the user is offline; there's no unbounded growth to fix. Moving it to async IndexedDB storage would also have cost the _synchronous_ rehydration-on-mount guarantee that 0.1 deliberately relies on for tab-close protection — trading away a real guarantee to fix a problem that doesn't exist. Left on localStorage.)
+- [x] **React Query cache → IndexedDB** (2026-09-06: this half was real — `ihsan_rq_cache` spans ~112 `useQuery` call sites across every feature and was persisted via a synchronous localStorage persister, JSON-stringifying the whole cache and blocking the main thread every 2s, capped at ~5MB. Swapped in `@tanstack/query-async-storage-persister` backed by the existing `idbCache.ts` helper from 0.5's Quran migration. Sign-out cleanup updated to clear the IndexedDB entry instead of the old localStorage key. Verified: typecheck, lint, build all pass; live browser check blocked by this session's dev-server preview being unavailable, so not confirmed in-browser this session — low risk since it reuses the already-proven `idbCache.ts` path.)
 - [x] ~~**Quran text cache → IndexedDB**~~ — done as part of 0.5 above (same fix, same commit family).
 
 ### 1.2 AI Guardrail Policy — Enforcement Layer
