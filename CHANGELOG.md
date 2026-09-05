@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Ihsan are documented here. Format is loosely [Keep a Changelog](https://keepachangelog.com/); versioning follows the project's existing convention (see "When to bump" in the project docs) rather than strict semver — patch = fixes, minor = a feature batch, major = a milestone.
+All notable changes to Ihsan are documented here. Format is loosely [Keep a Changelog](https://keepachangelog.com/); versioning follows the project's existing convention (see ["Versioning — when to bump"](README.md#versioning--when-to-bump) in the README) rather than strict semver — patch = fixes, minor = a feature batch, major = a milestone.
 
 ## v5.6.0 — Hardening & Trust — 2026-09-06
 

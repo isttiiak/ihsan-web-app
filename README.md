@@ -245,6 +245,25 @@ npm run format:check # Prettier — check only (this is what CI would run)
   `frontend/`, root), grouping minor/patch bumps and keeping security updates
   separate.
 
+### Versioning — when to bump
+
+Not strict semver (there's no external API contract to protect) — versioning
+here tracks _release size_, matching how the project has always tagged
+releases:
+
+- **Patch** (`x.y.Z`) — a bug fix, security patch, or small tweak. Bump once
+  per fix that reaches `main`, even a single small one.
+- **Minor** (`x.Y.0`) — a batch of related work: a new feature, or several
+  fixes/improvements shipped together in one push (e.g. an audit-driven
+  hardening pass). Bump once per _batch_, not once per commit inside it.
+- **Major** (`X.0.0`) — reserved for a milestone that changes the app's
+  shape: a design overhaul, a platform change (e.g. a native app launch), or
+  whatever you personally judge to be a new "era" for the project.
+
+Bump the three `package.json` files together (root, `frontend/`, `backend/`)
+and add an entry to [`CHANGELOG.md`](CHANGELOG.md) as the last step of a work
+session before pushing — not after every individual commit.
+
 ---
 
 ## 🚀 Deployment (Vercel)

@@ -11,10 +11,12 @@
 
 ---
 
-## Phase 0 — Fix & Complete Existing Features
+## Phase 0 — Fix & Complete Existing Features ✅ (2026-09-06)
 
 > Things that are built but have gaps, edge cases, or correctness issues.
 > These should be resolved before any new feature work.
+>
+> **Status: complete**, except one open sub-item (0.9's Google-popup timing question, pending user confirmation of same-vs-different account) and 0.1's cross-device type deletion propagation (deferred as low-priority — see the item). Everything else in 0.1–0.10 is shipped, tested, and pushed to `main` as of v5.6.0.
 
 ### 0.1 Zikr Counter — Tab-Close Data Loss
 
@@ -48,16 +50,16 @@
 - [x] **Privacy controls** (2026-09-05: added `SocialProfile.invisible` — a full opt-out where `getSummary` excludes the user from every OTHER friend's leaderboard query (`SocialProfile.find(...).select('userId invisible')` filters the friend-uid list before building stats), while the user still sees their own row and everyone else's on their own dashboard. Toggle lives in the Manage Friends modal, `PATCH /api/social/invisible`.)
 - [x] **Block mechanism** (2026-09-05: `blockUser`/`unblockUser` — blocking is one-directional, immediately tears down any existing friendship or pending request in either direction, and a blocked user's future invite-code attempt gets the _same generic_ "not valid" message as a nonexistent code, so they're never tipped off they were specifically blocked. `GET /api/social/blocked` for the manage-blocked view, both wired into the Manage Friends modal with a single-step confirm for blocking, matching how deliberate that action is.)
   - Backend: full coverage in `backend/tests/social.e2e.test.js` — 13 tests (6 new: pending-request creation, reject-then-retry, accept-to-mutual, invisible hides from others but not self, block tears down + hides via generic error, unblock restores). Full suite (90 tests, 10 suites) passes.
-  - Frontend: typecheck, lint, and build all pass. **Not yet verified live in-browser** — the test account credentials on file (`triistiak@mail.com`/`123456`) were rejected by Firebase as invalid when tried; needs corrected credentials before a real accept/reject/block/invisible click-through can be done. Didn't want to exercise this on the user's real "Tara" account since it would create real (fake) friend-request/block artifacts in their actual social graph.
+  - Frontend: typecheck, lint, and build all pass. Live in-browser accept/reject/block/invisible click-through still pending — the credentials on file turned out to have a typo (`.mail.com` → `.gmail.com`, corrected 2026-09-06); not yet re-attempted since it's the user's real account and these actions create real social-graph artifacts (friend requests, blocks) rather than being freely reversible like a toggle.
 
 ### 0.7 Rayhanah — Garden Sync & Key Cleanup
 
-- [ ] `[S]` **Clean up orphaned `ihsan_rayhanah_garden_*` keys** — a new localStorage key is created every day and never cleaned up. Add a cleanup pass that removes keys older than 30 days on app start.
-- [ ] `[S]` **Sync Garden of Light to server** — currently device-local only. Progress is lost on device switch or cache clear. Add a simple daily-checklist endpoint.
+- [x] **Clean up orphaned `ihsan_rayhanah_garden_*` keys** (2026-09-06: done as part of the server-sync migration below — every legacy key, today's and any orphaned past day's, is removed on first load once its data (if any) is migrated.)
+- [x] **Sync Garden of Light to server** (2026-09-06: extended the existing `CycleDay` model with a `garden: string[]` field, exposed through the existing `PUT /api/cycle/day` endpoint rather than a new one. `RayhanahCycle.tsx` now reads/writes through `useUpsertCycleDay`'s existing optimistic-update mutation. New backend test coverage; full suite passes. Caught and fixed a real bug pre-ship: the day-upsert controller wasn't passing `garden` through to the service or including it in the response.)
 
 ### 0.8 Documentation Drift
 
-- [ ] `[S]` **Fix CLAUDE.md AI provider references** — tech stack table says "OpenAI SDK v4" and env section says `OPENAI_API_KEY`, but the code uses Groq (`GROQ_API_KEY`, `api.groq.com`). Update to match reality.
+- [x] **Fix CLAUDE.md AI provider references** (2026-09-06: updated the tech stack table and env var section to say Groq/`GROQ_API_KEY` instead of OpenAI. Local-only change — `CLAUDE.md` is gitignored.)
 
 ### 0.9 Auth — Cross-Account State Leak on Sign-Out
 
@@ -67,6 +69,14 @@
 - [x] **Debounced persistence could let a fast re-sign-in hydrate against stale data** (2026-09-05: `resetAll()` only queues a 400ms-debounced localStorage write. Added a `flushZikrLocalPersistence()` call right after it in `App.tsx`'s central `onAuthStateChanged` handler, so the cleared state is written to disk immediately — closing the window where a very fast sign-out-then-sign-in on the same device could read the outgoing account's still-on-disk blob.)
 - [x] **Salat offline outbox wasn't cleared on sign-out** (2026-09-05: the `ihsan_salat_outbox` queue added in 0.2 above had no sign-out hook at all. Added `clearSalatOutbox()` and wired it into the same central sign-out handler — matches the existing precedent of wiping the React Query cache and zikr store on sign-out for shared-device safety, since an unsynced write from account A could otherwise flush into account B's session once back online.)
 - [ ] `[S]` **Still to verify: whether the Google popup sign-in flow itself has a separate timing issue.** The user's original report described seeing a previous account's home page specifically during a `signInWithPopup` Google re-authentication (not a plain email/password sign-out). The fixes above address a confirmed, reproduced state-leak bug in the general sign-out path, but haven't been specifically verified against the Google-popup flow (which may also just be Google's own session-persistence silently re-authenticating the same identity — expected behavior, not a bug — if it was the same Google account both times). Re-test once confirmed whether it was the same or a different Google account.
+
+### 0.10 Additional fixes (2026-09-06, not in the original audit)
+
+- [x] **Duplicate zikr streak/goal display in the navbar** — reported by the user: the navbar showed a second streak/goal capsule pair on `/zikr`, identical to the one already in the counter card. Removed the dead center-content branch plus the `useAnalytics` fetch and derived variables that existed only to feed it.
+- [x] **Location permission required a manual reload to take effect** — reported by the user: granting location access from Home's "Set Location" button updated `localStorage` but the prayer-time widget stayed on the prompt state until reload. Root cause: `prayerWidgetData`'s `useMemo` depended only on `prayerNow.getMinutes()`, so a same-minute `setPrayerNow(new Date())` never changed the dependency. Fixed by removing Home's whole duplicate inline geolocation flow (which had this bug) and routing the button to `/prayer-times`, which already has a correct, bug-free flow (proper React state, not memo-based) — and which the user specifically asked for: seeing "Use GPS" and manual city search side by side before any permission prompt fires, rather than a native dialog triggered straight from an ambiguous button. Verified live: the Home widget now updates immediately after setting a location on `/prayer-times`, no reload; a fresh tab shows zero console errors.
+- [x] **Version number in the footer** — added, read from the root `package.json` at build time via a Vite `define` (`__APP_VERSION__`) so it can't drift from the actual released version. Verified rendering live (`v5.5.0` before the bump below, confirmed baked into the built bundle).
+- [x] **Version bumped to 5.6.0** with a new root `CHANGELOG.md` covering this whole release, following the project's existing (non-strict-semver) versioning convention — see the "When to bump" note added to the docs.
+- [x] **Root `README.md` and `backend/README.md` reviewed** — the root README was already a thorough, well-maintained doc (not identified by the earlier audit agents, which apparently missed it); made only two small factual corrections (AI endpoint list, test count) plus a CHANGELOG link, rather than the full rewrite first attempted and then reverted. `backend/README.md` _was_ genuinely stale (an interim note from an old schema) and got a full rewrite.
 
 ---
 
