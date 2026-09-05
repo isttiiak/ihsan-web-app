@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -94,47 +94,11 @@ export default function Home() {
 
   // Prayer times widget state
   const [prayerNow, setPrayerNow] = useState(new Date());
-  const [locLoading, setLocLoading] = useState(false);
   // Widget shows hours+minutes only — 60s granularity is sufficient.
   useEffect(() => {
     const t = setInterval(() => setPrayerNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
-
-  const enableLocation = useCallback(() => {
-    if (!('geolocation' in navigator)) {
-      navigate('/prayer-times');
-      return;
-    }
-    setLocLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        let name = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
-        try {
-          const r = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-          );
-          const d = (await r.json()) as {
-            address?: { city?: string; town?: string; village?: string; country?: string };
-          };
-          const city = d.address?.city ?? d.address?.town ?? d.address?.village;
-          const country = d.address?.country;
-          if (city || country) name = [city, country].filter(Boolean).join(', ');
-        } catch {
-          /* use coords fallback */
-        }
-        localStorage.setItem('ihsan_location', JSON.stringify({ latitude, longitude, name }));
-        setLocLoading(false);
-        setPrayerNow(new Date()); // trigger recompute
-      },
-      () => {
-        setLocLoading(false);
-        navigate('/prayer-times');
-      },
-      { timeout: 10000 }
-    );
-  }, [navigate]);
 
   const todaySpecialDays = useMemo(() => getTodaySpecialDays(), []);
 
@@ -485,31 +449,31 @@ export default function Home() {
               </motion.div>
             </Link>
           ) : (
-            /* No location stored — prompt to enable */
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={enableLocation}
-              disabled={locLoading}
-              className="w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3 rounded-2xl bg-brand-surface/60 backdrop-blur-md border border-brand-border/60 border-dashed hover:border-brand-emerald/40 hover:bg-brand-surface/80 transition-all text-left"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                {locLoading ? (
-                  <span className="loading loading-spinner loading-xs text-brand-emerald shrink-0" />
-                ) : (
+            /* No location stored — send to the prayer-times page, which
+             * offers "use my location" and manual city search side by side.
+             * Deliberately NOT a native geolocation prompt fired straight
+             * from this button: the user should see and choose between both
+             * options before any permission dialog appears. */
+            <Link to="/prayer-times">
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3 rounded-2xl bg-brand-surface/60 backdrop-blur-md border border-brand-border/60 border-dashed hover:border-brand-emerald/40 hover:bg-brand-surface/80 transition-all text-left"
+              >
+                <div className="flex items-center gap-3 min-w-0">
                   <MapPinIcon className="w-5 h-5 text-brand-emerald/60 shrink-0" />
-                )}
-                <div className="min-w-0">
-                  <p className="text-white/70 font-semibold text-sm leading-none mb-0.5">
-                    {t('home.enablePrayerTimes')}
-                  </p>
-                  <p className="text-white/30 text-xs">{t('home.enablePrayerTimesDetail')}</p>
+                  <div className="min-w-0">
+                    <p className="text-white/70 font-semibold text-sm leading-none mb-0.5">
+                      {t('home.enablePrayerTimes')}
+                    </p>
+                    <p className="text-white/30 text-xs">{t('home.enablePrayerTimesDetail')}</p>
+                  </div>
                 </div>
-              </div>
-              <span className="text-brand-emerald/50 text-xs font-semibold shrink-0">
-                {locLoading ? t('home.locating') : t('home.setLocation')}
-              </span>
-            </motion.button>
+                <span className="text-brand-emerald/50 text-xs font-semibold shrink-0">
+                  {t('home.setLocation')}
+                </span>
+              </motion.div>
+            </Link>
           )}
         </motion.div>
 
