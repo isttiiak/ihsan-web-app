@@ -829,8 +829,11 @@ export default function RayhanahCycle() {
           </div>
         )}
 
-        {/* ── Fasting makeup summary ───────────────────────────────────────── */}
-        {qadaOwed > 0 && (
+        {/* ── Fasting makeup summary ─────────────────────────────────────────
+            Gated on qadaRemaining (not qadaOwed, which is the lifetime total)
+            so the card disappears once every owed fast is made up, instead of
+            leaving a stale "0 remaining" reminder around forever. */}
+        {qadaRemaining > 0 && (
           <div className="rounded-3xl bg-brand-deep/80 border border-brand-border p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-white font-black">
