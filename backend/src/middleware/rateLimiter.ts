@@ -56,6 +56,14 @@ const makeUidLimit = (windowMs: number, max: number, message: object) =>
     message,
   });
 
+/** AI suggestions: 20 per day per UID — the IP-based `aiLimiter` above guards
+ *  the endpoint before auth even runs; this catches one signed-in user
+ *  burning the shared IP allowance across a NAT/proxy or many devices. */
+export const aiUserLimiter = makeUidLimit(24 * 60 * 60 * 1000, 20, {
+  ok: false,
+  error: 'Daily AI limit reached. Try again tomorrow.',
+});
+
 /** Friend-connect: 10 per hour per UID — prevents invite-code spam */
 export const socialConnectLimiter = makeUidLimit(60 * 60 * 1000, 10, {
   ok: false,
