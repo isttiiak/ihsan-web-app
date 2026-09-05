@@ -4,8 +4,14 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import i18n, { LANGUAGES } from '../i18n.js';
 import { useQueryClient } from '@tanstack/react-query';
-import { signOut } from 'firebase/auth';
-import { auth } from '../firebase.js';
+import {
+  signOut,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  EmailAuthProvider,
+  type AuthError,
+} from 'firebase/auth';
+import { auth, googleProvider } from '../firebase.js';
 import api, { API_BASE, getIdToken } from '../lib/api.js';
 import {
   getHijriAdjustment,
@@ -283,9 +289,12 @@ export default function Settings() {
   const [importing, setImporting] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [deleteAccountStep, setDeleteAccountStep] = useState<'idle' | 'confirm' | 'deleting'>(
-    'idle'
-  );
+  const [deleteAccountStep, setDeleteAccountStep] = useState<
+    'idle' | 'confirm' | 'reauth' | 'deleting'
+  >('idle');
+  const [reauthPassword, setReauthPassword] = useState('');
+  const [reauthError, setReauthError] = useState<string | null>(null);
+  const [reauthBusy, setReauthBusy] = useState(false);
 
   const applyHijriAdj = (days: number) => {
     setHijriAdjustment(days);
@@ -427,15 +436,81 @@ export default function Settings() {
   };
 
   // ── Delete account: full GDPR purge + Firebase auth removal ─────────────
+  // Irreversible and full data loss — requires a fresh re-authentication
+  // (not just the existing session token) immediately beforehand, so a
+  // shared/unlocked device with a live session can't be used to wipe the
+  // account. See docs on requireRecentAuth in the backend for the matching
+  // server-side check (a stale token gets rejected even if this step is
+  // somehow bypassed via a direct API call).
+  const hasPasswordProvider = auth.currentUser?.providerData.some(
+    (p) => p.providerId === 'password'
+  );
+
   const runDeleteAccount = async () => {
     setDeleteAccountStep('deleting');
     try {
       await api.delete('/api/user/me');
       localStorage.removeItem('ihsan_idToken');
       await signOut(auth);
-    } catch {
-      toast.error('Account deletion failed — please try again or contact support.');
-      setDeleteAccountStep('idle');
+    } catch (err) {
+      const reauthRequired =
+        !!err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        (err as { response?: { data?: { error?: string } } }).response?.data?.error ===
+          'reauth_required';
+      if (reauthRequired) {
+        toast.error('Your sign-in is too old for this — please verify again.');
+        setReauthError(null);
+        setDeleteAccountStep('reauth');
+      } else {
+        toast.error('Account deletion failed — please try again or contact support.');
+        setDeleteAccountStep('idle');
+      }
+    }
+  };
+
+  const reauthErrorMessage = (err: unknown): string => {
+    const code = (err as AuthError)?.code;
+    if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+      return t('settings.reauthWrongPassword', 'Incorrect password — please try again.');
+    }
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+      return t('settings.reauthPopupClosed', 'Verification was cancelled.');
+    }
+    if (code === 'auth/too-many-requests') {
+      return t('settings.reauthTooManyRequests', 'Too many attempts — please wait and try again.');
+    }
+    return t('settings.reauthFailed', 'Verification failed — please try again.');
+  };
+
+  const reauthWithPassword = async () => {
+    if (!auth.currentUser?.email || !reauthPassword) return;
+    setReauthBusy(true);
+    setReauthError(null);
+    try {
+      const credential = EmailAuthProvider.credential(auth.currentUser.email, reauthPassword);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      setReauthPassword('');
+      await runDeleteAccount();
+    } catch (err) {
+      setReauthError(reauthErrorMessage(err));
+    } finally {
+      setReauthBusy(false);
+    }
+  };
+
+  const reauthWithGoogle = async () => {
+    if (!auth.currentUser) return;
+    setReauthBusy(true);
+    setReauthError(null);
+    try {
+      await reauthenticateWithPopup(auth.currentUser, googleProvider);
+      await runDeleteAccount();
+    } catch (err) {
+      setReauthError(reauthErrorMessage(err));
+    } finally {
+      setReauthBusy(false);
     }
   };
 
@@ -801,13 +876,79 @@ export default function Settings() {
                     )}
                   </span>
                   <button
-                    onClick={() => void runDeleteAccount()}
+                    onClick={() => {
+                      setReauthError(null);
+                      setDeleteAccountStep('reauth');
+                    }}
                     className="btn btn-xs bg-red-600 hover:bg-red-700 text-white border-0"
                   >
                     {t('settings.yesDeleteAccount', 'Yes, delete my account')}
                   </button>
                   <button
                     onClick={() => setDeleteAccountStep('idle')}
+                    className="btn btn-xs btn-ghost text-white/50"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              )}
+              {deleteAccountStep === 'reauth' && (
+                <div className="space-y-2">
+                  <p className="text-red-300 text-xs">
+                    {t(
+                      'settings.reauthPrompt',
+                      'For your security, please verify it’s really you before we delete everything.'
+                    )}
+                  </p>
+                  {hasPasswordProvider ? (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void reauthWithPassword();
+                      }}
+                      className="flex gap-2 items-center flex-wrap"
+                    >
+                      <input
+                        type="password"
+                        autoFocus
+                        value={reauthPassword}
+                        onChange={(e) => setReauthPassword(e.target.value)}
+                        placeholder={t('settings.reauthPasswordPlaceholder', 'Your password')}
+                        className="input input-xs bg-black/30 border-red-500/30 text-white w-40"
+                        disabled={reauthBusy}
+                      />
+                      <button
+                        type="submit"
+                        disabled={reauthBusy || !reauthPassword}
+                        className="btn btn-xs bg-red-600 hover:bg-red-700 text-white border-0"
+                      >
+                        {reauthBusy ? (
+                          <span className="loading loading-spinner loading-xs" />
+                        ) : (
+                          t('settings.reauthAndDelete', 'Verify & delete')
+                        )}
+                      </button>
+                    </form>
+                  ) : (
+                    <button
+                      onClick={() => void reauthWithGoogle()}
+                      disabled={reauthBusy}
+                      className="btn btn-xs bg-red-600 hover:bg-red-700 text-white border-0"
+                    >
+                      {reauthBusy ? (
+                        <span className="loading loading-spinner loading-xs" />
+                      ) : (
+                        t('settings.reauthWithGoogle', 'Re-verify with Google & delete')
+                      )}
+                    </button>
+                  )}
+                  {reauthError && <p className="text-red-400 text-[11px]">{reauthError}</p>}
+                  <button
+                    onClick={() => {
+                      setReauthPassword('');
+                      setReauthError(null);
+                      setDeleteAccountStep('idle');
+                    }}
                     className="btn btn-xs btn-ghost text-white/50"
                   >
                     {t('common.cancel')}

@@ -147,4 +147,28 @@ describe('User profile API', () => {
     const get = await auth(request(app).get('/api/user/me'));
     expect(get.status).toBe(404);
   });
+
+  test('DELETE /api/user/me rejects a stale auth_time with reauth_required', async () => {
+    const staleAuthTime = Math.floor(Date.now() / 1000) - 10 * 60; // 10 minutes ago
+    const token = fakeJwt({ uid: 'del2', email: 'del2@test.dev', auth_time: staleAuthTime });
+    const auth = (r) => r.set('Authorization', `Bearer ${token}`);
+    await request(app).post('/api/auth/verify').send({ idToken: token });
+
+    const res = await auth(request(app).delete('/api/user/me'));
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('reauth_required');
+
+    // Rejected before any purge happened.
+    expect(await User.findOne({ uid: 'del2' })).not.toBeNull();
+  });
+
+  test('DELETE /api/user/me allows a fresh auth_time', async () => {
+    const freshAuthTime = Math.floor(Date.now() / 1000) - 30; // 30 seconds ago
+    const token = fakeJwt({ uid: 'del3', email: 'del3@test.dev', auth_time: freshAuthTime });
+    const auth = (r) => r.set('Authorization', `Bearer ${token}`);
+    await request(app).post('/api/auth/verify').send({ idToken: token });
+
+    const res = await auth(request(app).delete('/api/user/me'));
+    expect(res.status).toBe(200);
+  });
 });

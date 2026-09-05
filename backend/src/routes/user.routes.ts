@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireRecentAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import * as userController from '../controllers/user.controller.js';
 import {
@@ -35,8 +35,10 @@ router.patch(
   userController.setPrimaryEmailHandler
 );
 
-// GDPR: delete all user data + Firebase auth account
-router.delete('/me', requireAuth, userController.deleteAccountHandler);
+// GDPR: delete all user data + Firebase auth account. requireRecentAuth
+// rejects a token whose original sign-in is more than a few minutes old —
+// pairs with the re-auth prompt in Settings.tsx before this is ever called.
+router.delete('/me', requireAuth, requireRecentAuth, userController.deleteAccountHandler);
 
 // Full-account backup (one JSON of every domain) + merge-restore of that file
 router.get('/export', requireAuth, userController.exportAllHandler);
