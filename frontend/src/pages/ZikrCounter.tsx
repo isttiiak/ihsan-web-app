@@ -693,8 +693,11 @@ export default function ZikrCounter() {
   return (
     <AnimatedBackground variant="dark">
       <Seo
-        title="Zikr Counter — Digital Tasbih with Streaks & Goals"
-        description="Free online tasbih counter for SubhanAllah, Alhamdulillah, Allahu Akbar and custom zikr. Set daily goals, build streaks, and track your dhikr with authentic references."
+        title={t('zikr.seoTitle', 'Zikr Counter — Digital Tasbih with Streaks & Goals')}
+        description={t(
+          'zikr.seoDescription',
+          'Free online tasbih counter for SubhanAllah, Alhamdulillah, Allahu Akbar and custom zikr. Set daily goals, build streaks, and track your dhikr with authentic references.'
+        )}
         path="/zikr"
       />
       <h1 className="sr-only">{t('zikr.pageTitle')}</h1>

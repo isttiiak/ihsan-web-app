@@ -443,8 +443,11 @@ export default function FastingTracker() {
   return (
     <AnimatedBackground variant="dark">
       <Seo
-        title="Fasting Tracker — Ramadan, Qada & Voluntary Sawm"
-        description="Log obligatory, qada (makeup) and voluntary fasts with a fiqh-aware calendar, streaks and progress stats. Track your Ramadan and Sunnah fasting in one place."
+        title={t('fasting.seoTitle', 'Fasting Tracker — Ramadan, Qada & Voluntary Sawm')}
+        description={t(
+          'fasting.seoDescription',
+          'Log obligatory, qada (makeup) and voluntary fasts with a fiqh-aware calendar, streaks and progress stats. Track your Ramadan and Sunnah fasting in one place.'
+        )}
         path="/fasting"
       />
       <h1 className="sr-only">{t('fasting.title', 'Fasting Tracker')}</h1>

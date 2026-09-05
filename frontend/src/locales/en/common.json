@@ -1,5 +1,10 @@
 {
+  "arabicKeyboard": {
+    "space": "space"
+  },
   "about": {
+    "seoTitle": "About Ihsan — Our Mission",
+    "seoDescription": "Ihsan is a free, private Islamic productivity app for zikr, salat, fasting and Quran habits — built for the Muslim community with authentic Quran and hadith references.",
     "authenticityLabel": "Authenticity first",
     "authenticityOr": "or",
     "authenticityText1": "Every verse and hadith in this app links to its exact source on",
@@ -356,6 +361,8 @@
     "salatExplanation": "Allah has lifted salat from you during this time. Your Noor keeps shining from dhikr, Quran, and ṣalawāt."
   },
   "fasting": {
+    "seoTitle": "Fasting Tracker — Ramadan, Qada & Voluntary Sawm",
+    "seoDescription": "Log obligatory, qada (makeup) and voluntary fasts with a fiqh-aware calendar, streaks and progress stats. Track your Ramadan and Sunnah fasting in one place.",
     "allMadeUp": "All made up — māshā'Allāh! 🎉",
     "allTime": "All time",
     "alreadyLogged": "This day is already logged — remove it (🗑) to change its type.",
@@ -500,6 +507,8 @@
     "nearIftar": "Naseeh · near iftar"
   },
   "feedback": {
+    "seoTitle": "Feedback & Contact",
+    "seoDescription": "Report a bug, suggest a feature, or ask a question — reach the Ihsan team directly. Real replies, kept private, built for the ummah.",
     "disclaimer": "Messages go directly to the developer. No data is shared with third parties.",
     "heroDesc1": "Ihsan is built quietly by one developer for the sake of Allah — which means there's no big team testing every screen.",
     "heroDesc2": "You are the testers.",
@@ -761,6 +770,8 @@
     "fridayKahfQuote": "A light will shine for him between the two Fridays."
   },
   "landing": {
+    "seoTitle": "Ihsan — Muslim Worship & Productivity Tracker",
+    "seoDescription": "Track your zikr, salat, fasting and Quran reading — with authentic references, streaks, prayer times and a friends leaderboard. Free, private, and built for the Muslim community.",
     "brother": "Brother",
     "cta": "Begin your journey — free",
     "ctaCounter": "Try the counter first",
@@ -846,11 +857,15 @@
     "openAccountMenu": "Open account menu"
   },
   "notFound": {
+    "seoTitle": "Page Not Found",
+    "seoDescription": "The page you're looking for doesn't exist.",
     "backHome": "Back to Home",
     "description": "The page you're looking for doesn't exist or has been moved.",
     "heading": "Page not found"
   },
   "prayerTimes": {
+    "seoTitle": "Prayer Times — Accurate Salat Times for Your Location",
+    "seoDescription": "On-device prayer time calculator for Fajr, Dhuhr, Asr, Maghrib and Isha, with multiple calculation methods, Hanafi/standard Asr settings and a live countdown.",
     "after": "After",
     "asr": "Asr",
     "awwabin": "Salat al-Awwabin",
@@ -907,6 +922,8 @@
     "useGps": "Use GPS (recommended)"
   },
   "privacy": {
+    "seoTitle": "Privacy Policy",
+    "seoDescription": "How Ihsan stores and protects your data: what we collect, what stays on your device, what friends can see, and your control over deletion.",
     "aboutLink": "About Ihsan",
     "analytics": {
       "body0": "We use Google Analytics 4 (GA4) for page-view counts and anonymous usage patterns.",
@@ -1034,6 +1051,8 @@
     "useThisPhoto": "Use This Photo"
   },
   "qibla": {
+    "seoTitle": "Qibla Compass — Find the Direction to Makkah",
+    "seoDescription": "Free on-device Qibla compass. Point your phone to find the exact direction to the Kaaba in Makkah for prayer, wherever you are.",
     "bearingLabel": "Qibla is {{deg}}° from true North",
     "enableCompass": "Enable compass",
     "geoFailed": "Could not get your location — allow location access and try again",
@@ -1652,6 +1671,8 @@
     "using": "✓ Using"
   },
   "salatTracker": {
+    "seoTitle": "Salat Tracker — Log Your 5 Daily Prayers",
+    "seoDescription": "Track Fajr, Dhuhr, Asr, Maghrib and Isha with on-time/late/kaza logging, Jumu'ah tracking, streaks and automatic missed-prayer (kaza) debt accrual.",
     "about": "ⓘ about",
     "afterSalat": "After salat:",
     "allCompleted": "🎉 All prayers completed — MashaAllah!",
@@ -2256,6 +2277,8 @@
     "title": "Don't lose your counts"
   },
   "zikr": {
+    "seoTitle": "Zikr Counter — Digital Tasbih with Streaks & Goals",
+    "seoDescription": "Free online tasbih counter for SubhanAllah, Alhamdulillah, Allahu Akbar and custom zikr. Set daily goals, build streaks, and track your dhikr with authentic references.",
     "a11y": {
       "closeSettings": "Close zikr settings",
       "settings": "Zikr settings"

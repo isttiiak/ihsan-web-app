@@ -565,8 +565,11 @@ export default function PrayerTimes() {
   return (
     <AnimatedBackground variant="dark">
       <Seo
-        title="Prayer Times — Accurate Salat Times for Your Location"
-        description="On-device prayer time calculator for Fajr, Dhuhr, Asr, Maghrib and Isha, with multiple calculation methods, Hanafi/standard Asr settings and a live countdown."
+        title={t('prayerTimes.seoTitle', 'Prayer Times — Accurate Salat Times for Your Location')}
+        description={t(
+          'prayerTimes.seoDescription',
+          'On-device prayer time calculator for Fajr, Dhuhr, Asr, Maghrib and Isha, with multiple calculation methods, Hanafi/standard Asr settings and a live countdown.'
+        )}
         path="/prayer-times"
       />
       <div className="p-4 sm:p-6 lg:p-8">

@@ -144,8 +144,11 @@ export default function QiblaCompass() {
   return (
     <AnimatedBackground variant="dark">
       <Seo
-        title="Qibla Compass — Find the Direction to Makkah"
-        description="Free on-device Qibla compass. Point your phone to find the exact direction to the Kaaba in Makkah for prayer, wherever you are."
+        title={t('qibla.seoTitle', 'Qibla Compass — Find the Direction to Makkah')}
+        description={t(
+          'qibla.seoDescription',
+          'Free on-device Qibla compass. Point your phone to find the exact direction to the Kaaba in Makkah for prayer, wherever you are.'
+        )}
         path="/qibla"
       />
       <div className="max-w-md mx-auto px-4 pb-10 pt-4 space-y-6 text-center">

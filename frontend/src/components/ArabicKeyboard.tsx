@@ -1,6 +1,8 @@
 // A small on-screen Arabic keyboard for typing custom dhikr text without an
 // OS-level Arabic layout installed. Inserts/deletes at the END of the value —
 // simple append semantics, no cursor tracking (fine for short dhikr phrases).
+import { useTranslation } from 'react-i18next';
+
 const ROWS: string[][] = [
   ['ض', 'ص', 'ث', 'ق', 'ف', 'غ', 'ع', 'ه', 'خ', 'ح', 'ج'],
   ['ش', 'س', 'ي', 'ب', 'ل', 'ا', 'ت', 'ن', 'م', 'ك', 'ط'],
@@ -17,6 +19,7 @@ export default function ArabicKeyboard({
   onChange: (next: string) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="mt-2 p-2 rounded-xl border border-brand-border bg-brand-deep space-y-1">
       {ROWS.map((row, i) => (
@@ -40,7 +43,7 @@ export default function ArabicKeyboard({
           onClick={() => onChange(value + ' ')}
           className="btn btn-xs flex-1 max-w-[120px] bg-white/10 border-0 text-white/70 hover:bg-white/20"
         >
-          space
+          {t('arabicKeyboard.space', 'space')}
         </button>
         <button
           type="button"

@@ -26,8 +26,11 @@ export default function About() {
   return (
     <AnimatedBackground variant="dark">
       <Seo
-        title="About Ihsan — Our Mission"
-        description="Ihsan is a free, private Islamic productivity app for zikr, salat, fasting and Quran habits — built for the Muslim community with authentic Quran and hadith references."
+        title={t('about.seoTitle', 'About Ihsan — Our Mission')}
+        description={t(
+          'about.seoDescription',
+          'Ihsan is a free, private Islamic productivity app for zikr, salat, fasting and Quran habits — built for the Muslim community with authentic Quran and hadith references.'
+        )}
         path="/about"
       />
       <h1 className="sr-only">{t('about.srTitle')}</h1>

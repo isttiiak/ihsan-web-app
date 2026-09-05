@@ -91,8 +91,11 @@ export default function Feedback() {
   return (
     <AnimatedBackground variant="dark">
       <Seo
-        title="Feedback & Contact"
-        description="Report a bug, suggest a feature, or ask a question — reach the Ihsan team directly. Real replies, kept private, built for the ummah."
+        title={t('feedback.seoTitle', 'Feedback & Contact')}
+        description={t(
+          'feedback.seoDescription',
+          'Report a bug, suggest a feature, or ask a question — reach the Ihsan team directly. Real replies, kept private, built for the ummah.'
+        )}
         path="/feedback"
       />
       <div className="max-w-2xl mx-auto px-4 py-8 sm:py-12 space-y-6">

@@ -615,8 +615,11 @@ export default function SalatTracker() {
   return (
     <AnimatedBackground variant="dark">
       <Seo
-        title="Salat Tracker — Log Your 5 Daily Prayers"
-        description="Track Fajr, Dhuhr, Asr, Maghrib and Isha with on-time/late/kaza logging, Jumu'ah tracking, streaks and automatic missed-prayer (kaza) debt accrual."
+        title={t('salatTracker.seoTitle', 'Salat Tracker — Log Your 5 Daily Prayers')}
+        description={t(
+          'salatTracker.seoDescription',
+          "Track Fajr, Dhuhr, Asr, Maghrib and Isha with on-time/late/kaza logging, Jumu'ah tracking, streaks and automatic missed-prayer (kaza) debt accrual."
+        )}
         path="/salat"
       />
       {/* ── Tab navigation ── */}

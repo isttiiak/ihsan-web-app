@@ -82,8 +82,11 @@ export default function Landing() {
   return (
     <AnimatedBackground variant="dark">
       <Seo
-        title="Ihsan — Muslim Worship & Productivity Tracker"
-        description="Track your zikr, salat, fasting and Quran reading — with authentic references, streaks, prayer times and a friends leaderboard. Free, private, and built for the Muslim community."
+        title={t('landing.seoTitle', 'Ihsan — Muslim Worship & Productivity Tracker')}
+        description={t(
+          'landing.seoDescription',
+          'Track your zikr, salat, fasting and Quran reading — with authentic references, streaks, prayer times and a friends leaderboard. Free, private, and built for the Muslim community.'
+        )}
         path="/"
       />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-20">

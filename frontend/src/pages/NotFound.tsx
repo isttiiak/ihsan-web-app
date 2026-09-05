@@ -10,8 +10,8 @@ export default function NotFound() {
   return (
     <AnimatedBackground variant="default">
       <Seo
-        title="Page Not Found"
-        description="The page you're looking for doesn't exist."
+        title={t('notFound.seoTitle', 'Page Not Found')}
+        description={t('notFound.seoDescription', "The page you're looking for doesn't exist.")}
         path="/404"
         index={false}
       />

@@ -26,8 +26,11 @@ export default function Privacy() {
   return (
     <AnimatedBackground variant="dark">
       <Seo
-        title="Privacy Policy"
-        description="How Ihsan stores and protects your data: what we collect, what stays on your device, what friends can see, and your control over deletion."
+        title={t('privacy.seoTitle', 'Privacy Policy')}
+        description={t(
+          'privacy.seoDescription',
+          'How Ihsan stores and protects your data: what we collect, what stays on your device, what friends can see, and your control over deletion.'
+        )}
         path="/privacy"
       />
       <h1 className="sr-only">{t('privacy.srTitle')}</h1>
