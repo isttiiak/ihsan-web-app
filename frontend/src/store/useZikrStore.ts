@@ -13,18 +13,39 @@ const SESSION_TZ_OFFSET = getUserTimezoneOffset();
 // Reads are always synchronous (needed for hydration on mount).
 const PERSIST_DEBOUNCE_MS = 400;
 const _persistTimers: Record<string, ReturnType<typeof setTimeout>> = {};
+const _pendingWrites: Record<string, string> = {};
 const rawDebouncedStorage = {
   getItem: (name: string) => localStorage.getItem(name),
   setItem: (name: string, value: string) => {
     clearTimeout(_persistTimers[name]);
-    _persistTimers[name] = setTimeout(() => localStorage.setItem(name, value), PERSIST_DEBOUNCE_MS);
+    _pendingWrites[name] = value;
+    _persistTimers[name] = setTimeout(() => {
+      localStorage.setItem(name, value);
+      delete _pendingWrites[name];
+    }, PERSIST_DEBOUNCE_MS);
   },
   removeItem: (name: string) => {
     clearTimeout(_persistTimers[name]);
+    delete _pendingWrites[name];
     localStorage.removeItem(name);
   },
 };
 const debouncedStorage = createJSONStorage(() => rawDebouncedStorage);
+
+// Forces any debounced-but-not-yet-written localStorage save to happen
+// immediately. Call this before the page can be torn down (tab close,
+// navigation away) — otherwise a save queued inside the 400ms debounce
+// window is lost, along with whatever `pending` zikr counts it held.
+export function flushZikrLocalPersistence() {
+  for (const name of Object.keys(_persistTimers)) {
+    clearTimeout(_persistTimers[name]);
+    const value = _pendingWrites[name];
+    if (value !== undefined) {
+      localStorage.setItem(name, value);
+      delete _pendingWrites[name];
+    }
+  }
+}
 
 export interface CustomMeaning {
   /** Compact Arabic shown on the counter card */
@@ -72,7 +93,7 @@ interface ZikrState {
   addConfirmedCounts: (type: string, amount: number) => void;
   addCounts: (entries: Record<string, number>) => void;
   scheduleFlush: () => void;
-  flush: () => Promise<void>;
+  flush: (opts?: { keepalive?: boolean }) => Promise<void>;
 }
 
 export const useZikrStore = create<ZikrState>()(
@@ -283,7 +304,7 @@ export const useZikrStore = create<ZikrState>()(
         set({ _flushTimer: t });
       },
 
-      flush: async () => {
+      flush: async (opts) => {
         // Prevent concurrent flushes
         if (get().isFlushing) return;
 
@@ -292,7 +313,12 @@ export const useZikrStore = create<ZikrState>()(
         const entries = Object.entries(snapshot).filter(([, a]) => a !== 0);
         if (!entries.length) return;
 
-        const idToken = await getIdToken();
+        // During page unload there's no time for Firebase's async token
+        // refresh (`getIdToken()`) to complete before the page is torn
+        // down — read the last cached token synchronously instead.
+        const idToken = opts?.keepalive
+          ? localStorage.getItem('ihsan_idToken')
+          : await getIdToken();
         if (!idToken) return;
 
         const resolvedOffset = get().timezoneOffset ?? SESSION_TZ_OFFSET;
@@ -322,6 +348,9 @@ export const useZikrStore = create<ZikrState>()(
               timezoneOffset: resolvedOffset,
               today: getTrackingDay(),
             }),
+            // Lets the request survive page unload — a plain fetch would be
+            // cancelled the instant the tab closes/navigates away.
+            keepalive: opts?.keepalive,
           });
 
           if (!res.ok) {
@@ -354,6 +383,7 @@ export const useZikrStore = create<ZikrState>()(
         selected: state.selected,
         types: state.types,
         counts: state.counts,
+        lifetimeTotals: state.lifetimeTotals,
         pending: state.pending,
         total: state.total,
         lastResetDate: state.lastResetDate,

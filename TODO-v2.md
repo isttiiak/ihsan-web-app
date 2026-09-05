@@ -1,0 +1,169 @@
+# Ihsan — TODO v2: Fix, Harden, Then Build
+
+> Generated 2026-09-05 from a full codebase audit against
+> `ihsan-feature-audit-2026.md`. Organised into three tiers:
+>
+> - **Phase 0** — Fix what we started but didn't finish properly
+> - **Phase 1** — Harden foundations before adding surface area
+> - **Phase 2** — New features from the audit roadmap
+>
+> Each item is tagged: `[S]` ≤2 days, `[M]` 3–7 days, `[L]` 2–4 weeks
+
+---
+
+## Phase 0 — Fix & Complete Existing Features
+
+> Things that are built but have gaps, edge cases, or correctness issues.
+> These should be resolved before any new feature work.
+
+### 0.1 Zikr Counter — Tab-Close Data Loss
+
+- [x] **Add `beforeunload` + `visibilitychange` flush** (2026-09-05: `pagehide` + `visibilitychange`(hidden) listeners in `App.tsx` call `flush({ keepalive: true })`, which reads the cached Firebase token synchronously (no async `getIdToken()` round-trip that could get cut off) and issues `fetch(..., { keepalive: true })` so the request survives unload — `sendBeacon` wasn't viable since it can't carry the Bearer auth header. Also added `flushZikrLocalPersistence()` to force the debounced localStorage write through immediately before teardown. Verified in-browser: simulated `visibilitychange`→hidden correctly triggered the batch POST.)
+- [x] **Persist `lifetimeTotals` in the store's `partialize` config** (2026-09-05: added to the persisted fields in `useZikrStore.ts` — `hydrate()` still overwrites it with the server value on success, so this only improves the offline/slow-network fallback.)
+- [ ] `[S]` **Cross-device type deletion propagation** — type list merge is additive-only (union via `Set`). If a user deletes a type on device A, device B re-adds it on hydration. Add a `deletedTypes[]` array synced to the server, or make the server's type list authoritative with soft-delete timestamps.
+
+### 0.2 Salat Tracker — Offline & Auto-Miss Gaps
+
+- [ ] `[M]` **Offline queueing for salat status changes** — unlike zikr, salat/fasting/quran/cycle have zero local persistence of unsaved changes. A network failure during prayer logging means lost input. Add a lightweight outbox (localStorage or IndexedDB) for PATCH operations, replayed on reconnect.
+- [ ] `[S]` **Backend auto-miss for unvisited days** — auto-missed detection only runs via a frontend minute-tick timer. If the user doesn't open the app for a day, no missed status is recorded. The backend `ensureCaughtUp` handles debt accrual but not individual prayer log entries. Add retroactive log creation for skipped days when the user next opens the tracker.
+
+### 0.3 Fasting Tracker — Kaffarah Enforcement
+
+- [ ] `[S]` **Kaffarah 60-day consecutive enforcement** — the service tracks `startDate` and counts but doesn't enforce what happens when a day is missed mid-kaffarah (whether the counter resets to 0). Add explicit break detection and restart logic with a clear warning in the UI.
+- [ ] `[S]` **Auto-detect Ramadan from Hijri date** — Ramadan mode appears to be manually activated. Use the existing `getHijriToday()` to auto-prompt or auto-enable Ramadan mode when Hijri month = 9.
+
+### 0.4 Streaks — Dual System & Hardcoded Grace
+
+- [ ] `[M]` **Resolve dual streak system** — `ZikrStreak` model (updated on increment) and derived walk-back in `streak.service.ts` (used by analytics) can diverge. Either make the stored model the single source of truth consumed by analytics, or remove it entirely and rely on the derived computation. Pick one.
+- [ ] `[S]` **Make grace days configurable** — currently hardcoded to exactly 1 day. Add a user setting (0, 1, 2, or 3 grace days) stored in user preferences.
+
+### 0.5 Quran — Dual Recording & Offline Reading
+
+- [ ] `[S]` **Consolidate page-based vs ayah-based recording** — `addReading` (pages) and `addAyatReading` (ayat) both write to `QuranLog` but track different units. Clarify which is canonical, deprecate the other, and ensure analytics uses one consistent unit.
+- [ ] `[M]` **Offline Quran text** — reading requires connectivity (text fetched from quran.com API). Cache fetched surahs in IndexedDB (see 1.1) so previously-read surahs work offline.
+
+### 0.6 Friends/Noor — Missing Safety Controls
+
+- [ ] `[M]` **Friend request/approval flow** — connecting via invite code is instant and mutual with no pending state. Add an accept/reject step so users control who sees their data.
+- [ ] `[S]` **Privacy controls** — add ability to hide Noor score / go invisible on the leaderboard. Some users' fiqh position is that worship data should never be shared.
+- [ ] `[S]` **Block mechanism** — no way to block another user currently.
+
+### 0.7 Rayhanah — Garden Sync & Key Cleanup
+
+- [ ] `[S]` **Clean up orphaned `ihsan_rayhanah_garden_*` keys** — a new localStorage key is created every day and never cleaned up. Add a cleanup pass that removes keys older than 30 days on app start.
+- [ ] `[S]` **Sync Garden of Light to server** — currently device-local only. Progress is lost on device switch or cache clear. Add a simple daily-checklist endpoint.
+
+### 0.8 Documentation Drift
+
+- [ ] `[S]` **Fix CLAUDE.md AI provider references** — tech stack table says "OpenAI SDK v4" and env section says `OPENAI_API_KEY`, but the code uses Groq (`GROQ_API_KEY`, `api.groq.com`). Update to match reality.
+
+---
+
+## Phase 1 — Harden Foundations
+
+> Infrastructure and hardening work that must land before major new features.
+
+### 1.1 Storage: Migrate Heavy Data to IndexedDB
+
+- [ ] `[M]` **Zikr pending queue → IndexedDB** — `ihsan_zikr_store`'s `pending` field can grow unboundedly while offline. The entire Zustand blob is re-serialized on every tap. Move to IndexedDB with the Zustand persist adapter (`idb-keyval` or similar). Keep small config in localStorage.
+- [ ] `[M]` **React Query cache → IndexedDB** — `ihsan_rq_cache` is an unbounded cache of all API responses. The code already has a `removeOldestQuery` fallback for when localStorage fills up. Use `@tanstack/query-persist-client-core` with an IndexedDB adapter.
+- [ ] `[M]` **Quran text cache → IndexedDB** — `ihsan_surah_text_{N}_{editions}_v2` keys (up to 114+, each 50–500 KB) are the main storage pressure. Code already catches quota errors. Move to IndexedDB or CacheStorage via the service worker.
+
+### 1.2 AI Guardrail Policy — Enforcement Layer
+
+> The system prompt guardrail is well-written (6 rules, no fatawa, no hadith
+> generation, escalation boundary). What's missing is server-side enforcement.
+
+- [ ] `[S]` **Output validation** — add a post-processing pass on LLM responses: regex scan for surah:ayah patterns, hadith citation patterns, ruling language (halal/haram/fard/wajib used prescriptively). Strip or replace with the static fallback if detected.
+- [ ] `[S]` **Prompt injection defense** — sanitize free-text inputs (`userSummary`, `feature`, `fastType`) before interpolation. Add instruction-boundary markers. Consider a classification pre-check for the `userSummary` field.
+- [ ] `[S]` **Per-user rate limiting** — current `aiLimiter` is IP-based (10/hr). Add UID-based limits (e.g., 20/day per user) like the social/import limiters already do.
+- [ ] `[S]` **Lower temperature** — currently 0.8, which is high for a safety-sensitive religious domain. Drop to 0.4–0.6 to reduce hallucination risk.
+- [ ] `[S]` **Audit logging** — log prompt/response pairs (or at minimum, feature + userId + timestamp + success/fallback) for review. Currently successful calls produce zero log entries.
+- [ ] `[S]` **Document the policy** — write a standalone guardrail policy doc (in `.claude/` or `/docs/`) covering: no fatawa, retrieval-only for religious text, escalation boundaries, mental health boundary, cost controls. Currently exists only as inline code.
+- [ ] `[S]` **Mental health escalation** — detect distress signals in streak coaching responses and surface real resources rather than generic encouragement.
+
+### 1.3 i18n — Remaining Gaps
+
+> The audit doc's claim that auth/AI/DaifExplainer aren't wired to i18n is
+> outdated — all three areas ARE wired now. The real remaining gaps:
+
+- [ ] `[S]` **SEO metadata i18n** — 10 pages pass hardcoded English strings to the `<Seo>` component (title, description, OG tags). Wire through `t()` so Bengali (and future Arabic) users get localised meta tags. Files: About, Landing, Feedback, FastingTracker, Privacy, NotFound, QiblaCompass, PrayerTimes, SalatTracker, ZikrCounter.
+- [ ] `[S]` **ArabicKeyboard "space" label** — hardcoded English in `ArabicKeyboard.tsx` line 43. Wire through `t()`.
+- [ ] `[S]` **DaifExplainer extensibility** — uses manual `claim`/`claimBn` bilingual fields instead of i18n. Works for EN/BN but won't scale to Arabic/Urdu. Refactor to use translation keys when adding a third language.
+
+### 1.4 Auth Hardening
+
+- [ ] `[S]` **Firebase account deletion** — data deletion exists in Settings danger zone (`DELETE /api/user/me`), but the Firebase Authentication account itself may not be deleted. Verify and add `admin.auth().deleteUser(uid)` to the purge flow.
+- [ ] `[M]` **Session timeout for sensitive ops** — no forced re-authentication before dangerous operations (data deletion, account linking). Add re-auth prompt before destructive actions.
+
+### 1.5 Analytics Performance
+
+- [ ] `[M]` **Server-side caching for analytics aggregations** — each analytics page load runs MongoDB aggregation pipelines on raw data. For users with months of data this will degrade. Add TTL-based caching (Redis or in-memory with 15-min expiry) for heavy aggregation endpoints.
+
+---
+
+## Phase 2 — New Features (from Audit Roadmap)
+
+> Ordered by the audit's 6-month phasing. Only start these after Phase 0 and
+> the critical Phase 1 items (1.1, 1.2) are resolved.
+
+### P1 — Foundations (Weeks 1–4)
+
+- [ ] `[M]` **Sound feedback for zikr** — optional subtle wooden-bead click per count, respecting silent mode. Already flagged in TODO v1 as unbuilt.
+- [ ] `[S]` **Whole-screen tap target + eyes-free haptics** — distinct haptic patterns at 33/66/99 counts. Web-capable today.
+- [ ] `[L]` **Push notification system (web)** — VAPID key registration, permission priming screen, service worker push handlers, per-category opt-in toggles (adhan, streak-at-risk, adhkar windows, weekly summary). Backend: subscription store per UID+device, timezone-aware scheduler, dead-subscription reaper.
+- [ ] `[S]` **Adhan audio** — optional in-browser adhan sound at prayer time. Already flagged in TODO v1.
+
+### P2 — Daily Hooks (Weeks 5–9)
+
+- [ ] `[M]` **Morning/evening adhkar guided sessions** — swipeable card stack for Adhkar as-Sabah wal-Masa'. Per-card: Arabic text, transliteration, translation, repetition count, source grading, optional audio. Auto-advance on reaching count. Window detection from prayer-time engine. Counts feed into zikr pipeline for Noor and streaks.
+- [ ] `[M]` **Situational dua library** — Hisnul Muslim-style, searchable by situation (travel, illness, anxiety, exams, entering masjid, rain, anger). Use the existing verified-reference discipline. Also a massive SEO asset if rendered as public pages.
+- [ ] `[M]` **Voice-assisted dhikr counting** — the audit endorses building this but "not the way originally described." Design a listen-and-count mode that detects repetition of a target phrase without requiring exact ASR transcription.
+
+### P3 — Reach (Weeks 10–15)
+
+- [ ] `[L]` **Capacitor native shell** — wrap the Vite build for App Store + Play Store. Unlocks: reliable iOS push, home-screen widgets, volume-button counting, background audio, local notification scheduling.
+- [ ] `[M]` **Home-screen widgets** (post-Capacitor) — tasbih counter, next prayer, streak status.
+- [ ] `[S]` **Volume-button counting** (post-Capacitor) — screen off, phone in pocket dhikr. Trivial in Capacitor.
+- [ ] `[L]` **Arabic + RTL support** — `dir` attribute plumbing, migrate Tailwind `ml-`/`pl-`/`left-` to logical properties (`ms-`/`ps-`/`start-`), mirror icons/charts, test Recharts + Framer Motion under RTL. Priority: Arabic → Indonesian → Urdu → Turkish.
+
+### P4 — Depth (Weeks 16–21)
+
+- [ ] `[L]` **Hifz (memorisation) tracker** — per-ayah state machine (new → learning → consolidating → solid), spaced repetition (SM-2 or FSRS) for daily revision queue, separate new-memorisation vs revision targets, self-assessment, weak-spot heatmap, optional hide-the-text mode.
+- [ ] `[M]` **Natural-language logging** — "Prayed fajr in jamaah, read 5 pages, 100 istighfar" → parsed into structured writes across salat/quran/zikr with confirmation diff. Highest-ROI AI feature.
+- [ ] `[M]` **Weekly muhasabah report** — AI-written weekly self-accounting: improvements, slips, one suggestion, one relevant ayah/hadith **retrieved from verified corpus** (never generated). Framed as reflection, never judgement.
+- [ ] `[M]` **Rayhanah hardening** — PIN/biometric lock on the section, field-level encryption at rest for cycle documents, discreet mode (neutral icon/label in nav), pregnancy & nifas mode, plain-language privacy statement.
+
+### P5 — Growth (Weeks 22–26)
+
+- [ ] `[L]` **Programmatic SEO** — statically generate `/prayer-times/{city}` (5000+ cities), `/ramadan-calendar/{city}/{year}`, `/qibla/{city}`, `/duas/{situation}`, `/adhkar/morning|evening`, `/hijri-date-converter`, `/zakat-calculator`. Pre-render at build with Vite SSG, `hreflang` for en/bn/ar, sitemap index, Schema.org markup.
+- [ ] `[M]` **Zakat calculator** — nisab by gold/silver standard, live metal prices (daily cache), asset categories, Hijri hawl anniversary tracking, madhab differences surfaced explicitly.
+- [ ] `[L]` **Circles & group khatm** — family circles, group Quran khatm (30 juz divided, live progress, auto-reassignment), Ramadan challenges. Design constraint: show consistency %, never raw comparative rankings.
+- [ ] `[M]` **Correlation insights** — "Your Fajr on-time rate is 71% when you log Isha before 11pm." Requires optional sleep-time logging.
+- [ ] `[S]` **Khushu features** — 60-second pre-salat centring screen, auto-DND during estimated salat duration (native), post-salat adhkar auto-open.
+
+### Backlog (No Timeline)
+
+- [ ] **Masjid finder + crowdsourced jama'ah times** — confirm/report mechanic, staleness decay
+- [ ] **Watch app** (post-Capacitor) — Apple Watch / Wear OS tasbih
+- [ ] **Media Session / lock-screen controls** — count from the lock screen
+- [ ] **Monetisation plumbing** — free/premium boundary, sadaqah tier, regional pricing
+- [ ] **Full account data export** — JSON/ZIP download of all user data across all features
+- [ ] **Global madhab setting** — currently only in CycleProfile, should be a user-level preference affecting fiqh rules across features
+- [ ] **Noor score transparency** — explain the scoring formula in the UI
+- [ ] **Friend activity feed** — beyond the leaderboard, show what friends are doing (aggregates only, never specific acts)
+
+---
+
+## Anti-Features (Never Build)
+
+| Item                               | Why                                               |
+| ---------------------------------- | ------------------------------------------------- |
+| Global public leaderboards         | Riya' — showing off voids the act                 |
+| AI that answers fiqh questions     | Liability, genuinely harmful if wrong             |
+| Any ad network                     | Serves haram creatives, destroys privacy position |
+| Location-data monetisation         | Trust is Ihsan's moat (see audit §5.1)            |
+| Guilt-based streak mechanics       | Wrong theology, churns users                      |
+| Charging for core worship tracking | Basic ibadah tracking free forever                |
+| Facebook/Meta login                | Already decided, correct                          |
+| Unbounded auto-play                | Must default to a bounded cap (see memory)        |

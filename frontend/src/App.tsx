@@ -7,7 +7,7 @@ import { onAuthStateChanged, sendEmailVerification } from 'firebase/auth';
 import { auth } from './firebase.js';
 import { API_BASE } from './lib/api.js';
 import { useAuthStore } from './store/useAuthStore.js';
-import { useZikrStore } from './store/useZikrStore.js';
+import { useZikrStore, flushZikrLocalPersistence } from './store/useZikrStore.js';
 import Navbar from './components/Navbar.js';
 import Home from './pages/Home.js';
 import ZikrCounter from './pages/ZikrCounter.js';
@@ -277,6 +277,28 @@ export default function App() {
     const onOnline = () => void useZikrStore.getState().flush();
     window.addEventListener('online', onOnline);
     return () => window.removeEventListener('online', onOnline);
+  }, []);
+
+  // Tab close / navigation away: any unflushed zikr taps sitting in `pending`
+  // would otherwise wait for the debounced localStorage write (400ms) and
+  // the next user tap (800ms flush debounce) to reach the server — both of
+  // which the page may not survive long enough to see. `pagehide` covers
+  // actual unload/navigation; `visibilitychange` also catches the mobile
+  // case where the app is backgrounded without a page-lifecycle event.
+  useEffect(() => {
+    const flushBeforeTeardown = () => {
+      flushZikrLocalPersistence();
+      void useZikrStore.getState().flush({ keepalive: true });
+    };
+    const onVisibilityHidden = () => {
+      if (document.hidden) flushBeforeTeardown();
+    };
+    window.addEventListener('pagehide', flushBeforeTeardown);
+    document.addEventListener('visibilitychange', onVisibilityHidden);
+    return () => {
+      window.removeEventListener('pagehide', flushBeforeTeardown);
+      document.removeEventListener('visibilitychange', onVisibilityHidden);
+    };
   }, []);
 
   useEffect(() => {
