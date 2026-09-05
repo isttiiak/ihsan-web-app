@@ -1,5 +1,9 @@
 import QuranLog, { IQuranLog } from '../models/QuranLog.js';
-import QuranProfile, { IQuranProfile, QURAN_TOTAL_PAGES, QURAN_TOTAL_AYAT } from '../models/QuranProfile.js';
+import QuranProfile, {
+  IQuranProfile,
+  QURAN_TOTAL_PAGES,
+  QURAN_TOTAL_AYAT,
+} from '../models/QuranProfile.js';
 
 /** Unit math: 1 mushaf page ≈ 10 ayat (6236/604). Units = ayat-equivalents. */
 const AYAT_PER_PAGE = 10;
@@ -33,6 +37,13 @@ export interface ReadResult {
 }
 
 /**
+ * Legacy page-based recording, kept for historical-data continuity and test
+ * coverage of the pages+ayat unit math — NOT called by the current frontend,
+ * which logs exclusively through addAyatReading (the v4 ayah engine) below.
+ * `unitsOf()` above is what lets old page-based logs and new ayah-based logs
+ * coexist in the same QuranLog document and combine correctly in analytics;
+ * this function still writes valid data, it's just no longer the active path.
+ *
  * Adds pages to the day's log (accumulating) and, when advancePosition is set,
  * moves the mushaf bookmark forward — completing a khatm when it crosses 604.
  */
@@ -80,21 +91,28 @@ export interface AyatReadResult {
  */
 export async function addAyatReading(
   userId: string,
-  input: { date: string; count: number; surah?: number; advanceKhatm?: boolean; completedSurah?: boolean }
+  input: {
+    date: string;
+    count: number;
+    surah?: number;
+    advanceKhatm?: boolean;
+    completedSurah?: boolean;
+  }
 ): Promise<AyatReadResult> {
   const { date, count, surah, advanceKhatm, completedSurah } = input;
 
-  const log = count > 0
-    ? await QuranLog.findOneAndUpdate(
-        { userId, date },
-        { $inc: { ayat: count }, $setOnInsert: { pages: 0 } },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      )
-    : await QuranLog.findOneAndUpdate(
-        { userId, date },
-        { $setOnInsert: { pages: 0, ayat: 0 } },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      );
+  const log =
+    count > 0
+      ? await QuranLog.findOneAndUpdate(
+          { userId, date },
+          { $inc: { ayat: count }, $setOnInsert: { pages: 0 } },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        )
+      : await QuranLog.findOneAndUpdate(
+          { userId, date },
+          { $setOnInsert: { pages: 0, ayat: 0 } },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
 
   const profile = await getOrCreateProfile(userId);
   // Top-surah counter now tracks how many times a surah was READ TO THE END,
@@ -113,7 +131,10 @@ export async function addAyatReading(
       khatmCompleted = true;
     }
     profile.currentAyah = pos;
-    profile.currentPage = Math.min(QURAN_TOTAL_PAGES - 1, Math.floor(pos / (QURAN_TOTAL_AYAT / QURAN_TOTAL_PAGES)));
+    profile.currentPage = Math.min(
+      QURAN_TOTAL_PAGES - 1,
+      Math.floor(pos / (QURAN_TOTAL_AYAT / QURAN_TOTAL_PAGES))
+    );
   }
   await profile.save();
 
@@ -149,7 +170,12 @@ export async function getHistory(
   const logs = await QuranLog.find({ userId, date: { $gte: since, $lte: end } })
     .select('date pages ayat')
     .sort({ date: 1 });
-  return logs.map((l) => ({ date: l.date, ayat: l.ayat ?? 0, pages: l.pages ?? 0, units: unitsOf(l) }));
+  return logs.map((l) => ({
+    date: l.date,
+    ayat: l.ayat ?? 0,
+    pages: l.pages ?? 0,
+    units: unitsOf(l),
+  }));
 }
 
 export interface QuranProfileUpdate {
@@ -159,14 +185,20 @@ export interface QuranProfileUpdate {
   currentAyah?: number;
 }
 
-export async function updateProfile(userId: string, input: QuranProfileUpdate): Promise<IQuranProfile> {
+export async function updateProfile(
+  userId: string,
+  input: QuranProfileUpdate
+): Promise<IQuranProfile> {
   const profile = await getOrCreateProfile(userId);
   if (input.dailyGoalPages !== undefined) profile.dailyGoalPages = input.dailyGoalPages;
   if (input.currentPage !== undefined) profile.currentPage = input.currentPage;
   if (input.dailyGoalAyat !== undefined) profile.dailyGoalAyat = input.dailyGoalAyat;
   if (input.currentAyah !== undefined) {
     profile.currentAyah = input.currentAyah;
-    profile.currentPage = Math.min(QURAN_TOTAL_PAGES - 1, Math.floor(input.currentAyah / (QURAN_TOTAL_AYAT / QURAN_TOTAL_PAGES)));
+    profile.currentPage = Math.min(
+      QURAN_TOTAL_PAGES - 1,
+      Math.floor(input.currentAyah / (QURAN_TOTAL_AYAT / QURAN_TOTAL_PAGES))
+    );
   }
   await profile.save();
   return profile;
@@ -259,10 +291,14 @@ export async function getSummary(userId: string, today?: string): Promise<QuranS
 
   const [profile, logs, allTimeAgg] = await Promise.all([
     getOrCreateProfile(userId),
-    QuranLog.find({ userId, date: { $gte: windowSince, $lte: end } }).select('date pages ayat').sort({ date: 1 }),
+    QuranLog.find({ userId, date: { $gte: windowSince, $lte: end } })
+      .select('date pages ayat')
+      .sort({ date: 1 }),
     QuranLog.aggregate([
       { $match: { userId } },
-      { $group: { _id: null, pages: { $sum: '$pages' }, ayat: { $sum: { $ifNull: ['$ayat', 0] } } } },
+      {
+        $group: { _id: null, pages: { $sum: '$pages' }, ayat: { $sum: { $ifNull: ['$ayat', 0] } } },
+      },
     ]) as Promise<Array<{ _id: null; pages: number; ayat: number }>>,
   ]);
 
@@ -375,7 +411,10 @@ export async function getSummary(userId: string, today?: string): Promise<QuranS
 /** Whitelisted tafsir editions (id → {name, language, slug}) available to the
  * reader. Sourced from api.quran.com; text is real scholarly tafsir, never
  * AI-generated. */
-export const TAFSIR_EDITIONS: Record<number, { name: string; language: 'en' | 'bn'; slug: string }> = {
+export const TAFSIR_EDITIONS: Record<
+  number,
+  { name: string; language: 'en' | 'bn'; slug: string }
+> = {
   169: { name: 'Ibn Kathir (Abridged)', language: 'en', slug: 'en-tafisr-ibn-kathir' },
   168: { name: "Ma'arif al-Qur'an", language: 'en', slug: 'en-tafsir-maarif-ul-quran' },
   817: { name: 'Tazkirul Quran', language: 'en', slug: 'tazkirul-quran-en' },
@@ -409,10 +448,16 @@ export interface TafsirResult {
   url: string;
 }
 
-export async function getTafsir(surah: number, ayah: number, editionId: number): Promise<TafsirResult> {
+export async function getTafsir(
+  surah: number,
+  ayah: number,
+  editionId: number
+): Promise<TafsirResult> {
   const meta = TAFSIR_EDITIONS[editionId];
   if (!meta) throw Object.assign(new Error('Unknown tafsir edition'), { status: 400 });
-  const res = await fetch(`https://api.quran.com/api/v4/tafsirs/${editionId}/by_ayah/${surah}:${ayah}`);
+  const res = await fetch(
+    `https://api.quran.com/api/v4/tafsirs/${editionId}/by_ayah/${surah}:${ayah}`
+  );
   if (!res.ok) throw Object.assign(new Error('Tafsir source unavailable'), { status: 502 });
   const data = (await res.json()) as { tafsir?: { text?: string; resource_name?: string } };
   const text = htmlToText(data.tafsir?.text ?? '');

@@ -39,8 +39,8 @@
 
 ### 0.5 Quran — Dual Recording & Offline Reading
 
-- [ ] `[S]` **Consolidate page-based vs ayah-based recording** — `addReading` (pages) and `addAyatReading` (ayat) both write to `QuranLog` but track different units. Clarify which is canonical, deprecate the other, and ensure analytics uses one consistent unit.
-- [ ] `[M]` **Offline Quran text** — reading requires connectivity (text fetched from quran.com API). Cache fetched surahs in IndexedDB (see 1.1) so previously-read surahs work offline.
+- [x] **Consolidate page-based vs ayah-based recording** — investigated: the "dual recording" was already correctly unified server-side. `unitsOf()` in `quran.service.ts` converts both `pages` and `ayat` into one ayat-equivalent measure (`ayat + pages·10`), and every analytics computation (streak, goal, pace, khatm ETA) already goes through it — this was never actually inconsistent. What genuinely needed cleanup: `useLogReading()`, the frontend hook for the legacy page-based path, had zero call sites anywhere in the app (confirmed via repo-wide grep) — the v4 ayah engine (`useReadAyat`) is the only path any component actually calls. Removed the dead hook and its now-unused `QURAN_TOTAL_PAGES` export from `useQuran.ts`. Left the backend `addReading`/`/api/quran/read` alone (still has real test coverage, still valid for historical-data continuity) but added a doc comment on `addReading` marking it explicitly legacy/back-compat-only so the next reader isn't confused about which path is canonical.
+- [x] **Offline Quran text** (2026-09-05: migrated `loadSurahList`/`loadSurahText` in `quranData.ts` from `localStorage` to IndexedDB via a new minimal `idbCache.ts` helper — this doubles as Phase 1.1's "Quran text cache → IndexedDB" item, same underlying fix. Includes a one-time migration path: an existing localStorage-cached surah is read once, moved into IndexedDB, and removed from localStorage, instead of being discarded and refetched. Note: the PWA service worker already CacheFirst-caches `api.alquran.cloud` for 30 days, so previously-read surahs were likely already available offline before this change — the real win here is relieving localStorage pressure (the actual problem the audit flagged), not newly-unlocked offline capability. Verified live in-browser: confirmed a fetched surah lands in IndexedDB (not localStorage), and confirmed the migration path returns pre-existing localStorage data, writes it to IndexedDB, and clears the old key — all without a network refetch.)
 
 ### 0.6 Friends/Noor — Missing Safety Controls
 
@@ -67,7 +67,7 @@
 
 - [ ] `[M]` **Zikr pending queue → IndexedDB** — `ihsan_zikr_store`'s `pending` field can grow unboundedly while offline. The entire Zustand blob is re-serialized on every tap. Move to IndexedDB with the Zustand persist adapter (`idb-keyval` or similar). Keep small config in localStorage.
 - [ ] `[M]` **React Query cache → IndexedDB** — `ihsan_rq_cache` is an unbounded cache of all API responses. The code already has a `removeOldestQuery` fallback for when localStorage fills up. Use `@tanstack/query-persist-client-core` with an IndexedDB adapter.
-- [ ] `[M]` **Quran text cache → IndexedDB** — `ihsan_surah_text_{N}_{editions}_v2` keys (up to 114+, each 50–500 KB) are the main storage pressure. Code already catches quota errors. Move to IndexedDB or CacheStorage via the service worker.
+- [x] ~~**Quran text cache → IndexedDB**~~ — done as part of 0.5 above (same fix, same commit family).
 
 ### 1.2 AI Guardrail Policy — Enforcement Layer
 
@@ -129,7 +129,16 @@
 
 ### P4 — Depth (Weeks 16–21)
 
-- [ ] `[L]` **Hifz (memorisation) tracker** — per-ayah state machine (new → learning → consolidating → solid), spaced repetition (SM-2 or FSRS) for daily revision queue, separate new-memorisation vs revision targets, self-assessment, weak-spot heatmap, optional hide-the-text mode.
+- [ ] `[L]` **Hifz (memorisation) tracker** — _requested 2026-09-05, to build as a new tab alongside Counter/Analytics in the Quran section._
+  - Per-ayah state machine: `new → learning → consolidating → solid`
+  - Spaced repetition (SM-2 or FSRS) generating a daily revision queue from ayat not yet `solid`
+  - Two separate daily targets: new memorisation count vs. revision count (mirrors real ḥalaqah structure)
+  - Self-assessment after each recall attempt: `easy / hesitant / forgot` — drives the next review interval
+  - Weak-spot heatmap across the muṣḥaf (which surahs/pages need the most revision)
+  - Optional hide-the-text mode with progressive word masking, for testing recall without peeking
+  - Reuses existing infrastructure: `QuranProfile`'s `readerPos`/bookmark patterns for per-ayah state storage, the streak/goal machinery already proven in zikr and quran reading
+  - New backend: a `HifzEntry` model (userId, surah, ayah, state, lastReviewedAt, nextDueAt, easeFactor) + a `hifz.service.ts` with the SRS scheduling logic
+  - New frontend: a `QuranHifz.tsx` page wired into `QuranTabNav` next to the existing Counter/Analytics tabs
 - [ ] `[M]` **Natural-language logging** — "Prayed fajr in jamaah, read 5 pages, 100 istighfar" → parsed into structured writes across salat/quran/zikr with confirmation diff. Highest-ROI AI feature.
 - [ ] `[M]` **Weekly muhasabah report** — AI-written weekly self-accounting: improvements, slips, one suggestion, one relevant ayah/hadith **retrieved from verified corpus** (never generated). Framed as reflection, never judgement.
 - [ ] `[M]` **Rayhanah hardening** — PIN/biometric lock on the section, field-level encryption at rest for cycle documents, discreet mode (neutral icon/label in nav), pregnancy & nifas mode, plain-language privacy statement.
