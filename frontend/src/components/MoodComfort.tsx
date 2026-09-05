@@ -13,6 +13,10 @@ import { AiBadge } from './ai/AiFlair.js';
 
 const CACHE_KEY = 'ihsan_mood_comfort';
 
+// Computed locally from `moods` (not from the AI response) so it still shows
+// on a cache hit, where the mutation never runs — see useEffect below.
+const DISTRESS_MOODS = new Set(['low', 'anxious']);
+
 function sig(day: string, moods: string[]): string {
   return `${day}|${[...moods].sort().join(',')}`;
 }
@@ -48,6 +52,7 @@ export default function MoodComfort({
   const comfort = useAiComfort();
   const [message, setMessage] = useState<string | null>(null);
   const key = sig(day, moods);
+  const showResourceNote = moods.some((m) => DISTRESS_MOODS.has(m));
 
   useEffect(() => {
     if (!moods.length) {
@@ -100,6 +105,14 @@ export default function MoodComfort({
       <p className="text-white/30 text-[10px] mt-2">
         {t('naseeh.disclaimer', "✨ A companion's words — not medical or religious advice.")}
       </p>
+      {showResourceNote && (
+        <p className="text-brand-pink/60 text-[11px] mt-1.5 leading-relaxed">
+          {t(
+            'naseeh.resourceNote',
+            'If this feeling sits heavy for more than today, please reach out to someone you trust or a mental health professional — you deserve real support, not just words.'
+          )}
+        </p>
+      )}
     </motion.div>
   );
 }
