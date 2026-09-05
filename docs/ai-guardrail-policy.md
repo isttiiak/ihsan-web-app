@@ -121,7 +121,8 @@ being wired up to a real UI later without anyone re-reading this doc first.
 ## 8. Audit logging
 
 Every `complete()` call logs a single structured line
-(`console.log(JSON.stringify({tag: 'ai_call', ...}))`) with: feature name,
+(`console.warn(JSON.stringify({tag: 'ai_call', ...}))` — `.warn`, not `.log`,
+since the project's lint config only allows `warn`/`error`) with: feature name,
 userId, timestamp, success/failure, provider used, and — if the output
 filter fired — which category it matched. **Deliberately not logged:** the
 actual prompt or response text. Several features carry personal data (cycle
