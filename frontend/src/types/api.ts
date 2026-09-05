@@ -27,6 +27,8 @@ export interface ZikrGoal {
   userId?: string;
   dailyTarget: number;
   isActive: boolean;
+  /** Consecutive missed days forgiven before the streak resets (0-3, default 1). */
+  graceDays: number;
 }
 
 export interface ZikrStreak {

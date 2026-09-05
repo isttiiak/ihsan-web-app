@@ -10,5 +10,6 @@ export const analyticsQuerySchema = z.object({
 export const setGoalSchema = z.object({
   body: z.object({
     dailyTarget: z.number().int().min(1).max(100000),
+    graceDays: z.number().int().min(0).max(3).optional(),
   }),
 });

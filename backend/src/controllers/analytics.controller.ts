@@ -4,18 +4,36 @@ import * as streakService from '../services/streak.service.js';
 import { DEFAULT_TIMEZONE_OFFSET, truncateToTimezone } from '../utils/timezone-flexible.js';
 import ZikrDaily from '../models/ZikrDaily.js';
 
-export const getAnalyticsHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getAnalyticsHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const { days = '7', timezoneOffset, today } = req.query as { days?: string; timezoneOffset?: string; today?: string };
-    const userOffset = timezoneOffset !== undefined ? parseInt(timezoneOffset) : DEFAULT_TIMEZONE_OFFSET;
-    const data = await analyticsService.getAnalyticsData(req.user.uid, parseInt(days), userOffset, today);
+    const {
+      days = '7',
+      timezoneOffset,
+      today,
+    } = req.query as { days?: string; timezoneOffset?: string; today?: string };
+    const userOffset =
+      timezoneOffset !== undefined ? parseInt(timezoneOffset) : DEFAULT_TIMEZONE_OFFSET;
+    const data = await analyticsService.getAnalyticsData(
+      req.user.uid,
+      parseInt(days),
+      userOffset,
+      today
+    );
     res.json({ ok: true, ...data });
   } catch (err) {
     next(err);
   }
 };
 
-export const getGoalHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getGoalHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const goal = await analyticsService.getGoal(req.user.uid);
     res.json({ ok: true, goal });
@@ -24,20 +42,29 @@ export const getGoalHandler = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-export const setGoalHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const setGoalHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const { dailyTarget } = req.body as { dailyTarget: number };
-    const goal = await analyticsService.setGoal(req.user.uid, dailyTarget);
+    const { dailyTarget, graceDays } = req.body as { dailyTarget: number; graceDays?: number };
+    const goal = await analyticsService.setGoal(req.user.uid, dailyTarget, graceDays);
     res.json({ ok: true, goal });
   } catch (err) {
     next(err);
   }
 };
 
-export const getStreakHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getStreakHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { timezoneOffset, today } = req.query as { timezoneOffset?: string; today?: string };
-    const userOffset = timezoneOffset !== undefined ? parseInt(timezoneOffset) : DEFAULT_TIMEZONE_OFFSET;
+    const userOffset =
+      timezoneOffset !== undefined ? parseInt(timezoneOffset) : DEFAULT_TIMEZONE_OFFSET;
     const streak = await streakService.getStreak(req.user.uid, userOffset, today);
     res.json({ ok: true, streak });
   } catch (err) {
@@ -45,10 +72,15 @@ export const getStreakHandler = async (req: Request, res: Response, next: NextFu
   }
 };
 
-export const pauseStreakHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const pauseStreakHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { timezoneOffset, today } = req.query as { timezoneOffset?: string; today?: string };
-    const userOffset = timezoneOffset !== undefined ? parseInt(timezoneOffset) : DEFAULT_TIMEZONE_OFFSET;
+    const userOffset =
+      timezoneOffset !== undefined ? parseInt(timezoneOffset) : DEFAULT_TIMEZONE_OFFSET;
     const result = await streakService.pauseStreak(req.user.uid, userOffset, today);
     res.json(result);
   } catch (err) {
@@ -56,10 +88,15 @@ export const pauseStreakHandler = async (req: Request, res: Response, next: Next
   }
 };
 
-export const resumeStreakHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const resumeStreakHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { timezoneOffset, today } = req.query as { timezoneOffset?: string; today?: string };
-    const userOffset = timezoneOffset !== undefined ? parseInt(timezoneOffset) : DEFAULT_TIMEZONE_OFFSET;
+    const userOffset =
+      timezoneOffset !== undefined ? parseInt(timezoneOffset) : DEFAULT_TIMEZONE_OFFSET;
     const result = await streakService.resumeStreak(req.user.uid, userOffset, today);
     if (!result) {
       res.status(404).json({ ok: false, error: 'Streak not found' });
@@ -71,7 +108,11 @@ export const resumeStreakHandler = async (req: Request, res: Response, next: Nex
   }
 };
 
-export const checkStreakHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const checkStreakHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const userId = req.user.uid;
     const today = truncateToTimezone(Date.now(), DEFAULT_TIMEZONE_OFFSET);
@@ -95,7 +136,11 @@ export const checkStreakHandler = async (req: Request, res: Response, next: Next
   }
 };
 
-export const compareAnalyticsHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const compareAnalyticsHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const userId = req.user.uid;
     const { days = '7' } = req.query as { days?: string };
@@ -110,14 +155,21 @@ export const compareAnalyticsHandler = async (req: Request, res: Response, next:
     const lastPeriodStart = new Date(lastPeriodEnd);
     lastPeriodStart.setDate(lastPeriodStart.getDate() - daysNum + 1);
 
-    const currentRecords = await ZikrDaily.find({ userId, date: { $gte: periodStart, $lte: today } });
+    const currentRecords = await ZikrDaily.find({
+      userId,
+      date: { $gte: periodStart, $lte: today },
+    });
     const currentTotal = currentRecords.reduce((sum, r) => sum + r.count, 0);
 
-    const lastRecords = await ZikrDaily.find({ userId, date: { $gte: lastPeriodStart, $lte: lastPeriodEnd } });
+    const lastRecords = await ZikrDaily.find({
+      userId,
+      date: { $gte: lastPeriodStart, $lte: lastPeriodEnd },
+    });
     const lastTotal = lastRecords.reduce((sum, r) => sum + r.count, 0);
 
     const difference = currentTotal - lastTotal;
-    const percentChange = lastTotal > 0 ? parseFloat(((difference / lastTotal) * 100).toFixed(1)) : 0;
+    const percentChange =
+      lastTotal > 0 ? parseFloat(((difference / lastTotal) * 100).toFixed(1)) : 0;
 
     res.json({
       ok: true,

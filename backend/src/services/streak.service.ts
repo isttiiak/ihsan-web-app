@@ -4,10 +4,12 @@ import ZikrStreak, { IZikrStreak } from '../models/ZikrStreak.js';
 import { truncateToTimezone, DEFAULT_TIMEZONE_OFFSET } from '../utils/timezone-flexible.js';
 
 /**
- * Streak rules (Istiak's spec, 2026-07-02):
+ * Streak rules (Istiak's spec, 2026-07-02; grace made configurable 2026-09-05):
  * - A day counts when its zikr total reaches the daily goal.
- * - Missing ONE day is a "grace" day — the streak survives if the next day is
- *   completed. Missing TWO consecutive days resets the streak to 0.
+ * - Missing up to `graceDays` CONSECUTIVE days is forgiven — the streak
+ *   survives if a day within the grace window is completed. Exceeding
+ *   `graceDays` consecutive misses resets the streak to 0. Default is 1 day
+ *   (the original hardcoded behaviour); user-configurable 0-3 via ZikrGoal.
  * - Today is never a "miss" while it's still in progress.
  * - The streak is DERIVED from ZikrDaily buckets on every read, so
  *   backfilling a missed day (Log Missed Counts, up to 2 days back)
@@ -52,10 +54,10 @@ function keyToDate(key: string): Date {
 }
 
 async function loadDayTotals(userId: string, sinceKey: string): Promise<Map<string, number>> {
-  const rows = await ZikrDaily.aggregate([
+  const rows = (await ZikrDaily.aggregate([
     { $match: { userId, date: { $gte: keyToDate(sinceKey) } } },
     { $group: { _id: '$date', total: { $sum: '$count' } } },
-  ]) as Array<{ _id: Date; total: number }>;
+  ])) as Array<{ _id: Date; total: number }>;
   const map = new Map<string, number>();
   for (const r of rows) {
     const k = keyOf(new Date(r._id));
@@ -75,12 +77,14 @@ export async function getStreakStatus(
     ZikrStreak.findOne({ userId }),
   ]);
   const goal = goalDoc?.dailyTarget ?? 100;
+  const graceDays = goalDoc?.graceDays ?? 1;
 
   // Fajr-boundary tracking day: the client owns the day decision and sends it
   // explicitly; the clock+offset fallback keeps old clients working.
-  const todayKey = todayStr && DAY_STR_RE.test(todayStr)
-    ? todayStr
-    : keyOf(truncateToTimezone(Date.now(), timezoneOffset));
+  const todayKey =
+    todayStr && DAY_STR_RE.test(todayStr)
+      ? todayStr
+      : keyOf(truncateToTimezone(Date.now(), timezoneOffset));
   const yesterdayKey = shiftKey(todayKey, -1);
   const floorKey = shiftKey(todayKey, -365);
 
@@ -127,7 +131,7 @@ export async function getStreakStatus(
         misses = 0;
       } else {
         misses++;
-        if (misses >= 2) break; // two consecutive missed days → chain dead
+        if (misses > graceDays) break; // exceeded the grace window → chain dead
       }
       cursor = shiftKey(cursor, -1);
     }
@@ -137,7 +141,8 @@ export async function getStreakStatus(
   let state: StreakState;
   if (streak === 0) state = 'none';
   else if (todayMet) state = 'active';
-  else if (met(yesterdayKey) || creditKey === yesterdayKey || creditKey === todayKey) state = 'active';
+  else if (met(yesterdayKey) || creditKey === yesterdayKey || creditKey === todayKey)
+    state = 'active';
   else state = 'grace'; // yesterday missed — today is the last chance
 
   // Persist ONLY the longest-streak high-water mark (never the anchor pair)
@@ -146,7 +151,12 @@ export async function getStreakStatus(
     doc.longestStreak = longest;
     await doc.save();
   } else if (!doc && streak > 0) {
-    await ZikrStreak.create({ userId, longestStreak: longest, currentStreak: 0, lastCompletedDate: null });
+    await ZikrStreak.create({
+      userId,
+      longestStreak: longest,
+      currentStreak: 0,
+      lastCompletedDate: null,
+    });
   }
 
   return {
@@ -164,25 +174,48 @@ export async function getStreakStatus(
  * Per-day statuses for a date range (used for the weekly heatmap tags).
  * met      — goal reached
  * pending  — today, goal not yet reached
- * grace    — missed, but the streak survived it (single-day gap)
- * missed   — missed and part of a broken chain (or plain miss)
+ * grace    — missed, but within the (configurable) grace window — the chain
+ *            survives as long as the RUN of consecutive misses it belongs to
+ *            doesn't exceed `graceDays`, same rule getStreakStatus applies
+ * missed   — a run of consecutive misses that exceeded `graceDays` — every
+ *            day in that run breaks the chain, not just the day that tips it
+ *            over (matches getStreakStatus, which can't "unbreak" earlier
+ *            days once the grace budget for that run is exhausted)
  */
 export function classifyDays(
   keys: string[],
   totals: Map<string, number>,
   goal: number,
-  todayKey: string
+  todayKey: string,
+  graceDays: number = 1
 ): Record<string, 'met' | 'pending' | 'grace' | 'missed'> {
   const met = (k: string): boolean => (totals.get(k) ?? 0) >= goal;
   const out: Record<string, 'met' | 'pending' | 'grace' | 'missed'> = {};
-  for (const k of keys) {
-    if (met(k)) { out[k] = 'met'; continue; }
-    if (k >= todayKey) { out[k] = 'pending'; continue; }
-    const prevMet = met(shiftKey(k, -1));
-    const nextKey = shiftKey(k, 1);
-    const nextOk = met(nextKey) || nextKey === todayKey; // next day saved it, or it's today's chance
-    out[k] = prevMet && nextOk ? 'grace' : 'missed';
+
+  const sorted = [...keys].sort();
+  let run: string[] = [];
+  const flushRun = () => {
+    if (!run.length) return;
+    const tag = run.length <= graceDays ? 'grace' : 'missed';
+    for (const d of run) out[d] = tag;
+    run = [];
+  };
+
+  for (const k of sorted) {
+    if (met(k)) {
+      flushRun();
+      out[k] = 'met';
+      continue;
+    }
+    if (k >= todayKey) {
+      flushRun(); // a run ending right at today is still within its own budget check
+      out[k] = 'pending';
+      continue;
+    }
+    run.push(k);
   }
+  flushRun(); // trailing run with no todayKey in `keys` (shouldn't normally happen)
+
   return out;
 }
 
@@ -276,9 +309,10 @@ export async function resumeStreak(
 
   // Write the frozen streak as a credit anchored at yesterday so today's
   // zikr seamlessly continues it.
-  const todayKey = todayStr && DAY_STR_RE.test(todayStr)
-    ? todayStr
-    : keyOf(truncateToTimezone(Date.now(), timezoneOffset));
+  const todayKey =
+    todayStr && DAY_STR_RE.test(todayStr)
+      ? todayStr
+      : keyOf(truncateToTimezone(Date.now(), timezoneOffset));
   streak.isPaused = false;
   streak.currentStreak = streak.pausedStreak;
   streak.lastCompletedDate = keyToDate(shiftKey(todayKey, -1));

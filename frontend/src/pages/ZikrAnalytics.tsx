@@ -760,6 +760,7 @@ export default function ZikrAnalytics() {
   const [activeTab, setActiveTab] = useState<'today' | 'all'>('today');
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [newGoal, setNewGoal] = useState(100);
+  const [newGraceDays, setNewGraceDays] = useState(1);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [sessionsDate, setSessionsDate] = useState(() => getTrackingDay());
 
@@ -785,7 +786,10 @@ export default function ZikrAnalytics() {
 
   const handleUpdateGoal = () => {
     if (!newGoal || newGoal < 1) return;
-    updateGoal.mutate(newGoal, { onSuccess: () => setShowGoalModal(false) });
+    updateGoal.mutate(
+      { dailyTarget: newGoal, graceDays: newGraceDays },
+      { onSuccess: () => setShowGoalModal(false) }
+    );
   };
 
   if (isLoading) {
@@ -905,6 +909,7 @@ export default function ZikrAnalytics() {
               today={today}
               onEditGoal={() => {
                 setNewGoal(goal?.dailyTarget ?? 100);
+                setNewGraceDays(goal?.graceDays ?? 1);
                 setShowGoalModal(true);
               }}
             />
@@ -1284,6 +1289,28 @@ export default function ZikrAnalytics() {
                   className="input input-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald"
                   placeholder={t('zikrAnalytics.enterGoal')}
                 />
+              </div>
+              <div className="form-control mt-4">
+                <label className="label">
+                  <span className="label-text text-white/70 font-semibold">
+                    {t('zikrAnalytics.graceDays')}
+                  </span>
+                </label>
+                <select
+                  value={newGraceDays}
+                  onChange={(e) => setNewGraceDays(parseInt(e.target.value, 10))}
+                  className="select select-bordered bg-brand-deep border-brand-border text-white focus:border-brand-emerald"
+                >
+                  <option value={0}>{t('zikrAnalytics.grace0')}</option>
+                  <option value={1}>{t('zikrAnalytics.grace1')}</option>
+                  <option value={2}>{t('zikrAnalytics.grace2')}</option>
+                  <option value={3}>{t('zikrAnalytics.grace3')}</option>
+                </select>
+                <label className="label">
+                  <span className="label-text-alt text-white/30">
+                    {t('zikrAnalytics.graceDaysNote')}
+                  </span>
+                </label>
               </div>
               <div className="modal-action">
                 <button

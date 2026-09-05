@@ -60,7 +60,7 @@ function buildZikrAnalytics(days: number): AnalyticsResponse {
         { zikrType: 'Allahu Akbar', total: Math.floor(todayTotal * 0.34) },
       ],
     },
-    goal: { dailyTarget: 500, isActive: true },
+    goal: { dailyTarget: 500, isActive: true, graceDays: 1 },
     streak: { currentStreak: 12, longestStreak: 21, state: 'active' },
     allTime: { totalCount: 42300, bestDay: { date: dateStr(14), count: 2180 } },
     perType: [

@@ -93,7 +93,8 @@ export function useStreak() {
 export function useUpdateGoal() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (dailyTarget: number) => api.post('/api/analytics/goal', { dailyTarget }),
+    mutationFn: ({ dailyTarget, graceDays }: { dailyTarget: number; graceDays?: number }) =>
+      api.post('/api/analytics/goal', { dailyTarget, graceDays }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['analytics'] });
     },

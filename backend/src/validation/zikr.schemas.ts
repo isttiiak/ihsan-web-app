@@ -22,9 +22,16 @@ const amountField = z
   .refine((a) => a !== 0, { message: 'amount may not be 0' })
   .default(1);
 
-// Backfill window: today plus the two previous days (matches the streak's
-// grace rules — you may only repair the days that can still save a streak),
-// with a little slack for timezones/clock skew.
+// Backfill window: today plus the two previous days — sized to the default
+// 1-day grace period, with a little slack for timezones/clock skew. A user
+// who raises graceDays beyond the default (see ZikrGoal.graceDays) can have
+// their streak automatically bridge a longer gap once they resume tapping
+// normally, but this static bound is NOT scaled to their setting — manually
+// repairing ("Log Missed Counts") a day older than 2 days back is still
+// refused even with a wider grace window. Widening this would need the
+// per-user graceDays value available inside the schema, which Zod's static
+// validation doesn't have; left as a known limitation rather than plumbing
+// a DB lookup into request validation for an edge case.
 const tsField = z
   .number()
   .optional()

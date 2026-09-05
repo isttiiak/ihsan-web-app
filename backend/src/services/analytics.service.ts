@@ -2,7 +2,11 @@ import User from '../models/User.js';
 import ZikrDaily from '../models/ZikrDaily.js';
 import ZikrGoal, { IZikrGoal } from '../models/ZikrGoal.js';
 import { getStreak, classifyDays, StreakResponse } from './streak.service.js';
-import { truncateToTimezone, bucketDateForDayString, DEFAULT_TIMEZONE_OFFSET } from '../utils/timezone-flexible.js';
+import {
+  truncateToTimezone,
+  bucketDateForDayString,
+  DEFAULT_TIMEZONE_OFFSET,
+} from '../utils/timezone-flexible.js';
 import { ChartDataPoint } from '../types/api.types.js';
 
 export interface AnalyticsData {
@@ -24,8 +28,9 @@ export async function getAnalyticsData(
 ): Promise<AnalyticsData> {
   const DAY_MS = 86_400_000;
   // Fajr-boundary tracking day (client-sent); clock+offset fallback
-  const today = (todayStr ? bucketDateForDayString(todayStr, timezoneOffset) : null)
-    ?? truncateToTimezone(Date.now(), timezoneOffset);
+  const today =
+    (todayStr ? bucketDateForDayString(todayStr, timezoneOffset) : null) ??
+    truncateToTimezone(Date.now(), timezoneOffset);
   const startDate = new Date(today.getTime() - (days - 1) * DAY_MS);
 
   // truncateToTimezone anchors every bucket so its UTC date part equals the
@@ -71,7 +76,8 @@ export async function getAnalyticsData(
     (max, d) => (d.total > max.total ? d : max),
     chartData[0] ?? { date: null as unknown as string, total: 0, breakdown: {} }
   );
-  const average = totals.length > 0 ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
+  const average =
+    totals.length > 0 ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
 
   // getStreak derives the live streak from buckets (2-consecutive-miss reset,
   // single-day grace) and refreshes the checkpoint — no cron needed.
@@ -89,7 +95,13 @@ export async function getAnalyticsData(
   {
     const dailyTarget = goal?.dailyTarget ?? 100;
     const totalsMap = new Map<string, number>(chartData.map((d) => [d.date, d.total]));
-    const statuses = classifyDays(chartData.map((d) => d.date), totalsMap, dailyTarget, dateKey(today));
+    const statuses = classifyDays(
+      chartData.map((d) => d.date),
+      totalsMap,
+      dailyTarget,
+      dateKey(today),
+      goal?.graceDays ?? 1
+    );
     for (const d of chartData) d.status = statuses[d.date];
   }
 
@@ -97,19 +109,22 @@ export async function getAnalyticsData(
   if (user?.zikrTotals instanceof Map) {
     perType = [...user.zikrTotals.entries()].map(([zikrType, total]) => ({ zikrType, total }));
   } else if (user?.zikrTotals && typeof user.zikrTotals === 'object') {
-    perType = Object.entries(user.zikrTotals as unknown as Record<string, number>).map(([zikrType, total]) => ({ zikrType, total }));
+    perType = Object.entries(user.zikrTotals as unknown as Record<string, number>).map(
+      ([zikrType, total]) => ({ zikrType, total })
+    );
   }
 
-  const allDailyRecords = await ZikrDaily.aggregate([
+  const allDailyRecords = (await ZikrDaily.aggregate([
     { $match: { userId } },
     { $group: { _id: '$date', total: { $sum: '$count' } } },
     { $sort: { total: -1 } },
     { $limit: 1 },
-  ]) as Array<{ _id: Date; total: number }>;
+  ])) as Array<{ _id: Date; total: number }>;
 
-  const bestDay = allDailyRecords.length > 0
-    ? { date: allDailyRecords[0]?._id ?? null, count: allDailyRecords[0]?.total ?? 0 }
-    : { date: null, count: 0 };
+  const bestDay =
+    allDailyRecords.length > 0
+      ? { date: allDailyRecords[0]?._id ?? null, count: allDailyRecords[0]?.total ?? 0 }
+      : { date: null, count: 0 };
 
   return {
     period: {
@@ -145,13 +160,18 @@ export async function getGoal(userId: string): Promise<IZikrGoal> {
   return goal;
 }
 
-export async function setGoal(userId: string, dailyTarget: number): Promise<IZikrGoal> {
+export async function setGoal(
+  userId: string,
+  dailyTarget: number,
+  graceDays?: number
+): Promise<IZikrGoal> {
   let goal = await ZikrGoal.findOne({ userId });
   if (!goal) {
-    goal = new ZikrGoal({ userId, dailyTarget });
+    goal = new ZikrGoal({ userId, dailyTarget, graceDays });
   } else {
     goal.dailyTarget = dailyTarget;
     goal.isActive = true;
+    if (graceDays !== undefined) goal.graceDays = graceDays;
   }
   await goal.save();
   return goal;
