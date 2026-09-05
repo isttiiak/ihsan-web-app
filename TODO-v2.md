@@ -57,6 +57,15 @@
 
 - [ ] `[S]` **Fix CLAUDE.md AI provider references** — tech stack table says "OpenAI SDK v4" and env section says `OPENAI_API_KEY`, but the code uses Groq (`GROQ_API_KEY`, `api.groq.com`). Update to match reality.
 
+### 0.9 Auth — Cross-Account State Leak on Sign-Out
+
+> Not in the original audit — found 2026-09-05 while the user was testing sign-out/sign-in behavior manually and noticed a previous account's data flash on screen.
+
+- [x] **Logout button called the wrong zikr reset action** (2026-09-05: `Navbar.tsx`'s sign-out handler called `useZikrStore`'s `reset()` — which only zeroes the count for whichever dhikr type happens to be currently selected — instead of `resetAll()`, the comprehensive wipe. Confirmed this was a real, visible bug via an accidental natural experiment: a check made against a not-yet-HMR-refreshed page (i.e., still running the old buggy code) showed `lifetimeTotals`, custom dhikr types, and the running total all surviving sign-out untouched; the same check after a clean reload with the fix applied showed everything correctly zeroed. Fixed by using `resetAll()` instead.)
+- [x] **Debounced persistence could let a fast re-sign-in hydrate against stale data** (2026-09-05: `resetAll()` only queues a 400ms-debounced localStorage write. Added a `flushZikrLocalPersistence()` call right after it in `App.tsx`'s central `onAuthStateChanged` handler, so the cleared state is written to disk immediately — closing the window where a very fast sign-out-then-sign-in on the same device could read the outgoing account's still-on-disk blob.)
+- [x] **Salat offline outbox wasn't cleared on sign-out** (2026-09-05: the `ihsan_salat_outbox` queue added in 0.2 above had no sign-out hook at all. Added `clearSalatOutbox()` and wired it into the same central sign-out handler — matches the existing precedent of wiping the React Query cache and zikr store on sign-out for shared-device safety, since an unsynced write from account A could otherwise flush into account B's session once back online.)
+- [ ] `[S]` **Still to verify: whether the Google popup sign-in flow itself has a separate timing issue.** The user's original report described seeing a previous account's home page specifically during a `signInWithPopup` Google re-authentication (not a plain email/password sign-out). The fixes above address a confirmed, reproduced state-leak bug in the general sign-out path, but haven't been specifically verified against the Google-popup flow (which may also just be Google's own session-persistence silently re-authenticating the same identity — expected behavior, not a bug — if it was the same Google account both times). Re-test once confirmed whether it was the same or a different Google account.
+
 ---
 
 ## Phase 1 — Harden Foundations

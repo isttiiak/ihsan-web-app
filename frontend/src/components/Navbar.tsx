@@ -120,7 +120,7 @@ export default function Navbar() {
   const pageTitle = (path: string, fallback: string) =>
     PAGE_KEYS[path] ? t(PAGE_KEYS[path]!, { defaultValue: fallback }) : fallback;
   const { user, setUser } = useAuthStore();
-  const reset = useZikrStore((s) => s.reset);
+  const resetAll = useZikrStore((s) => s.resetAll);
   const localTotal = useZikrStore((s) => Object.values(s.counts).reduce((a, b) => a + b, 0));
   const pendingTotal = useZikrStore((s) => Object.values(s.pending).reduce((a, b) => a + b, 0));
   const [confirmLogout, setConfirmLogout] = useState(false);
@@ -481,7 +481,7 @@ export default function Navbar() {
                     localStorage.removeItem('ihsan_user');
                     localStorage.removeItem('ihsan_idToken');
                     sessionStorage.removeItem('ihsan_redirect');
-                    reset();
+                    resetAll();
                     setConfirmLogout(false);
                     navigate('/', { replace: true });
                   }}

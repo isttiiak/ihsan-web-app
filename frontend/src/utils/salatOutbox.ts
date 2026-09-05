@@ -76,3 +76,14 @@ export function getSalatOutboxSize(): number {
 export function removeSalatOp(id: string): void {
   writeQueue(readQueue().filter((op) => op.id !== id));
 }
+
+// Called on sign-out. Matches how the React Query cache and zikr store are
+// already wiped on sign-out (see App.tsx) — a shared device must never let
+// one account's unsynced writes flush into a different account's session.
+export function clearSalatOutbox(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* nothing to clean up if localStorage is unavailable */
+  }
+}

@@ -9,6 +9,7 @@ import { API_BASE } from './lib/api.js';
 import { useAuthStore } from './store/useAuthStore.js';
 import { useZikrStore, flushZikrLocalPersistence } from './store/useZikrStore.js';
 import { replaySalatOutbox } from './hooks/useSalatLog.js';
+import { clearSalatOutbox } from './utils/salatOutbox.js';
 import Navbar from './components/Navbar.js';
 import Home from './pages/Home.js';
 import ZikrCounter from './pages/ZikrCounter.js';
@@ -344,6 +345,11 @@ export default function App() {
       if (!u) {
         setUser(null);
         resetAll();
+        // resetAll() only queues a debounced (400ms) localStorage write —
+        // force it through immediately so a fast re-sign-in on the same
+        // device can't hydrate against the outgoing account's stale blob.
+        flushZikrLocalPersistence();
+        clearSalatOutbox();
         localStorage.removeItem('ihsan_user');
         localStorage.removeItem('ihsan_idToken');
         // The persisted React Query cache holds personal stats (incl. cycle
