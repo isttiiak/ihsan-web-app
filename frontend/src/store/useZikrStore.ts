@@ -292,11 +292,6 @@ export const useZikrStore = create<ZikrState>()(
         const entries = Object.entries(snapshot).filter(([, a]) => a !== 0);
         if (!entries.length) return;
 
-        // Offline: don't burn a failed request — pending stays queued
-        // (already durable via the debounced localStorage persist) and the
-        // App-level `online` listener replays it the moment we reconnect.
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
-
         const idToken = await getIdToken();
         if (!idToken) return;
 
