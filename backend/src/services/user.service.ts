@@ -1,4 +1,5 @@
 import admin from 'firebase-admin';
+import { isFirebaseInitialized } from '../config/firebaseAdmin.js';
 import User, { IUser, ILinkedProvider } from '../models/User.js';
 import ZikrDaily from '../models/ZikrDaily.js';
 import ZikrGoal from '../models/ZikrGoal.js';
@@ -102,11 +103,17 @@ export async function deleteAccount(uid: string): Promise<void> {
     User.deleteOne({ uid }),
   ]);
 
+  // Skip in environments without Firebase Admin credentials (local dev without
+  // a service account, DEV_AUTH_BYPASS) — admin.auth() throws synchronously
+  // there ("app/no-app"), which would otherwise surface as a 500 even though
+  // the Mongo purge above already succeeded.
+  if (!isFirebaseInitialized()) return;
+
   try {
     await admin.auth().deleteUser(uid);
   } catch (err: unknown) {
     const code = (err as { code?: string })?.code;
-    // AUTH_USER_NOT_FOUND is fine — Firebase user may have already been deleted
+    // auth/user-not-found is fine — the Firebase user may already be gone
     if (code !== 'auth/user-not-found') throw err;
   }
 }
