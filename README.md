@@ -1,6 +1,6 @@
 # 🌙 Ihsan — Islamic Productivity App
 
-**Live:** [https://ihsan-web-app-main.vercel.app/](https://ihsan-web-app-main.vercel.app/)
+**Live:** [https://ihsan-web-app-main.vercel.app/](https://ihsan-web-app-main.vercel.app/) · [CHANGELOG](CHANGELOG.md)
 
 > _Iḥsān is to worship Allah as though you see Him._
 
@@ -194,24 +194,24 @@ go through `getHijriDate()` with a user ±1-day moon-sighting adjustment.
 
 ## 📝 API (all Bearer-token authenticated + zod-validated)
 
-| Area      | Base             | Highlights                                                                                                                |
-| --------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Zikr      | `/api/zikr`      | `POST /increment/batch` (signed deltas), `GET /summary`, `GET\|POST\|DELETE /types`, `PATCH /types/rename`, `DELETE /all` |
-| Analytics | `/api/analytics` | `GET /` (charts + derived streak), `GET\|POST /goal`, `POST /streak/pause\|resume`                                        |
-| Salat     | `/api/salat`     | `GET /?date=`, `PATCH /prayer`, `PATCH /nafl`, `GET /analytics?today=`, `DELETE /all`                                     |
-| Fasting   | `/api/fasting`   | `PUT /log`, `GET /summary?today=`, `GET /history`, `PATCH /profile`, vows CRUD, `DELETE /category/:c`, `DELETE /all`      |
-| Quran     | `/api/quran`     | `POST /read-ayat`, `POST /bookmark`, `GET /summary?today=`, `GET /tafsir`, `PUT /resume`, `PATCH /profile`, `DELETE /all` |
-| Cycle     | `/api/cycle`     | `GET /summary`, `POST /start\|end`, `PUT /day`, `PATCH /logs/:id`, `PATCH /profile`, `DELETE /all`                        |
-| Social    | `/api/social`    | `GET /summary` (leaderboard), `GET /noor`, `GET /friends`, `POST /connect`, `DELETE /friends/:uid`                        |
-| User      | `/api/user`      | `GET /export` (full backup .json), `POST /import` (merge restore)                                                         |
-| AI        | `/api/ai`        | `POST /suggest\|reflect\|weekly-summary\|simplify` — encouragement only, never a source of evidence                       |
+| Area      | Base             | Highlights                                                                                                                                                |
+| --------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Zikr      | `/api/zikr`      | `POST /increment/batch` (signed deltas), `GET /summary`, `GET\|POST\|DELETE /types`, `PATCH /types/rename`, `DELETE /all`                                 |
+| Analytics | `/api/analytics` | `GET /` (charts + derived streak), `GET\|POST /goal`, `POST /streak/pause\|resume`                                                                        |
+| Salat     | `/api/salat`     | `GET /?date=`, `PATCH /prayer`, `PATCH /nafl`, `GET /analytics?today=`, `DELETE /all`                                                                     |
+| Fasting   | `/api/fasting`   | `PUT /log`, `GET /summary?today=`, `GET /history`, `PATCH /profile`, vows CRUD, `DELETE /category/:c`, `DELETE /all`                                      |
+| Quran     | `/api/quran`     | `POST /read-ayat`, `POST /bookmark`, `GET /summary?today=`, `GET /tafsir`, `PUT /resume`, `PATCH /profile`, `DELETE /all`                                 |
+| Cycle     | `/api/cycle`     | `GET /summary`, `POST /start\|end`, `PUT /day`, `PATCH /logs/:id`, `PATCH /profile`, `DELETE /all`                                                        |
+| Social    | `/api/social`    | `GET /summary` (leaderboard), `GET /noor`, `GET /friends`, `POST /connect`, `DELETE /friends/:uid`                                                        |
+| User      | `/api/user`      | `GET /export` (full backup .json), `POST /import` (merge restore)                                                                                         |
+| AI        | `/api/ai`        | `POST /suggest\|weekly-summary\|comeback\|comfort\|streak-coaching\|fasting-companion\|activity-insight` — encouragement only, never a source of evidence |
 
 ---
 
 ## 🧪 Testing
 
 ```bash
-cd backend && npm test   # jest ESM + ts-jest, mongodb-memory-server (54 tests)
+cd backend && npm test   # jest ESM + ts-jest, mongodb-memory-server (91 tests)
 ```
 
 ---

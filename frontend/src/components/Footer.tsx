@@ -15,15 +15,24 @@ export default function Footer() {
             <span>{t('footer.forTheUmmah')}</span>
           </div>
           <nav className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1.5 text-xs">
-            <Link to="/feedback" className="text-white/60 hover:text-brand-emerald underline underline-offset-2 transition-colors">
+            <Link
+              to="/feedback"
+              className="text-white/60 hover:text-brand-emerald underline underline-offset-2 transition-colors"
+            >
               {t('footer.feedbackContact')}
             </Link>
             <span className="text-white/20">•</span>
-            <Link to="/about" className="text-white/60 hover:text-brand-gold underline underline-offset-2 transition-colors">
+            <Link
+              to="/about"
+              className="text-white/60 hover:text-brand-gold underline underline-offset-2 transition-colors"
+            >
               {t('footer.about')}
             </Link>
             <span className="text-white/20">•</span>
-            <Link to="/privacy" className="text-white/60 hover:text-white underline underline-offset-2 transition-colors">
+            <Link
+              to="/privacy"
+              className="text-white/60 hover:text-white underline underline-offset-2 transition-colors"
+            >
               {t('footer.privacy')}
             </Link>
           </nav>
@@ -37,6 +46,7 @@ export default function Footer() {
             <span>•</span>
             <span>{t('footer.secure')}</span>
           </div>
+          <p className="text-[10px] text-white/25 tabular-nums">v{__APP_VERSION__}</p>
         </div>
       </div>
     </footer>

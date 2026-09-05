@@ -1,8 +1,19 @@
+import { readFileSync } from 'fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// Root package.json is the single source of truth for the app version
+// (frontend/backend/root package.json versions are kept in sync manually on
+// each release) — read at build time so the footer never drifts from it.
+const rootPkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8')) as {
+  version: string;
+};
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(rootPkg.version),
+  },
   plugins: [
     react(),
     // v4.10.0 — installable PWA: precached app shell + offline-tolerant

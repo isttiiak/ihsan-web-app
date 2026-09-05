@@ -1,23 +1,41 @@
 # Backend — Ihsan API
 
-Express + MongoDB + Firebase Admin backend for Ihsan.
+Express + TypeScript + Mongoose (MongoDB Atlas) + Firebase Admin backend for Ihsan.
 
-## Current Simplified Zikr Model
+See the root [`CLAUDE.md`](../CLAUDE.md) for the full architecture, conventions, and environment variable reference — this file only covers what's specific to running and testing the backend in isolation.
 
-(Interim step while resetting database) — Only lifetime totals are exposed via API.
+## Running
 
-### Collections
+```bash
+npm run dev          # ts-node-dev, port 5000 (see .env)
+npm test             # Jest + mongodb-memory-server, no real DB needed
+npm run typecheck    # tsc --noEmit
+npm run build        # compile to dist/
+```
 
-- users: `totalCount`, `zikrTotals` (per-type), `zikrTypes`
-- (Optional for future) zikrdailies retained but not used in UI
+## Layout
 
-### Endpoints (active)
+```
+src/
+├── routes/       Routing only — registers middleware + controller handlers
+├── controllers/  Request/response handling, calls services, never touches the DB directly
+├── services/     Business logic + all DB queries
+├── middleware/   auth, validate (Zod), rateLimiter, errorHandler
+├── models/       Mongoose schemas + interfaces
+├── config/       mongo.ts, firebaseAdmin.ts
+├── utils/        timezone-flexible.ts is the canonical timezone util
+├── validation/   Zod schemas, one file per domain
+└── jobs/         dailyCron.ts
+```
 
-- POST /api/zikr/increment
-- GET /api/zikr/summary
-- GET /api/zikr/types
-- POST /api/zikr/type
+## Domains
 
-Daily / stats aggregation is temporarily removed to keep logic simple while reseeding data.
+Ten route modules, each following the same routes → controllers → services layering: `auth`, `zikr`, `salat`, `fasting`, `quran`, `cycle` (Rayhanah), `social` (friends/Noor), `analytics`, `ai` (Naseeh, Groq-backed), `user`.
 
-Add back advanced analytics later by reintroducing a /stats endpoint aggregating `zikrdailies`.
+## Tests
+
+`tests/*.e2e.test.js` — one file per domain, each spinning up its own `mongodb-memory-server` instance (no shared state between files, no real database needed to run the suite). Run the whole suite with `npm test`, or a single file with e.g. `npx jest tests/social.e2e.test.js`.
+
+## Deployment
+
+Deploys to Vercel as a serverless function alongside the frontend (same deployment, same origin — see `CLAUDE.md`). `MONGODB_URI` in production points at the live Atlas cluster; there is currently no separate staging database, so exercise care when testing against a deployed environment with a real account.
