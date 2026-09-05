@@ -8,6 +8,7 @@ import { auth } from './firebase.js';
 import { API_BASE } from './lib/api.js';
 import { useAuthStore } from './store/useAuthStore.js';
 import { useZikrStore, flushZikrLocalPersistence } from './store/useZikrStore.js';
+import { replaySalatOutbox } from './hooks/useSalatLog.js';
 import Navbar from './components/Navbar.js';
 import Home from './pages/Home.js';
 import ZikrCounter from './pages/ZikrCounter.js';
@@ -272,12 +273,20 @@ export default function App() {
   // Offline sync: zikr taps made while offline stay queued in `pending`
   // (persisted to localStorage, so a reload doesn't lose them either) — this
   // listener replays them the moment the connection comes back, instead of
-  // waiting for the user's next tap to trigger a flush.
+  // waiting for the user's next tap to trigger a flush. Salat prayer/nafl
+  // updates queued in the same window (see useSalatLog.ts) replay here too.
   useEffect(() => {
-    const onOnline = () => void useZikrStore.getState().flush();
+    const onOnline = () => {
+      void useZikrStore.getState().flush();
+      void replaySalatOutbox(queryClient);
+    };
     window.addEventListener('online', onOnline);
+    // Also try once on mount: a queue can survive a reload while the browser
+    // was ALREADY online the whole time (tab closed offline, reopened later
+    // with connectivity restored) — no 'online' transition ever fires for that.
+    if (navigator.onLine) void replaySalatOutbox(queryClient);
     return () => window.removeEventListener('online', onOnline);
-  }, []);
+  }, [queryClient]);
 
   // Tab close / navigation away: any unflushed zikr taps sitting in `pending`
   // would otherwise wait for the debounced localStorage write (400ms) and

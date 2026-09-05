@@ -1,6 +1,25 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 import api from '../lib/api.js';
 import { useAuthStore } from '../store/useAuthStore.js';
+import { enqueueSalatOp, peekSalatOutbox, removeSalatOp } from '../utils/salatOutbox.js';
+
+// Thrown from a mutationFn to tell onError/onSettled "this wasn't a real
+// failure — it's queued for replay, keep the optimistic UI as-is."
+class OfflineQueuedError extends Error {
+  constructor() {
+    super('offline-queued');
+    this.name = 'OfflineQueuedError';
+  }
+}
+
+function isNetworkError(err: unknown): boolean {
+  // No `response` means the request never reached the server — offline,
+  // DNS failure, timeout. A real 4xx/5xx has a response and should roll back
+  // the optimistic update as before, not get silently queued forever.
+  return axios.isAxiosError(err) && !err.response;
+}
 
 export type PrayerStatus = 'completed' | 'kaza' | 'missed' | 'pending';
 export type PrayerLocation = 'home' | 'mosque' | 'jamat';
@@ -337,8 +356,16 @@ export function useUpdatePrayer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (vars: UpdatePrayerVars) => {
-      const { data } = await api.patch<{ ok: boolean; log: SalatLog }>('/api/salat/prayer', vars);
-      return data.log;
+      try {
+        const { data } = await api.patch<{ ok: boolean; log: SalatLog }>('/api/salat/prayer', vars);
+        return data.log;
+      } catch (err) {
+        if (isNetworkError(err)) {
+          enqueueSalatOp({ kind: 'prayer', vars });
+          throw new OfflineQueuedError();
+        }
+        throw err;
+      }
     },
     onMutate: async (vars) => {
       const key = ['salat', 'log', vars.date ?? localTodayStr()];
@@ -371,10 +398,18 @@ export function useUpdatePrayer() {
       });
       return { previous, key };
     },
-    onError: (_err, _vars, context) => {
+    onError: (err, _vars, context) => {
+      if (err instanceof OfflineQueuedError) {
+        toast("You're offline — this will sync automatically once you're back online.", {
+          icon: '📶',
+          id: 'salat-offline',
+        });
+        return; // keep the optimistic state; don't roll back a change that's just queued
+      }
       if (context?.previous !== undefined) qc.setQueryData(context.key, context.previous);
     },
-    onSettled: (_data, _err, vars) => {
+    onSettled: (_data, err, vars) => {
+      if (err instanceof OfflineQueuedError) return; // nothing changed server-side yet
       void qc.invalidateQueries({ queryKey: ['salat', 'log', vars.date ?? localTodayStr()] });
       void qc.invalidateQueries({ queryKey: ['salat', 'analytics'] });
       // A prayer moving into/out of 'missed' auto-adjusts the kaza debt server-side.
@@ -388,8 +423,16 @@ export function useUpdateNafl() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (vars: UpdateNaflVars) => {
-      const { data } = await api.patch<{ ok: boolean; log: SalatLog }>('/api/salat/nafl', vars);
-      return data.log;
+      try {
+        const { data } = await api.patch<{ ok: boolean; log: SalatLog }>('/api/salat/nafl', vars);
+        return data.log;
+      } catch (err) {
+        if (isNetworkError(err)) {
+          enqueueSalatOp({ kind: 'nafl', vars });
+          throw new OfflineQueuedError();
+        }
+        throw err;
+      }
     },
     onMutate: async (vars) => {
       const key = ['salat', 'log', vars.date ?? localTodayStr()];
@@ -409,10 +452,18 @@ export function useUpdateNafl() {
       });
       return { previous, key };
     },
-    onError: (_err, _vars, context) => {
+    onError: (err, _vars, context) => {
+      if (err instanceof OfflineQueuedError) {
+        toast("You're offline — this will sync automatically once you're back online.", {
+          icon: '📶',
+          id: 'salat-offline',
+        });
+        return;
+      }
       if (context?.previous !== undefined) qc.setQueryData(context.key, context.previous);
     },
-    onSettled: (_data, _err, vars) => {
+    onSettled: (_data, err, vars) => {
+      if (err instanceof OfflineQueuedError) return;
       void qc.invalidateQueries({ queryKey: ['salat', 'log', vars.date ?? localTodayStr()] });
       void qc.invalidateQueries({ queryKey: ['salat', 'analytics'] });
     },
@@ -560,4 +611,35 @@ export function useSalatAnalytics(days = 30, todayOverride?: string) {
     enabled: !!user,
     staleTime: 5 * 60_000,
   });
+}
+
+// Replays queued prayer/nafl PATCHes in the order they were made — call this
+// on 'online' (see App.tsx). Stops at the first still-failing request rather
+// than skipping ahead, so a flaky reconnect doesn't reorder writes; a
+// non-network failure (e.g. a since-invalidated request) is dropped instead
+// of retried forever.
+export async function replaySalatOutbox(qc: QueryClient): Promise<void> {
+  const queue = peekSalatOutbox();
+  if (!queue.length) return;
+
+  let replayedAny = false;
+  for (const op of queue) {
+    try {
+      if (op.kind === 'prayer') {
+        await api.patch('/api/salat/prayer', op.vars);
+      } else {
+        await api.patch('/api/salat/nafl', op.vars);
+      }
+      removeSalatOp(op.id);
+      replayedAny = true;
+    } catch (err) {
+      if (isNetworkError(err)) return; // still offline — leave the rest queued
+      removeSalatOp(op.id); // real error (e.g. bad request) — don't retry forever
+    }
+  }
+
+  if (replayedAny) {
+    toast.success('Synced your offline prayer updates.', { icon: '✅', id: 'salat-offline-sync' });
+  }
+  void qc.invalidateQueries({ queryKey: ['salat'] });
 }
