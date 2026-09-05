@@ -335,17 +335,17 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
                     <Avatar name={f.displayName} photoUrl={f.photoUrl} />
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-bold text-sm truncate">{f.displayName}</p>
-                      <p className="text-white/30 text-[11px]">
+                      <p className="text-white/30 text-[11px] truncate">
                         {formatConnectedSince(f.connectedSince, t)}
                       </p>
                     </div>
                     {!confirming && !blockConfirming && (
-                      <>
+                      <div className="flex items-center gap-0.5 shrink-0">
                         <button
                           onClick={() => setBlockConfirmUid(f.uid)}
                           aria-label={t('friends.blockFriendAria', { name: f.displayName })}
                           title={t('friends.blockFriendTooltip')}
-                          className="p-2 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 shrink-0"
+                          className="p-1.5 sm:p-2 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 shrink-0"
                         >
                           <NoSymbolIcon className="w-4 h-4" />
                         </button>
@@ -353,11 +353,11 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
                           onClick={() => startConfirm(f.uid)}
                           aria-label={t('friends.removeFriendAria', { name: f.displayName })}
                           title={t('friends.removeFriendTooltip')}
-                          className="p-2 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 shrink-0"
+                          className="p-1.5 sm:p-2 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 shrink-0"
                         >
                           <TrashIcon className="w-4 h-4" />
                         </button>
-                      </>
+                      </div>
                     )}
                   </div>
 

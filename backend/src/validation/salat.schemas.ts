@@ -20,6 +20,22 @@ export const getSalatLogSchema = z.object({
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional(),
+    // The user's Fajr-tracking day — the server clock runs UTC civil time
+    // and is the wrong "today" for the missed-prayer rollover sweep.
+    today: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+  }),
+  body: z.object({}).optional(),
+});
+
+export const getSalatDebtSchema = z.object({
+  query: z.object({
+    today: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
   }),
   body: z.object({}).optional(),
 });

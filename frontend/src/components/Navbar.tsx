@@ -257,31 +257,36 @@ export default function Navbar() {
                 syncQuranTranslationWithLang(next);
               }}
               aria-label={t('nav.switchLang')}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all mr-0.5"
+              className="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all"
             >
               <GlobeAltIcon className="w-4 h-4" />
-              <span className="text-[10px] font-bold uppercase">
+              <span className="text-[10px] font-bold uppercase hidden sm:inline">
                 {i18n.resolvedLanguage === 'bn' ? 'EN' : 'বা'}
               </span>
             </button>
             {user && noor && (noorTodayVisible || noorAllTimeVisible) && (
-              <div className="flex items-center gap-1 mr-1">
+              <div className="flex items-center gap-0.5 sm:gap-1">
                 {noorTodayVisible && (
                   <div
                     className="tooltip tooltip-bottom"
                     data-tip="Today's Noor — fresh light every day, resets at midnight"
                   >
-                    <span className="px-2 py-0.5 rounded-full bg-brand-emerald/15 border border-brand-emerald/40 text-brand-emerald text-xs font-bold flex items-center gap-1 whitespace-nowrap">
+                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-brand-emerald/15 border border-brand-emerald/40 text-brand-emerald text-xs font-bold flex items-center gap-0.5 sm:gap-1 whitespace-nowrap">
                       ✨ {formatLocaleNumber(noor.today)}
                     </span>
                   </div>
                 )}
                 {noorAllTimeVisible && (
+                  // Hidden below 360px — on the narrowest phones the left
+                  // (back+title) and right (lang+noor+avatar) nav sections
+                  // don't both fit at their minimum widths even after
+                  // trimming padding; today's Noor is the more actionable
+                  // one, so it stays, all-time drops first.
                   <div
-                    className="tooltip tooltip-bottom"
+                    className="hidden min-[360px]:block tooltip tooltip-bottom"
                     data-tip="All-time Noor — every day's light, gathered. Never resets"
                   >
-                    <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 border border-brand-gold/40 text-brand-gold text-xs font-bold flex items-center gap-1 whitespace-nowrap">
+                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-brand-gold/15 border border-brand-gold/40 text-brand-gold text-xs font-bold flex items-center gap-0.5 sm:gap-1 whitespace-nowrap">
                       🌟 {formatLocaleNumber(noor.allTime ?? 0)}
                     </span>
                   </div>

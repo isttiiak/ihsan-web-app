@@ -1039,7 +1039,10 @@ export default function SalatTracker() {
                                 )}
                                 {isOverdue && (
                                   <span className="ml-2 text-xs font-normal text-brand-gold/80">
-                                    ⚠️ {t('salatTracker.overdueTag', 'window closed')}
+                                    ⚠️{' '}
+                                    {prayerId === 'isha'
+                                      ? t('salatTracker.ishaLateTag', 'better before midnight')
+                                      : t('salatTracker.overdueTag', 'window closed')}
                                   </span>
                                 )}
                                 {prayerId === 'dhuhr' && isCivilFriday && (

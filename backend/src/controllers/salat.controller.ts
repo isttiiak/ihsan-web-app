@@ -6,7 +6,8 @@ import { PrayerId, PrayerStatus, PrayerLocation, NaflType } from '../models/Sala
 export const getLog = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const date = req.query['date'] as string | undefined;
-    await salatDebtService.ensureCaughtUp(req.user.uid);
+    const today = req.query['today'] as string | undefined;
+    await salatDebtService.ensureCaughtUp(req.user.uid, today);
     const log = await salatService.getLogReadOnly(req.user.uid, date);
     res.json({ ok: true, log });
   } catch (err) {
@@ -69,7 +70,8 @@ export const getHistory = async (
 ): Promise<void> => {
   try {
     const days = Number(req.query['days'] ?? 30);
-    await salatDebtService.ensureCaughtUp(req.user.uid);
+    const today = req.query['today'] as string | undefined;
+    await salatDebtService.ensureCaughtUp(req.user.uid, today);
     const logs = await salatService.getSalatHistory(req.user.uid, days);
     res.json({ ok: true, logs });
   } catch (err) {
@@ -152,7 +154,8 @@ export const getJourney = async (
 
 export const getDebt = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await salatDebtService.ensureCaughtUp(req.user.uid);
+    const today = req.query['today'] as string | undefined;
+    await salatDebtService.ensureCaughtUp(req.user.uid, today);
     const debt = await salatDebtService.getDebtReadOnly(req.user.uid);
     res.json({ ok: true, ...debt });
   } catch (err) {

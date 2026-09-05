@@ -267,6 +267,49 @@ describe('Salat API', () => {
     expect(debtRes2.body.totalOwed).toBe(9);
   });
 
+  test('ensureCaughtUp respects an explicit ?today= (Fajr-tracking day) instead of the server civil clock', async () => {
+    const token9 = fakeJwt({ uid: 'sal9', email: 'sal9@test.dev', name: 'Sal9' });
+    const auth9 = (r) => r.set('Authorization', `Bearer ${token9}`);
+    await request(app).post('/api/auth/verify').send({ idToken: token9 });
+
+    const yesterday = shiftDateStr(today, -1);
+    const twoDaysAgo = shiftDateStr(today, -2);
+
+    await SalatDebtModel.create({
+      userId: 'sal9',
+      owed: {},
+      since: twoDaysAgo,
+      lastAccrualDate: twoDaysAgo,
+    });
+
+    // Yesterday's tracking day: Isha not logged yet — still open by the
+    // caller's own account (e.g. it's past midnight UTC but before that
+    // user's next Fajr).
+    await SalatLogModel.create({
+      userId: 'sal9',
+      date: yesterday,
+      prayers: { fajr: { status: 'completed' } },
+    });
+
+    // Client says the tracking day hasn't rolled past "yesterday" yet —
+    // the sweep must not touch yesterday's still-open log.
+    const held = await auth9(request(app).get(`/api/salat/debt?today=${yesterday}`));
+    expect(held.status).toBe(200);
+    expect(held.body.totalOwed).toBe(0);
+    const heldLog = await SalatLogModel.findOne({ userId: 'sal9', date: yesterday });
+    expect(heldLog.prayers.isha.status).toBe('pending');
+
+    // Once the client agrees the tracking day has actually advanced to
+    // today, the sweep catches yesterday's unresolved prayers up as missed.
+    const caughtUp = await auth9(request(app).get(`/api/salat/debt?today=${today}`));
+    expect(caughtUp.status).toBe(200);
+    expect(caughtUp.body.owed.isha).toBe(1);
+    expect(caughtUp.body.owed.dhuhr).toBe(1);
+    expect(caughtUp.body.owed.fajr).toBe(0);
+    const caughtUpLog = await SalatLogModel.findOne({ userId: 'sal9', date: yesterday });
+    expect(caughtUpLog.prayers.isha.status).toBe('missed');
+  });
+
   test('POST /debt/reset zeroes debt and restarts the counting period', async () => {
     const token8 = fakeJwt({ uid: 'sal8', email: 'sal8@test.dev', name: 'Sal8' });
     const auth8 = (r) => r.set('Authorization', `Bearer ${token8}`);

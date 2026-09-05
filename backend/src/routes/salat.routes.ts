@@ -5,6 +5,7 @@ import {
   updatePrayerSchema,
   updateNaflSchema,
   getSalatLogSchema,
+  getSalatDebtSchema,
   salatHistorySchema,
   adjustSalatDebtSchema,
   setSalatDebtSchema,
@@ -32,7 +33,7 @@ router.get('/history', requireAuth, validate(salatHistorySchema), salatControlle
 router.get('/analytics', requireAuth, validate(salatHistorySchema), salatController.getAnalytics);
 
 // GET /api/salat/debt — kaza (missed-prayer) debt per prayer
-router.get('/debt', requireAuth, salatController.getDebt);
+router.get('/debt', requireAuth, validate(getSalatDebtSchema), salatController.getDebt);
 // PATCH /api/salat/debt/adjust — +/- one prayer's owed count (e.g. "paid one back")
 router.patch(
   '/debt/adjust',

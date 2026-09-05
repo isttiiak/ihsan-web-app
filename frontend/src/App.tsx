@@ -375,6 +375,12 @@ export default function App() {
         if (cached?.uid === u.uid) {
           optimistic.displayName = cached.displayName ?? optimistic.displayName;
           optimistic.photoUrl = cached.photoUrl ?? optimistic.photoUrl;
+          // gender lives only in our DB, never in Firebase's own user object —
+          // without this, every reload's optimistic rebuild dropped it for the
+          // brief window before the background /api/auth/verify sync restored
+          // it, flashing the GenderGate banner on an account that already has
+          // a gender set.
+          optimistic.gender = cached.gender ?? optimistic.gender;
         }
       } catch {
         /* corrupt cache — Firebase values are fine */

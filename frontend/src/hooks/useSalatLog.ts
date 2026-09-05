@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { enqueueSalatOp, peekSalatOutbox, removeSalatOp } from '../utils/salatOutbox.js';
+import { getTrackingDay } from '../utils/trackingDay.js';
 
 // Thrown from a mutationFn to tell onError/onSettled "this wasn't a real
 // failure — it's queued for replay, keep the optimistic UI as-is."
@@ -336,7 +337,7 @@ export function useSalatLog(date?: string) {
     queryKey: ['salat', 'log', resolvedDate],
     queryFn: async () => {
       const { data } = await api.get<{ ok: boolean; log: SalatLog }>(
-        `/api/salat?date=${resolvedDate}`
+        `/api/salat?date=${resolvedDate}&today=${getTrackingDay()}`
       );
       return data.log;
     },
@@ -483,7 +484,9 @@ export function useSalatDebt() {
   return useQuery({
     queryKey: ['salat', 'debt'],
     queryFn: async () => {
-      const { data } = await api.get<SalatDebt & { ok: boolean }>('/api/salat/debt');
+      const { data } = await api.get<SalatDebt & { ok: boolean }>(
+        `/api/salat/debt?today=${getTrackingDay()}`
+      );
       return data;
     },
     enabled: !!user,
@@ -599,7 +602,10 @@ export function useResetSalat() {
 
 export function useSalatAnalytics(days = 30, todayOverride?: string) {
   const user = useAuthStore((s) => s.user);
-  const todayParam = todayOverride ?? localTodayStr();
+  // The missed-prayer rollover sweep (ensureCaughtUp) this endpoint triggers
+  // must use the Fajr-tracking day, not a civil-midnight date, so Isha prayed
+  // after midnight isn't swept into "missed" before its window truly closes.
+  const todayParam = todayOverride ?? getTrackingDay();
   return useQuery({
     queryKey: ['salat', 'analytics', days, todayParam],
     queryFn: async () => {

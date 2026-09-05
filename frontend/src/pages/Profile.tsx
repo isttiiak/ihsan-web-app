@@ -19,6 +19,8 @@ import {
   XMarkIcon,
   LinkIcon,
   PhotoIcon,
+  IdentificationIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { useAnalytics } from '../hooks/useAnalytics.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
@@ -1494,7 +1496,8 @@ export default function Profile() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="form-control">
                     <label className="label py-1">
-                      <span className="label-text text-white/60 text-sm">
+                      <span className="label-text text-white/60 text-sm flex items-center gap-1">
+                        <IdentificationIcon className="w-3.5 h-3.5" />{' '}
                         {t('profile.gender', 'Gender')}
                       </span>
                     </label>
@@ -1507,6 +1510,30 @@ export default function Profile() {
                       <option value="male">{t('profile.male', 'Male')}</option>
                       <option value="female">{t('profile.female', 'Female')}</option>
                     </select>
+                    <p className="text-white/25 text-[11px] mt-1 leading-relaxed">
+                      {t(
+                        'profile.genderHelp',
+                        'Personalises greetings and content — you can change this anytime.'
+                      )}
+                    </p>
+                    <AnimatePresence>
+                      {profile.gender === 'female' && (
+                        <motion.p
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="text-brand-pink/70 text-[11px] mt-1.5 flex items-start gap-1 overflow-hidden"
+                        >
+                          <SparklesIcon className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span>
+                            {t(
+                              'profile.genderFemaleNote',
+                              "You'll see Rayhanah — cycle-aware salat & fasting tracking, just for you."
+                            )}
+                          </span>
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   <div className="form-control">
