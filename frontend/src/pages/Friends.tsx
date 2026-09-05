@@ -13,8 +13,22 @@ import {
   UserPlusIcon,
   UsersIcon,
   TrashIcon,
+  NoSymbolIcon,
+  BellIcon,
+  EyeSlashIcon,
 } from '@heroicons/react/24/outline';
-import { useSocialSummary, useUnfriend, useFriendsList } from '../hooks/useSocial.js';
+import {
+  useSocialSummary,
+  useUnfriend,
+  useFriendsList,
+  usePendingRequests,
+  useAcceptRequest,
+  useRejectRequest,
+  useBlockedList,
+  useBlockUser,
+  useUnblockUser,
+  useSetInvisible,
+} from '../hooks/useSocial.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 
@@ -138,13 +152,109 @@ function formatConnectedSince(
   });
 }
 
+/** Incoming friend requests — accept/reject people who opened my invite link. */
+function PendingRequestsModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  const { data: requests, isLoading } = usePendingRequests(true);
+  const accept = useAcceptRequest();
+  const reject = useRejectRequest();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <motion.div
+        initial={{ y: 60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 60, opacity: 0 }}
+        transition={{ type: 'spring', damping: 26 }}
+        className="bg-brand-surface rounded-3xl p-6 w-full max-w-md shadow-2xl border border-brand-emerald/30 space-y-4 max-h-[80vh] overflow-y-auto"
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <span className="text-3xl">🤝</span>
+            <div>
+              <h3 className="text-lg font-black text-white leading-tight">
+                {t('friends.requestsTitle')}
+              </h3>
+              <p className="text-white/30 text-[11px]">{t('friends.requestsSubtitle')}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label={t('common.close')}
+            className="text-white/30 hover:text-white p-1"
+          >
+            <XMarkIcon className="w-5 h-5" />
+          </button>
+        </div>
+
+        {isLoading ? (
+          <div className="grid place-items-center py-8">
+            <span className="loading loading-spinner text-brand-emerald" />
+          </div>
+        ) : !requests || requests.length === 0 ? (
+          <div className="text-center py-6 space-y-1.5">
+            <p className="text-3xl">📭</p>
+            <p className="text-white/50 text-sm">{t('friends.noRequests')}</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {requests.map((r) => (
+              <div
+                key={r.uid}
+                className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-3 flex items-center gap-3"
+              >
+                <Avatar name={r.displayName} photoUrl={r.photoUrl} />
+                <p className="flex-1 min-w-0 text-white font-bold text-sm truncate">
+                  {r.displayName}
+                </p>
+                <div className="flex gap-1.5 shrink-0">
+                  <button
+                    onClick={() => reject.mutate(r.uid)}
+                    disabled={reject.isPending || accept.isPending}
+                    className="btn btn-xs bg-white/10 hover:bg-white/20 text-white/60 border-0"
+                  >
+                    {t('friends.reject')}
+                  </button>
+                  <button
+                    onClick={() => accept.mutate(r.uid)}
+                    disabled={reject.isPending || accept.isPending}
+                    className="btn btn-xs bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0"
+                  >
+                    {t('friends.accept')}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
 /** Manage-friends modal: full list, connected-since date, two-step confirm delete. */
 function ManageFriendsModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const { data: friends, isLoading } = useFriendsList(true);
   const unfriend = useUnfriend();
+  const blockUser = useBlockUser();
+  const unblockUser = useUnblockUser();
+  const setInvisible = useSetInvisible();
+  const { data: summary } = useSocialSummary();
+  const { data: blocked, isLoading: blockedLoading } = useBlockedList(true);
   // Two-step confirm: null → "confirm-1" (Remove?) → "confirm-2" (Are you sure?) → delete
   const [confirmStep, setConfirmStep] = useState<{ uid: string; step: 1 | 2 } | null>(null);
+  // Block only needs one confirm step — it's already the more protective action
+  const [blockConfirmUid, setBlockConfirmUid] = useState<string | null>(null);
+  const [blockedListOpen, setBlockedListOpen] = useState(false);
 
   const startConfirm = (uid: string) => setConfirmStep({ uid, step: 1 });
   const advanceConfirm = (uid: string) => setConfirmStep({ uid, step: 2 });
@@ -152,6 +262,10 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
   const finalizeRemove = (uid: string) => {
     unfriend.mutate(uid);
     setConfirmStep(null);
+  };
+  const finalizeBlock = (uid: string) => {
+    blockUser.mutate(uid);
+    setBlockConfirmUid(null);
   };
 
   return (
@@ -207,11 +321,12 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
           <div className="space-y-2">
             {friends.map((f) => {
               const confirming = confirmStep?.uid === f.uid;
+              const blockConfirming = blockConfirmUid === f.uid;
               return (
                 <div
                   key={f.uid}
                   className={`rounded-2xl border p-3 transition-colors ${
-                    confirming
+                    confirming || blockConfirming
                       ? 'border-red-500/40 bg-red-500/[0.06]'
                       : 'border-brand-emerald/10 bg-white/[0.04]'
                   }`}
@@ -224,19 +339,62 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
                         {formatConnectedSince(f.connectedSince, t)}
                       </p>
                     </div>
-                    {!confirming && (
-                      <button
-                        onClick={() => startConfirm(f.uid)}
-                        aria-label={t('friends.removeFriendAria', { name: f.displayName })}
-                        title={t('friends.removeFriendTooltip')}
-                        className="p-2 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 shrink-0"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
+                    {!confirming && !blockConfirming && (
+                      <>
+                        <button
+                          onClick={() => setBlockConfirmUid(f.uid)}
+                          aria-label={t('friends.blockFriendAria', { name: f.displayName })}
+                          title={t('friends.blockFriendTooltip')}
+                          className="p-2 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 shrink-0"
+                        >
+                          <NoSymbolIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => startConfirm(f.uid)}
+                          aria-label={t('friends.removeFriendAria', { name: f.displayName })}
+                          title={t('friends.removeFriendTooltip')}
+                          className="p-2 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 shrink-0"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </>
                     )}
                   </div>
 
                   <AnimatePresence>
+                    {blockConfirming && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-3 pt-3 border-t border-red-500/20 space-y-2">
+                          <p className="text-red-300/90 text-xs font-semibold">
+                            {t('friends.blockWarning', { name: f.displayName })}
+                          </p>
+                          <div className="flex gap-1.5 justify-end">
+                            <button
+                              onClick={() => setBlockConfirmUid(null)}
+                              className="btn btn-xs btn-ghost text-white/50"
+                            >
+                              {t('common.cancel')}
+                            </button>
+                            <button
+                              onClick={() => finalizeBlock(f.uid)}
+                              disabled={blockUser.isPending}
+                              className="btn btn-xs bg-red-500 hover:bg-red-600 text-white border-0"
+                            >
+                              {blockUser.isPending ? (
+                                <span className="loading loading-spinner loading-xs" />
+                              ) : (
+                                t('friends.yesBlock')
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
                     {confirming && confirmStep?.step === 1 && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
@@ -304,6 +462,81 @@ function ManageFriendsModal({ onClose }: { onClose: () => void }) {
             })}
           </div>
         )}
+
+        {/* ── Privacy: full leaderboard opt-out ── */}
+        <div className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-3 flex items-center gap-3">
+          <EyeSlashIcon className="w-5 h-5 text-white/40 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm">{t('friends.invisibleTitle')}</p>
+            <p className="text-white/30 text-[11px] leading-relaxed">
+              {t('friends.invisibleDesc')}
+            </p>
+          </div>
+          <input
+            type="checkbox"
+            className="toggle toggle-sm toggle-success shrink-0"
+            checked={summary?.invisible ?? false}
+            disabled={setInvisible.isPending}
+            onChange={(e) => setInvisible.mutate(e.target.checked)}
+            aria-label={t('friends.invisibleTitle')}
+          />
+        </div>
+
+        {/* ── Blocked users ── */}
+        <div className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] overflow-hidden">
+          <button
+            onClick={() => setBlockedListOpen((o) => !o)}
+            className="w-full px-3 py-2.5 flex items-center justify-between text-left"
+            aria-expanded={blockedListOpen}
+          >
+            <p className="text-white/60 font-bold text-xs">
+              🚫 {t('friends.blockedUsers')}
+              {blocked && blocked.length > 0 ? ` (${formatLocaleNumber(blocked.length)})` : ''}
+            </p>
+            <motion.span animate={{ rotate: blockedListOpen ? 180 : 0 }} className="text-white/30">
+              <ChevronDownIcon className="w-4 h-4" />
+            </motion.span>
+          </button>
+          <AnimatePresence>
+            {blockedListOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="px-3 pb-3 pt-1 border-t border-brand-emerald/5 space-y-1.5">
+                  {blockedLoading ? (
+                    <div className="grid place-items-center py-3">
+                      <span className="loading loading-spinner loading-sm text-brand-emerald" />
+                    </div>
+                  ) : !blocked || blocked.length === 0 ? (
+                    <p className="text-white/30 text-xs py-2 text-center">
+                      {t('friends.noBlockedUsers', "You haven't blocked anyone.")}
+                    </p>
+                  ) : (
+                    blocked.map((b) => (
+                      <div key={b.uid} className="flex items-center gap-2.5 py-1.5">
+                        <Avatar name={b.displayName} photoUrl={b.photoUrl} size="w-7 h-7" />
+                        <p className="flex-1 min-w-0 text-white/70 text-xs font-semibold truncate">
+                          {b.displayName}
+                        </p>
+                        <button
+                          onClick={() => unblockUser.mutate(b.uid)}
+                          disabled={unblockUser.isPending}
+                          className="btn btn-xs bg-white/10 hover:bg-white/20 text-white/60 border-0 shrink-0"
+                        >
+                          {t('friends.unblock')}
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </motion.div>
     </motion.div>
   );
@@ -316,6 +549,7 @@ export default function Friends() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  const [requestsOpen, setRequestsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
 
@@ -372,6 +606,27 @@ export default function Friends() {
               {t('friends.quranRef')}
             </a>
           </motion.div>
+
+          {/* ── Pending friend requests — shown regardless of friend count ── */}
+          {!isDemoMode && !!data?.pendingCount && (
+            <motion.button
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => setRequestsOpen(true)}
+              className="w-full flex items-center gap-2.5 rounded-2xl border border-brand-gold/30 bg-brand-gold/[0.08] px-4 py-3 text-left hover:bg-brand-gold/[0.12] transition-colors"
+            >
+              <BellIcon className="w-5 h-5 text-brand-gold shrink-0" />
+              <span className="flex-1 text-sm font-bold text-brand-gold">
+                {t(
+                  data.pendingCount === 1 ? 'friends.pendingCount' : 'friends.pendingCountPlural',
+                  { count: data.pendingCount }
+                )}
+              </span>
+              <span className="text-brand-gold/60 text-xs font-bold">
+                {t('friends.viewRequests')}
+              </span>
+            </motion.button>
+          )}
 
           {/* ── Leaderboard ── */}
           {isLoading ? (
@@ -483,7 +738,7 @@ export default function Friends() {
                         {f.prayersDue !== undefined && f.prayersDue < 5 ? (
                           <span className="text-white/35">/{formatLocaleNumber(f.prayersDue)}</span>
                         ) : null}{' '}
-                        {t('friends.prayers', 'prayers')}
+                        {t('friends.prayers')}
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full border text-[10px] font-bold text-white/70 ${sv.cls}`}
@@ -678,6 +933,11 @@ export default function Friends() {
       {/* ── Manage friends modal ── */}
       <AnimatePresence>
         {manageOpen && <ManageFriendsModal onClose={() => setManageOpen(false)} />}
+      </AnimatePresence>
+
+      {/* ── Pending requests modal ── */}
+      <AnimatePresence>
+        {requestsOpen && <PendingRequestsModal onClose={() => setRequestsOpen(false)} />}
       </AnimatePresence>
     </AnimatedBackground>
   );

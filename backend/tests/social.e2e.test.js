@@ -67,16 +67,57 @@ describe('Social API (share activities)', () => {
     expect(res.body.ok).toBe(false);
   });
 
-  test('friend connects via invite code — mutual, idempotent', async () => {
+  test('connecting via invite code sends a pending request, not an instant friendship', async () => {
     const res = await asB(request(app).post(`/api/social/connect`)).send({ code: codeA });
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
+    expect(res.body.pending).toBe(true);
     expect(res.body.friendUid).toBe('amir');
 
-    // Idempotent second connect
+    // Not friends yet — neither leaderboard shows the other person
+    const sumA = await asA(
+      request(app).get(`/api/social/summary?today=${TODAY}&timezoneOffset=360`)
+    );
+    const sumB = await asB(
+      request(app).get(`/api/social/summary?today=${TODAY}&timezoneOffset=360`)
+    );
+    expect(sumA.body.leaderboard).toHaveLength(1);
+    expect(sumB.body.leaderboard).toHaveLength(1);
+
+    // Re-sending the same request is idempotent, not a duplicate
     const again = await asB(request(app).post(`/api/social/connect`)).send({ code: codeA });
     expect(again.status).toBe(200);
-    expect(again.body.message).toMatch(/already/i);
+    expect(again.body.message).toMatch(/already sent/i);
+  });
+
+  test("amir sees bilal's request and can reject it, then bilal can re-request", async () => {
+    const incoming = await asA(request(app).get(`/api/social/requests`));
+    expect(incoming.status).toBe(200);
+    expect(incoming.body.requests).toHaveLength(1);
+    expect(incoming.body.requests[0].uid).toBe('bilal');
+
+    const rejected = await asA(request(app).post(`/api/social/requests/bilal/reject`));
+    expect(rejected.status).toBe(200);
+    expect(rejected.body.ok).toBe(true);
+
+    // Request is gone from both sides
+    const afterReject = await asA(request(app).get(`/api/social/requests`));
+    expect(afterReject.body.requests).toHaveLength(0);
+
+    // Bilal can send a fresh request since the old one was cleared
+    const retry = await asB(request(app).post(`/api/social/connect`)).send({ code: codeA });
+    expect(retry.body.pending).toBe(true);
+  });
+
+  test('accepting the request makes both sides mutual friends', async () => {
+    const res = await asA(request(app).post(`/api/social/requests/bilal/accept`));
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.friendUid).toBe('bilal');
+
+    // No longer pending
+    const incoming = await asA(request(app).get(`/api/social/requests`));
+    expect(incoming.body.requests).toHaveLength(0);
 
     // Both sides see each other
     const sumA = await asA(
@@ -87,6 +128,27 @@ describe('Social API (share activities)', () => {
     );
     expect(sumA.body.leaderboard.map((f) => f.uid).sort()).toEqual(['amir', 'bilal']);
     expect(sumB.body.leaderboard.map((f) => f.uid).sort()).toEqual(['amir', 'bilal']);
+  });
+
+  test('invisible friend is hidden from the leaderboard entirely, even for existing friends', async () => {
+    const set = await asB(request(app).patch(`/api/social/invisible`)).send({ invisible: true });
+    expect(set.status).toBe(200);
+    expect(set.body.invisible).toBe(true);
+
+    const sumA = await asA(
+      request(app).get(`/api/social/summary?today=${TODAY}&timezoneOffset=360`)
+    );
+    expect(sumA.body.leaderboard.map((f) => f.uid)).toEqual(['amir']); // bilal hidden
+
+    // Invisible only hides YOU from OTHERS — Bilal still sees Amir (and
+    // himself) on his own dashboard, since Amir hasn't gone invisible
+    const sumB = await asB(
+      request(app).get(`/api/social/summary?today=${TODAY}&timezoneOffset=360`)
+    );
+    expect(sumB.body.leaderboard.map((f) => f.uid).sort()).toEqual(['amir', 'bilal']);
+
+    // Turn it back off for the rest of the suite
+    await asB(request(app).patch(`/api/social/invisible`)).send({ invisible: false });
   });
 
   test('leaderboard ranks by activity score', async () => {
@@ -162,5 +224,34 @@ describe('Social API (share activities)', () => {
     const listB = await asB(request(app).get(`/api/social/friends`));
     expect(listA.body.friends).toHaveLength(0);
     expect(listB.body.friends).toHaveLength(0);
+  });
+
+  test('blocking someone tears down the relationship and hides you from their invite link', async () => {
+    // Bilal re-sends a request to re-establish something to tear down
+    await asB(request(app).post(`/api/social/connect`)).send({ code: codeA });
+    const pendingBefore = await asA(request(app).get(`/api/social/requests`));
+    expect(pendingBefore.body.requests).toHaveLength(1);
+
+    const block = await asA(request(app).post(`/api/social/block/bilal`));
+    expect(block.status).toBe(200);
+    expect(block.body.ok).toBe(true);
+
+    // The pending request is gone, and it shows up in Amir's blocked list
+    const pendingAfter = await asA(request(app).get(`/api/social/requests`));
+    expect(pendingAfter.body.requests).toHaveLength(0);
+    const blockedList = await asA(request(app).get(`/api/social/blocked`));
+    expect(blockedList.body.blocked.map((b) => b.uid)).toEqual(['bilal']);
+
+    // Bilal trying the same invite code again gets the SAME generic message
+    // as an invalid code — never told he was specifically blocked
+    const retry = await asB(request(app).post(`/api/social/connect`)).send({ code: codeA });
+    expect(retry.status).toBe(400);
+    expect(retry.body.message).toMatch(/not valid/i);
+
+    // Unblocking restores the ability to connect
+    const unblock = await asA(request(app).delete(`/api/social/block/bilal`));
+    expect(unblock.status).toBe(200);
+    const afterUnblock = await asB(request(app).post(`/api/social/connect`)).send({ code: codeA });
+    expect(afterUnblock.body.pending).toBe(true);
   });
 });

@@ -44,9 +44,11 @@
 
 ### 0.6 Friends/Noor — Missing Safety Controls
 
-- [ ] `[M]` **Friend request/approval flow** — connecting via invite code is instant and mutual with no pending state. Add an accept/reject step so users control who sees their data.
-- [ ] `[S]` **Privacy controls** — add ability to hide Noor score / go invisible on the leaderboard. Some users' fiqh position is that worship data should never be shared.
-- [ ] `[S]` **Block mechanism** — no way to block another user currently.
+- [x] **Friend request/approval flow** (2026-09-05: connecting via invite code now creates a `pendingIncoming`/`pendingOutgoing` request pair on `SocialProfile` instead of instant mutual friendship; `acceptRequest`/`rejectRequest` promote or clear it. If both people happen to open each other's links, the second call auto-accepts the first's request instead of creating a redundant reverse one. New endpoints: `GET /api/social/requests`, `POST /api/social/requests/:uid/accept|reject`. Frontend: a `PendingRequestsModal` plus a gold notification banner on the Friends page shown whenever `pendingCount > 0`, independent of whether the user has any friends yet.)
+- [x] **Privacy controls** (2026-09-05: added `SocialProfile.invisible` — a full opt-out where `getSummary` excludes the user from every OTHER friend's leaderboard query (`SocialProfile.find(...).select('userId invisible')` filters the friend-uid list before building stats), while the user still sees their own row and everyone else's on their own dashboard. Toggle lives in the Manage Friends modal, `PATCH /api/social/invisible`.)
+- [x] **Block mechanism** (2026-09-05: `blockUser`/`unblockUser` — blocking is one-directional, immediately tears down any existing friendship or pending request in either direction, and a blocked user's future invite-code attempt gets the _same generic_ "not valid" message as a nonexistent code, so they're never tipped off they were specifically blocked. `GET /api/social/blocked` for the manage-blocked view, both wired into the Manage Friends modal with a single-step confirm for blocking, matching how deliberate that action is.)
+  - Backend: full coverage in `backend/tests/social.e2e.test.js` — 13 tests (6 new: pending-request creation, reject-then-retry, accept-to-mutual, invisible hides from others but not self, block tears down + hides via generic error, unblock restores). Full suite (90 tests, 10 suites) passes.
+  - Frontend: typecheck, lint, and build all pass. **Not yet verified live in-browser** — the test account credentials on file (`triistiak@mail.com`/`123456`) were rejected by Firebase as invalid when tried; needs corrected credentials before a real accept/reject/block/invisible click-through can be done. Didn't want to exercise this on the user's real "Tara" account since it would create real (fake) friend-request/block artifacts in their actual social graph.
 
 ### 0.7 Rayhanah — Garden Sync & Key Cleanup
 

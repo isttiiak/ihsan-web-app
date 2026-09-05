@@ -51,8 +51,18 @@ export interface ConnectResult {
   message: string;
   friendUid?: string;
   friendName?: string;
+  /** True when this created/resolved a pending request rather than an
+   * immediate friendship — lets the UI show "waiting for them to accept" */
+  pending?: boolean;
 }
 
+/**
+ * Opening someone's invite link no longer connects instantly — it sends a
+ * request they must accept, so a user always controls who sees their data
+ * (0.6 spec). The one exception: if THEY already sent YOU a request (both
+ * people opened each other's links), this accepts theirs immediately rather
+ * than creating a redundant reverse request.
+ */
 export async function connectByCode(userId: string, code: string): Promise<ConnectResult> {
   const owner = await SocialProfile.findOne({ inviteCode: code });
   if (!owner) return { ok: false, message: 'This invite link is not valid.' };
@@ -60,32 +70,186 @@ export async function connectByCode(userId: string, code: string): Promise<Conne
     return { ok: false, message: 'That is your own invite link — share it with a friend!' };
 
   const mine = await getOrCreateProfile(userId);
-  const alreadyFriends = mine.friends.includes(owner.userId);
-  if (!alreadyFriends) {
-    if (mine.friends.length >= MAX_FRIENDS || owner.friends.length >= MAX_FRIENDS) {
-      return { ok: false, message: 'Friend limit reached.' };
-    }
-    const now = new Date();
-    // Mutual connection, atomic on each side — record the join date for both
-    await Promise.all([
-      SocialProfile.updateOne(
-        { userId },
-        { $addToSet: { friends: owner.userId }, $set: { [`friendSince.${owner.userId}`]: now } }
-      ),
-      SocialProfile.updateOne(
-        { userId: owner.userId },
-        { $addToSet: { friends: userId }, $set: { [`friendSince.${userId}`]: now } }
-      ),
-    ]);
+
+  // Blocked in either direction — identical message to "not found" so a
+  // blocking user is never tipped off that they were specifically blocked.
+  if (owner.blocked.includes(userId) || mine.blocked.includes(owner.userId)) {
+    return { ok: false, message: 'This invite link is not valid.' };
   }
+
+  if (mine.friends.includes(owner.userId)) {
+    const friendUser = await User.findOne({ uid: owner.userId }).select('displayName');
+    return {
+      ok: true,
+      message: 'You are already connected!',
+      friendUid: owner.userId,
+      friendName: friendUser?.displayName ?? 'your friend',
+    };
+  }
+
+  if (mine.pendingIncoming.includes(owner.userId)) {
+    return acceptRequest(userId, owner.userId);
+  }
+
+  if (mine.pendingOutgoing.includes(owner.userId)) {
+    return {
+      ok: true,
+      pending: true,
+      message: 'Request already sent — waiting for them to accept.',
+      friendUid: owner.userId,
+    };
+  }
+
+  if (mine.friends.length >= MAX_FRIENDS || owner.friends.length >= MAX_FRIENDS) {
+    return { ok: false, message: 'Friend limit reached.' };
+  }
+
+  await Promise.all([
+    SocialProfile.updateOne({ userId }, { $addToSet: { pendingOutgoing: owner.userId } }),
+    SocialProfile.updateOne({ userId: owner.userId }, { $addToSet: { pendingIncoming: userId } }),
+  ]);
 
   const friendUser = await User.findOne({ uid: owner.userId }).select('displayName');
   return {
     ok: true,
-    message: alreadyFriends ? 'You are already connected!' : 'Connected!',
+    pending: true,
+    message: 'Request sent — waiting for them to accept.',
     friendUid: owner.userId,
     friendName: friendUser?.displayName ?? 'your friend',
   };
+}
+
+export interface PendingRequestItem {
+  uid: string;
+  displayName: string;
+  photoUrl?: string;
+}
+
+function toPendingItems(
+  uids: string[],
+  users: Array<{ uid: string; displayName?: string; photoUrl?: string }>
+): PendingRequestItem[] {
+  const byUid = new Map(users.map((u) => [u.uid, u]));
+  return uids.map((uid) => {
+    const u = byUid.get(uid);
+    const photo = u?.photoUrl;
+    return {
+      uid,
+      displayName: u?.displayName || 'Ihsan user',
+      ...(photo && /^https?:\/\//.test(photo) ? { photoUrl: photo } : {}),
+    };
+  });
+}
+
+/** Incoming requests awaiting my accept/reject (people who opened my link). */
+export async function getPendingIncoming(userId: string): Promise<PendingRequestItem[]> {
+  const profile = await getOrCreateProfile(userId);
+  if (!profile.pendingIncoming.length) return [];
+  const users = await User.find({ uid: { $in: profile.pendingIncoming } }).select(
+    'uid displayName photoUrl'
+  );
+  return toPendingItems(profile.pendingIncoming, users);
+}
+
+export async function acceptRequest(userId: string, requesterUid: string): Promise<ConnectResult> {
+  const mine = await getOrCreateProfile(userId);
+  if (!mine.pendingIncoming.includes(requesterUid)) {
+    return { ok: false, message: 'No pending request from this user.' };
+  }
+  const requester = await SocialProfile.findOne({ userId: requesterUid });
+  if (
+    mine.friends.length >= MAX_FRIENDS ||
+    (requester && requester.friends.length >= MAX_FRIENDS)
+  ) {
+    return { ok: false, message: 'Friend limit reached.' };
+  }
+  const now = new Date();
+  await Promise.all([
+    SocialProfile.updateOne(
+      { userId },
+      {
+        $pull: { pendingIncoming: requesterUid },
+        $addToSet: { friends: requesterUid },
+        $set: { [`friendSince.${requesterUid}`]: now },
+      }
+    ),
+    SocialProfile.updateOne(
+      { userId: requesterUid },
+      {
+        $pull: { pendingOutgoing: userId },
+        $addToSet: { friends: userId },
+        $set: { [`friendSince.${userId}`]: now },
+      }
+    ),
+  ]);
+  const friendUser = await User.findOne({ uid: requesterUid }).select('displayName');
+  return {
+    ok: true,
+    message: 'Connected!',
+    friendUid: requesterUid,
+    friendName: friendUser?.displayName ?? 'your friend',
+  };
+}
+
+export async function rejectRequest(
+  userId: string,
+  requesterUid: string
+): Promise<{ ok: boolean }> {
+  await Promise.all([
+    SocialProfile.updateOne({ userId }, { $pull: { pendingIncoming: requesterUid } }),
+    SocialProfile.updateOne({ userId: requesterUid }, { $pull: { pendingOutgoing: userId } }),
+  ]);
+  return { ok: true };
+}
+
+/** Blocking is one-directional and immediately tears down any existing
+ * friendship or pending request in either direction — the blocked user is
+ * never notified, they simply find the invite link "not valid" if they try
+ * to reconnect (see connectByCode). */
+export async function blockUser(userId: string, targetUid: string): Promise<{ ok: boolean }> {
+  if (userId === targetUid) return { ok: false };
+  await Promise.all([
+    SocialProfile.updateOne(
+      { userId },
+      {
+        $addToSet: { blocked: targetUid },
+        $pull: { friends: targetUid, pendingIncoming: targetUid, pendingOutgoing: targetUid },
+        $unset: { [`friendSince.${targetUid}`]: '' },
+      }
+    ),
+    SocialProfile.updateOne(
+      { userId: targetUid },
+      {
+        $pull: { friends: userId, pendingIncoming: userId, pendingOutgoing: userId },
+        $unset: { [`friendSince.${userId}`]: '' },
+      }
+    ),
+  ]);
+  return { ok: true };
+}
+
+export async function unblockUser(userId: string, targetUid: string): Promise<{ ok: boolean }> {
+  await SocialProfile.updateOne({ userId }, { $pull: { blocked: targetUid } });
+  return { ok: true };
+}
+
+export async function getBlockedList(userId: string): Promise<PendingRequestItem[]> {
+  const profile = await getOrCreateProfile(userId);
+  if (!profile.blocked.length) return [];
+  const users = await User.find({ uid: { $in: profile.blocked } }).select(
+    'uid displayName photoUrl'
+  );
+  return toPendingItems(profile.blocked, users);
+}
+
+/** Full leaderboard opt-out — see ISocialProfile.invisible. */
+export async function setInvisible(
+  userId: string,
+  invisible: boolean
+): Promise<{ ok: boolean; invisible: boolean }> {
+  await getOrCreateProfile(userId);
+  await SocialProfile.updateOne({ userId }, { $set: { invisible } });
+  return { ok: true, invisible };
 }
 
 export async function unfriend(userId: string, friendUid: string): Promise<{ ok: boolean }> {
@@ -367,6 +531,10 @@ async function statsForUser(
 export interface SocialSummary {
   inviteCode: string;
   leaderboard: FriendStats[]; // me + friends, ranked by score desc
+  /** Whether the VIEWER has opted out of appearing on others' leaderboards */
+  invisible: boolean;
+  /** Count of incoming friend requests awaiting the viewer's accept/reject */
+  pendingCount: number;
 }
 
 export async function getSummary(
@@ -377,9 +545,18 @@ export async function getSummary(
   const end = today ?? todayDateString();
   const profile = await getOrCreateProfile(userId);
 
+  // A friend who has gone invisible (see ISocialProfile.invisible) is a full
+  // opt-out — excluded from EVERY friend's leaderboard, not just new ones.
+  // The viewer always sees their own row regardless of their own setting.
+  const friendUids = profile.friends.slice(0, MAX_FRIENDS);
+  const friendProfiles = friendUids.length
+    ? await SocialProfile.find({ userId: { $in: friendUids } }).select('userId invisible')
+    : [];
+  const visibleFriendUids = friendProfiles.filter((p) => !p.invisible).map((p) => p.userId);
+
   // Everyone is judged on the VIEWER's calendar date — a consistent basis for
   // one ranked list (documented in CLAUDE.md).
-  const uids = [userId, ...profile.friends.slice(0, MAX_FRIENDS)];
+  const uids = [userId, ...visibleFriendUids];
   const excused = await getExcusedSet(uids, end);
   const stats = await Promise.all(
     uids.map((uid) => statsForUser(uid, userId, end, timezoneOffset, excused.has(uid)))
@@ -390,7 +567,12 @@ export async function getSummary(
       b.score - a.score || b.zikrStreak - a.zikrStreak || a.displayName.localeCompare(b.displayName)
   );
 
-  return { inviteCode: profile.inviteCode, leaderboard: stats };
+  return {
+    inviteCode: profile.inviteCode,
+    leaderboard: stats,
+    invisible: profile.invisible,
+    pendingCount: profile.pendingIncoming.length,
+  };
 }
 
 // ─── Noor (navbar capsules) ───────────────────────────────────────────────────

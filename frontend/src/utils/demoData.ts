@@ -369,6 +369,8 @@ function buildSocialSummary(gender: string) {
       ok: true,
       inviteCode: 'demo-invite-f',
       leaderboard: leaderboard.sort((a, b) => b.score - a.score),
+      invisible: false,
+      pendingCount: 0,
     };
   }
 
@@ -454,6 +456,8 @@ function buildSocialSummary(gender: string) {
     ok: true,
     inviteCode: 'demo-invite-m',
     leaderboard: leaderboard.sort((a, b) => b.score - a.score),
+    invisible: false,
+    pendingCount: 0,
   };
 }
 

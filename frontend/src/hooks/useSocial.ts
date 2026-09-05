@@ -31,6 +31,10 @@ export interface FriendStats {
 export interface SocialSummary {
   inviteCode: string;
   leaderboard: FriendStats[];
+  /** Whether the viewer has opted out of appearing on others' leaderboards */
+  invisible: boolean;
+  /** Count of incoming friend requests awaiting the viewer's accept/reject */
+  pendingCount: number;
 }
 
 function localTodayStr(): string {
@@ -83,10 +87,12 @@ export function useConnectFriend() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (code: string) => {
-      const { data } = await api.post<{ ok: boolean; message: string; friendName?: string }>(
-        '/api/social/connect',
-        { code }
-      );
+      const { data } = await api.post<{
+        ok: boolean;
+        message: string;
+        friendName?: string;
+        pending?: boolean;
+      }>('/api/social/connect', { code });
       return data;
     },
     onSuccess: () => {
@@ -129,5 +135,113 @@ export function useFriendsList(enabled: boolean) {
     },
     enabled: !!user && enabled,
     staleTime: 60_000,
+  });
+}
+
+export interface PendingRequestItem {
+  uid: string;
+  displayName: string;
+  photoUrl?: string;
+}
+
+/** Incoming friend requests awaiting accept/reject — people who opened my invite link. */
+export function usePendingRequests(enabled: boolean) {
+  const user = useAuthStore((s) => s.user);
+  return useQuery({
+    queryKey: ['social', 'requests'],
+    queryFn: async () => {
+      const { data } = await api.get<{ ok: boolean; requests: PendingRequestItem[] }>(
+        '/api/social/requests'
+      );
+      return data.requests;
+    },
+    enabled: !!user && enabled,
+    staleTime: 30_000,
+  });
+}
+
+export function useAcceptRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (requesterUid: string) => {
+      const { data } = await api.post<{ ok: boolean; message: string; friendName?: string }>(
+        `/api/social/requests/${requesterUid}/accept`
+      );
+      return data;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['social'] }),
+    onError: () =>
+      toast.error('Could not accept the request — try again.', { id: 'social-accept' }),
+  });
+}
+
+export function useRejectRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (requesterUid: string) => {
+      await api.post(`/api/social/requests/${requesterUid}/reject`);
+      return requesterUid;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['social', 'requests'] }),
+    onError: () =>
+      toast.error('Could not reject the request — try again.', { id: 'social-reject' }),
+  });
+}
+
+/** Uids I've blocked — for the "Manage blocked" view. */
+export function useBlockedList(enabled: boolean) {
+  const user = useAuthStore((s) => s.user);
+  return useQuery({
+    queryKey: ['social', 'blocked'],
+    queryFn: async () => {
+      const { data } = await api.get<{ ok: boolean; blocked: PendingRequestItem[] }>(
+        '/api/social/blocked'
+      );
+      return data.blocked;
+    },
+    enabled: !!user && enabled,
+    staleTime: 60_000,
+  });
+}
+
+export function useBlockUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (targetUid: string) => {
+      await api.post(`/api/social/block/${targetUid}`);
+      return targetUid;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['social'] }),
+    onError: () => toast.error('Could not block this user — try again.', { id: 'social-block' }),
+  });
+}
+
+export function useUnblockUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (targetUid: string) => {
+      await api.delete(`/api/social/block/${targetUid}`);
+      return targetUid;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['social', 'blocked'] }),
+    onError: () =>
+      toast.error('Could not unblock this user — try again.', { id: 'social-unblock' }),
+  });
+}
+
+/** Full leaderboard opt-out — when on, no one (not even existing friends) sees your stats. */
+export function useSetInvisible() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (invisible: boolean) => {
+      const { data } = await api.patch<{ ok: boolean; invisible: boolean }>(
+        '/api/social/invisible',
+        { invisible }
+      );
+      return data;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['social'] }),
+    onError: () =>
+      toast.error('Could not update your privacy setting — try again.', { id: 'social-invisible' }),
   });
 }

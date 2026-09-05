@@ -2,7 +2,11 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import * as socialController from '../controllers/social.controller.js';
-import { connectSchema, socialSummarySchema } from '../validation/social.schemas.js';
+import {
+  connectSchema,
+  socialSummarySchema,
+  setInvisibleSchema,
+} from '../validation/social.schemas.js';
 import { socialConnectLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
@@ -28,5 +32,28 @@ router.get('/friends', requireAuth, socialController.getFriendsList);
 
 // DELETE /api/social/friends/:friendUid — mutual disconnect
 router.delete('/friends/:friendUid', requireAuth, socialController.unfriend);
+
+// GET /api/social/requests — incoming friend requests awaiting accept/reject
+router.get('/requests', requireAuth, socialController.getPendingIncoming);
+
+// POST /api/social/requests/:requesterUid/accept | /reject
+router.post('/requests/:requesterUid/accept', requireAuth, socialController.acceptRequest);
+router.post('/requests/:requesterUid/reject', requireAuth, socialController.rejectRequest);
+
+// POST/DELETE /api/social/block/:targetUid — block/unblock (same limiter as
+// connect: both are UID-driven relationship changes with similar abuse shape)
+router.post('/block/:targetUid', requireAuth, socialConnectLimiter, socialController.blockUser);
+router.delete('/block/:targetUid', requireAuth, socialController.unblockUser);
+
+// GET /api/social/blocked — manage-blocked-users view
+router.get('/blocked', requireAuth, socialController.getBlockedList);
+
+// PATCH /api/social/invisible { invisible } — full leaderboard opt-out
+router.patch(
+  '/invisible',
+  requireAuth,
+  validate(setInvisibleSchema),
+  socialController.setInvisible
+);
 
 export default router;
