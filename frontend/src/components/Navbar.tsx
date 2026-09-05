@@ -6,10 +6,8 @@ import { signOut } from 'firebase/auth';
 import logo from '../assets/logo.svg';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useZikrStore } from '../store/useZikrStore.js';
-import { useAnalytics } from '../hooks/useAnalytics.js';
 import { useNoor } from '../hooks/useSocial.js';
 import { useUiStore } from '../store/useUiStore.js';
-import { StreakBadge, GoalBadge } from './StatusBadges.js';
 import { getHijriToday, formatHijriDate } from '../utils/islamicCalendar.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 import {
@@ -121,8 +119,6 @@ export default function Navbar() {
     PAGE_KEYS[path] ? t(PAGE_KEYS[path]!, { defaultValue: fallback }) : fallback;
   const { user, setUser } = useAuthStore();
   const resetAll = useZikrStore((s) => s.resetAll);
-  const localTotal = useZikrStore((s) => Object.values(s.counts).reduce((a, b) => a + b, 0));
-  const pendingTotal = useZikrStore((s) => Object.values(s.pending).reduce((a, b) => a + b, 0));
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -150,22 +146,12 @@ export default function Navbar() {
     setDropdownOpen(false);
   }, [location.pathname]);
 
-  // ── Context data (always called — React Query's enabled guards auth) ────────
-  const { data: analyticsData } = useAnalytics(1);
-
   // Noor capsules: always on /friends; elsewhere per the Settings toggles
   const { showNoorAllTime, showNoorToday } = useUiStore();
   const onFriendsPage = location.pathname === '/friends';
   const noorTodayVisible = onFriendsPage || showNoorToday;
   const noorAllTimeVisible = onFriendsPage || showNoorAllTime;
   const { data: noor } = useNoor(!!user && (noorTodayVisible || noorAllTimeVisible));
-
-  const streak = analyticsData?.streak?.currentStreak ?? null;
-  const dailyGoal = analyticsData?.goal?.dailyTarget ?? null;
-  const confirmedTotal = analyticsData?.today?.total ?? 0;
-  const effectiveTotal = Math.max(localTotal, confirmedTotal + pendingTotal);
-  const goalPct = dailyGoal ? Math.min(100, Math.round((effectiveTotal / dailyGoal) * 100)) : null;
-  const goalMet = dailyGoal !== null && effectiveTotal >= dailyGoal;
 
   const firstName = user?.displayName?.split(' ')[0] ?? '';
   const greeting = `${t('home.greeting')}${firstName ? ', ' + firstName : ''}`;
@@ -187,14 +173,6 @@ export default function Navbar() {
           <span className="text-sm font-bold leading-tight">
             <TextType text={greeting} speed={50} />
           </span>
-        </div>
-      );
-    }
-    if (location.pathname === '/zikr') {
-      return (
-        <div className="hidden sm:flex items-center gap-1.5">
-          {streak !== null && <StreakBadge streak={streak} state={analyticsData?.streak?.state} />}
-          <GoalBadge pct={goalPct} met={goalMet} />
         </div>
       );
     }
