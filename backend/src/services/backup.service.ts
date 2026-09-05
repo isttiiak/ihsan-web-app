@@ -99,16 +99,16 @@ export async function exportAll(uid: string): Promise<PlainDoc> {
       zikrTypes: ((user?.zikrTypes ?? []) as unknown as Array<{ name: string }>).map((t) => ({
         name: t.name,
       })),
-      goal: clean(goal as PlainDoc | null),
+      goal: clean(goal as unknown as PlainDoc | null),
       daily: cleanAll(zikrDaily as unknown as PlainDoc[]),
     },
     salat: cleanAll(salat as unknown as PlainDoc[]),
     fasting: {
-      profile: clean(fastingProfile as PlainDoc | null),
+      profile: clean(fastingProfile as unknown as PlainDoc | null),
       logs: cleanAll(fastingLogs as unknown as PlainDoc[]),
     },
     quran: {
-      profile: clean(quranProfile as PlainDoc | null),
+      profile: clean(quranProfile as unknown as PlainDoc | null),
       logs: cleanAll(quranLogs as unknown as PlainDoc[]),
     },
     // Rayhanah data ships only when it exists — and the file stays on the
@@ -116,7 +116,7 @@ export async function exportAll(uid: string): Promise<PlainDoc> {
     ...(cycleProfile || cycleLogs.length || cycleDays.length
       ? {
           cycle: {
-            profile: clean(cycleProfile as PlainDoc | null),
+            profile: clean(cycleProfile as unknown as PlainDoc | null),
             logs: cleanAll(cycleLogs as unknown as PlainDoc[]),
             days: cleanAll(cycleDays as unknown as PlainDoc[]),
           },
