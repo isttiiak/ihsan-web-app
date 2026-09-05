@@ -10,6 +10,7 @@ import { useAuthStore } from './store/useAuthStore.js';
 import { useZikrStore, flushZikrLocalPersistence } from './store/useZikrStore.js';
 import { replaySalatOutbox } from './hooks/useSalatLog.js';
 import { clearSalatOutbox } from './utils/salatOutbox.js';
+import { idbRemove } from './utils/idbCache.js';
 import Navbar from './components/Navbar.js';
 import Home from './pages/Home.js';
 import ZikrCounter from './pages/ZikrCounter.js';
@@ -355,7 +356,7 @@ export default function App() {
         // The persisted React Query cache holds personal stats (incl. cycle
         // data) — never leave it behind after sign-out on a shared device.
         queryClient.clear();
-        localStorage.removeItem('ihsan_rq_cache');
+        void idbRemove('ihsan_rq_cache');
         setAuthLoading(false);
         return;
       }

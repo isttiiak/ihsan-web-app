@@ -2,8 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient } from '@tanstack/react-query';
-import { PersistQueryClientProvider, removeOldestQuery } from '@tanstack/react-query-persist-client';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import {
+  PersistQueryClientProvider,
+  removeOldestQuery,
+} from '@tanstack/react-query-persist-client';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from './App.js';
 import './i18n.js';
@@ -11,6 +14,7 @@ import './styles.css';
 import './styles/global.css';
 import ThemeInit from './components/ThemeInit.js';
 import UiInit from './components/UiInit.js';
+import { idbGet, idbSet, idbRemove } from './utils/idbCache.js';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,15 +34,28 @@ const queryClient = new QueryClient({
   },
 });
 
-// Persist the query cache to localStorage: on a hard reload the app paints
+// Persist the query cache to IndexedDB: on a hard reload the app paints
 // yesterday's numbers immediately instead of spinners, then refetches.
-const persister = createSyncStoragePersister({
-  storage: window.localStorage,
+// IndexedDB instead of localStorage because this cache spans every feature
+// (salat, quran, fasting, cycle, social, analytics) and can grow into the
+// megabytes over active daily use — an async store avoids both the ~5MB
+// localStorage ceiling and blocking the main thread on every throttled write.
+const persister = createAsyncStoragePersister({
+  storage: { getItem: idbGet, setItem: idbSet, removeItem: idbRemove },
   key: 'ihsan_rq_cache',
   throttleTime: 2_000,
-  // If localStorage is full, drop the oldest queries instead of giving up.
+  // If storage is full, drop the oldest queries instead of giving up.
   retry: removeOldestQuery,
 });
+
+// One-time cleanup: the cache used to live in localStorage under this same
+// key. It's disposable (just refetches on miss), so no migration — just
+// reclaim the quota it was using.
+try {
+  localStorage.removeItem('ihsan_rq_cache');
+} catch {
+  /* ignore */
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
