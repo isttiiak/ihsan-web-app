@@ -1786,6 +1786,8 @@
     "reauthPasswordPlaceholder": "Your password",
     "reauthAndDelete": "Verify & delete",
     "reauthWithGoogle": "Re-verify with Google & delete",
+    "reauthMethodPassword": "Password",
+    "reauthMethodGoogle": "Google",
     "reauthWrongPassword": "Incorrect password — please try again.",
     "reauthPopupClosed": "Verification was cancelled.",
     "reauthTooManyRequests": "Too many attempts — please wait and try again.",

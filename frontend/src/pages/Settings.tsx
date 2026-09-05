@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n, { LANGUAGES } from '../i18n.js';
 import { useQueryClient } from '@tanstack/react-query';
@@ -256,6 +257,7 @@ function Toggle({
 
 export default function Settings() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   // Rayhanah is a sisters-only feature — its delete group must not appear for
   // anyone else (a brother seeing a 🌸 cycle-data row was a bug).
@@ -295,6 +297,9 @@ export default function Settings() {
   const [reauthPassword, setReauthPassword] = useState('');
   const [reauthError, setReauthError] = useState<string | null>(null);
   const [reauthBusy, setReauthBusy] = useState(false);
+  // When both a password and Google are linked, let the user pick which one
+  // to verify with instead of always defaulting to password.
+  const [reauthMethod, setReauthMethod] = useState<'password' | 'google'>('password');
 
   const applyHijriAdj = (days: number) => {
     setHijriAdjustment(days);
@@ -445,6 +450,10 @@ export default function Settings() {
   const hasPasswordProvider = auth.currentUser?.providerData.some(
     (p) => p.providerId === 'password'
   );
+  const hasGoogleProvider = auth.currentUser?.providerData.some(
+    (p) => p.providerId === 'google.com'
+  );
+  const canChooseReauthMethod = !!hasPasswordProvider && !!hasGoogleProvider;
 
   const runDeleteAccount = async () => {
     setDeleteAccountStep('deleting');
@@ -452,6 +461,10 @@ export default function Settings() {
       await api.delete('/api/user/me');
       localStorage.removeItem('ihsan_idToken');
       await signOut(auth);
+      // Without this, staying on /settings after sign-out hits the Protected
+      // route's "sign in required" gate on the same page instead of landing
+      // somewhere sensible for a now-signed-out visitor.
+      navigate('/', { replace: true });
     } catch (err) {
       const reauthRequired =
         !!err &&
@@ -900,7 +913,25 @@ export default function Settings() {
                       'For your security, please verify it’s really you before we delete everything.'
                     )}
                   </p>
-                  {hasPasswordProvider ? (
+                  {canChooseReauthMethod && (
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setReauthMethod('password')}
+                        className={`btn btn-2xs rounded-full ${reauthMethod === 'password' ? 'bg-red-600 text-white border-0' : 'bg-white/5 border-red-500/20 text-white/50'}`}
+                      >
+                        {t('settings.reauthMethodPassword', 'Password')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReauthMethod('google')}
+                        className={`btn btn-2xs rounded-full ${reauthMethod === 'google' ? 'bg-red-600 text-white border-0' : 'bg-white/5 border-red-500/20 text-white/50'}`}
+                      >
+                        {t('settings.reauthMethodGoogle', 'Google')}
+                      </button>
+                    </div>
+                  )}
+                  {(canChooseReauthMethod ? reauthMethod === 'password' : hasPasswordProvider) ? (
                     <form
                       onSubmit={(e) => {
                         e.preventDefault();

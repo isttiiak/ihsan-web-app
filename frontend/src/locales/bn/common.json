@@ -1786,6 +1786,8 @@
     "reauthPasswordPlaceholder": "আপনার পাসওয়ার্ড",
     "reauthAndDelete": "যাচাই করুন ও মুছে ফেলুন",
     "reauthWithGoogle": "গুগল দিয়ে পুনরায় যাচাই করুন ও মুছে ফেলুন",
+    "reauthMethodPassword": "পাসওয়ার্ড",
+    "reauthMethodGoogle": "গুগল",
     "reauthWrongPassword": "ভুল পাসওয়ার্ড — আবার চেষ্টা করুন।",
     "reauthPopupClosed": "যাচাইকরণ বাতিল করা হয়েছে।",
     "reauthTooManyRequests": "অনেক বেশি চেষ্টা — কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন।",
