@@ -30,7 +30,8 @@ function shiftDateStr(dateStr: string, delta: number): string {
 
 function daysBetween(a: string, b: string): number {
   return Math.round(
-    (new Date(b + 'T12:00:00.000Z').getTime() - new Date(a + 'T12:00:00.000Z').getTime()) / 86_400_000
+    (new Date(b + 'T12:00:00.000Z').getTime() - new Date(a + 'T12:00:00.000Z').getTime()) /
+      86_400_000
   );
 }
 
@@ -40,7 +41,10 @@ export async function getOrCreateProfile(userId: string): Promise<ICycleProfile>
   return profile;
 }
 
-export async function setMadhab(userId: string, madhab: ICycleProfile['madhab']): Promise<ICycleProfile> {
+export async function setMadhab(
+  userId: string,
+  madhab: ICycleProfile['madhab']
+): Promise<ICycleProfile> {
   return await CycleProfile.findOneAndUpdate(
     { userId },
     { $set: { madhab } },
@@ -88,7 +92,9 @@ export async function getStatus(userId: string, today: string): Promise<CycleSta
   }
 
   // Predictions from completed hayd episodes only (nifas is not cyclical)
-  const hayd = logs.filter((l) => l.type === 'hayd').sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const hayd = logs
+    .filter((l) => l.type === 'hayd')
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
   const gaps: number[] = [];
   for (let i = 1; i < hayd.length; i++) {
     const g = daysBetween(hayd[i - 1]!.startDate, hayd[i]!.startDate);
@@ -100,7 +106,9 @@ export async function getStatus(userId: string, today: string): Promise<CycleSta
     .filter((n) => n >= 1 && n <= 15);
 
   const avgCycleDays = gaps.length ? Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length) : 28;
-  const avgPeriodDays = lengths.length ? Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length) : 7;
+  const avgPeriodDays = lengths.length
+    ? Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length)
+    : 7;
   const lastStart = hayd.length ? hayd[hayd.length - 1]!.startDate : null;
   const nextStart = !active && lastStart ? shiftDateStr(lastStart, avgCycleDays) : null;
 
@@ -113,8 +121,14 @@ export async function getStatus(userId: string, today: string): Promise<CycleSta
 
 export interface CycleSummary extends CycleStatus {
   logs: Array<{ _id: string; type: string; startDate: string; endDate: string | null }>;
-  /** Wellness notes for the last ~60 days (flow/symptoms/moods) */
-  days: Array<{ date: string; flow: string | null; symptoms: string[]; moods: string[] }>;
+  /** Wellness notes for the last ~60 days (flow/symptoms/moods/garden) */
+  days: Array<{
+    date: string;
+    flow: string | null;
+    symptoms: string[];
+    moods: string[];
+    garden: string[];
+  }>;
 }
 
 export async function getSummary(userId: string, today: string): Promise<CycleSummary> {
@@ -122,7 +136,9 @@ export async function getSummary(userId: string, today: string): Promise<CycleSu
   const [status, logs, days] = await Promise.all([
     getStatus(userId, today),
     CycleLog.find({ userId }).sort({ startDate: -1 }).limit(24).select('type startDate endDate'),
-    CycleDay.find({ userId, date: { $gte: daysSince, $lte: today } }).select('date flow symptoms moods mood'),
+    CycleDay.find({ userId, date: { $gte: daysSince, $lte: today } }).select(
+      'date flow symptoms moods mood garden'
+    ),
   ]);
   return {
     ...status,
@@ -137,20 +153,31 @@ export async function getSummary(userId: string, today: string): Promise<CycleSu
       flow: d.flow,
       symptoms: d.symptoms,
       // Merge any legacy single mood into the new array.
-      moods: d.moods?.length ? d.moods : (d.mood ? [d.mood] : []),
+      moods: d.moods?.length ? d.moods : d.mood ? [d.mood] : [],
+      garden: d.garden ?? [],
     })),
   };
 }
 
 export async function upsertDay(
   userId: string,
-  input: { date: string; flow?: string | null; symptoms?: string[]; moods?: string[] }
+  input: {
+    date: string;
+    flow?: string | null;
+    symptoms?: string[];
+    moods?: string[];
+    garden?: string[];
+  }
 ): Promise<ICycleDay> {
   const set: Record<string, unknown> = {};
   if (input.flow !== undefined) set.flow = input.flow;
   if (input.symptoms !== undefined) set.symptoms = input.symptoms;
   // Writing moods clears the legacy single-mood field to avoid double-counting.
-  if (input.moods !== undefined) { set.moods = input.moods; set.mood = null; }
+  if (input.moods !== undefined) {
+    set.moods = input.moods;
+    set.mood = null;
+  }
+  if (input.garden !== undefined) set.garden = input.garden;
   return await CycleDay.findOneAndUpdate(
     { userId, date: input.date },
     { $set: set, $setOnInsert: { userId, date: input.date } },
@@ -189,11 +216,17 @@ export async function addPastCycle(
   input: { startDate: string; endDate: string; type: 'hayd' | 'nifas'; today: string }
 ): Promise<{ ok: boolean; error?: string; log?: ICycleLog }> {
   const { startDate, endDate, type, today } = input;
-  if (!DAY_STR_RE.test(startDate) || !DAY_STR_RE.test(endDate)) return { ok: false, error: 'Invalid date' };
+  if (!DAY_STR_RE.test(startDate) || !DAY_STR_RE.test(endDate))
+    return { ok: false, error: 'Invalid date' };
   if (endDate < startDate) return { ok: false, error: 'End date is before the start date.' };
-  if (endDate >= today) return { ok: false, error: 'Past cycles must end before today — use "My period started" for a current one.' };
+  if (endDate >= today)
+    return {
+      ok: false,
+      error: 'Past cycles must end before today — use "My period started" for a current one.',
+    };
   const len = daysBetween(startDate, endDate) + 1;
-  if (len > 60) return { ok: false, error: 'That episode is longer than 60 days — please split it.' };
+  if (len > 60)
+    return { ok: false, error: 'That episode is longer than 60 days — please split it.' };
 
   // Overlap check against every existing episode (incl. active)
   const clash = await CycleLog.findOne({
@@ -241,8 +274,10 @@ export async function editCycleLog(
   const endDate = input.endDate === undefined ? log.endDate : input.endDate;
 
   if (!DAY_STR_RE.test(startDate)) return { ok: false, error: 'Invalid start date' };
-  if (endDate !== null && !DAY_STR_RE.test(endDate)) return { ok: false, error: 'Invalid end date' };
-  if (endDate !== null && endDate < startDate) return { ok: false, error: 'End date is before the start date.' };
+  if (endDate !== null && !DAY_STR_RE.test(endDate))
+    return { ok: false, error: 'Invalid end date' };
+  if (endDate !== null && endDate < startDate)
+    return { ok: false, error: 'End date is before the start date.' };
   if (endDate !== null && daysBetween(startDate, endDate) + 1 > 60) {
     return { ok: false, error: 'That episode is longer than 60 days — please split it.' };
   }
@@ -252,7 +287,11 @@ export async function editCycleLog(
     // episode can resume (a later episode would contradict it).
     const otherOpen = await CycleLog.findOne({ userId, endDate: null, _id: { $ne: log._id } });
     if (otherOpen) return { ok: false, error: 'Another cycle is already active.' };
-    const later = await CycleLog.findOne({ userId, _id: { $ne: log._id }, startDate: { $gt: log.startDate } });
+    const later = await CycleLog.findOne({
+      userId,
+      _id: { $ne: log._id },
+      startDate: { $gt: log.startDate },
+    });
     if (later) return { ok: false, error: 'Only your most recent cycle can be reopened.' };
   }
 
@@ -262,7 +301,10 @@ export async function editCycleLog(
     _id: { $ne: log._id },
     ...(endDate === null
       ? { $or: [{ endDate: null }, { endDate: { $gte: startDate } }] }
-      : { startDate: { $lte: endDate }, $or: [{ endDate: null }, { endDate: { $gte: startDate } }] }),
+      : {
+          startDate: { $lte: endDate },
+          $or: [{ endDate: null }, { endDate: { $gte: startDate } }],
+        }),
   });
   if (clash) return { ok: false, error: 'Those dates overlap another logged cycle.' };
 

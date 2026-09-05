@@ -62,17 +62,6 @@ const GARDEN_ITEMS: GardenItem[] = [
   { id: 'kindness', icon: '🎁', label: 'One act of kindness or charity' },
 ];
 
-function gardenKey(): string {
-  return `ihsan_rayhanah_garden_${getTrackingDay()}`;
-}
-function loadGarden(): Record<string, boolean> {
-  try {
-    return JSON.parse(localStorage.getItem(gardenKey()) ?? '{}') as Record<string, boolean>;
-  } catch {
-    return {};
-  }
-}
-
 // ─── Ghusl steps (Bukhari 248 — Maimunah's description) ───────────────────────
 const GHUSL_STEPS = [
   'Make the intention (niyyah) in your heart to purify yourself',
@@ -214,7 +203,6 @@ export default function RayhanahCycle() {
   const [ghuslOpen, setGhuslOpen] = useState(false);
   const [ghuslChecked, setGhuslChecked] = useState<boolean[]>(GHUSL_STEPS.map(() => false));
   const [qadaPrompt, setQadaPrompt] = useState<{ days: number } | null>(null);
-  const [garden, setGarden] = useState<Record<string, boolean>>(loadGarden);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   // Edit an episode (dates) or reopen the most recent one ("I'm not done yet")
@@ -227,20 +215,43 @@ export default function RayhanahCycle() {
   const [editStart, setEditStart] = useState('');
   const [editEnd, setEditEnd] = useState('');
 
-  useEffect(() => {
-    setGarden(loadGarden());
-  }, [today]);
-
-  const toggleGarden = (id: string) => {
-    const next = { ...garden, [id]: !garden[id] };
-    setGarden(next);
-    localStorage.setItem(gardenKey(), JSON.stringify(next));
-    if (!garden[id]) celebrateSmall();
-  };
-  const gardenDone = GARDEN_ITEMS.filter((g) => garden[g.id]).length;
-
   const active = summary?.active ?? null;
   const todayNote = summary?.days?.find((d) => d.date === today) ?? null;
+
+  // Garden of Light checklist — server-synced (see useUpsertCycleDay), so
+  // progress survives a device switch or cache clear instead of living only
+  // in localStorage. One-time migration: any pre-existing local checklist
+  // data (from before this was server-synced) is moved up on first load,
+  // then every orphaned `ihsan_rayhanah_garden_*` key is cleared — those
+  // used to accumulate one new key per day forever with no cleanup.
+  const gardenIds = useMemo(() => todayNote?.garden ?? [], [todayNote]);
+  const garden = useMemo(() => Object.fromEntries(gardenIds.map((id) => [id, true])), [gardenIds]);
+  useEffect(() => {
+    const legacyKeys = Object.keys(localStorage).filter((k) =>
+      k.startsWith('ihsan_rayhanah_garden_')
+    );
+    if (!legacyKeys.length) return;
+    const todayKey = `ihsan_rayhanah_garden_${today}`;
+    if (legacyKeys.includes(todayKey) && !todayNote?.garden?.length) {
+      try {
+        const local = JSON.parse(localStorage.getItem(todayKey) ?? '{}') as Record<string, boolean>;
+        const ids = Object.keys(local).filter((id) => local[id]);
+        if (ids.length) upsertDay.mutate({ date: today, garden: ids });
+      } catch {
+        /* corrupt legacy entry — nothing to migrate */
+      }
+    }
+    for (const k of legacyKeys) localStorage.removeItem(k);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time migration + cleanup pass; todayNote/upsertDay change identity often and re-running this after the first pass would be a no-op anyway
+  }, []);
+
+  const toggleGarden = (id: string) => {
+    const already = gardenIds.includes(id);
+    const next = already ? gardenIds.filter((g) => g !== id) : [...gardenIds, id];
+    upsertDay.mutate({ date: today, garden: next });
+    if (!already) celebrateSmall();
+  };
+  const gardenDone = gardenIds.length;
 
   // "I'm not done yet": the most recent completed episode, offered for reopen
   // when it ended within the last 3 days and nothing is active. Daily notes

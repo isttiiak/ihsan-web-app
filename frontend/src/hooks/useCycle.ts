@@ -20,6 +20,8 @@ export interface CycleDayNote {
   flow: CycleFlow | null;
   symptoms: string[];
   moods: CycleMood[];
+  /** Garden of Light checklist — ids of items completed that day */
+  garden: string[];
 }
 
 export interface CycleSummary {
@@ -125,31 +127,45 @@ export function useAddPastCycle() {
   });
 }
 
-/** Save today's wellness note (flow / symptoms / mood) — optimistic, silent. */
+/** Save today's wellness note (flow / symptoms / mood / garden checklist) — optimistic, silent. */
 export function useUpsertCycleDay() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (vars: { date: string; flow?: CycleFlow | null; symptoms?: string[]; moods?: CycleMood[] }) => {
+    mutationFn: async (vars: {
+      date: string;
+      flow?: CycleFlow | null;
+      symptoms?: string[];
+      moods?: CycleMood[];
+      garden?: string[];
+    }) => {
       const { data } = await api.put('/api/cycle/day', vars);
       return data;
     },
     onMutate: async (vars) => {
       // Optimistic merge into every cached cycle summary
       await qc.cancelQueries({ queryKey: ['cycle'] });
-      qc.setQueriesData<CycleSummary & { ok: boolean }>({ queryKey: ['cycle', 'summary'] }, (old) => {
-        if (!old) return old;
-        const days = [...(old.days ?? [])];
-        const i = days.findIndex((d) => d.date === vars.date);
-        const prev = i >= 0 ? days[i]! : { date: vars.date, flow: null, symptoms: [], moods: [] };
-        const next = {
-          ...prev,
-          ...(vars.flow !== undefined ? { flow: vars.flow } : {}),
-          ...(vars.symptoms !== undefined ? { symptoms: vars.symptoms } : {}),
-          ...(vars.moods !== undefined ? { moods: vars.moods } : {}),
-        };
-        if (i >= 0) days[i] = next; else days.push(next);
-        return { ...old, days };
-      });
+      qc.setQueriesData<CycleSummary & { ok: boolean }>(
+        { queryKey: ['cycle', 'summary'] },
+        (old) => {
+          if (!old) return old;
+          const days = [...(old.days ?? [])];
+          const i = days.findIndex((d) => d.date === vars.date);
+          const prev =
+            i >= 0
+              ? days[i]!
+              : { date: vars.date, flow: null, symptoms: [], moods: [], garden: [] };
+          const next = {
+            ...prev,
+            ...(vars.flow !== undefined ? { flow: vars.flow } : {}),
+            ...(vars.symptoms !== undefined ? { symptoms: vars.symptoms } : {}),
+            ...(vars.moods !== undefined ? { moods: vars.moods } : {}),
+            ...(vars.garden !== undefined ? { garden: vars.garden } : {}),
+          };
+          if (i >= 0) days[i] = next;
+          else days.push(next);
+          return { ...old, days };
+        }
+      );
     },
     onError: () => {
       toast.error('Could not save your note — try again.', { id: 'cycle-day' });

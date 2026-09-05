@@ -47,12 +47,27 @@ export const cycleDaySchema = z.object({
     date: dateField,
     flow: z.enum(['light', 'medium', 'heavy']).nullable().optional(),
     symptoms: z
-      .array(z.enum(['cramps', 'headache', 'fatigue', 'nausea', 'backache', 'bloating', 'tenderness', 'insomnia']))
+      .array(
+        z.enum([
+          'cramps',
+          'headache',
+          'fatigue',
+          'nausea',
+          'backache',
+          'bloating',
+          'tenderness',
+          'insomnia',
+        ])
+      )
       .max(8)
       .optional(),
     moods: z
       .array(z.enum(['calm', 'happy', 'low', 'irritable', 'anxious', 'tired']))
       .max(6)
+      .optional(),
+    garden: z
+      .array(z.enum(['adhkar', 'dhikr', 'salawat', 'istighfar', 'listen', 'learn', 'kindness']))
+      .max(7)
       .optional(),
   }),
 });

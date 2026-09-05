@@ -5,7 +5,11 @@ import { getTodayString } from '../utils/timezone-flexible.js';
 const dayOrToday = (raw: unknown): string =>
   typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : getTodayString();
 
-export const getSummary = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getSummary = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const today = dayOrToday(req.query.today);
     const summary = await cycleService.getSummary(req.user.uid, today);
@@ -15,7 +19,11 @@ export const getSummary = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const startCycle = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const startCycle = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { date, type } = req.body as { date: string; type: 'hayd' | 'nifas' };
     const result = await cycleService.startCycle(req.user.uid, date, type);
@@ -43,7 +51,11 @@ export const endCycle = async (req: Request, res: Response, next: NextFunction):
   }
 };
 
-export const updateProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const updateProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { madhab } = req.body as { madhab: 'hanafi' | 'majority' };
     const profile = await cycleService.setMadhab(req.user.uid, madhab);
@@ -53,12 +65,24 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const addPastCycle = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const addPastCycle = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { startDate, endDate, type, today } = req.body as {
-      startDate: string; endDate: string; type: 'hayd' | 'nifas'; today: string;
+      startDate: string;
+      endDate: string;
+      type: 'hayd' | 'nifas';
+      today: string;
     };
-    const result = await cycleService.addPastCycle(req.user.uid, { startDate, endDate, type, today });
+    const result = await cycleService.addPastCycle(req.user.uid, {
+      startDate,
+      endDate,
+      type,
+      today,
+    });
     if (!result.ok) {
       res.status(400).json({ ok: false, error: result.error });
       return;
@@ -71,11 +95,24 @@ export const addPastCycle = async (req: Request, res: Response, next: NextFuncti
 
 export const upsertDay = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { date, flow, symptoms, moods } = req.body as {
-      date: string; flow?: 'light' | 'medium' | 'heavy' | null; symptoms?: string[]; moods?: string[];
+    const { date, flow, symptoms, moods, garden } = req.body as {
+      date: string;
+      flow?: 'light' | 'medium' | 'heavy' | null;
+      symptoms?: string[];
+      moods?: string[];
+      garden?: string[];
     };
-    const day = await cycleService.upsertDay(req.user.uid, { date, flow, symptoms, moods });
-    res.json({ ok: true, day: { date: day.date, flow: day.flow, symptoms: day.symptoms, moods: day.moods } });
+    const day = await cycleService.upsertDay(req.user.uid, { date, flow, symptoms, moods, garden });
+    res.json({
+      ok: true,
+      day: {
+        date: day.date,
+        flow: day.flow,
+        symptoms: day.symptoms,
+        moods: day.moods,
+        garden: day.garden,
+      },
+    });
   } catch (err) {
     next(err);
   }

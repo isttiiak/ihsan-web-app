@@ -7,7 +7,14 @@ import mongoose, { Schema, Document } from 'mongoose';
  */
 export const CYCLE_FLOWS = ['light', 'medium', 'heavy'] as const;
 export const CYCLE_SYMPTOMS = [
-  'cramps', 'headache', 'fatigue', 'nausea', 'backache', 'bloating', 'tenderness', 'insomnia',
+  'cramps',
+  'headache',
+  'fatigue',
+  'nausea',
+  'backache',
+  'bloating',
+  'tenderness',
+  'insomnia',
 ] as const;
 export const CYCLE_MOODS = ['calm', 'happy', 'low', 'irritable', 'anxious', 'tired'] as const;
 
@@ -20,6 +27,10 @@ export interface ICycleDay extends Document {
   moods: string[];
   /** Legacy single-mood field (pre-multi). Read-only fallback, no longer written. */
   mood?: (typeof CYCLE_MOODS)[number] | null;
+  /** Garden of Light checklist — ids of completed items for the day. Was
+   * device-local only (localStorage), moved server-side so progress survives
+   * a device switch or cache clear. */
+  garden: string[];
 }
 
 const CycleDaySchema = new Schema<ICycleDay>(
@@ -31,6 +42,7 @@ const CycleDaySchema = new Schema<ICycleDay>(
     moods: { type: [String], default: [] },
     // Legacy single mood kept so pre-existing rows aren't lost on read.
     mood: { type: String, enum: [...CYCLE_MOODS, null], default: null },
+    garden: { type: [String], default: [] },
   },
   { timestamps: true }
 );
