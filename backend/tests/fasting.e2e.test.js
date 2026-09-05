@@ -1,24 +1,22 @@
-import request from "supertest";
-import mongoose from "mongoose";
-import app from "../src/app.js";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import request from 'supertest';
+import mongoose from 'mongoose';
+import app from '../src/app.js';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 
 const fakeJwt = (payload) => {
-  const header = Buffer.from(
-    JSON.stringify({ alg: "none", typ: "JWT" })
-  ).toString("base64url");
-  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
   return `${header}.${body}.`;
 };
 
 let mongo;
 
-describe("Fasting API", () => {
+describe('Fasting API', () => {
   beforeAll(async () => {
-    process.env.DEV_AUTH_BYPASS = "1";
+    process.env.DEV_AUTH_BYPASS = '1';
     mongo = await MongoMemoryServer.create();
     const uri = mongo.getUri();
-    await mongoose.connect(uri, { dbName: "ihsan_test" });
+    await mongoose.connect(uri, { dbName: 'ihsan_test' });
   });
 
   afterAll(async () => {
@@ -29,58 +27,58 @@ describe("Fasting API", () => {
     if (mongo) await mongo.stop();
   });
 
-  const token = fakeJwt({ uid: "f1", email: "f1@test.dev", name: "F1" });
-  const auth = (r) => r.set("Authorization", `Bearer ${token}`);
+  const token = fakeJwt({ uid: 'f1', email: 'f1@test.dev', name: 'F1' });
+  const auth = (r) => r.set('Authorization', `Bearer ${token}`);
 
-  test("endpoints require auth", async () => {
+  test('endpoints require auth', async () => {
     const res = await request(app).get(`/api/fasting/summary`);
     expect(res.status).toBe(401);
   });
 
-  test("upsert + read a voluntary fast log", async () => {
+  test('upsert + read a voluntary fast log', async () => {
     const put = await auth(request(app).put(`/api/fasting/log`)).send({
-      date: "2026-06-29",
-      category: "voluntary",
-      voluntaryKind: "mon_thu",
-      status: "completed",
-      hijri: "14 Muḥarram 1448",
+      date: '2026-06-29',
+      category: 'voluntary',
+      voluntaryKind: 'mon_thu',
+      status: 'completed',
+      hijri: '14 Muḥarram 1448',
     });
     expect(put.status).toBe(200);
-    expect(put.body.log.category).toBe("voluntary");
+    expect(put.body.log.category).toBe('voluntary');
 
     const get = await auth(request(app).get(`/api/fasting?date=2026-06-29`));
     expect(get.status).toBe(200);
-    expect(get.body.log.voluntaryKind).toBe("mon_thu");
-    expect(get.body.log.status).toBe("completed");
+    expect(get.body.log.voluntaryKind).toBe('mon_thu');
+    expect(get.body.log.status).toBe('completed');
   });
 
-  test("one fast per day: upsert replaces, not duplicates", async () => {
+  test('one fast per day: upsert replaces, not duplicates', async () => {
     await auth(request(app).put(`/api/fasting/log`)).send({
-      date: "2026-06-29",
-      category: "qada",
-      status: "completed",
+      date: '2026-06-29',
+      category: 'qada',
+      status: 'completed',
     });
     const get = await auth(request(app).get(`/api/fasting?date=2026-06-29`));
-    expect(get.body.log.category).toBe("qada");
+    expect(get.body.log.category).toBe('qada');
     expect(get.body.log.voluntaryKind).toBeUndefined();
   });
 
-  test("ramadan category logs with a tarawih flag (dedicated tracker)", async () => {
+  test('ramadan category logs with a tarawih flag (dedicated tracker)', async () => {
     const res = await auth(request(app).put(`/api/fasting/log`)).send({
-      date: "2026-06-30",
-      category: "ramadan",
-      status: "completed",
+      date: '2026-06-30',
+      category: 'ramadan',
+      status: 'completed',
       tarawih: true,
     });
     expect(res.status).toBe(200);
-    expect(res.body.log.category).toBe("ramadan");
+    expect(res.body.log.category).toBe('ramadan');
     expect(res.body.log.tarawih).toBe(true);
 
     // Toggle tarawih off without touching the fast status
     const upd = await auth(request(app).put(`/api/fasting/log`)).send({
-      date: "2026-06-30",
-      category: "ramadan",
-      status: "completed",
+      date: '2026-06-30',
+      category: 'ramadan',
+      status: 'completed',
       tarawih: false,
     });
     expect(upd.body.log.tarawih).toBe(false);
@@ -89,55 +87,51 @@ describe("Fasting API", () => {
     await auth(request(app).delete(`/api/fasting/log?date=2026-06-30`));
   });
 
-  test("nadhr requires a valid vow; vow progress is derived in summary", async () => {
+  test('nadhr requires a valid vow; vow progress is derived in summary', async () => {
     const noVow = await auth(request(app).put(`/api/fasting/log`)).send({
-      date: "2026-06-25",
-      category: "nadhr",
-      vowId: "64b000000000000000000000",
-      status: "completed",
+      date: '2026-06-25',
+      category: 'nadhr',
+      vowId: '64b000000000000000000000',
+      status: 'completed',
     });
     expect(noVow.status).toBe(400);
 
     const vowRes = await auth(request(app).post(`/api/fasting/vows`)).send({
-      title: "3 days for shifa",
+      title: '3 days for shifa',
       targetDays: 3,
     });
     expect(vowRes.status).toBe(200);
     const vowId = vowRes.body.profile.vows[0]._id;
 
     const logged = await auth(request(app).put(`/api/fasting/log`)).send({
-      date: "2026-06-25",
-      category: "nadhr",
+      date: '2026-06-25',
+      category: 'nadhr',
       vowId,
-      status: "completed",
+      status: 'completed',
     });
     expect(logged.status).toBe(200);
 
-    const summary = await auth(
-      request(app).get(`/api/fasting/summary?today=2026-06-30`)
-    );
+    const summary = await auth(request(app).get(`/api/fasting/summary?today=2026-06-30`));
     expect(summary.status).toBe(200);
     expect(summary.body.profile.vows[0].completed).toBe(1);
   });
 
-  test("qada progress and kaffarah consecutive run are derived from logs", async () => {
+  test('qada progress and kaffarah consecutive run are derived from logs', async () => {
     await auth(request(app).patch(`/api/fasting/profile`)).send({
       qadaOwed: 5,
       kaffarah: { active: true, targetDays: 60 },
     });
 
     // qada already logged on 2026-06-29 (test above). Add kaffarah chain 26,27,28.
-    for (const d of ["2026-06-26", "2026-06-27", "2026-06-28"]) {
+    for (const d of ['2026-06-26', '2026-06-27', '2026-06-28']) {
       await auth(request(app).put(`/api/fasting/log`)).send({
         date: d,
-        category: "kaffarah",
-        status: "completed",
+        category: 'kaffarah',
+        status: 'completed',
       });
     }
     // Wait — 2026-06-28 then 29 is qada, chain ends at 28.
-    const summary = await auth(
-      request(app).get(`/api/fasting/summary?today=2026-06-29`)
-    );
+    const summary = await auth(request(app).get(`/api/fasting/summary?today=2026-06-29`));
     expect(summary.body.qadaCompleted).toBe(1);
     expect(summary.body.profile.qadaOwed).toBe(5);
     expect(summary.body.kaffarah.completed).toBe(3);
@@ -146,17 +140,52 @@ describe("Fasting API", () => {
     expect(summary.body.kaffarah.currentRun).toBe(3);
 
     // With today far in the future the chain is stale → run resets to 0
-    const stale = await auth(
-      request(app).get(`/api/fasting/summary?today=2026-07-15`)
-    );
+    const stale = await auth(request(app).get(`/api/fasting/summary?today=2026-07-15`));
     expect(stale.body.kaffarah.runStale).toBe(true);
     expect(stale.body.kaffarah.currentRun).toBe(0);
   });
 
+  test("kaffarah run: a hayd interruption doesn't restart the count, but an ordinary gap does", async () => {
+    // Fresh run: Aug 1-3 fasted, then a 3-day hayd episode (Aug 4-6), then
+    // resume Aug 7. The majority position is that a mandatory Sharīʿah break
+    // doesn't reset consecutiveness — she resumes where she left off.
+    for (const d of ['2026-08-01', '2026-08-02', '2026-08-03']) {
+      await auth(request(app).put(`/api/fasting/log`)).send({
+        date: d,
+        category: 'kaffarah',
+        status: 'completed',
+      });
+    }
+    await auth(request(app).post(`/api/cycle/logs`)).send({
+      startDate: '2026-08-04',
+      endDate: '2026-08-06',
+      type: 'hayd',
+      today: '2026-08-07',
+    });
+    await auth(request(app).put(`/api/fasting/log`)).send({
+      date: '2026-08-07',
+      category: 'kaffarah',
+      status: 'completed',
+    });
+
+    const summary = await auth(request(app).get(`/api/fasting/summary?today=2026-08-07`));
+    expect(summary.body.kaffarah.runStale).toBe(false);
+    expect(summary.body.kaffarah.currentRun).toBe(4); // Aug 1-3 + Aug 7 (4-6 excused, not counted or broken)
+
+    // Now break the SAME run with an ordinary (non-excused) gap: nothing
+    // logged on Aug 8, then fasted again Aug 9 — this must NOT bridge the
+    // gap the way the hayd episode did.
+    await auth(request(app).put(`/api/fasting/log`)).send({
+      date: '2026-08-09',
+      category: 'kaffarah',
+      status: 'completed',
+    });
+    const afterGap = await auth(request(app).get(`/api/fasting/summary?today=2026-08-09`));
+    expect(afterGap.body.kaffarah.currentRun).toBe(1); // only Aug 9 — Aug 1-7 run is discarded
+  });
+
   test("clear log deletes the day's row", async () => {
-    const del = await auth(
-      request(app).delete(`/api/fasting/log?date=2026-06-25`)
-    );
+    const del = await auth(request(app).delete(`/api/fasting/log?date=2026-06-25`));
     expect(del.status).toBe(200);
     expect(del.body.deleted).toBe(true);
 

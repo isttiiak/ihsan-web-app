@@ -5,6 +5,7 @@ import FastingLog, {
   VoluntaryKind,
 } from '../models/FastingLog.js';
 import FastingProfile, { IFastingProfile } from '../models/FastingProfile.js';
+import { getExcusedIntervals } from './cycle.service.js';
 
 function todayDateString(): string {
   return new Date().toISOString().substring(0, 10);
@@ -228,20 +229,36 @@ export async function getSummary(userId: string, today?: string): Promise<Fastin
 
   // Kaffarah consecutive run: walk back from the most recent kaffarah fast.
   // The 60-day expiation must be consecutive (Ṣaḥīḥ al-Bukhārī 1936) — a gap
-  // restarts the count (valid excuses are between the servant and Allah; the
-  // UI advises consulting a scholar).
+  // restarts the count. The one recognised exception is ḥayḍ/nifās: the
+  // majority position is that a mandatory Sharīʿah-imposed break for the
+  // menstrual/postpartum period does NOT restart the count — she resumes
+  // where she left off once purified. Any other gap (illness, travel,
+  // forgetfulness) still breaks the chain; the UI advises consulting a
+  // scholar for genuinely disputed cases.
   let currentRun = 0;
   let runStale = false;
   if (kaffarahDates.length > 0) {
     const lastDate = kaffarahDates[kaffarahDates.length - 1]!;
     const dateSet = new Set(kaffarahDates);
+    const excusedIntervals = await getExcusedIntervals(userId);
+    const isExcused = (date: string): boolean =>
+      excusedIntervals.some((iv) => iv.start <= date && (iv.end === null || date <= iv.end));
+
     let cursor = lastDate;
-    while (dateSet.has(cursor)) {
-      currentRun++;
+    while (dateSet.has(cursor) || isExcused(cursor)) {
+      if (dateSet.has(cursor)) currentRun++;
       cursor = shiftDateStr(cursor, -1);
     }
-    // If the last kaffarah fast is older than yesterday, the chain is broken.
-    runStale = lastDate < shiftDateStr(end, -1);
+    // Broken only if some day between the last fast and today is neither a
+    // logged kaffarah fast nor an excused day — a still-ongoing or
+    // just-ended cycle doesn't count against her.
+    runStale = false;
+    for (let d = shiftDateStr(lastDate, 1); d <= shiftDateStr(end, -1); d = shiftDateStr(d, 1)) {
+      if (!isExcused(d)) {
+        runStale = true;
+        break;
+      }
+    }
   }
 
   return {

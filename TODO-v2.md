@@ -29,8 +29,8 @@
 
 ### 0.3 Fasting Tracker — Kaffarah Enforcement
 
-- [ ] `[S]` **Kaffarah 60-day consecutive enforcement** — the service tracks `startDate` and counts but doesn't enforce what happens when a day is missed mid-kaffarah (whether the counter resets to 0). Add explicit break detection and restart logic with a clear warning in the UI.
-- [ ] `[S]` **Auto-detect Ramadan from Hijri date** — Ramadan mode appears to be manually activated. Use the existing `getHijriToday()` to auto-prompt or auto-enable Ramadan mode when Hijri month = 9.
+- [x] **Kaffarah 60-day consecutive enforcement** — investigated first: the break/restart logic was _already_ correctly implemented (`currentRun`/`runStale` in `getSummary`, with a "chain broken" warning banner in `FastingTracker.tsx`). What was genuinely missing: no awareness of ḥayḍ/nifās. A woman's period during her kaffarah run was treated as an ordinary gap and would incorrectly reset her count to 0, even though the majority fiqh position is that a mandatory Sharīʿah-imposed break doesn't restart consecutiveness. Fixed in `backend/src/services/fasting.service.ts`: the run-walk now calls `cycle.service.ts`'s existing `getExcusedIntervals(userId)` and treats any day inside a logged hayd/nifas episode as transparent to the count — neither breaking nor extending it — while an ordinary (non-excused) gap still resets it. Added two new assertions to `backend/tests/fasting.e2e.test.js` proving both halves (hayd bridges the gap; a plain gap still breaks it). Full backend suite (82 tests, 9 suites) passes.
+- [x] ~~**Auto-detect Ramadan from Hijri date**~~ — investigated, not a gap: `frontend/src/utils/ramadan.ts`'s `getRamadanWindow()` already fully derives Ramadan state from the Hijri calendar (via `getHijriDate`), and `RamadanTracker.tsx` gates its entire UI on `window_.active` — no manual toggle exists. No change made.
 
 ### 0.4 Streaks — Dual System & Hardcoded Grace
 
