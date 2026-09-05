@@ -158,6 +158,11 @@ Also backfilled i18n keys for the whole delete-account danger-zone block (pre-ex
 - [ ] `[S]` **Whole-screen tap target + eyes-free haptics** — distinct haptic patterns at 33/66/99 counts. Web-capable today.
 - [ ] `[L]` **Push notification system (web)** — VAPID key registration, permission priming screen, service worker push handlers, per-category opt-in toggles (adhan, streak-at-risk, adhkar windows, weekly summary). Backend: subscription store per UID+device, timezone-aware scheduler, dead-subscription reaper.
 - [ ] `[S]` **Adhan audio** — optional in-browser adhan sound at prayer time. Already flagged in TODO v1.
+- [ ] `[M]` **Personalized invite-link previews** — requested 2026-09-06. `/connect/:code` was fixed to be crawlable at all (it was previously blocked by `robots.txt`'s `Disallow: /connect/`, so WhatsApp/Messenger/etc. couldn't generate any preview — see the `X-Robots-Tag: noindex` fix that replaced it), but what it shows when shared is still generic site-wide Ihsan branding, not "Amir invited you to race in good deeds." Real fix needs a bot-aware response for this one route:
+  - Detect known link-unfurl crawlers by User-Agent (`facebookexternalhit`, `WhatsApp`, `Twitterbot`, `LinkedInBot`, `Slackbot`, `TelegramBot`, etc.) in the Vercel serverless function and serve them a lightweight per-code HTML document with `og:title`/`og:description`/`og:image` built from the inviter's real `displayName` (looked up via the invite code → `SocialProfile` → `User`) — real browser visitors keep getting the normal SPA shell untouched.
+  - `og:image` needs to be dynamically generated per inviter (a static image can't include their name) — Vercel's `@vercel/og` (Satori-based) is the standard way to render a templated PNG on the fly from a small React-like component; this is a new dependency + a new tiny edge/serverless route.
+  - Keep the existing `X-Robots-Tag: noindex, nofollow` on this route regardless — the goal is unfurl-bot-visible, not search-engine-indexable; an invite code is still a per-user secret.
+  - Cache the generated image briefly (a few hours) keyed by invite code so repeat unfurls don't regenerate it every time, and so an inviter changing their display name doesn't need to be reflected instantly.
 
 ### P2 — Daily Hooks (Weeks 5–9)
 
