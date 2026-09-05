@@ -102,18 +102,20 @@
 - [x] **React Query cache → IndexedDB** (2026-09-06: this half was real — `ihsan_rq_cache` spans ~112 `useQuery` call sites across every feature and was persisted via a synchronous localStorage persister, JSON-stringifying the whole cache and blocking the main thread every 2s, capped at ~5MB. Swapped in `@tanstack/query-async-storage-persister` backed by the existing `idbCache.ts` helper from 0.5's Quran migration. Sign-out cleanup updated to clear the IndexedDB entry instead of the old localStorage key. Verified: typecheck, lint, build all pass; live browser check blocked by this session's dev-server preview being unavailable, so not confirmed in-browser this session — low risk since it reuses the already-proven `idbCache.ts` path.)
 - [x] ~~**Quran text cache → IndexedDB**~~ — done as part of 0.5 above (same fix, same commit family).
 
-### 1.2 AI Guardrail Policy — Enforcement Layer
+### 1.2 AI Guardrail Policy — Enforcement Layer ✅ (2026-09-06)
 
 > The system prompt guardrail is well-written (6 rules, no fatawa, no hadith
 > generation, escalation boundary). What's missing is server-side enforcement.
 
-- [ ] `[S]` **Output validation** — add a post-processing pass on LLM responses: regex scan for surah:ayah patterns, hadith citation patterns, ruling language (halal/haram/fard/wajib used prescriptively). Strip or replace with the static fallback if detected.
-- [ ] `[S]` **Prompt injection defense** — sanitize free-text inputs (`userSummary`, `feature`, `fastType`) before interpolation. Add instruction-boundary markers. Consider a classification pre-check for the `userSummary` field.
-- [ ] `[S]` **Per-user rate limiting** — current `aiLimiter` is IP-based (10/hr). Add UID-based limits (e.g., 20/day per user) like the social/import limiters already do.
-- [ ] `[S]` **Lower temperature** — currently 0.8, which is high for a safety-sensitive religious domain. Drop to 0.4–0.6 to reduce hallucination risk.
-- [ ] `[S]` **Audit logging** — log prompt/response pairs (or at minimum, feature + userId + timestamp + success/fallback) for review. Currently successful calls produce zero log entries.
-- [ ] `[S]` **Document the policy** — write a standalone guardrail policy doc (in `.claude/` or `/docs/`) covering: no fatawa, retrieval-only for religious text, escalation boundaries, mental health boundary, cost controls. Currently exists only as inline code.
-- [ ] `[S]` **Mental health escalation** — detect distress signals in streak coaching responses and surface real resources rather than generic encouragement.
+- [x] **Output validation** — `findGuardrailViolation()` in `ai.service.ts` scans every reply for verse-citation (`surah`/`ayah`/`N:N` patterns), hadith-citation (bukhari/tirmidhi/isnad/sahih/da'if/etc.), and ruling-language (halal/haram/fard/wajib/etc.) patterns; a hit is treated exactly like a provider failure and falls back to the existing static message. Covered by `backend/tests/ai.unit.test.js`.
+- [x] **Prompt injection defense** — investigated first: the real exposure was narrower than assumed. `userSummary` (`/api/ai/suggest`) has **no frontend caller at all** (dead code); `moods`/`symptoms` are closed enums/checklist IDs, not free text. The two actual gaps were `feature` (a translated UI label, not enumerable backend-side since it varies by locale — sanitized via `sanitizeForPrompt()`) and `fastType` (now locked to the real `FastingLog` category/voluntaryKind enum in `ai.schemas.ts` instead of accepting arbitrary strings). `sanitizeForPrompt()` strips control chars + injection/override phrases; `asUntrustedData()` wraps surviving free text as explicitly-inert data. Did not build a classification pre-check for `userSummary` — not proportionate for a field with zero live callers.
+- [x] **Per-user rate limiting** — `aiUserLimiter` (20/day per UID) added in `rateLimiter.ts`, applied after `requireAuth` on every `/api/ai/*` route, alongside the existing IP-based `aiLimiter` (10/hr, pre-auth).
+- [x] **Lower temperature** — 0.8 → 0.5.
+- [x] **Audit logging** — `logAiCall()` emits one structured line per call (feature, userId, timestamp, success/fallback, filter category if blocked). Deliberately does NOT log prompt/response text — several features carry personal data (cycle mood, worship stats) that shouldn't gain a second long-lived store for no proportionate gain; see the anti-features "Trust is Ihsan's moat" principle below.
+- [x] **Document the policy** — `docs/ai-guardrail-policy.md` covers all of the above plus retrieval-only religious text, the escalation boundary, and where each rule is enforced in code.
+- [x] **Mental health escalation** — re-scoped: streak coaching has no user-authored text or mood data to detect distress in (it only ever receives numbers), so building a detector there would be contrived. The real signal is the Rayhanah mood check-in — `getMoodComfort` now returns `resourceNote: true` when a heavier mood (`low`/`anxious`) is named, and `MoodComfort.tsx` shows a static (non-AI) note pointing to a trusted person or mental health professional alongside the AI line.
+
+Full backend suite: 105 tests, 11 suites (13 new in `ai.unit.test.js`). Frontend typecheck/lint/build pass. Live browser verification not possible this session (dev-server previews unavailable) — see the accompanying commits.
 
 ### 1.3 i18n — Remaining Gaps
 
