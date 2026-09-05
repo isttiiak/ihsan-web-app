@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
-import { XMarkIcon, ArrowPathIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
+import {
+  XMarkIcon,
+  ArrowPathIcon,
+  ArrowsRightLeftIcon,
+  SpeakerWaveIcon,
+} from '@heroicons/react/24/outline';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../lib/api.js';
@@ -16,6 +21,10 @@ export default function ZikrSettings({ open, onClose }: { open: boolean; onClose
   const [resetting, setResetting] = useState(false);
   const tasbihMode = useUiStore((s) => s.tasbihMode);
   const setTasbihMode = useUiStore((s) => s.setTasbihMode);
+  const zikrAudioEnabled = useUiStore((s) => s.zikrAudioEnabled);
+  const setZikrAudioEnabled = useUiStore((s) => s.setZikrAudioEnabled);
+  const zikrAudioVolume = useUiStore((s) => s.zikrAudioVolume);
+  const setZikrAudioVolume = useUiStore((s) => s.setZikrAudioVolume);
 
   const handleReset = async () => {
     setResetting(true);
@@ -92,6 +101,50 @@ export default function ZikrSettings({ open, onClose }: { open: boolean; onClose
                     'Auto-advance SubhanAllah → Alhamdulillah → Allahu Akbar every 33 counts, looping back after 99.'
                   )}
                 </p>
+              </section>
+
+              <section className="rounded-2xl border border-brand-emerald/20 bg-brand-emerald/[0.06] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <SpeakerWaveIcon className="w-4 h-4 text-brand-emerald" />
+                    <h3 className="text-brand-emerald font-bold text-sm">
+                      {t('zikr.audioToggle', 'Zikr audio')}
+                    </h3>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-success toggle-sm"
+                    checked={zikrAudioEnabled}
+                    onChange={(e) => setZikrAudioEnabled(e.target.checked)}
+                    aria-label={t('zikr.audioToggle', 'Zikr audio')}
+                  />
+                </div>
+                <p className="text-white/40 text-xs leading-relaxed mt-2">
+                  {t(
+                    'zikr.audioDesc',
+                    'Play the pronunciation of each dhikr. Enable auto-play to loop the audio and count automatically.'
+                  )}
+                </p>
+                {zikrAudioEnabled && (
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="text-white/50 text-xs shrink-0">
+                      {t('zikr.volume', 'Volume')}
+                    </span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={zikrAudioVolume}
+                      onChange={(e) => setZikrAudioVolume(parseFloat(e.target.value))}
+                      className="range range-success range-xs flex-1"
+                      aria-label={t('zikr.volume', 'Volume')}
+                    />
+                    <span className="text-white/40 text-xs w-8 text-right">
+                      {Math.round(zikrAudioVolume * 100)}%
+                    </span>
+                  </div>
+                )}
               </section>
 
               <section className="rounded-2xl border border-brand-gold/20 bg-brand-gold/[0.06] p-4">

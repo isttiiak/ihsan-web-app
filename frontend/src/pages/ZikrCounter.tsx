@@ -29,6 +29,7 @@ import ArabicKeyboard from '../components/ArabicKeyboard.js';
 import ReportReference from '../components/ReportReference.js';
 import ZikrSettings from '../components/ZikrSettings.js';
 import Seo from '../components/Seo.js';
+import { useZikrAudio } from '../hooks/useZikrAudio.js';
 import {
   PlusIcon,
   MinusIcon,
@@ -41,6 +42,10 @@ import {
   Cog6ToothIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
+  SpeakerWaveIcon,
+  PlayIcon,
+  StopIcon,
+  PlayPauseIcon,
 } from '@heroicons/react/24/outline';
 
 // Meanings for all built-in dhikr — transliteration/meaning are i18n KEYS with
@@ -311,6 +316,12 @@ export default function ZikrCounter() {
   const reduceMotion = useUiStore((s) => s.reduceMotion);
   const vibrationEnabled = useUiStore((s) => s.vibrationEnabled);
   const tasbihMode = useUiStore((s) => s.tasbihMode);
+  const zikrAudioEnabled = useUiStore((s) => s.zikrAudioEnabled);
+  const zikrAudioVolume = useUiStore((s) => s.zikrAudioVolume);
+  const setZikrAudioVolume = useUiStore((s) => s.setZikrAudioVolume);
+  const audio = useZikrAudio(selected);
+  const [showAutoPlay, setShowAutoPlay] = useState(false);
+  const [autoPlayTarget, setAutoPlayTarget] = useState('50');
   const [hiddenTypes, setHiddenTypes] = useState<string[]>(getHiddenZikr);
   const { data: fetchedTypes } = useZikrTypes();
   const addZikrType = useAddZikrType();
@@ -801,6 +812,22 @@ export default function ZikrCounter() {
           >
             <PlusIcon className="w-3.5 h-3.5" />
           </button>
+
+          {/* Play pronunciation */}
+          {zikrAudioEnabled && audio.hasAudio && (
+            <button
+              onClick={() => (audio.isPlaying && !audio.isAutoPlay ? audio.stop() : audio.play())}
+              className={`flex-shrink-0 w-7 h-7 rounded-full border flex items-center justify-center transition-all ${
+                audio.isPlaying && !audio.isAutoPlay
+                  ? 'bg-brand-emerald/30 border-brand-emerald/50 text-brand-emerald'
+                  : 'bg-white/10 hover:bg-white/20 border-brand-emerald/20 text-white/70 hover:text-white'
+              }`}
+              title={t('zikr.playPronunciation', 'Play pronunciation')}
+              aria-label={t('zikr.playPronunciation', 'Play pronunciation')}
+            >
+              <SpeakerWaveIcon className="w-3.5 h-3.5" />
+            </button>
+          )}
         </motion.div>
 
         {/* ── Counter + meaning card ── */}
@@ -986,6 +1013,133 @@ export default function ZikrCounter() {
             <ArrowPathIcon className="w-6 h-6" />
           </motion.button>
         </motion.div>
+
+        {/* ── Auto-play controls ── */}
+        {zikrAudioEnabled && audio.hasAudio && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+            {!audio.isAutoPlay ? (
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setShowAutoPlay(!showAutoPlay)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
+                    showAutoPlay
+                      ? 'bg-brand-emerald/20 border-brand-emerald/40 text-brand-emerald'
+                      : 'bg-white/10 border-brand-emerald/15 text-white/60 hover:text-white hover:bg-white/15'
+                  }`}
+                >
+                  <PlayPauseIcon className="w-4 h-4" />
+                  {t('zikr.autoPlay', 'Auto-play')}
+                </button>
+              </div>
+            ) : (
+              /* Active auto-play bar */
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl border border-brand-emerald/30 bg-brand-emerald/[0.08] backdrop-blur-md p-4 space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <motion.div
+                      animate={{ scale: [1, 1.3, 1] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                      className="w-2.5 h-2.5 rounded-full bg-brand-emerald"
+                    />
+                    <span className="text-brand-emerald font-bold text-sm">
+                      {t('zikr.autoPlayActive', 'Auto-playing')}
+                    </span>
+                  </div>
+                  <span className="text-white/50 text-sm font-mono tabular-nums">
+                    {audio.loopCount}
+                    {audio.targetCount !== null ? ` / ${audio.targetCount}` : ''}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      audio.stopAutoPlay();
+                      setShowAutoPlay(false);
+                    }}
+                    className="btn btn-sm bg-red-500/20 hover:bg-red-500/30 border-red-500/30 text-red-400 gap-1.5"
+                  >
+                    <StopIcon className="w-4 h-4" />
+                    {t('zikr.stop', 'Stop')}
+                  </button>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={zikrAudioVolume}
+                    onChange={(e) => setZikrAudioVolume(parseFloat(e.target.value))}
+                    className="range range-success range-xs flex-1"
+                    aria-label={t('zikr.volume', 'Volume')}
+                  />
+                  <span className="text-white/30 text-xs w-8 text-right">
+                    {Math.round(zikrAudioVolume * 100)}%
+                  </span>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Auto-play setup panel */}
+            <AnimatePresence>
+              {showAutoPlay && !audio.isAutoPlay && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="rounded-2xl border border-brand-emerald/20 bg-white/[0.05] backdrop-blur-md p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <label className="text-white/50 text-xs shrink-0">
+                        {t('zikr.targetCount', 'Target count')}
+                      </label>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        placeholder="50"
+                        value={autoPlayTarget}
+                        onChange={(e) => setAutoPlayTarget(e.target.value)}
+                        className="input input-bordered input-sm flex-1 bg-brand-deep border-brand-border text-white text-center"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-white/50 text-xs shrink-0">
+                        {t('zikr.volume', 'Volume')}
+                      </span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.05}
+                        value={zikrAudioVolume}
+                        onChange={(e) => setZikrAudioVolume(parseFloat(e.target.value))}
+                        className="range range-success range-xs flex-1"
+                        aria-label={t('zikr.volume', 'Volume')}
+                      />
+                      <span className="text-white/30 text-xs w-8 text-right">
+                        {Math.round(zikrAudioVolume * 100)}%
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const target = parseInt(autoPlayTarget, 10);
+                        audio.startAutoPlay(target > 0 ? target : 50);
+                      }}
+                      className="btn btn-sm w-full bg-brand-emerald/20 hover:bg-brand-emerald/30 border-brand-emerald/30 text-brand-emerald gap-2"
+                    >
+                      <PlayIcon className="w-4 h-4" />
+                      {t('zikr.startAutoPlay', 'Start auto-play')}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
 
         {/* Keyboard hint */}
         <p className="text-center text-white/30 text-xs">
@@ -1321,6 +1475,33 @@ export default function ZikrCounter() {
                     {t('zikr.countBtn', 'Count')}
                   </motion.button>
                 </div>
+
+                {/* Auto-play in focus mode */}
+                {zikrAudioEnabled && audio.hasAudio && (
+                  <div className="flex items-center gap-3 mt-1">
+                    {audio.isAutoPlay ? (
+                      <button
+                        onClick={() => audio.stopAutoPlay()}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-bold"
+                      >
+                        <StopIcon className="w-5 h-5" />
+                        {t('zikr.stop', 'Stop')}
+                        <span className="text-white/40 font-mono ml-1">
+                          {audio.loopCount}
+                          {audio.targetCount !== null ? ` / ${audio.targetCount}` : ''}
+                        </span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => audio.startAutoPlay()}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-brand-emerald/15 border border-brand-emerald/25 text-brand-emerald/80 hover:text-brand-emerald text-sm font-bold transition-all"
+                      >
+                        <PlayIcon className="w-5 h-5" />
+                        {t('zikr.autoPlay', 'Auto-play')}
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* Streak + goal — hidden once goal is met to keep focus */}
                 {!goalMet && (streakCount !== null || goalProgress !== null) && (

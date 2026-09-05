@@ -11,12 +11,18 @@ interface UiState {
   vibrationEnabled: boolean;
   /** Tasbih mode: auto-cycle SubhanAllah → Alhamdulillah → Allahu Akbar every 33 counts */
   tasbihMode: boolean;
+  /** Master toggle for zikr audio playback features */
+  zikrAudioEnabled: boolean;
+  /** Volume for zikr audio (0–1) */
+  zikrAudioVolume: number;
   setReduceMotion: (val: boolean) => void;
   setHighContrast: (val: boolean) => void;
   setShowNoorAllTime: (val: boolean) => void;
   setShowNoorToday: (val: boolean) => void;
   setVibrationEnabled: (val: boolean) => void;
   setTasbihMode: (val: boolean) => void;
+  setZikrAudioEnabled: (val: boolean) => void;
+  setZikrAudioVolume: (val: number) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -26,6 +32,8 @@ export const useUiStore = create<UiState>((set) => ({
   showNoorToday: localStorage.getItem('ihsan_noor_today') === '1',
   vibrationEnabled: localStorage.getItem('ihsan_vibration') !== '0',
   tasbihMode: localStorage.getItem('ihsan_tasbih_mode') === '1',
+  zikrAudioEnabled: localStorage.getItem('ihsan_zikr_audio') !== '0',
+  zikrAudioVolume: parseFloat(localStorage.getItem('ihsan_zikr_volume') || '0.7'),
 
   setReduceMotion: (val) => {
     localStorage.setItem('ihsan_reduce_motion', val ? '1' : '0');
@@ -55,5 +63,16 @@ export const useUiStore = create<UiState>((set) => ({
   setTasbihMode: (val) => {
     localStorage.setItem('ihsan_tasbih_mode', val ? '1' : '0');
     set({ tasbihMode: !!val });
+  },
+
+  setZikrAudioEnabled: (val) => {
+    localStorage.setItem('ihsan_zikr_audio', val ? '1' : '0');
+    set({ zikrAudioEnabled: !!val });
+  },
+
+  setZikrAudioVolume: (val) => {
+    const clamped = Math.max(0, Math.min(1, val));
+    localStorage.setItem('ihsan_zikr_volume', String(clamped));
+    set({ zikrAudioVolume: clamped });
   },
 }));
