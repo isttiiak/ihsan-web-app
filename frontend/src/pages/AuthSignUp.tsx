@@ -413,7 +413,7 @@ export default function AuthSignUp() {
                   <input
                     name="email"
                     type="email"
-                    placeholder="your.email@example.com"
+                    placeholder={t('authSignIn.emailPlaceholder', 'you@example.com')}
                     value={emailValue}
                     onChange={(e) => {
                       setEmailValue(e.target.value);

@@ -232,7 +232,7 @@ export default function AuthSignIn() {
                     resetError && setResetError('');
                   }}
                   className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm border border-brand-border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-transparent transition-all"
-                  placeholder="you@example.com"
+                  placeholder={t('authSignIn.emailPlaceholder', 'you@example.com')}
                   required
                   autoFocus
                 />
@@ -355,7 +355,7 @@ export default function AuthSignIn() {
                         required
                         onChange={() => error && setError('')}
                         className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm border border-brand-border rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-transparent transition-all duration-300"
-                        placeholder="you@example.com"
+                        placeholder={t('authSignIn.emailPlaceholder', 'you@example.com')}
                       />
                     </div>
 

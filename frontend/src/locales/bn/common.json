@@ -95,6 +95,7 @@
     "didntReceive": "পাননি? স্প্যাম ফোল্ডার দেখুন অথবা আবার চেষ্টা করুন।",
     "email": "ইমেইল",
     "emailAddress": "ইমেইল ঠিকানা",
+    "emailPlaceholder": "you@example.com",
     "errGeneric": "সাইন ইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।",
     "errInvalidCredential": "ভুল ইমেইল অথবা পাসওয়ার্ড। আবার চেষ্টা করুন।",
     "errInvalidEmail": "একটি সঠিক ইমেইল ঠিকানা লিখুন।",

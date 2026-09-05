@@ -95,6 +95,7 @@
     "didntReceive": "Didn't receive it? Check your spam folder or try again.",
     "email": "Email",
     "emailAddress": "Email address",
+    "emailPlaceholder": "you@example.com",
     "errGeneric": "Sign in failed. Please try again.",
     "errInvalidCredential": "Invalid email or password. Please try again.",
     "errInvalidEmail": "Please enter a valid email address.",
