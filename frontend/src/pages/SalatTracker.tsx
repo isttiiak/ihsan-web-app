@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -440,6 +440,30 @@ export default function SalatTracker() {
   };
 
   const trackablePrayers = PRAYER_META.filter((p) => p.isTrackable);
+
+  // Auto-accrue kaza debt the moment TODAY's own prayer window closes,
+  // instead of waiting for ensureCaughtUp's day-rollover sweep (which only
+  // ever looks at FULLY PAST days — see salatDebt.service.ts). Without this,
+  // a prayer missed this morning wouldn't count toward debt until tomorrow's
+  // first read, even though the "window closed" badge already shows it as
+  // overdue. Reuses the exact same mutation the manual ❌ Miss button sends,
+  // so the backend's existing wasMissed/isMissed debt hook (salat.service.ts)
+  // handles it identically either way.
+  const autoMissedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!user || !isToday || !log) return;
+    for (const prayer of trackablePrayers) {
+      const prayerId = prayer.id as PrayerId;
+      const rawStatus = log.prayers[prayerId]?.status ?? 'pending';
+      if (rawStatus !== 'pending') continue;
+      if (!isOverdueToday(prayerId)) continue;
+      const key = `${selectedDate}:${prayerId}`;
+      if (autoMissedRef.current.has(key)) continue;
+      autoMissedRef.current.add(key);
+      updatePrayer.mutate({ prayer: prayerId, status: 'missed', date: selectedDate });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-checks every minute tick; trackablePrayers/updatePrayer/isOverdueToday are stable per render
+  }, [minuteNow, log, isToday, user, selectedDate]);
 
   const completedCount = useMemo(() => {
     if (!log) return 0;
