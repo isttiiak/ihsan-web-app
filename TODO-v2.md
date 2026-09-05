@@ -117,14 +117,14 @@
 
 Full backend suite: 105 tests, 11 suites (13 new in `ai.unit.test.js`). Frontend typecheck/lint/build pass. Live browser verification not possible this session (dev-server previews unavailable) — see the accompanying commits.
 
-### 1.3 i18n — Remaining Gaps
+### 1.3 i18n — Remaining Gaps ✅ (2026-09-06)
 
 > The audit doc's claim that auth/AI/DaifExplainer aren't wired to i18n is
 > outdated — all three areas ARE wired now. The real remaining gaps:
 
-- [ ] `[S]` **SEO metadata i18n** — 10 pages pass hardcoded English strings to the `<Seo>` component (title, description, OG tags). Wire through `t()` so Bengali (and future Arabic) users get localised meta tags. Files: About, Landing, Feedback, FastingTracker, Privacy, NotFound, QiblaCompass, PrayerTimes, SalatTracker, ZikrCounter.
-- [ ] `[S]` **ArabicKeyboard "space" label** — hardcoded English in `ArabicKeyboard.tsx` line 43. Wire through `t()`.
-- [ ] `[S]` **DaifExplainer extensibility** — uses manual `claim`/`claimBn` bilingual fields instead of i18n. Works for EN/BN but won't scale to Arabic/Urdu. Refactor to use translation keys when adding a third language.
+- [x] **SEO metadata i18n** — all 10 pages (About, Landing, Feedback, FastingTracker, Privacy, NotFound, QiblaCompass, PrayerTimes, SalatTracker, ZikrCounter) now pass `t('<page>.seoTitle', ...)`/`t('<page>.seoDescription', ...)` to `<Seo>` instead of hardcoded English, with matching keys added to both `en`/`bn` locale files.
+- [x] **ArabicKeyboard "space" label** — wired through `t('arabicKeyboard.space', 'space')`.
+- [ ] ~~**DaifExplainer extensibility**~~ — investigated, deliberately not done now: the item is explicitly scoped in its own description to "when adding a third language," and there is no third language in the pipeline (Arabic/RTL is a P3 roadmap item, not active work). Migrating the three hand-curated bilingual scholarly entries (chain, defect, grading, each with careful citations) into i18n JSON now would risk transcription errors in religious content for no present benefit — this is exactly the kind of premature refactor to avoid. Revisit when a third language actually starts.
 
 ### 1.4 Auth Hardening
 
