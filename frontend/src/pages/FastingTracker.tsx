@@ -185,8 +185,13 @@ export default function FastingTracker() {
 
   const today = localTodayStr();
   const tomorrow = offsetDate(today, 1);
-  // After Maghrib the Islamic day has advanced — default to tomorrow's intent
-  const [selectedDate, setSelectedDate] = useState(() => (isPostMaghrib() ? tomorrow : today));
+  // The viewed day stays on the civil "today" regardless of Maghrib — only
+  // the Hijri label/ruling banner are Maghrib-aware (see getHijriToday()
+  // below). Auto-jumping the whole page to tomorrow the moment Maghrib
+  // passed made today's already-completed fast disappear from view; the
+  // "I intend to fast tomorrow" action still lets a user opt into tomorrow
+  // manually.
+  const [selectedDate, setSelectedDate] = useState(today);
   const isFuture = selectedDate > today;
 
   const dateObj = useMemo(() => new Date(selectedDate + 'T12:00:00'), [selectedDate]);
