@@ -52,9 +52,18 @@ function digitsToBn(s: string): string {
   return s.replace(/\d/g, (d) => BN_DIGITS[Number(d)]!);
 }
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Case-insensitive: the source data capitalizes grade words ("Ṣaḥīḥ", "Ḥasan")
+// but GRADE_BN's keys are lowercase, so a plain case-sensitive split/join
+// never matched them — every grade badge silently stayed in English. The
+// Bengali replacement has no case of its own, so matching case-insensitively
+// is always safe.
 function applyMap(s: string, map: [string, string][]): string {
   let out = s;
-  for (const [en, bn] of map) out = out.split(en).join(bn);
+  for (const [en, bn] of map) out = out.replace(new RegExp(escapeRegex(en), 'gi'), bn);
   return out;
 }
 
