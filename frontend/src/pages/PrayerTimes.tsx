@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import Seo from '../components/Seo.js';
-import { MapPinIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import SalatSettings from '../components/SalatSettings.js';
+import { MapPinIcon, InformationCircleIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import {
   calcPrayerTimes,
   formatTime,
@@ -452,6 +453,7 @@ export default function PrayerTimes() {
   const [locLoading, setLocLoading] = useState(false);
   const [locError, setLocError] = useState('');
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   // City search state
   const [cityInput, setCityInput] = useState('');
@@ -586,6 +588,14 @@ export default function PrayerTimes() {
               🧭 {t('qibla.title', 'Qibla Compass')}
             </Link>
             <div className="flex items-center gap-2 min-w-0">
+              <button
+                onClick={() => setShowSettings(true)}
+                aria-label={t('salatSettings.title', 'Salat settings')}
+                title={t('salatSettings.title', 'Salat settings')}
+                className="shrink-0 p-1.5 rounded-xl border border-brand-emerald/20 bg-white/5 text-white/50 hover:text-brand-emerald hover:border-brand-emerald/40 transition-colors"
+              >
+                <Cog6ToothIcon className="w-4 h-4" />
+              </button>
               {location && (
                 <div className="flex items-center gap-1.5 text-white/50 text-xs min-w-0">
                   <MapPinIcon className="w-3.5 h-3.5 text-brand-emerald shrink-0" />
@@ -606,6 +616,8 @@ export default function PrayerTimes() {
               </button>
             </div>
           </div>
+
+          <SalatSettings open={showSettings} onClose={() => setShowSettings(false)} />
 
           {/* Location panel — shows when no location or user clicks Change */}
           <AnimatePresence>
