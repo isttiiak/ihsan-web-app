@@ -263,7 +263,6 @@ export default function QuranReader() {
       resumeSyncTimerRef.current = setTimeout(() => {
         setResumeServer.mutate({ surah: surahNo, ayah });
       }, 1500);
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
     },
     [user, surahNo]
   );
@@ -282,7 +281,6 @@ export default function QuranReader() {
           },
         }
       );
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
     },
     [user, surahNo, mode, countsGoal]
   );
@@ -991,7 +989,11 @@ export default function QuranReader() {
         {/* bottom controls: jump (left) · volume (right) */}
         {!loading && ayat.length > 0 && (
           <div className="flex items-center justify-between gap-3 text-xs text-white/40">
-            {mode !== 'bundle' ? (
+            {/* Khatam must be read serially — a jump dropdown here would let
+                ayat get skipped without being counted, breaking the "read
+                every āyah in order" invariant the khatam count relies on.
+                Bundle mode already had no jump control; khatam now matches. */}
+            {mode !== 'bundle' && mode !== 'khatam' ? (
               <div className="flex items-center gap-2">
                 <label htmlFor="jump-ayah" className="font-bold">
                   {t('quranReader.jumpToAyah', 'Jump to āyah')}
