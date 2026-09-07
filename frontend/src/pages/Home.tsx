@@ -495,9 +495,11 @@ export default function Home() {
                 >
                   <span className="text-2xl shrink-0">{day.icon}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-white font-bold text-sm leading-tight">{day.name}</p>
+                    <p className="text-white font-bold text-sm leading-tight">
+                      {t(`specialDays.${day.id}.name`, day.name)}
+                    </p>
                     <p className="text-white/40 text-xs leading-snug truncate mt-0.5">
-                      {day.shortDesc}
+                      {t(`specialDays.${day.id}.shortDesc`, day.shortDesc)}
                     </p>
                   </div>
                   <span className="text-white/30 text-xs shrink-0 font-bold">→</span>
