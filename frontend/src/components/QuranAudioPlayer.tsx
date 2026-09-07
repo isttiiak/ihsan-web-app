@@ -140,10 +140,16 @@ export default function QuranAudioPlayer() {
         if (diff >= 1) {
           loggedAyatRef.current = target;
           readAyat.mutate({ count: diff });
-          toast.success(`🎧 +${diff} āyah${diff > 1 ? 's' : ''} logged toward your goal`, {
-            id: 'quran-listen',
-            duration: 2000,
-          });
+          toast.success(
+            t('quranAudioPlayer.ayahLogged', {
+              count: diff,
+              defaultValue: '🎧 +{{count}} āyah(s) logged toward your goal',
+            }),
+            {
+              id: 'quran-listen',
+              duration: 2000,
+            }
+          );
         }
       }
     }
@@ -193,9 +199,11 @@ export default function QuranAudioPlayer() {
     <div className="card bg-gradient-to-br from-brand-info/10 to-brand-deep border border-brand-info/20 rounded-3xl">
       <div className="card-body p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-white font-black">🎧 Listen to the Quran</h2>
+          <h2 className="text-white font-black">
+            🎧 {t('quranAudioPlayer.title', 'Listen to the Quran')}
+          </h2>
           <select
-            aria-label="Reciter"
+            aria-label={t('quranAudioPlayer.reciterLabel', 'Reciter')}
             className="select select-xs bg-white/5 border-brand-emerald/10 text-white/70 rounded-lg max-w-[45%]"
             value={reciter}
             onChange={(e) => {
@@ -213,12 +221,15 @@ export default function QuranAudioPlayer() {
 
         {loadError ? (
           <p className="text-white/40 text-xs">
-            Couldn't load the surah list — check your connection and reload.
+            {t(
+              'quranAudioPlayer.loadError',
+              "Couldn't load the surah list — check your connection and reload."
+            )}
           </p>
         ) : (
           <>
             <select
-              aria-label="Surah"
+              aria-label={t('quranAudioPlayer.surahLabel', 'Surah')}
               className="select select-sm w-full bg-white/5 border-brand-emerald/10 text-white rounded-xl"
               value={surahNo}
               onChange={(e) => changeSurah(Number(e.target.value))}
@@ -251,7 +262,7 @@ export default function QuranAudioPlayer() {
             {/* transport */}
             <div className="flex items-center justify-center gap-4">
               <button
-                aria-label="Previous surah"
+                aria-label={t('quranAudioPlayer.previousSurah', 'Previous surah')}
                 className="p-2 text-white/50 hover:text-white disabled:opacity-20"
                 disabled={surahNo <= 1}
                 onClick={() => changeSurah(surahNo - 1)}
@@ -260,7 +271,11 @@ export default function QuranAudioPlayer() {
               </button>
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                aria-label={playing ? 'Pause' : 'Play'}
+                aria-label={
+                  playing
+                    ? t('quranAudioPlayer.pause', 'Pause')
+                    : t('quranAudioPlayer.play', 'Play')
+                }
                 className="w-14 h-14 rounded-full grid place-items-center text-white shadow-lg bg-gradient-to-br from-brand-info to-brand-emerald-dim"
                 onClick={togglePlay}
               >
@@ -273,7 +288,7 @@ export default function QuranAudioPlayer() {
                 )}
               </motion.button>
               <button
-                aria-label="Next surah"
+                aria-label={t('quranAudioPlayer.nextSurah', 'Next surah')}
                 className="p-2 text-white/50 hover:text-white disabled:opacity-20"
                 disabled={surahNo >= 114}
                 onClick={() => changeSurah(surahNo + 1)}
@@ -290,7 +305,7 @@ export default function QuranAudioPlayer() {
                 min={0}
                 max={100}
                 step={0.1}
-                aria-label="Seek"
+                aria-label={t('quranAudioPlayer.seek', 'Seek')}
                 value={duration ? (progress / duration) * 100 : 0}
                 onChange={seek}
                 className="range range-xs flex-1 [--range-shdw:theme(colors.brand.info)]"
@@ -301,7 +316,11 @@ export default function QuranAudioPlayer() {
             {/* sound control */}
             <div className="flex items-center gap-2 text-white/40">
               <button
-                aria-label={muted ? 'Unmute' : 'Mute'}
+                aria-label={
+                  muted
+                    ? t('quranAudioPlayer.unmute', 'Unmute')
+                    : t('quranAudioPlayer.mute', 'Mute')
+                }
                 className="text-sm w-6"
                 onClick={() => setMuted((m) => !m)}
               >
@@ -312,7 +331,7 @@ export default function QuranAudioPlayer() {
                 min={0}
                 max={100}
                 value={muted ? 0 : Math.round(volume * 100)}
-                aria-label="Volume"
+                aria-label={t('quranAudioPlayer.volume', 'Volume')}
                 onChange={(e) => {
                   const v = Number(e.target.value) / 100;
                   setVolume(v);
