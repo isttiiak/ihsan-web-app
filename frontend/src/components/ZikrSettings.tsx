@@ -7,6 +7,7 @@ import {
   ArrowPathIcon,
   ArrowsRightLeftIcon,
   SpeakerWaveIcon,
+  MusicalNoteIcon,
 } from '@heroicons/react/24/outline';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +22,8 @@ export default function ZikrSettings({ open, onClose }: { open: boolean; onClose
   const [resetting, setResetting] = useState(false);
   const tasbihMode = useUiStore((s) => s.tasbihMode);
   const setTasbihMode = useUiStore((s) => s.setTasbihMode);
+  const zikrSoundEnabled = useUiStore((s) => s.zikrSoundEnabled);
+  const setZikrSoundEnabled = useUiStore((s) => s.setZikrSoundEnabled);
   const zikrAudioEnabled = useUiStore((s) => s.zikrAudioEnabled);
   const setZikrAudioEnabled = useUiStore((s) => s.setZikrAudioEnabled);
   const zikrAudioVolume = useUiStore((s) => s.zikrAudioVolume);
@@ -100,6 +103,27 @@ export default function ZikrSettings({ open, onClose }: { open: boolean; onClose
                     'zikr.tasbihModeDesc',
                     'Auto-advance SubhanAllah → Alhamdulillah → Allahu Akbar every 33 counts, looping back after 99.'
                   )}
+                </p>
+              </section>
+
+              <section className="rounded-2xl border border-brand-emerald/20 bg-brand-emerald/[0.06] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <MusicalNoteIcon className="w-4 h-4 text-brand-emerald" />
+                    <h3 className="text-brand-emerald font-bold text-sm">
+                      {t('zikr.tapSound', 'Tap sound')}
+                    </h3>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-success toggle-sm"
+                    checked={zikrSoundEnabled}
+                    onChange={(e) => setZikrSoundEnabled(e.target.checked)}
+                    aria-label={t('zikr.tapSound', 'Tap sound')}
+                  />
+                </div>
+                <p className="text-white/40 text-xs leading-relaxed mt-2">
+                  {t('zikr.tapSoundDesc', 'A soft click on every count, like wooden tasbih beads.')}
                 </p>
               </section>
 

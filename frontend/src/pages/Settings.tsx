@@ -25,11 +25,13 @@ import { useAuthStore } from '../store/useAuthStore.js';
 import { useUiStore } from '../store/useUiStore.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import ZikrLibrarySection from '../components/ZikrLibrarySection.js';
+import NotificationSettings from '../components/NotificationSettings.js';
 import {
   Cog6ToothIcon,
   SparklesIcon,
   MoonIcon,
   EyeIcon,
+  BellIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   TrashIcon,
@@ -680,6 +682,15 @@ export default function Settings() {
                 detail={t('settings.vibrationDetail')}
               />
             </div>
+          </SectionCard>
+
+          {/* ── Notifications ── */}
+          <SectionCard
+            icon={<BellIcon className="w-5 h-5 text-brand-emerald" />}
+            title={t('settings.notificationsSection', 'Notifications')}
+            delay={0.16}
+          >
+            <NotificationSettings />
           </SectionCard>
 
           {/* ── Naseeh AI companion ── */}

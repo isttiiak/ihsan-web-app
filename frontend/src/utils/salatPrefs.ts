@@ -113,6 +113,88 @@ export const AYATUL_KURSI_REF = {
   virtue: 'Nothing prevents him from entering Paradise except death.',
 };
 
+// ─── auto-count dhikr toggle ────────────────────────────────────────────────
+
+const AUTO_COUNT_KEY = 'ihsan_salat_auto_count';
+/** Existing behaviour for everyone today — tapping a tag has always also
+ * credited the zikr counter until this setting existed. */
+export const DEFAULT_AUTO_COUNT_DHIKR = true;
+
+export function getAutoCountDhikr(): boolean {
+  try {
+    const v = localStorage.getItem(AUTO_COUNT_KEY);
+    return v === null ? DEFAULT_AUTO_COUNT_DHIKR : v === '1';
+  } catch {
+    return DEFAULT_AUTO_COUNT_DHIKR;
+  }
+}
+
+export function setAutoCountDhikr(value: boolean): void {
+  try {
+    localStorage.setItem(AUTO_COUNT_KEY, value ? '1' : '0');
+  } catch {
+    /* private mode */
+  }
+}
+
+/**
+ * Tracks which of TODAY's tasbīḥ/Ayatul-Kursi tags actually credited the zikr
+ * counter — needed because the auto-count setting above can be toggled
+ * BETWEEN the moment a tag is marked and the moment it's un-marked, so
+ * SalatLog's own `tasbeeh`/`ayatulKursi` booleans (meaning only "marked") can
+ * no longer be trusted as a proxy for "a credit was given" when reversing one.
+ *
+ * Only ever meaningful for today — crediting itself never applies to a
+ * back-dated entry (see SalatTracker.tsx's creditDhikr), so a day rollover
+ * simply makes the previous day's record irrelevant; no explicit cleanup
+ * needed, the single key is just overwritten with the new day's own record.
+ */
+const CREDITED_KEY = 'ihsan_salat_dhikr_credited';
+interface CreditedRecord {
+  date: string;
+  credited: Record<string, boolean>;
+}
+
+function readCreditedRecord(today: string): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(CREDITED_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as CreditedRecord;
+    return parsed.date === today ? parsed.credited : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeCreditedRecord(today: string, credited: Record<string, boolean>): void {
+  try {
+    localStorage.setItem(CREDITED_KEY, JSON.stringify({ date: today, credited }));
+  } catch {
+    /* private mode */
+  }
+}
+
+export function wasDhikrCredited(
+  today: string,
+  prayer: string,
+  type: 'tasbeeh' | 'ayatulKursi'
+): boolean {
+  return readCreditedRecord(today)[`${prayer}:${type}`] ?? false;
+}
+
+export function setDhikrCredited(
+  today: string,
+  prayer: string,
+  type: 'tasbeeh' | 'ayatulKursi',
+  value: boolean
+): void {
+  const record = readCreditedRecord(today);
+  const key = `${prayer}:${type}`;
+  if (value) record[key] = true;
+  else delete record[key];
+  writeCreditedRecord(today, record);
+}
+
 // ─── ʿAṣr calculation school ────────────────────────────────────────────────
 
 /**

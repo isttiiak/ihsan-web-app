@@ -19,9 +19,22 @@ export default defineConfig({
     // v4.10.0 — installable PWA: precached app shell + offline-tolerant
     // runtime caching. The API stays network-only (worship data must never be
     // stale-served); the free Quran text CDN and fonts cache aggressively.
+    //
+    // Switched generateSW → injectManifest (push notifications, added later,
+    // need a hand-written service worker source to attach a `push` listener
+    // to — generateSW has no source file at all). All the caching behavior
+    // below is now implemented directly in src/sw.ts instead of this
+    // declarative `workbox` block; injectManifest only needs globPatterns
+    // here, to build the precache manifest injected as self.__WB_MANIFEST.
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'og-image.jpg', 'robots.txt'],
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+      },
       manifest: {
         name: 'Ihsan — Muslim Worship & Productivity Tracker',
         short_name: 'Ihsan',
@@ -38,47 +51,6 @@ export default defineConfig({
           { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/pwa-512.png', sizes: '512x512', type: 'image/png' },
           { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-        ],
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        // SPA offline routing: serve the cached index.html for any navigation
-        // that misses the precache (e.g. /zikr while offline).
-        navigateFallback: 'index.html',
-        // Never intercept the API — worship logs must always hit the server.
-        navigateFallbackDenylist: [/^\/api\//],
-        // THE MOBILE STALENESS FIX. With autoUpdate alone a new service worker
-        // installs but then WAITS for every tab to close before activating. On
-        // a phone the app is basically never fully closed, so users kept being
-        // served the previous precached bundle — features worked on desktop
-        // and silently didn't on mobile until a hard reload (this is what broke
-        // "Log missed counts" there). skipWaiting + clientsClaim let the new
-        // worker take over on the next load; cleanupOutdatedCaches drops the
-        // superseded precache instead of letting it accumulate.
-        skipWaiting: true,
-        clientsClaim: true,
-        cleanupOutdatedCaches: true,
-        runtimeCaching: [
-          {
-            // Quran text + surah meta (immutable content) — cache-first, 30 days
-            urlPattern: /^https:\/\/api\.alquran\.cloud\/.*/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'quran-text',
-              expiration: { maxEntries: 300, maxAgeSeconds: 30 * 24 * 60 * 60 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            // Google Fonts stylesheets + woff2 (Arabic reading faces)
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'fonts',
-              expiration: { maxEntries: 30, maxAgeSeconds: 365 * 24 * 60 * 60 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
         ],
       },
     }),

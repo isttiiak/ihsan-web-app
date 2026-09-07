@@ -9,6 +9,7 @@ import QuranProfile from '../models/QuranProfile.js';
 import CycleLog from '../models/CycleLog.js';
 import CycleDay from '../models/CycleDay.js';
 import CycleProfile from '../models/CycleProfile.js';
+import PushSubscription from '../models/PushSubscription.js';
 
 /**
  * Full-account backup & restore (Istiak's spec, v4.9): ONE JSON file that
@@ -64,6 +65,7 @@ export async function exportAll(uid: string): Promise<PlainDoc> {
     cycleProfile,
     cycleLogs,
     cycleDays,
+    pushSubscriptions,
   ] = await Promise.all([
     User.findOne({ uid }).lean(),
     ZikrGoal.findOne({ userId: uid }).lean(),
@@ -76,6 +78,7 @@ export async function exportAll(uid: string): Promise<PlainDoc> {
     CycleProfile.findOne({ userId: uid }).lean(),
     CycleLog.find({ userId: uid }).lean(),
     CycleDay.find({ userId: uid }).lean(),
+    PushSubscription.find({ userId: uid }).lean(),
   ]);
 
   return {
@@ -90,6 +93,8 @@ export async function exportAll(uid: string): Promise<PlainDoc> {
           birthDate: user.birthDate ?? null,
           country: (user as unknown as PlainDoc).country ?? null,
           photoUrl: user.photoUrl ?? null,
+          timezoneOffset: (user as unknown as PlainDoc).timezoneOffset ?? null,
+          location: (user as unknown as PlainDoc).location ?? null,
         }
       : null,
     zikr: {
@@ -122,6 +127,29 @@ export async function exportAll(uid: string): Promise<PlainDoc> {
           },
         }
       : {}),
+    // Informational only — NOT restored on import. A push subscription's
+    // endpoint/keys are cryptographically tied to the exact browser that
+    // created them; there's no way to "restore" one into a different device,
+    // so this exists purely so a data export shows everything we actually
+    // hold, per-device. The raw p256dh/auth encryption keys are left out —
+    // they're not meaningful to a human reading their own export.
+    notifications: {
+      subscriptions: (
+        pushSubscriptions as unknown as Array<{
+          endpoint: string;
+          categories: unknown;
+          userAgent?: string;
+          lastSeenAt: Date;
+          createdAt: Date;
+        }>
+      ).map((s) => ({
+        endpoint: s.endpoint,
+        categories: s.categories,
+        userAgent: s.userAgent ?? null,
+        lastSeenAt: s.lastSeenAt,
+        createdAt: s.createdAt,
+      })),
+    },
   };
 }
 
@@ -148,6 +176,9 @@ export interface BackupFile {
   fasting?: { profile?: PlainDoc | null; logs?: PlainDoc[] };
   quran?: { profile?: PlainDoc | null; logs?: PlainDoc[] };
   cycle?: { profile?: PlainDoc | null; logs?: PlainDoc[]; days?: PlainDoc[] };
+  // Informational only — see the doc comment where this is built in exportAll.
+  // Deliberately not read anywhere in importAll below.
+  notifications?: { subscriptions?: PlainDoc[] };
 }
 
 export async function importAll(uid: string, data: BackupFile): Promise<ImportCounts> {
@@ -173,6 +204,11 @@ export async function importAll(uid: string, data: BackupFile): Promise<ImportCo
   };
 
   // ── User + zikr lifetime state ──
+  // timezoneOffset/location are exported for transparency but deliberately
+  // NOT restored here — they're kept fresh by push-subscribe (see
+  // push.service.ts), and reintroducing a stale value from an old backup
+  // could point the notification scheduler at a location/timezone the user
+  // has since moved away from.
   const userSet: PlainDoc = {};
   if (data.user && typeof data.user === 'object') {
     for (const k of ['displayName', 'gender', 'birthDate', 'country'] as const) {

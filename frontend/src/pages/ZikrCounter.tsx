@@ -16,6 +16,7 @@ import TabNav from '../components/TabNav.js';
 import { StreakBadge, GoalBadge } from '../components/StatusBadges.js';
 import { celebrateGoal } from '../utils/celebrate.js';
 import { getHiddenZikr, hideZikr } from '../utils/hiddenZikr.js';
+import { playZikrClick } from '../utils/zikrClickSound.js';
 import {
   PREDEFINED_TYPES,
   findLibraryZikr,
@@ -315,6 +316,7 @@ export default function ZikrCounter() {
   } = useZikrStore();
   const reduceMotion = useUiStore((s) => s.reduceMotion);
   const vibrationEnabled = useUiStore((s) => s.vibrationEnabled);
+  const zikrSoundEnabled = useUiStore((s) => s.zikrSoundEnabled);
   const tasbihMode = useUiStore((s) => s.tasbihMode);
   const zikrAudioEnabled = useUiStore((s) => s.zikrAudioEnabled);
   const zikrAudioVolume = useUiStore((s) => s.zikrAudioVolume);
@@ -494,8 +496,17 @@ export default function ZikrCounter() {
     increment();
     scheduleFlush();
     setColorIdx((i) => (i + 1) % GLOW_PALETTE.length);
-    // Subtle haptic pulse on supported mobile browsers
-    if (vibrationEnabled && 'vibrate' in navigator) navigator.vibrate(10);
+    if (zikrSoundEnabled) playZikrClick();
+    // Haptic pulse on supported mobile browsers — a plain short pulse on every
+    // tap, and a distinct, longer pattern at each 33/66/99 tasbih milestone so
+    // an eyes-free user can feel their position in the cycle without looking.
+    if (vibrationEnabled && 'vibrate' in navigator) {
+      const newCount = currentCount + 1;
+      if (newCount % 99 === 0) navigator.vibrate([20, 50, 20, 50, 20, 50, 30]);
+      else if (newCount % 66 === 0) navigator.vibrate([15, 40, 15, 40, 15]);
+      else if (newCount % 33 === 0) navigator.vibrate([15, 40, 15]);
+      else navigator.vibrate(10);
+    }
     // Tasbih mode: every 33rd count on a cycle dhikr auto-advances to the next one
     if (tasbihMode) {
       const cycleIdx = TASBIH_CYCLE.indexOf(selected);
@@ -503,7 +514,16 @@ export default function ZikrCounter() {
         selectType(TASBIH_CYCLE[(cycleIdx + 1) % TASBIH_CYCLE.length]!);
       }
     }
-  }, [increment, scheduleFlush, vibrationEnabled, tasbihMode, selected, currentCount, selectType]);
+  }, [
+    increment,
+    scheduleFlush,
+    zikrSoundEnabled,
+    vibrationEnabled,
+    tasbihMode,
+    selected,
+    currentCount,
+    selectType,
+  ]);
 
   // Entering tasbih mode mid-session jumps to the start of the cycle so the
   // 33-count boundaries line up correctly.
@@ -1427,8 +1447,13 @@ export default function ZikrCounter() {
                 </button>
               </div>
 
-              {/* ── Center content ── */}
-              <div className="relative z-10 flex-1 flex flex-col items-center justify-center gap-5 px-6 -mt-6">
+              {/* ── Center content — whole area is tappable to count, for
+                   eyes-free tasbih; the Count button and auto-play controls
+                   below stop propagation so they don't double-fire. ── */}
+              <div
+                onClick={onIncrement}
+                className="relative z-10 flex-1 flex flex-col items-center justify-center gap-5 px-6 -mt-6 cursor-pointer"
+              >
                 {/* Arabic text — very faint, above number */}
                 {meaning?.arabic && (
                   <motion.p
@@ -1489,7 +1514,9 @@ export default function ZikrCounter() {
                   )}
                   <motion.button
                     whileTap={{ scale: 0.97 }}
-                    onClick={onIncrement}
+                    // No onClick here — the tap bubbles up to the whole-screen
+                    // tap target on the center-content wrapper, which counts
+                    // it exactly once. An explicit handler here would double-count.
                     className="relative flex items-center justify-center gap-3 font-black rounded-3xl w-full select-none outline-none border border-brand-emerald/25 text-white"
                     style={{
                       height: 'clamp(120px, 18vh, 180px)',
@@ -1511,7 +1538,10 @@ export default function ZikrCounter() {
                     {audio.isAutoPlay ? (
                       <motion.button
                         whileTap={{ scale: 0.94 }}
-                        onClick={() => audio.stopAutoPlay()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          audio.stopAutoPlay();
+                        }}
                         className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-bold"
                       >
                         <StopIcon className="w-5 h-5" />
@@ -1524,7 +1554,10 @@ export default function ZikrCounter() {
                     ) : (
                       <motion.button
                         whileTap={{ scale: 0.94 }}
-                        onClick={() => audio.startAutoPlay()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          audio.startAutoPlay();
+                        }}
                         className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-brand-gold/15 border border-brand-gold/40 text-brand-gold/90 hover:text-brand-gold text-sm font-bold transition-all"
                       >
                         <PlayIcon className="w-5 h-5" />

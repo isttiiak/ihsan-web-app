@@ -13,6 +13,8 @@ import {
   setTasbihMode,
   type TasbihMode,
   AYATUL_KURSI_REF,
+  getAutoCountDhikr,
+  setAutoCountDhikr,
 } from '../utils/salatPrefs.js';
 import { translateReference } from '../utils/localeReference.js';
 import { useSalatDebt, useResetSalatDebt } from '../hooks/useSalatLog.js';
@@ -32,6 +34,7 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [tasbih, setTasbih] = useState<TasbihMode>(() => getTasbihMode());
+  const [autoCount, setAutoCount] = useState<boolean>(() => getAutoCountDhikr());
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
   const { data: debt } = useSalatDebt();
@@ -65,6 +68,11 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
       icon: '📿',
       duration: 1800,
     });
+  };
+
+  const toggleAutoCount = (value: boolean) => {
+    setAutoCount(value);
+    setAutoCountDhikr(value);
   };
 
   const handleDebtReset = () => {
@@ -119,6 +127,28 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
             </div>
 
             <div className="p-5 space-y-7">
+              {/* ── auto-count dhikr ───────────────────────────────────── */}
+              <section className="rounded-2xl border border-brand-emerald/20 bg-brand-emerald/[0.06] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-brand-emerald font-bold text-sm">
+                    {t('salatSettings.autoCountTitle', '📿 Auto-count dhikr')}
+                  </h3>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-success"
+                    checked={autoCount}
+                    onChange={(e) => toggleAutoCount(e.target.checked)}
+                    aria-label={t('salatSettings.autoCountTitle', '📿 Auto-count dhikr')}
+                  />
+                </div>
+                <p className="text-white/40 text-xs leading-relaxed mt-2">
+                  {t(
+                    'salatSettings.autoCountDesc',
+                    'When on, tapping Tasbīḥ or Ayatul Kursi below adds the counts straight to your dhikr counter. Turn it off to just mark them as done — use Tasbih mode on the Zikr counter to count them yourself instead.'
+                  )}
+                </p>
+              </section>
+
               {/* ── after-salah tasbih ─────────────────────────────────── */}
               <section>
                 <h3 className="text-white font-bold text-sm">

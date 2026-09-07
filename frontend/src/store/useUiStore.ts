@@ -9,6 +9,8 @@ interface UiState {
   showNoorToday: boolean;
   /** Haptic pulse on each zikr count tap (mobile browsers only) */
   vibrationEnabled: boolean;
+  /** Subtle click sound on each zikr count tap */
+  zikrSoundEnabled: boolean;
   /** Tasbih mode: auto-cycle SubhanAllah → Alhamdulillah → Allahu Akbar every 33 counts */
   tasbihMode: boolean;
   /** Master toggle for zikr audio playback features */
@@ -20,6 +22,7 @@ interface UiState {
   setShowNoorAllTime: (val: boolean) => void;
   setShowNoorToday: (val: boolean) => void;
   setVibrationEnabled: (val: boolean) => void;
+  setZikrSoundEnabled: (val: boolean) => void;
   setTasbihMode: (val: boolean) => void;
   setZikrAudioEnabled: (val: boolean) => void;
   setZikrAudioVolume: (val: number) => void;
@@ -31,6 +34,7 @@ export const useUiStore = create<UiState>((set) => ({
   showNoorAllTime: localStorage.getItem('ihsan_noor_alltime') === '1',
   showNoorToday: localStorage.getItem('ihsan_noor_today') === '1',
   vibrationEnabled: localStorage.getItem('ihsan_vibration') !== '0',
+  zikrSoundEnabled: localStorage.getItem('ihsan_zikr_sound') !== '0',
   tasbihMode: localStorage.getItem('ihsan_tasbih_mode') === '1',
   zikrAudioEnabled: localStorage.getItem('ihsan_zikr_audio') !== '0',
   zikrAudioVolume: parseFloat(localStorage.getItem('ihsan_zikr_volume') || '0.7'),
@@ -58,6 +62,11 @@ export const useUiStore = create<UiState>((set) => ({
   setVibrationEnabled: (val) => {
     localStorage.setItem('ihsan_vibration', val ? '1' : '0');
     set({ vibrationEnabled: !!val });
+  },
+
+  setZikrSoundEnabled: (val) => {
+    localStorage.setItem('ihsan_zikr_sound', val ? '1' : '0');
+    set({ zikrSoundEnabled: !!val });
   },
 
   setTasbihMode: (val) => {

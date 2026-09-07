@@ -4,14 +4,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  useSalatLog, useUpdatePrayer, useUpdateNafl,
-  NAFL_TYPE_META, SELECTABLE_NAFL_TYPES,
-  type PrayerId, type PrayerStatus, type NaflType,
+  useSalatLog,
+  useUpdatePrayer,
+  useUpdateNafl,
+  NAFL_TYPE_META,
+  SELECTABLE_NAFL_TYPES,
+  type PrayerId,
+  type PrayerStatus,
+  type NaflType,
 } from '../hooks/useSalatLog.js';
 import { translateSalatName } from '../utils/prayerTimes.js';
 import { useZikrStore } from '../store/useZikrStore.js';
 import {
-  getTasbihMode, tasbihModeMeta, tasbihDeltas, AYATUL_KURSI_ZIKR,
+  getTasbihMode,
+  tasbihModeMeta,
+  tasbihDeltas,
+  AYATUL_KURSI_ZIKR,
+  getAutoCountDhikr,
+  wasDhikrCredited,
+  setDhikrCredited,
 } from '../utils/salatPrefs.js';
 import { celebrateSmall, celebrateAllPrayers } from '../utils/celebrate.js';
 
@@ -40,7 +51,10 @@ const MIN_RAKAT = 2;
 
 function suggestedRakat(types: NaflType[]): number {
   if (types.length === 0) return MIN_RAKAT;
-  return types.reduce((sum, id) => sum + (NAFL_TYPE_META.find((m) => m.id === id)?.defaultRakat ?? MIN_RAKAT), 0);
+  return types.reduce(
+    (sum, id) => sum + (NAFL_TYPE_META.find((m) => m.id === id)?.defaultRakat ?? MIN_RAKAT),
+    0
+  );
 }
 
 export default function RamadanSalatCard({
@@ -71,22 +85,24 @@ export default function RamadanSalatCard({
   const nafl = log?.nafl ?? { completed: false, types: [] as NaflType[], rakat: MIN_RAKAT };
 
   const doneCount = useMemo(
-    () => PRAYERS.filter((p) => {
-      const s = log?.prayers?.[p.id]?.status;
-      return s === 'completed' || s === 'kaza';
-    }).length,
-    [log],
+    () =>
+      PRAYERS.filter((p) => {
+        const s = log?.prayers?.[p.id]?.status;
+        return s === 'completed' || s === 'kaza';
+      }).length,
+    [log]
   );
 
   const normalise = (raw?: string): PrayerStatus =>
-    raw === 'prayed' || raw === 'mosque' ? 'completed'
-      : (raw as PrayerStatus) ?? 'pending';
+    raw === 'prayed' || raw === 'mosque' ? 'completed' : ((raw as PrayerStatus) ?? 'pending');
 
   const setStatus = (prayer: PrayerId, status: PrayerStatus) => {
     const current = log?.prayers?.[prayer];
     const next: PrayerStatus = normalise(current?.status) === status ? 'pending' : status;
     updatePrayer.mutate({
-      prayer, status: next, date,
+      prayer,
+      status: next,
+      date,
       location: current?.location ?? 'home',
       tasbeeh: current?.tasbeeh ?? false,
       ayatulKursi: current?.ayatulKursi ?? false,
@@ -96,14 +112,18 @@ export default function RamadanSalatCard({
         const s = p.id === prayer ? next : log?.prayers?.[p.id]?.status;
         return s === 'completed' || s === 'kaza';
       }).length;
-      if (after >= 5) celebrateAllPrayers(); else celebrateSmall();
+      if (after >= 5) celebrateAllPrayers();
+      else celebrateSmall();
       setOpenPrayer(prayer);
     } else {
       setOpenPrayer(null);
     }
   };
 
-  /** Same contract as SalatTracker.creditDhikr — tap adds, un-tap subtracts. */
+  /** Same contract as SalatTracker.creditDhikr — tap adds, un-tap subtracts,
+   * gated by the same auto-count-dhikr setting (see its doc comment there);
+   * `date` here is always today (see the component doc comment above), so
+   * unlike the full tracker this never needs a back-dating guard. */
   const toggleTag = (prayer: PrayerId, kind: 'tasbeeh' | 'ayatulKursi') => {
     const current = log?.prayers?.[prayer];
     const was = kind === 'tasbeeh' ? (current?.tasbeeh ?? false) : (current?.ayatulKursi ?? false);
@@ -119,15 +139,35 @@ export default function RamadanSalatCard({
       ayatulKursi: kind === 'ayatulKursi' ? on : (current?.ayatulKursi ?? false),
     });
 
+    if (on && !getAutoCountDhikr()) {
+      toast.success(
+        kind === 'tasbeeh'
+          ? t('salatTracker.dhikrMarkedOnly', 'Marked — count it yourself in Tasbih mode')
+          : t('salatTracker.ayatulKursiMarkedOnly', 'Ayatul Kursi marked'),
+        { icon: '✅', duration: 2000 }
+      );
+      return;
+    }
+    if (!on && !wasDhikrCredited(date, prayer, kind)) return;
+
     const sign: 1 | -1 = on ? 1 : -1;
     if (kind === 'tasbeeh') {
       const meta = tasbihModeMeta(getTasbihMode());
       addCounts(tasbihDeltas(meta.id, sign));
-      toast.success(on ? t('ramadanSalat.tasbeehAdded', { label: meta.label }) : t('ramadanSalat.tasbeehRemoved', { label: meta.label }), { icon: '📿', duration: 2000 });
+      toast.success(
+        on
+          ? t('ramadanSalat.tasbeehAdded', { label: meta.label })
+          : t('ramadanSalat.tasbeehRemoved', { label: meta.label }),
+        { icon: '📿', duration: 2000 }
+      );
     } else {
       addCounts({ [AYATUL_KURSI_ZIKR]: sign });
-      toast.success(on ? t('ramadanSalat.ayatulKursiCounted') : t('ramadanSalat.ayatulKursiRemoved'), { icon: '📖', duration: 1800 });
+      toast.success(
+        on ? t('ramadanSalat.ayatulKursiCounted') : t('ramadanSalat.ayatulKursiRemoved'),
+        { icon: '📖', duration: 1800 }
+      );
     }
+    setDhikrCredited(date, prayer, kind, on);
     void (async () => {
       await flushZikr();
       await queryClient.invalidateQueries({ queryKey: ['analytics'] });
@@ -144,7 +184,12 @@ export default function RamadanSalatCard({
   const toggleNaflType = (t: NaflType) => {
     const cur = nafl.types ?? [];
     const next = cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t];
-    updateNafl.mutate({ completed: nafl.completed, types: next, rakat: suggestedRakat(next), date });
+    updateNafl.mutate({
+      completed: nafl.completed,
+      types: next,
+      rakat: suggestedRakat(next),
+      date,
+    });
   };
 
   const stepRakat = (delta: number) => {
@@ -172,16 +217,27 @@ export default function RamadanSalatCard({
               const done = status === 'completed' || status === 'kaza';
               const isOpen = openPrayer === p.id;
               return (
-                <div key={p.id} className={`rounded-2xl border transition-colors ${
-                  done ? 'border-brand-emerald/25 bg-brand-emerald/[0.07]' : 'border-brand-emerald/10 bg-white/[0.03]'
-                }`}>
+                <div
+                  key={p.id}
+                  className={`rounded-2xl border transition-colors ${
+                    done
+                      ? 'border-brand-emerald/25 bg-brand-emerald/[0.07]'
+                      : 'border-brand-emerald/10 bg-white/[0.03]'
+                  }`}
+                >
                   <div className="flex items-center gap-2 p-2.5">
                     <span className="text-base shrink-0">{p.emoji}</span>
-                    <span className={`flex-1 min-w-0 truncate text-sm font-bold ${done ? 'text-brand-emerald' : 'text-white/55'}`}>
+                    <span
+                      className={`flex-1 min-w-0 truncate text-sm font-bold ${done ? 'text-brand-emerald' : 'text-white/55'}`}
+                    >
                       {translateSalatName(p.id, p.name, t)}
                     </span>
-                    {entry?.tasbeeh && <span className="text-brand-info/60 text-xs shrink-0">📿</span>}
-                    {entry?.ayatulKursi && <span className="text-brand-gold/60 text-xs shrink-0">📖</span>}
+                    {entry?.tasbeeh && (
+                      <span className="text-brand-info/60 text-xs shrink-0">📿</span>
+                    )}
+                    {entry?.ayatulKursi && (
+                      <span className="text-brand-gold/60 text-xs shrink-0">📖</span>
+                    )}
                     <div className="flex gap-1 shrink-0">
                       <button
                         onClick={() => setStatus(p.id, 'completed')}
@@ -190,7 +246,9 @@ export default function RamadanSalatCard({
                             ? 'bg-brand-emerald/25 border-brand-emerald/50 text-brand-emerald'
                             : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                         }`}
-                      >✅</button>
+                      >
+                        ✅
+                      </button>
                       <button
                         onClick={() => setStatus(p.id, 'kaza')}
                         className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
@@ -198,13 +256,17 @@ export default function RamadanSalatCard({
                             ? 'bg-brand-gold/25 border-brand-gold/50 text-brand-gold'
                             : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                         }`}
-                      >⏰</button>
+                      >
+                        ⏰
+                      </button>
                       {done && (
                         <button
                           onClick={() => setOpenPrayer(isOpen ? null : p.id)}
                           aria-label={`After-salat options for ${translateSalatName(p.id, p.name, t)}`}
                           className="px-2 py-1 rounded-lg text-[11px] border bg-brand-deep border-brand-border text-white/30 hover:text-white/60"
-                        >{isOpen ? '▲' : '▾'}</button>
+                        >
+                          {isOpen ? '▲' : '▾'}
+                        </button>
                       )}
                     </div>
                   </div>
@@ -212,11 +274,15 @@ export default function RamadanSalatCard({
                   <AnimatePresence>
                     {done && isOpen && (
                       <motion.div
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         transition={{ duration: 0.18 }}
                         className="px-2.5 pb-2.5 flex items-center gap-2 flex-wrap"
                       >
-                        <span className="text-white/25 text-[11px]">{t('ramadanSalat.afterSalat')}:</span>
+                        <span className="text-white/25 text-[11px]">
+                          {t('ramadanSalat.afterSalat')}:
+                        </span>
                         <button
                           onClick={() => toggleTag(p.id, 'tasbeeh')}
                           className={`px-2 py-1 rounded-lg text-[11px] font-semibold border transition-colors ${
@@ -224,7 +290,9 @@ export default function RamadanSalatCard({
                               ? 'bg-brand-info/20 border-brand-info/50 text-brand-info'
                               : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                           }`}
-                        >📿 Tasbeeh</button>
+                        >
+                          📿 Tasbeeh
+                        </button>
                         <button
                           onClick={() => toggleTag(p.id, 'ayatulKursi')}
                           className={`px-2 py-1 rounded-lg text-[11px] font-semibold border transition-colors ${
@@ -232,7 +300,9 @@ export default function RamadanSalatCard({
                               ? 'bg-brand-gold/20 border-brand-gold/50 text-brand-gold'
                               : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                           }`}
-                        >📖 Ayatul Kursi</button>
+                        >
+                          📖 Ayatul Kursi
+                        </button>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -255,29 +325,46 @@ export default function RamadanSalatCard({
               }`}
             >
               <span className="text-base shrink-0">🕌</span>
-              <span className={`flex-1 min-w-0 text-sm font-bold ${tarawih ? 'text-brand-info' : 'text-white/55'}`}>
+              <span
+                className={`flex-1 min-w-0 text-sm font-bold ${tarawih ? 'text-brand-info' : 'text-white/55'}`}
+              >
                 {t('ramadanSalat.tarawih')}
-                <span className="block text-[10px] font-semibold text-white/25">{t('ramadanSalat.tarawihSub')}</span>
+                <span className="block text-[10px] font-semibold text-white/25">
+                  {t('ramadanSalat.tarawihSub')}
+                </span>
               </span>
-              <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 ${
-                tarawih
-                  ? 'bg-brand-info/25 border-brand-info/50 text-brand-info'
-                  : 'bg-brand-deep border-brand-border text-white/40'
-              }`}>
+              <span
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 ${
+                  tarawih
+                    ? 'bg-brand-info/25 border-brand-info/50 text-brand-info'
+                    : 'bg-brand-deep border-brand-border text-white/40'
+                }`}
+              >
                 {tarawih ? t('ramadanSalat.prayed') : t('ramadanSalat.markDone')}
               </span>
             </button>
           )}
 
           {/* Nafl — extra weight in Ramadan, so it lives here rather than a page away */}
-          <div className={`mt-2.5 rounded-2xl border p-2.5 ${
-            nafl.completed ? 'border-brand-info/25 bg-brand-info/[0.07]' : 'border-brand-emerald/10 bg-white/[0.03]'
-          }`}>
+          <div
+            className={`mt-2.5 rounded-2xl border p-2.5 ${
+              nafl.completed
+                ? 'border-brand-info/25 bg-brand-info/[0.07]'
+                : 'border-brand-emerald/10 bg-white/[0.03]'
+            }`}
+          >
             <div className="flex items-center gap-2">
               <span className="text-base shrink-0">🌙</span>
-              <span className={`flex-1 min-w-0 text-sm font-bold ${nafl.completed ? 'text-brand-info' : 'text-white/55'}`}>
+              <span
+                className={`flex-1 min-w-0 text-sm font-bold ${nafl.completed ? 'text-brand-info' : 'text-white/55'}`}
+              >
                 {t('ramadanSalat.nafl')}
-                {nafl.completed && <span className="text-white/30 font-semibold"> · {nafl.rakat ?? MIN_RAKAT} {t('ramadanSalat.rakah')}</span>}
+                {nafl.completed && (
+                  <span className="text-white/30 font-semibold">
+                    {' '}
+                    · {nafl.rakat ?? MIN_RAKAT} {t('ramadanSalat.rakah')}
+                  </span>
+                )}
               </span>
               <button
                 onClick={toggleNaflDone}
@@ -286,20 +373,26 @@ export default function RamadanSalatCard({
                     ? 'bg-brand-info/25 border-brand-info/50 text-brand-info'
                     : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                 }`}
-              >{nafl.completed ? t('ramadanSalat.done') : t('ramadanSalat.markDone')}</button>
+              >
+                {nafl.completed ? t('ramadanSalat.done') : t('ramadanSalat.markDone')}
+              </button>
               {nafl.completed && (
                 <button
                   onClick={() => setNaflOpen((v) => !v)}
                   aria-label={t('ramadanSalat.naflDetails', 'Nafl details')}
                   className="px-2 py-1 rounded-lg text-[11px] border bg-brand-deep border-brand-border text-white/30 hover:text-white/60 shrink-0"
-                >{naflOpen ? '▲' : '▾'}</button>
+                >
+                  {naflOpen ? '▲' : '▾'}
+                </button>
               )}
             </div>
 
             <AnimatePresence>
               {nafl.completed && naflOpen && (
                 <motion.div
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   transition={{ duration: 0.18 }}
                   className="mt-2.5 space-y-2.5"
                 >
@@ -310,12 +403,17 @@ export default function RamadanSalatCard({
                         <button
                           key={nt.id}
                           onClick={() => toggleNaflType(nt.id)}
-                          title={i18n.language === 'bn' && nt.shortNoteBn ? nt.shortNoteBn : nt.shortNote}
+                          title={
+                            i18n.language === 'bn' && nt.shortNoteBn ? nt.shortNoteBn : nt.shortNote
+                          }
                           className={`px-2 py-1 rounded-lg text-[11px] font-semibold border transition-colors ${
-                            on ? 'bg-brand-info/20 border-brand-info/50 text-brand-info'
-                               : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
+                            on
+                              ? 'bg-brand-info/20 border-brand-info/50 text-brand-info'
+                              : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
                           }`}
-                        >{nt.emoji} {translateSalatName(nt.id, nt.label, t)}</button>
+                        >
+                          {nt.emoji} {translateSalatName(nt.id, nt.label, t)}
+                        </button>
                       );
                     })}
                   </div>
@@ -325,14 +423,18 @@ export default function RamadanSalatCard({
                       onClick={() => stepRakat(-1)}
                       disabled={(nafl.rakat ?? MIN_RAKAT) <= MIN_RAKAT}
                       className="w-6 h-6 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-sm disabled:opacity-25"
-                    >−</button>
+                    >
+                      −
+                    </button>
                     <span className="text-white font-black text-sm tabular-nums w-6 text-center">
                       {nafl.rakat ?? MIN_RAKAT}
                     </span>
                     <button
                       onClick={() => stepRakat(1)}
                       className="w-6 h-6 rounded-lg bg-brand-deep border border-brand-border text-white/60 font-bold text-sm"
-                    >+</button>
+                    >
+                      +
+                    </button>
                   </div>
                 </motion.div>
               )}

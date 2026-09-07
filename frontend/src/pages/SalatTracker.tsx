@@ -49,6 +49,9 @@ import {
   tasbihModeMeta,
   tasbihDeltas,
   AYATUL_KURSI_ZIKR,
+  getAutoCountDhikr,
+  wasDhikrCredited,
+  setDhikrCredited,
 } from '../utils/salatPrefs.js';
 import { recitationsFor, recitationHref } from '../utils/postSalatQuran.js';
 import { getFridayHour, FRIDAY_HOUR_REF } from '../utils/fridayHour.js';
@@ -469,8 +472,8 @@ export default function SalatTracker() {
       normaliseStatus(current?.status) === 'kaza';
     const willBeCompleted = newStatus === 'completed' || newStatus === 'kaza';
     if (wasCompleted && !willBeCompleted) {
-      if (current?.tasbeeh) creditDhikr('tasbeeh', false, current);
-      if (current?.ayatulKursi) creditDhikr('ayatulKursi', false, current);
+      if (current?.tasbeeh) creditDhikr('tasbeeh', false, current, prayer);
+      if (current?.ayatulKursi) creditDhikr('ayatulKursi', false, current, prayer);
     }
 
     // If setting to completed/kaza, open sub-tag row; keep existing location if re-selecting
@@ -536,13 +539,20 @@ export default function SalatTracker() {
       }
       return;
     }
-    creditDhikr(type, value as boolean, current);
+    creditDhikr(type, value as boolean, current, prayer);
   };
 
   /**
    * Salat → Zikr wiring. Marking tasbīḥ or Ayatul Kursi on a prayer posts the
    * counts straight into the dhikr counter, so nobody has to re-enter 33/33/34
-   * by hand five times a day. Un-tapping reverses exactly what was added.
+   * by hand five times a day — unless "auto-count dhikr" (Salat settings) is
+   * off, in which case the tag is still marked (handleSubTag's updatePrayer
+   * call runs regardless of this function) but no count is added; Tasbih
+   * mode or the counter page become the manual path for someone who'd rather
+   * physically count. Un-tapping reverses exactly what was added — tracked
+   * via wasDhikrCredited/setDhikrCredited since the setting can be flipped
+   * between marking a tag and un-marking it, so the tag's own boolean can't
+   * be trusted to mean "a credit was given".
    *
    * Only fires for TODAY: dhikr counts live in today's bucket, so crediting
    * them from a back-dated prayer would file the counts on the wrong day.
@@ -550,11 +560,14 @@ export default function SalatTracker() {
   const creditDhikr = (
     type: 'tasbeeh' | 'ayatulKursi',
     turnedOn: boolean,
-    current: { tasbeeh?: boolean; ayatulKursi?: boolean } | undefined
+    current: { tasbeeh?: boolean; ayatulKursi?: boolean } | undefined,
+    prayer: PrayerId
   ) => {
     const was = type === 'tasbeeh' ? (current?.tasbeeh ?? false) : (current?.ayatulKursi ?? false);
     if (was === turnedOn) return; // not an actual change — never double-count
-    if (selectedDate !== todayStr()) {
+
+    const today = todayStr();
+    if (selectedDate !== today) {
       if (turnedOn) {
         toast(t('salatTracker.dhikrTodayOnly', 'Saved. Dhikr counts are only added for today.'), {
           icon: '🗓️',
@@ -562,6 +575,20 @@ export default function SalatTracker() {
         });
       }
       return;
+    }
+
+    if (turnedOn && !getAutoCountDhikr()) {
+      toast.success(
+        type === 'tasbeeh'
+          ? t('salatTracker.dhikrMarkedOnly', 'Marked — count it yourself in Tasbih mode')
+          : t('salatTracker.ayatulKursiMarkedOnly', 'Ayatul Kursi marked'),
+        { icon: '✅', duration: 2200 }
+      );
+      return;
+    }
+
+    if (!turnedOn && !wasDhikrCredited(today, prayer, type)) {
+      return; // never credited (auto-count was off when marked) — nothing to undo
     }
 
     const sign: 1 | -1 = turnedOn ? 1 : -1;
@@ -583,6 +610,7 @@ export default function SalatTracker() {
         { icon: '📖', duration: 2000 }
       );
     }
+    setDhikrCredited(today, prayer, type, turnedOn);
 
     // Push to the server NOW rather than waiting out the debounce, then
     // re-hydrate so zustand counts agree with the DB (prevents stale local
@@ -1831,6 +1859,17 @@ export default function SalatTracker() {
                               <span className="text-white/70 font-medium">33·33·34</span> (Muslim
                               596a) in salat settings — both are authentic. Your ʿAṣr school lives
                               there too.
+                            </Trans>
+                          </p>
+                          <p>
+                            <Trans
+                              i18nKey="salatTracker.legendAutoCountInfo"
+                              defaults="🔕 Prefer to count by hand? Turn off <1>Auto-count dhikr</1> in salat settings — tags still mark as done, and Tasbih mode on the Zikr counter becomes your manual way to count them."
+                            >
+                              🔕 Prefer to count by hand? Turn off{' '}
+                              <span className="text-white/70 font-medium">Auto-count dhikr</span> in
+                              salat settings — tags still mark as done, and Tasbih mode on the Zikr
+                              counter becomes your manual way to count them.
                             </Trans>
                           </p>
                           <p>

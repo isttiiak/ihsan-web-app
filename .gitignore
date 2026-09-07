@@ -61,3 +61,8 @@ backend/dist/
 CLAUDE.md
 
 ihsan-feature-audit-2026.md
+
+# Markdown docs — keep only README files tracked (repo-facing); TODO lists,
+# changelogs, session notes and internal docs stay local-only.
+*.md
+!README.md

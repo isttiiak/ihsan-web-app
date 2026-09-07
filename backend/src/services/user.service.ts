@@ -15,6 +15,7 @@ import CycleLog from '../models/CycleLog.js';
 import CycleDay from '../models/CycleDay.js';
 import CycleProfile from '../models/CycleProfile.js';
 import SocialProfile from '../models/SocialProfile.js';
+import PushSubscription from '../models/PushSubscription.js';
 
 // Belt-and-braces: the Zod schema catches invalid photoUrls at the HTTP boundary;
 // this helper protects direct service calls (backup restore, future callers).
@@ -100,6 +101,7 @@ export async function deleteAccount(uid: string): Promise<void> {
     CycleDay.deleteMany({ userId: uid }),
     CycleProfile.deleteMany({ userId: uid }),
     SocialProfile.deleteMany({ userId: uid }),
+    PushSubscription.deleteMany({ userId: uid }),
     User.deleteOne({ uid }),
   ]);
 
