@@ -410,6 +410,21 @@ export default function ZikrCounter() {
     return () => window.removeEventListener('keydown', handler);
   }, [fullScreen]);
 
+  // Browsers handle Escape specially for the Fullscreen API — they exit
+  // native fullscreen directly at the browser-chrome level and don't
+  // reliably deliver it to the page as a keydown, so the handler above can
+  // miss it. Without this, our overlay state stays stuck "open" (native
+  // fullscreen already gone, custom overlay still covering the screen)
+  // until the user manually taps its own close button. `fullscreenchange`
+  // fires for every exit path, so it's the reliable source of truth.
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      if (!document.fullscreenElement) setFullScreen(false);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
   // Lower navbar z-index while in full-screen so the portal overlay covers it
   // + request browser fullscreen API for truly immersive mode
   useEffect(() => {
