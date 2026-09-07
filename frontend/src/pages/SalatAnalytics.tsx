@@ -63,8 +63,16 @@ export default function SalatAnalytics() {
   const navigate = useNavigate();
   const isDemoMode = useAuthStore((s) => s.isDemoMode);
   const [days, setDays] = useState(30);
-  // null = use the period selector; otherwise a specific calendar month
-  const [selectedMonth, setSelectedMonth] = useState<MonthSel | null>(null);
+  // Defaults to the CURRENT calendar month, not a 30-day rolling window — a
+  // fixed lookback can make someone who only recently started tracking (or
+  // who had a rough patch just outside the window) look worse than they are,
+  // which cuts against the whole point of a motivating dashboard. null means
+  // "use the day-count period selector instead"; that's now only reached by
+  // explicitly clicking 30d/90d/1y.
+  const [selectedMonth, setSelectedMonth] = useState<MonthSel | null>(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  });
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
 
