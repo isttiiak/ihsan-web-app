@@ -292,11 +292,14 @@ function LiveClockCard({
   const info = times ? getCurrentAndNextPrayer(times, now) : null;
   const currentMeta = PRAYER_META.find((p) => p.id === info?.current);
   const nextMeta = PRAYER_META.find((p) => p.id === info?.next);
+  // During the sun-setting forbidden window Asr is technically over but
+  // Maghrib hasn't begun — show it as "After: Asr", not "Current: Asr".
+  const isCurrentTrackable = !!currentMeta?.isTrackable && !info?.inForbiddenGap;
 
   // The current prayer's own end time. Before Fajr we are in last night's Isha
   // whose end is today's Fajr — not tonight's Islamic midnight.
   const currentEnd =
-    times && info && currentMeta?.isTrackable
+    times && info && isCurrentTrackable
       ? info.current === 'isha' && now < times.fajr
         ? times.fajr
         : getPrayerEndTime(info.current, times)
@@ -335,7 +338,7 @@ function LiveClockCard({
                 <span className="text-xl">{currentMeta.icon}</span>
                 <div className="text-left">
                   <p className="text-white/40 text-xs uppercase tracking-widest leading-none mb-0.5">
-                    {currentMeta.isTrackable
+                    {isCurrentTrackable
                       ? t('prayerTimes.current', 'Current')
                       : t('prayerTimes.after', 'After')}
                   </p>
@@ -765,7 +768,9 @@ export default function PrayerTimes() {
                   const isActiveNow =
                     entry.kind === 'forbidden' || entry.kind === 'nafl'
                       ? now >= entry.start && now < entry.end
-                      : entry.kind === 'prayer' && info?.current === entry.id;
+                      : entry.kind === 'prayer' &&
+                        info?.current === entry.id &&
+                        !info?.inForbiddenGap;
 
                   // ── Prayer entry ───────────────────────────────────────
                   if (entry.kind === 'prayer') {

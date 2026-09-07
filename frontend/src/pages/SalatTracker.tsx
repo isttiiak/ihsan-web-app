@@ -218,7 +218,10 @@ export default function SalatTracker() {
         } as Record<string, Date>,
         full: times,
         nextTime: info.nextTime,
-        current: info.current as string,
+        // During the sun-setting forbidden window (last ~17 min before
+        // Maghrib), Asr is technically over but Maghrib hasn't begun — don't
+        // highlight either as "current".
+        current: info.inForbiddenGap ? undefined : (info.current as string),
       };
     } catch {
       return null;
@@ -1334,8 +1337,9 @@ export default function SalatTracker() {
                           </button>
                         )}
 
-                        {/* Witr reminder — always shown on Isha card */}
-                        {prayerId === 'isha' && (
+                        {/* Witr reminder — only once Isha has actually started (not
+                            while it's still upcoming today) */}
+                        {prayerId === 'isha' && !isFuture && (
                           <div className="px-3 py-2.5 border-t border-brand-gold/20 flex items-start gap-2 bg-brand-gold/5">
                             <span className="text-base shrink-0">🕯️</span>
                             <div className="min-w-0">

@@ -358,11 +358,16 @@ export function getCurrentAndNextPrayer(times: PrayerTimesResult, now: Date = ne
       ? { id: 'fajr' as PrayerKey, time: new Date(times.fajr.getTime() + 86400_000) }
       : ordered[nextIdx];
 
+  // Asr's own prayer window ends ~17 min before sunset (the sun-setting
+  // forbidden window) — after that point it's misleading to still call Asr
+  // "current" even though Maghrib hasn't started yet.
+  const inForbiddenGap = current === 'asr' && now >= getPrayerEndTime('asr', times);
+
   const msUntilNext = next.time.getTime() - now.getTime();
   const totalSec = Math.max(0, Math.floor(msUntilNext / 1000));
   const hh = Math.floor(totalSec / 3600);
   const mm = Math.floor((totalSec % 3600) / 60);
   const ss = totalSec % 60;
 
-  return { current, next: next.id, nextTime: next.time, hh, mm, ss };
+  return { current, next: next.id, nextTime: next.time, hh, mm, ss, inForbiddenGap };
 }
