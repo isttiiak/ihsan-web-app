@@ -6,6 +6,7 @@ import DemoSignInGate from '../components/DemoSignInGate.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useQuranSummary, useQuranHistory, QURAN_TOTAL_AYAT } from '../hooks/useQuran.js';
 import { loadSurahList, surahDisplayName, type SurahMeta } from '../utils/quranData.js';
+import { formatLocaleNumber } from '../utils/localeDate.js';
 
 /** The whole Quran journey in numbers — reading, listening, khatam, favourites. */
 export default function QuranAnalytics() {
@@ -76,30 +77,38 @@ export default function QuranAnalytics() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
             <p className="text-2xl font-black text-brand-emerald">
-              {summary?.stats.allTimeUnits ?? '—'}
+              {summary ? formatLocaleNumber(summary.stats.allTimeUnits) : '—'}
             </p>
             <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
               {t('quranAnalytics.ayatAllTime')}
             </p>
           </div>
           <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-            <p className="text-2xl font-black text-brand-gold">🔥 {summary?.streak ?? 0}</p>
+            <p className="text-2xl font-black text-brand-gold">
+              🔥 {formatLocaleNumber(summary?.streak ?? 0)}
+            </p>
             <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
-              {t('quranAnalytics.dayStreak', { best: summary?.bestStreak ?? 0 })}
+              {t('quranAnalytics.dayStreak', {
+                best: formatLocaleNumber(summary?.bestStreak ?? 0),
+              })}
             </p>
           </div>
           <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-            <p className="text-2xl font-black text-brand-info">{summary?.stats.last30Units ?? 0}</p>
+            <p className="text-2xl font-black text-brand-info">
+              {formatLocaleNumber(summary?.stats.last30Units ?? 0)}
+            </p>
             <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
               {t('quranAnalytics.ayatLast30')}
             </p>
           </div>
           <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
             <p className="text-2xl font-black text-brand-info">
-              ⭐ {summary?.profile.khatmCount ?? 0}
+              ⭐ {formatLocaleNumber(summary?.profile.khatmCount ?? 0)}
             </p>
             <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
-              {t('quranAnalytics.khatmNow', { pct: khatmPct.toFixed(0) })}
+              {t('quranAnalytics.khatmNow', {
+                pct: formatLocaleNumber(Number(khatmPct.toFixed(0))),
+              })}
             </p>
           </div>
         </div>
@@ -109,7 +118,7 @@ export default function QuranAnalytics() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-white font-black">{t('quranAnalytics.last30Title')}</h2>
             <span className="text-white/30 text-xs">
-              {t('quranAnalytics.daysWithQuran', { active: chart.activeDays })}
+              {t('quranAnalytics.daysWithQuran', { active: formatLocaleNumber(chart.activeDays) })}
             </span>
           </div>
           <div className="flex items-end gap-[3px] h-28">
@@ -146,7 +155,7 @@ export default function QuranAnalytics() {
                     />
                   </div>
                   <span className="text-brand-emerald font-bold w-16 text-right">
-                    ×{t.completions}
+                    ×{formatLocaleNumber(t.completions)}
                   </span>
                 </div>
               ))}
@@ -166,16 +175,12 @@ export default function QuranAnalytics() {
             />
           </div>
           <p className="text-white/40 text-xs mt-2">
-            {summary?.estDaysToKhatm ? (
-              <>
-                {t('quranAnalytics.paceEstimate', { pace: summary.pace })}{' '}
-                <b className="text-brand-emerald">
-                  {t('quranAnalytics.finishIn', { days: summary.estDaysToKhatm })}
-                </b>
-              </>
-            ) : (
-              t('quranAnalytics.paceEmpty')
-            )}
+            {summary?.estDaysToKhatm
+              ? t('quranAnalytics.paceEstimate', {
+                  pace: formatLocaleNumber(summary.pace ?? 0),
+                  days: formatLocaleNumber(summary.estDaysToKhatm),
+                })
+              : t('quranAnalytics.paceEmpty')}
           </p>
         </div>
       </div>
