@@ -451,6 +451,7 @@ interface HeatmapDay {
 }
 
 function HeatmapCalendar({ data }: { data: HeatmapDay[] }) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState<HeatmapDay | null>(null);
 
   const cells = useMemo(() => {
@@ -489,7 +490,7 @@ function HeatmapCalendar({ data }: { data: HeatmapDay[] }) {
 
   return (
     <div className="space-y-2">
-      {hovered && !hovered.date.startsWith('') && (
+      {hovered && hovered.date !== '' && (
         <p className="text-xs text-white/50 h-4">
           {formatLocaleDate(new Date(hovered.date + 'T12:00:00'), {
             month: 'short',
@@ -525,19 +526,19 @@ function HeatmapCalendar({ data }: { data: HeatmapDay[] }) {
         </div>
       </div>
       <div className="flex items-center gap-1.5 justify-end">
-        <span className="text-white/25 text-[10px]">Less</span>
-        {[0, 0.25, 0.5, 0.75, 1].map((t) => (
+        <span className="text-white/25 text-[10px]">{t('zikrAnalytics.heatmapLess', 'Less')}</span>
+        {[0, 0.25, 0.5, 0.75, 1].map((lvl) => (
           <div
-            key={t}
+            key={lvl}
             className="rounded-[2px]"
             style={{
               width: 10,
               height: 10,
-              background: t === 0 ? 'rgba(255,255,255,0.05)' : `rgba(122,158,110,${t})`,
+              background: lvl === 0 ? 'rgba(255,255,255,0.05)' : `rgba(122,158,110,${lvl})`,
             }}
           />
         ))}
-        <span className="text-white/25 text-[10px]">More</span>
+        <span className="text-white/25 text-[10px]">{t('zikrAnalytics.heatmapMore', 'More')}</span>
       </div>
     </div>
   );
