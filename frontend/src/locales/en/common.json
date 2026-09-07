@@ -1083,8 +1083,7 @@
     "ayatAllTime": "ayat (all time)",
     "ayatLast30": "ayat (30d)",
     "dayStreak": "day streak",
-    "daysWithQuran": "days with Quran",
-    "finishIn": "Finish in",
+    "daysWithQuran": "{{active}} days with Quran",
     "khatamProjectionTitle": "Khatam projection",
     "khatmNow": "khatm now",
     "last30Title": "Last 30 days",
@@ -1169,8 +1168,16 @@
     "whyOrderTitle": "Why does the khatam follow muṣḥaf order?",
     "yourChoice": "Read it your way — from surah 1 to 114, at whatever pace feels right."
   },
+  "quranAudioPlayer": {
+    "loggedIntro": "As you listen, āyāt are logged toward your",
+    "dailyGoal": "daily goal",
+    "andStreak": "and streak",
+    "signInToSave": "(sign in to save it)",
+    "loggedTail": "— counted from each surah's own length. Recitation streamed free from the Islamic Network CDN.",
+    "rayhanahNote": "During Rayhanah days, listening keeps your Quran connection — and your Noor — alive."
+  },
   "quranListen": {
-    "listeningCounts": "Listening counts toward your daily ayat goal.",
+    "listeningCounts": "Listening to ayah counts toward your daily ayat goal.",
     "listeningVirtue": "\"When the Quran is recited, listen to it and be silent.\"",
     "title": "Listen"
   },
@@ -2441,6 +2448,8 @@
     "backfillPreview": "+{{amount}} will be added to {{day}}",
     "backfillToast": "{{amount}} {{type}} added to {{day}}",
     "bestDay": "Best Day",
+    "heatmapLess": "Less",
+    "heatmapMore": "More",
     "breakdownByType": "Breakdown by Type",
     "couldNotLoad": "Could not load your analytics",
     "countsToAdd": "Counts to add",
