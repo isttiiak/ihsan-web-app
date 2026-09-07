@@ -4,12 +4,21 @@
 // setting from Settings) via getHijriDate().
 
 import { getHijriDate, formatHijriDate } from './islamicCalendar.js';
+import i18n from '../i18n.js';
 
 // 'ramadan' is logged only by the dedicated Ramadan tracker (/ramadan)
 export type FastingCategory = 'qada' | 'kaffarah' | 'nadhr' | 'voluntary' | 'ramadan';
 export type VoluntaryKind =
-  | 'mon_thu' | 'ayyam_bid' | 'arafah' | 'ashura' | 'shawwal_six'
-  | 'muharram' | 'shaban' | 'dawud' | 'dhul_hijjah' | 'general';
+  | 'mon_thu'
+  | 'ayyam_bid'
+  | 'arafah'
+  | 'ashura'
+  | 'shawwal_six'
+  | 'muharram'
+  | 'shaban'
+  | 'dawud'
+  | 'dhul_hijjah'
+  | 'general';
 export type FastingStatus = 'intended' | 'completed' | 'broken';
 
 export interface FastingRef {
@@ -114,7 +123,8 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
     label: 'Monday / Thursday',
     emoji: '📅',
     when: 'Every Monday and Thursday',
-    virtue: 'Deeds are presented to Allah on these two days — the Prophet ﷺ loved his deeds to be presented while fasting.',
+    virtue:
+      'Deeds are presented to Allah on these two days — the Prophet ﷺ loved his deeds to be presented while fasting.',
     ref: {
       text: '"Deeds are presented on Monday and Thursday, and I love that my deeds be presented while I am fasting."',
       source: 'Jāmiʿ al-Tirmidhī 747',
@@ -129,7 +139,8 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
     label: 'Ayyām al-Bīḍ (White Days)',
     emoji: '🌕',
     when: '13th, 14th, 15th of every Hijri month',
-    virtue: 'Three days each month — with every good deed multiplied by ten, it equals fasting the whole year.',
+    virtue:
+      'Three days each month — with every good deed multiplied by ten, it equals fasting the whole year.',
     ref: {
       text: '"Fast three days of every month — the 13th, 14th, and 15th."',
       source: 'Sunan Abī Dāwūd 2449',
@@ -144,7 +155,8 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
     label: 'Day of ʿArafah',
     emoji: '⛰️',
     when: '9 Dhul Ḥijjah (for those not on Ḥajj)',
-    virtue: 'Expiates the sins of the previous year AND the coming year — the single most rewarding voluntary fast.',
+    virtue:
+      'Expiates the sins of the previous year AND the coming year — the single most rewarding voluntary fast.',
     ref: {
       text: '"Fasting on the day of ʿArafah expiates the sins of the preceding year and the coming year."',
       source: 'Ṣaḥīḥ Muslim 1162b',
@@ -202,7 +214,7 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
     label: "Sha'bān",
     emoji: '☁️',
     when: "Especially the first half of Sha'bān",
-    virtue: 'The Prophet ﷺ fasted more in Sha\'bān than any month besides Ramadan.',
+    virtue: "The Prophet ﷺ fasted more in Sha'bān than any month besides Ramadan.",
     ref: {
       text: '"I never saw him fasting in any month more than in Sha\'bān." — ʿĀʾishah (RA)',
       source: 'Ṣaḥīḥ al-Bukhārī 1969',
@@ -256,8 +268,9 @@ export const VOLUNTARY_META: VoluntaryMeta[] = [
   },
 ];
 
-export const VOLUNTARY_BY_ID: Record<string, VoluntaryMeta> =
-  Object.fromEntries(VOLUNTARY_META.map((m) => [m.id, m]));
+export const VOLUNTARY_BY_ID: Record<string, VoluntaryMeta> = Object.fromEntries(
+  VOLUNTARY_META.map((m) => [m.id, m])
+);
 
 // ─── Prohibited & disliked ───────────────────────────────────────────────────
 
@@ -274,37 +287,46 @@ export const PROHIBITED_INFO: ProhibitionInfo[] = [
     id: 'eid_fitr',
     label: 'Eid al-Fiṭr (1 Shawwāl)',
     emoji: '🎉',
-    detail: 'Fasting on the day of Eid al-Fiṭr is ḥarām — it is the day Allah commanded us to break the fast and celebrate.',
-    refs: [{
-      text: 'The Prophet ﷺ forbade fasting on the day of al-Fiṭr and al-Naḥr (the two Eids).',
-      source: 'Ṣaḥīḥ al-Bukhārī 1991',
-      url: 'https://sunnah.com/bukhari:1991',
-      grade: 'Ṣaḥīḥ',
-    }],
+    detail:
+      'Fasting on the day of Eid al-Fiṭr is ḥarām — it is the day Allah commanded us to break the fast and celebrate.',
+    refs: [
+      {
+        text: 'The Prophet ﷺ forbade fasting on the day of al-Fiṭr and al-Naḥr (the two Eids).',
+        source: 'Ṣaḥīḥ al-Bukhārī 1991',
+        url: 'https://sunnah.com/bukhari:1991',
+        grade: 'Ṣaḥīḥ',
+      },
+    ],
   },
   {
     id: 'eid_adha',
     label: 'Eid al-Aḍḥā (10 Dhul Ḥijjah)',
     emoji: '🐑',
-    detail: 'Fasting on the day of sacrifice is ḥarām — it is a day of eating from the qurbānī and celebration.',
-    refs: [{
-      text: 'The Prophet ﷺ forbade fasting on the day of al-Fiṭr and al-Naḥr (the two Eids).',
-      source: 'Ṣaḥīḥ al-Bukhārī 1991',
-      url: 'https://sunnah.com/bukhari:1991',
-      grade: 'Ṣaḥīḥ',
-    }],
+    detail:
+      'Fasting on the day of sacrifice is ḥarām — it is a day of eating from the qurbānī and celebration.',
+    refs: [
+      {
+        text: 'The Prophet ﷺ forbade fasting on the day of al-Fiṭr and al-Naḥr (the two Eids).',
+        source: 'Ṣaḥīḥ al-Bukhārī 1991',
+        url: 'https://sunnah.com/bukhari:1991',
+        grade: 'Ṣaḥīḥ',
+      },
+    ],
   },
   {
     id: 'tashriq',
     label: 'Days of Tashrīq (11–13 Dhul Ḥijjah)',
     emoji: '🍖',
-    detail: 'The three days after Eid al-Aḍḥā are days of eating, drinking, and remembering Allah — fasting them is prohibited (exception: a pilgrim without a sacrificial animal).',
-    refs: [{
-      text: '"The days of Tashrīq are days of eating, drinking and remembrance of Allah."',
-      source: 'Ṣaḥīḥ Muslim 1141',
-      url: 'https://sunnah.com/muslim:1141a',
-      grade: 'Ṣaḥīḥ',
-    }],
+    detail:
+      'The three days after Eid al-Aḍḥā are days of eating, drinking, and remembering Allah — fasting them is prohibited (exception: a pilgrim without a sacrificial animal).',
+    refs: [
+      {
+        text: '"The days of Tashrīq are days of eating, drinking and remembrance of Allah."',
+        source: 'Ṣaḥīḥ Muslim 1141',
+        url: 'https://sunnah.com/muslim:1141a',
+        grade: 'Ṣaḥīḥ',
+      },
+    ],
   },
 ];
 
@@ -313,49 +335,61 @@ export const DISLIKED_INFO: ProhibitionInfo[] = [
     id: 'friday_alone',
     label: 'Singling out Friday',
     emoji: '🕌',
-    detail: 'Do not fast Friday by itself — join it with Thursday or Saturday. (Fine when it coincides with a habit or a specific day like ʿArafah.)',
-    refs: [{
-      text: '"None of you should fast on Friday unless he fasts a day before or after it."',
-      source: 'Ṣaḥīḥ al-Bukhārī 1985',
-      url: 'https://sunnah.com/bukhari:1985',
-      grade: 'Ṣaḥīḥ',
-    }],
+    detail:
+      'Do not fast Friday by itself — join it with Thursday or Saturday. (Fine when it coincides with a habit or a specific day like ʿArafah.)',
+    refs: [
+      {
+        text: '"None of you should fast on Friday unless he fasts a day before or after it."',
+        source: 'Ṣaḥīḥ al-Bukhārī 1985',
+        url: 'https://sunnah.com/bukhari:1985',
+        grade: 'Ṣaḥīḥ',
+      },
+    ],
   },
   {
     id: 'saturday_alone',
     label: 'Singling out Saturday',
     emoji: '📆',
-    detail: 'Singling out Saturday for voluntary fasting is discouraged by some scholars (it is the day the Jews venerate). Joined with Friday or Sunday, or coinciding with ʿArafah/ʿĀshūrā, it is fine. There is scholarly difference on this hadith.',
-    refs: [{
-      text: '"Do not fast on Saturday except for what has been made obligatory upon you."',
-      source: 'Jāmiʿ al-Tirmidhī 744',
-      url: 'https://sunnah.com/tirmidhi:744',
-      grade: 'Ḥasan (al-Tirmidhī) — graded differently by other scholars',
-    }],
+    detail:
+      'Singling out Saturday for voluntary fasting is discouraged by some scholars (it is the day the Jews venerate). Joined with Friday or Sunday, or coinciding with ʿArafah/ʿĀshūrā, it is fine. There is scholarly difference on this hadith.',
+    refs: [
+      {
+        text: '"Do not fast on Saturday except for what has been made obligatory upon you."',
+        source: 'Jāmiʿ al-Tirmidhī 744',
+        url: 'https://sunnah.com/tirmidhi:744',
+        grade: 'Ḥasan (al-Tirmidhī) — graded differently by other scholars',
+      },
+    ],
   },
   {
     id: 'day_of_doubt',
-    label: 'Day of Doubt (30 Sha\'bān)',
+    label: "Day of Doubt (30 Sha'bān)",
     emoji: '❓',
-    detail: 'Fasting the day when Ramadan\'s start is uncertain is prohibited by most scholars — unless it matches a fasting habit you already keep (e.g. it falls on your usual Monday fast).',
-    refs: [{
-      text: '"Whoever fasts on the day of doubt has disobeyed Abul-Qāsim ﷺ." — ʿAmmār ibn Yāsir (RA)',
-      source: 'Jāmiʿ al-Tirmidhī 686',
-      url: 'https://sunnah.com/tirmidhi:686',
-      grade: 'Ṣaḥīḥ',
-    }],
+    detail:
+      "Fasting the day when Ramadan's start is uncertain is prohibited by most scholars — unless it matches a fasting habit you already keep (e.g. it falls on your usual Monday fast).",
+    refs: [
+      {
+        text: '"Whoever fasts on the day of doubt has disobeyed Abul-Qāsim ﷺ." — ʿAmmār ibn Yāsir (RA)',
+        source: 'Jāmiʿ al-Tirmidhī 686',
+        url: 'https://sunnah.com/tirmidhi:686',
+        grade: 'Ṣaḥīḥ',
+      },
+    ],
   },
   {
     id: 'wisal',
     label: 'Wiṣāl (continuous, no ifṭār)',
     emoji: '⛔',
-    detail: 'Fasting day and night continuously without breaking is forbidden — the Prophet ﷺ said no one is like him in this.',
-    refs: [{
-      text: 'Allah\'s Messenger ﷺ forbade al-Wiṣāl in fasting… "Who amongst you is similar to me?"',
-      source: 'Ṣaḥīḥ al-Bukhārī 1965',
-      url: 'https://sunnah.com/bukhari:1965',
-      grade: 'Ṣaḥīḥ',
-    }],
+    detail:
+      'Fasting day and night continuously without breaking is forbidden — the Prophet ﷺ said no one is like him in this.',
+    refs: [
+      {
+        text: 'Allah\'s Messenger ﷺ forbade al-Wiṣāl in fasting… "Who amongst you is similar to me?"',
+        source: 'Ṣaḥīḥ al-Bukhārī 1965',
+        url: 'https://sunnah.com/bukhari:1965',
+        grade: 'Ṣaḥīḥ',
+      },
+    ],
   },
 ];
 
@@ -402,7 +436,10 @@ export interface DayRuling {
 
 const dislikedById = Object.fromEntries(DISLIKED_INFO.map((d) => [d.id, d]));
 
-export function getDayRuling(date: Date, hijriOverride?: import('./islamicCalendar.js').HijriDate | null): DayRuling {
+export function getDayRuling(
+  date: Date,
+  hijriOverride?: import('./islamicCalendar.js').HijriDate | null
+): DayRuling {
   const h = hijriOverride !== undefined ? hijriOverride : getHijriDate(date);
   const weekday = date.getDay(); // 0=Sun … 5=Fri, 6=Sat
   const recommended: VoluntaryMeta[] = [];
@@ -418,10 +455,16 @@ export function getDayRuling(date: Date, hijriOverride?: import('./islamicCalend
     // ── Prohibited days ─────────────────────────────────────────────────────
     if (h.month === 10 && h.day === 1) {
       return {
-        level: 'haram', recommended: [], cautions: [], hijriLabel,
+        level: 'haram',
+        recommended: [],
+        cautions: [],
+        hijriLabel,
         haram: {
           id: 'eid_fitr',
-          title: 'Today is Eid al-Fiṭr — fasting is ḥarām',
+          title: i18n.t(
+            'fastingRules.haram.eidFitrTitle',
+            'Today is Eid al-Fiṭr — fasting is ḥarām'
+          ),
           detail: PROHIBITED_INFO[0]!.detail,
           refs: PROHIBITED_INFO[0]!.refs,
         },
@@ -429,10 +472,16 @@ export function getDayRuling(date: Date, hijriOverride?: import('./islamicCalend
     }
     if (h.month === 12 && h.day === 10) {
       return {
-        level: 'haram', recommended: [], cautions: [], hijriLabel,
+        level: 'haram',
+        recommended: [],
+        cautions: [],
+        hijriLabel,
         haram: {
           id: 'eid_adha',
-          title: 'Today is Eid al-Aḍḥā — fasting is ḥarām',
+          title: i18n.t(
+            'fastingRules.haram.eidAdhaTitle',
+            'Today is Eid al-Aḍḥā — fasting is ḥarām'
+          ),
           detail: PROHIBITED_INFO[1]!.detail,
           refs: PROHIBITED_INFO[1]!.refs,
         },
@@ -440,10 +489,16 @@ export function getDayRuling(date: Date, hijriOverride?: import('./islamicCalend
     }
     if (h.month === 12 && h.day >= 11 && h.day <= 13) {
       return {
-        level: 'haram', recommended: [], cautions: [], hijriLabel,
+        level: 'haram',
+        recommended: [],
+        cautions: [],
+        hijriLabel,
         haram: {
           id: 'tashriq',
-          title: `Today is a day of Tashrīq (${h.day} Dhul Ḥijjah) — fasting is prohibited`,
+          title: i18n.t('fastingRules.haram.tashriqTitle', {
+            day: h.day,
+            defaultValue: `Today is a day of Tashrīq (${h.day} Dhul Ḥijjah) — fasting is prohibited`,
+          }),
           detail: PROHIBITED_INFO[2]!.detail,
           refs: PROHIBITED_INFO[2]!.refs,
         },
@@ -452,11 +507,14 @@ export function getDayRuling(date: Date, hijriOverride?: import('./islamicCalend
 
     // ── Recommended days (most specific first) ──────────────────────────────
     if (h.month === 12 && h.day === 9) recommended.push(VOLUNTARY_BY_ID['arafah']!);
-    if (h.month === 1 && (h.day === 9 || h.day === 10)) recommended.push(VOLUNTARY_BY_ID['ashura']!);
+    if (h.month === 1 && (h.day === 9 || h.day === 10))
+      recommended.push(VOLUNTARY_BY_ID['ashura']!);
     if (h.day >= 13 && h.day <= 15) recommended.push(VOLUNTARY_BY_ID['ayyam_bid']!);
-    if (h.month === 12 && h.day >= 1 && h.day <= 8) recommended.push(VOLUNTARY_BY_ID['dhul_hijjah']!);
+    if (h.month === 12 && h.day >= 1 && h.day <= 8)
+      recommended.push(VOLUNTARY_BY_ID['dhul_hijjah']!);
     if (h.month === 10 && h.day >= 2) recommended.push(VOLUNTARY_BY_ID['shawwal_six']!);
-    if (h.month === 1 && h.day !== 9 && h.day !== 10) recommended.push(VOLUNTARY_BY_ID['muharram']!);
+    if (h.month === 1 && h.day !== 9 && h.day !== 10)
+      recommended.push(VOLUNTARY_BY_ID['muharram']!);
     if (h.month === 8 && h.day <= 15) recommended.push(VOLUNTARY_BY_ID['shaban']!);
 
     // ── Day of doubt: 30 Sha'bān ────────────────────────────────────────────

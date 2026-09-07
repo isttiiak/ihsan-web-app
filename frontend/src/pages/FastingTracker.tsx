@@ -772,7 +772,7 @@ export default function FastingTracker() {
                         {ruling.haram.title}
                       </p>
                       <p className="text-red-200/60 text-xs leading-relaxed max-w-sm mx-auto">
-                        {ruling.haram.detail}
+                        {t(`fastingRules.prohibitedDetail.${ruling.haram.id}`, ruling.haram.detail)}
                       </p>
                       <div className="flex justify-center gap-2 flex-wrap">
                         {ruling.haram.refs.map((r) => (
@@ -1048,7 +1048,9 @@ export default function FastingTracker() {
                             — {t('fasting.sunnahFast', 'sunnah fast!')}
                           </span>
                         </p>
-                        <p className="text-white/40 text-[11px] leading-snug">{r.virtue}</p>
+                        <p className="text-white/40 text-[11px] leading-snug">
+                          {t(`fastingRules.voluntaryVirtue.${r.id}`, r.virtue)}
+                        </p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <RefLink r={r.ref} />
                           {r.specialDayId && (
@@ -1235,9 +1237,11 @@ export default function FastingTracker() {
                           'A fast runs from dawn (Fajr) to sunset (Maghrib): no food, drink, or intimacy. Make the intention in your heart, eat suhur before dawn, and break your fast promptly at sunset — dates and water are the sunnah.'
                         )}
                       </p>
-                      {FASTING_SUNNAH.map((r) => (
+                      {FASTING_SUNNAH.map((r, i) => (
                         <div key={r.url} className="pl-2 border-l-2 border-brand-emerald/30">
-                          <p className="text-white/40 text-[11px] italic">{r.text}</p>
+                          <p className="text-white/40 text-[11px] italic">
+                            {t(`fastingRules.sunnahText.${i}`, r.text)}
+                          </p>
                           <RefLink r={r} />
                         </div>
                       ))}
@@ -1262,7 +1266,7 @@ export default function FastingTracker() {
                               {m.emoji} {t(`fastingRules.voluntary.${m.id}`, m.label)}
                             </p>
                             <p className="text-white/30 text-[10px] leading-snug mt-0.5">
-                              {m.when}
+                              {t(`fastingRules.voluntaryWhen.${m.id}`, m.when)}
                             </p>
                             <div className="mt-1">
                               <RefLink r={m.ref} />
@@ -1285,7 +1289,9 @@ export default function FastingTracker() {
                           <p className="text-red-300 text-[11px] font-bold">
                             {p.emoji} {t(`fastingRules.prohibited.${p.id}`, p.label)}
                           </p>
-                          <p className="text-white/30 text-[10px] leading-snug">{p.detail}</p>
+                          <p className="text-white/30 text-[10px] leading-snug">
+                            {t(`fastingRules.prohibitedDetail.${p.id}`, p.detail)}
+                          </p>
                           <div className="mt-0.5">
                             {p.refs.map((r) => (
                               <RefLink key={r.url} r={r} />
@@ -1308,7 +1314,9 @@ export default function FastingTracker() {
                           <p className="text-brand-gold/90 text-[11px] font-bold">
                             {p.emoji} {t(`fastingRules.disliked.${p.id}`, p.label)}
                           </p>
-                          <p className="text-white/30 text-[10px] leading-snug">{p.detail}</p>
+                          <p className="text-white/30 text-[10px] leading-snug">
+                            {t(`fastingRules.dislikedDetail.${p.id}`, p.detail)}
+                          </p>
                           <div className="mt-0.5">
                             {p.refs.map((r) => (
                               <RefLink key={r.url} r={r} />
@@ -1324,17 +1332,22 @@ export default function FastingTracker() {
                         🔄 {t('fasting.missedRamadan', 'Missed Ramadan days?')}
                       </p>
                       <p className="text-white/40 text-[11px] leading-relaxed">
+                        {/* components is an ARRAY prop — react-i18next numbers <0>/<1>/...
+                            by that array's own order only, ignoring surrounding text/
+                            whitespace nodes. The old children-based numbering (<1>/<3>/<5>/<7>)
+                            was thrown off by the {' '} whitespace node splitting the first
+                            text run, which shifted every index and rendered a garbled mix
+                            of the Bengali translation and the English defaults. */}
                         <Trans
                           i18nKey="fasting.missedRamadanDesc"
-                          defaults="Days missed for a valid reason are made up as <1>Qada</1> (Quran 2:184). Broke a fast deliberately? That may need <3>Kaffarah</3>. Made a vow to fast? That's <5>Nadhr</5>. Track all three from the <7>Manage</7> button above."
-                        >
-                          Days missed for a valid reason are made up as{' '}
-                          <b className="text-white/60">Qada</b> (Quran 2:184). Broke a fast
-                          deliberately? That may need <b className="text-white/60">Kaffarah</b>.
-                          Made a vow to fast? That&apos;s <b className="text-white/60">Nadhr</b>.
-                          Track all three from the <b className="text-white/60">Manage</b> button
-                          above.
-                        </Trans>
+                          defaults="Days missed for a valid reason are made up as <0>Qada</0> (Quran 2:184). Broke a fast deliberately? That may need <1>Kaffarah</1>. Made a vow to fast? That's <2>Nadhr</2>. Track all three from the <3>Manage</3> button above."
+                          components={[
+                            <b key="0" className="text-white/60" />,
+                            <b key="1" className="text-white/60" />,
+                            <b key="2" className="text-white/60" />,
+                            <b key="3" className="text-white/60" />,
+                          ]}
+                        />
                       </p>
                     </div>
                   </div>
@@ -1406,7 +1419,9 @@ export default function FastingTracker() {
                           </span>
                         )}
                       </p>
-                      <p className="text-white/30 text-[10px] leading-snug">{m.when}</p>
+                      <p className="text-white/30 text-[10px] leading-snug">
+                        {t(`fastingRules.voluntaryWhen.${m.id}`, m.when)}
+                      </p>
                     </div>
                   </button>
                 ))}
@@ -1844,10 +1859,14 @@ export default function FastingTracker() {
                     <p className="text-brand-gold font-bold text-sm">
                       {c.info.emoji} {t(`fastingRules.disliked.${c.info.id}`, c.info.label)}
                     </p>
-                    <p className="text-white/60 text-xs leading-relaxed">{c.info.detail}</p>
-                    {c.info.refs.map((r) => (
+                    <p className="text-white/60 text-xs leading-relaxed">
+                      {t(`fastingRules.dislikedDetail.${c.info.id}`, c.info.detail)}
+                    </p>
+                    {c.info.refs.map((r, i) => (
                       <div key={r.url} className="space-y-0.5 pt-1">
-                        <p className="text-white/30 text-xs italic">{r.text}</p>
+                        <p className="text-white/30 text-xs italic">
+                          {t(`fastingRules.dislikedRefText.${c.info.id}.${i}`, r.text)}
+                        </p>
                         <RefLink r={r} />
                       </div>
                     ))}

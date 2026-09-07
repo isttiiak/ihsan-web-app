@@ -418,7 +418,7 @@
     "manageTitle": "Make-up fasts, kaffarah & vows",
     "mayAllahAccept": "may Allah accept it!",
     "missedRamadan": "Missed Ramadan days?",
-    "missedRamadanDesc": "Days missed for a valid reason are made up as <1>Qada</1> (Quran 2:184). Broke a fast deliberately? That may need <3>Kaffarah</3>. Made a vow to fast? That's <5>Nadhr</5>. Track all three from the <7>Manage</7> button above.",
+    "missedRamadanDesc": "Days missed for a valid reason are made up as <0>Qada</0> (Quran 2:184). Broke a fast deliberately? That may need <1>Kaffarah</1>. Made a vow to fast? That's <2>Nadhr</2>. Track all three from the <3>Manage</3> button above.",
     "nLeft": "{{count}} left",
     "nadhr": "Vow",
     "nadhrHadith": "\"Whoever vows to obey Allah, let him obey Him\" (Bukhārī 6696)",
@@ -702,8 +702,6 @@
   "hijriMonths": {
     "0": "Muharram",
     "1": "Safar",
-    "10": "Dhul Qa'dah",
-    "11": "Dhul Ḥijjah",
     "2": "Rabī' al-Awwal",
     "3": "Rabī' al-Ākhir",
     "4": "Jumādā al-Ūlā",
@@ -712,6 +710,8 @@
     "7": "Sha'bān",
     "8": "Ramaḍān",
     "9": "Shawwāl",
+    "10": "Dhul Qa'dah",
+    "11": "Dhul Ḥijjah",
     "ah": "AH"
   },
   "home": {
@@ -2619,16 +2619,74 @@
       "dawud": "Fast of Dāwūd",
       "general": "General Nafl"
     },
+    "voluntaryWhen": {
+      "mon_thu": "Every Monday and Thursday",
+      "ayyam_bid": "13th, 14th, 15th of every Hijri month",
+      "arafah": "9 Dhul Ḥijjah (for those not on Ḥajj)",
+      "ashura": "10 Muḥarram — add the 9th to differ from the People of the Book",
+      "shawwal_six": "Any six days of Shawwāl (after Eid day)",
+      "muharram": "Any days of Muḥarram (sacred month)",
+      "shaban": "Especially the first half of Sha'bān",
+      "dhul_hijjah": "1–9 Dhul Ḥijjah",
+      "dawud": "Alternate days — the strongest regular pattern",
+      "general": "Any permissible day"
+    },
+    "voluntaryVirtue": {
+      "mon_thu": "Deeds are presented to Allah on these two days — the Prophet ﷺ loved his deeds to be presented while fasting.",
+      "ayyam_bid": "Three days each month — with every good deed multiplied by ten, it equals fasting the whole year.",
+      "arafah": "Expiates the sins of the previous year AND the coming year — the single most rewarding voluntary fast.",
+      "ashura": "Expiates the sins of the previous year.",
+      "shawwal_six": "Ramadan + six of Shawwāl = the reward of fasting the entire year.",
+      "muharram": "The best fasting after Ramadan is in the month of Allah, Muḥarram.",
+      "shaban": "The Prophet ﷺ fasted more in Sha'bān than any month besides Ramadan.",
+      "dhul_hijjah": "No days in which righteous deeds are more beloved to Allah than these.",
+      "dawud": "The most beloved fasting to Allah: fast one day, break the next.",
+      "general": "One day of fasting for Allah distances your face from the Fire by seventy years."
+    },
     "prohibited": {
       "eid_fitr": "Eid al-Fiṭr (1 Shawwāl)",
       "eid_adha": "Eid al-Aḍḥā (10 Dhul Ḥijjah)",
       "tashriq": "Days of Tashrīq (11–13 Dhul Ḥijjah)"
+    },
+    "prohibitedDetail": {
+      "eid_fitr": "Fasting on the day of Eid al-Fiṭr is ḥarām — it is the day Allah commanded us to break the fast and celebrate.",
+      "eid_adha": "Fasting on the day of sacrifice is ḥarām — it is a day of eating from the qurbānī and celebration.",
+      "tashriq": "The three days after Eid al-Aḍḥā are days of eating, drinking, and remembering Allah — fasting them is prohibited (exception: a pilgrim without a sacrificial animal)."
     },
     "disliked": {
       "friday_alone": "Singling out Friday",
       "saturday_alone": "Singling out Saturday",
       "day_of_doubt": "Day of Doubt (30 Sha'bān)",
       "wisal": "Wiṣāl (continuous, no ifṭār)"
+    },
+    "dislikedDetail": {
+      "friday_alone": "Do not fast Friday by itself — join it with Thursday or Saturday. (Fine when it coincides with a habit or a specific day like ʿArafah.)",
+      "saturday_alone": "Singling out Saturday for voluntary fasting is discouraged by some scholars (it is the day the Jews venerate). Joined with Friday or Sunday, or coinciding with ʿArafah/ʿĀshūrā, it is fine. There is scholarly difference on this hadith.",
+      "day_of_doubt": "Fasting the day when Ramadan's start is uncertain is prohibited by most scholars — unless it matches a fasting habit you already keep (e.g. it falls on your usual Monday fast).",
+      "wisal": "Fasting day and night continuously without breaking is forbidden — the Prophet ﷺ said no one is like him in this."
+    },
+    "sunnahText": {
+      "0": "\"Take suḥūr, for in suḥūr there is a blessing.\"",
+      "1": "\"The people will remain upon good as long as they hasten the breaking of the fast.\""
+    },
+    "haram": {
+      "eidFitrTitle": "Today is Eid al-Fiṭr — fasting is ḥarām",
+      "eidAdhaTitle": "Today is Eid al-Aḍḥā — fasting is ḥarām",
+      "tashriqTitle": "Today is a day of Tashrīq ({{day}} Dhul Ḥijjah) — fasting is prohibited"
+    },
+    "dislikedRefText": {
+      "friday_alone": {
+        "0": "\"None of you should fast on Friday unless he fasts a day before or after it.\""
+      },
+      "saturday_alone": {
+        "0": "\"Do not fast on Saturday except for what has been made obligatory upon you.\""
+      },
+      "day_of_doubt": {
+        "0": "\"Whoever fasts on the day of doubt has disobeyed Abul-Qāsim ﷺ.\" — ʿAmmār ibn Yāsir (RA)"
+      },
+      "wisal": {
+        "0": "Allah's Messenger ﷺ forbade al-Wiṣāl in fasting… \"Who amongst you is similar to me?\""
+      }
     }
   },
   "quranTabs": {
