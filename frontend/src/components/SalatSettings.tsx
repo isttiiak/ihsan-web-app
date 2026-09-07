@@ -12,17 +12,11 @@ import {
   getTasbihMode,
   setTasbihMode,
   type TasbihMode,
-  ASR_MADHABS,
-  getAsrMadhab,
-  setAsrMadhab,
-  type AsrMadhab,
-  CALC_METHODS,
-  getCalcMethod,
-  setCalcMethod,
-  type CalculationMethodId,
   AYATUL_KURSI_REF,
 } from '../utils/salatPrefs.js';
 import { translateReference } from '../utils/localeReference.js';
+import { useSalatDebt, useResetSalatDebt } from '../hooks/useSalatLog.js';
+import { getTrackingDay } from '../utils/trackingDay.js';
 
 /**
  * Salat settings — a right-side DRAWER, same shape as QuranSettings.
@@ -38,10 +32,11 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [tasbih, setTasbih] = useState<TasbihMode>(() => getTasbihMode());
-  const [madhab, setMadhab] = useState<AsrMadhab>(() => getAsrMadhab());
-  const [calcMethod, setCalcMethodState] = useState<CalculationMethodId>(() => getCalcMethod());
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const { data: debt } = useSalatDebt();
+  const resetDebt = useResetSalatDebt();
+  const [confirmDebtReset, setConfirmDebtReset] = useState(false);
 
   const handleReset = async () => {
     setResetting(true);
@@ -72,22 +67,21 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
     });
   };
 
-  const chooseMadhab = (m: AsrMadhab) => {
-    setMadhab(m);
-    setAsrMadhab(m);
-    toast.success(t('salatSettings.timesUpdated', 'Prayer times updated'), {
-      icon: '🕌',
-      duration: 1800,
-    });
-  };
-
-  const chooseCalcMethod = (m: CalculationMethodId) => {
-    setCalcMethodState(m);
-    setCalcMethod(m);
-    toast.success(t('salatSettings.timesUpdated', 'Prayer times updated'), {
-      icon: '🕌',
-      duration: 1800,
-    });
+  const handleDebtReset = () => {
+    resetDebt.mutate(
+      { today: getTrackingDay() },
+      {
+        onSuccess: () => {
+          toast.success(
+            t('salatTracker.kazaDebtResetDone', 'Kaza debt reset — counting fresh from today'),
+            { icon: '🌱' }
+          );
+        },
+        onError: () =>
+          toast.error(t('salatTracker.kazaDebtResetFail', 'Could not reset — try again')),
+      }
+    );
+    setConfirmDebtReset(false);
   };
 
   return createPortal(
@@ -216,83 +210,26 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
                 </p>
               </section>
 
-              {/* ── Calculation method ─────────────────────────────────── */}
-              <section>
-                <h3 className="text-white font-bold text-sm">
-                  {t('salatSettings.calcMethodTitle', '🌐 Calculation method')}
-                </h3>
-                <p className="text-white/40 text-xs mt-1 leading-relaxed">
-                  {t(
-                    'salatSettings.calcMethodDesc',
-                    'Sets the Fajr/Isha twilight angles — the main source of disagreement between prayer-time apps. Match your local mosque if times feel off.'
-                  )}
-                </p>
-                <select
-                  value={calcMethod}
-                  onChange={(e) => chooseCalcMethod(e.target.value as CalculationMethodId)}
-                  className="select select-bordered w-full mt-3 bg-white/5 border-brand-emerald/20 text-white text-sm"
-                >
-                  {CALC_METHODS.map((m) => (
-                    <option key={m.id} value={m.id} className="bg-brand-deep text-white">
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-white/40 text-xs mt-2 leading-relaxed">
-                  {CALC_METHODS.find((m) => m.id === calcMethod)?.detail}
-                </p>
-              </section>
-
-              {/* ── Asr madhab ─────────────────────────────────────────── */}
-              <section>
-                <h3 className="text-white font-bold text-sm">
-                  {t('salatSettings.asrTitle', '🕌 ʿAṣr timing (madhab)')}
-                </h3>
-                <p className="text-white/40 text-xs mt-1 leading-relaxed">
-                  {t(
-                    'salatSettings.asrDesc',
-                    'Madhabs differ on when ʿAṣr begins. Because Ẓuhr lasts until ʿAṣr starts, this moves both. Follow your local mosque.'
-                  )}
-                </p>
-
-                <div className="mt-3 space-y-2.5">
-                  {ASR_MADHABS.map((m) => {
-                    const active = madhab === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        onClick={() => chooseMadhab(m.id)}
-                        aria-pressed={active}
-                        className={`w-full text-left p-3.5 rounded-2xl border transition-all ${
-                          active
-                            ? 'border-brand-info/40 bg-brand-info/10'
-                            : 'border-brand-emerald/10 bg-white/5 hover:border-brand-info/30'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span
-                            className={`font-black text-sm ${active ? 'text-brand-info' : 'text-white/80'}`}
-                          >
-                            {m.label}
-                          </span>
-                          {active && (
-                            <span className="text-brand-info text-xs font-bold shrink-0">
-                              {t('salatSettings.using', '✓ Using')}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-white/50 text-xs mt-1 leading-relaxed">{m.detail}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="text-white/25 text-[11px] mt-2.5 leading-relaxed">
-                  {t(
-                    'salatSettings.locationNote',
-                    'Your saved location never leaves this device — prayer times are computed here.'
-                  )}
-                </p>
-              </section>
+              {/* ── Kaza debt reset ─────────────────────────────────── */}
+              {(debt?.totalOwed ?? 0) > 0 && (
+                <section className="rounded-2xl border border-brand-gold/20 bg-brand-gold/[0.06] p-4">
+                  <h3 className="text-brand-gold font-bold text-sm">
+                    {t('salatTracker.kazaDebtTitle', 'Kaza Debt')}
+                  </h3>
+                  <p className="text-white/40 text-xs leading-relaxed mt-1 mb-3">
+                    {t(
+                      'salatSettings.kazaDebtResetDesc',
+                      "Fallen behind for a while? A running total can feel discouraging rather than useful — reset it and count fresh from today. Your prayer history isn't affected, and you can always add debt back on the tracker if you need to."
+                    )}
+                  </p>
+                  <button
+                    onClick={() => setConfirmDebtReset(true)}
+                    className="btn btn-sm border border-brand-gold/30 bg-brand-gold/10 text-brand-gold hover:bg-brand-gold/20 gap-1.5"
+                  >
+                    🌱 {t('salatTracker.kazaDebtReset', 'Reset kaza debt')}
+                  </button>
+                </section>
+              )}
 
               {/* ── Reset tracking ─────────────────────────────────── */}
               <section className="rounded-2xl border border-brand-gold/20 bg-brand-gold/[0.06] p-4">
@@ -347,6 +284,22 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
             }
             onConfirm={() => void handleReset()}
             onCancel={() => setConfirmReset(false)}
+          />
+
+          <ConfirmDialog
+            open={confirmDebtReset}
+            title={t('salatTracker.kazaDebtResetConfirmTitle', 'Reset kaza debt?')}
+            message={t(
+              'salatTracker.kazaDebtResetConfirmMsg',
+              'All prayers owed will be set to 0 and counting restarts from today. Nothing is deleted — your logged prayers stay as they are, and you can add debt back by hand afterward if you need to.'
+            )}
+            confirmLabel={
+              resetDebt.isPending
+                ? t('salatTracker.kazaDebtResetting', 'Resetting…')
+                : t('salatTracker.kazaDebtResetConfirm', 'Yes, start fresh')
+            }
+            onConfirm={handleDebtReset}
+            onCancel={() => setConfirmDebtReset(false)}
           />
         </>
       )}

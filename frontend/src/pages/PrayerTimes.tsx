@@ -4,8 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import Seo from '../components/Seo.js';
-import SalatSettings from '../components/SalatSettings.js';
-import { MapPinIcon, InformationCircleIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import PrayerTimeSettings from '../components/PrayerTimeSettings.js';
+import LocationPicker from '../components/LocationPicker.js';
+import {
+  MapPinIcon,
+  InformationCircleIcon,
+  Cog6ToothIcon,
+  ChevronDownIcon,
+} from '@heroicons/react/24/outline';
 import {
   calcPrayerTimes,
   formatTime,
@@ -17,6 +23,12 @@ import {
 } from '../utils/prayerTimes.js';
 import { getHijriToday, formatHijriDate } from '../utils/islamicCalendar.js';
 import { formatLocaleDate } from '../utils/localeDate.js';
+import { translateReference } from '../utils/localeReference.js';
+import {
+  reverseGeocodeCity,
+  looksLikeRawCoordinates,
+  type StoredLocation,
+} from '../utils/geocode.js';
 
 // ─── Timeline types ───────────────────────────────────────────────────────────
 
@@ -254,14 +266,6 @@ function buildTimeline(
   return entries.sort((a, b) => entryTime(a) - entryTime(b));
 }
 
-// ─── Stored location ──────────────────────────────────────────────────────────
-
-interface StoredLocation {
-  latitude: number;
-  longitude: number;
-  name?: string;
-}
-
 // ─── Live clock card ─────────────────────────────────────────────────────────
 // Owns its own 1-second tick so the rest of the page (timeline, ~20 animated
 // cards) doesn't re-render every second.
@@ -442,27 +446,58 @@ function LiveClockCard({
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+const SOURCE_REFS: {
+  key: string;
+  labelKey: string;
+  labelFallback: string;
+  refs: { cite: string; url: string }[];
+}[] = [
+  {
+    key: 'forbidden',
+    labelKey: 'prayerTimes.sourcesForbiddenLabel',
+    labelFallback: 'Forbidden times',
+    refs: [
+      { cite: 'Ṣaḥīḥ al-Bukhārī 581, 585, 586', url: 'https://sunnah.com/bukhari:581' },
+      { cite: 'Ṣaḥīḥ Muslim 831', url: 'https://sunnah.com/muslim:831' },
+    ],
+  },
+  {
+    key: 'ishraq',
+    labelKey: 'prayerTimes.sourcesIshraqLabel',
+    labelFallback: 'Ishraq/Duha',
+    refs: [
+      { cite: 'Tirmidhī 586', url: 'https://sunnah.com/tirmidhi:586' },
+      { cite: 'Ṣaḥīḥ Muslim 717', url: 'https://sunnah.com/muslim:717' },
+    ],
+  },
+  {
+    key: 'awwabin',
+    labelKey: 'prayerTimes.sourcesAwwabinLabel',
+    labelFallback: 'Awwabin',
+    refs: [{ cite: 'Ibn Mājah 1167', url: 'https://sunnah.com/ibnmajah:1167' }],
+  },
+  {
+    key: 'tahajjud',
+    labelKey: 'prayerTimes.sourcesTahajjudLabel',
+    labelFallback: 'Tahajjud',
+    refs: [
+      { cite: 'Ṣaḥīḥ al-Bukhārī 1145', url: 'https://sunnah.com/bukhari:1145' },
+      { cite: 'Ṣaḥīḥ Muslim 758, 1163', url: 'https://sunnah.com/muslim:758' },
+    ],
+  },
+];
+
 export default function PrayerTimes() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [now, setNow] = useState(new Date());
   const [location, setLocation] = useState<StoredLocation | null>(() => {
     const s = localStorage.getItem('ihsan_location');
     return s ? (JSON.parse(s) as StoredLocation) : null;
   });
   const [times, setTimes] = useState<PrayerTimesResult | null>(null);
-  const [locLoading, setLocLoading] = useState(false);
-  const [locError, setLocError] = useState('');
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-
-  // City search state
-  const [cityInput, setCityInput] = useState('');
-  const [citySearching, setCitySearching] = useState(false);
-  const [cityError, setCityError] = useState('');
-  const [showCitySearch, setShowCitySearch] = useState(false);
-  const [citySuggestions, setCitySuggestions] = useState<
-    Array<{ lat: string; lon: string; display_name: string }>
-  >([]);
+  const [sourcesExpanded, setSourcesExpanded] = useState(false);
 
   // 60-second tick for timeline active/past states — the live clock has its
   // own 1-second tick inside LiveClockCard so the whole page isn't re-rendered
@@ -481,87 +516,22 @@ export default function PrayerTimes() {
   const saveLocation = useCallback((loc: StoredLocation) => {
     setLocation(loc);
     localStorage.setItem('ihsan_location', JSON.stringify(loc));
-    setShowCitySearch(false);
-    setCityInput('');
-    setCityError('');
   }, []);
 
-  const requestLocation = useCallback(() => {
-    setLocLoading(true);
-    setLocError('');
-    if (!('geolocation' in navigator)) {
-      setLocError(
-        t('prayerTimes.geoNotSupported', 'Geolocation not supported — use city search instead.')
-      );
-      setLocLoading(false);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        let name = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
-        try {
-          const r = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-          );
-          const d = (await r.json()) as {
-            address?: { city?: string; town?: string; village?: string; country?: string };
-          };
-          const city = d.address?.city ?? d.address?.town ?? d.address?.village;
-          const country = d.address?.country;
-          if (city || country) name = [city, country].filter(Boolean).join(', ');
-        } catch {
-          /* use coords fallback */
-        }
-        saveLocation({ latitude, longitude, name });
-        setLocLoading(false);
-      },
-      () => {
-        // GPS denied — nudge city search
-        setLocError(t('prayerTimes.gpsDenied', 'GPS denied. Type your city below.'));
-        setShowCitySearch(true);
-        setLocLoading(false);
-      },
-      { timeout: 10000 }
-    );
-  }, [saveLocation, t]);
-
-  const searchByCity = useCallback(async () => {
-    if (!cityInput.trim()) return;
-    setCitySearching(true);
-    setCityError('');
-    setCitySuggestions([]);
-    try {
-      const r = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityInput)}&format=json&limit=5`
-      );
-      const results = (await r.json()) as Array<{ lat: string; lon: string; display_name: string }>;
-      if (!results.length) {
-        setCityError(t('prayerTimes.cityNotFound', 'City not found. Try a different name.'));
-        setCitySearching(false);
-        return;
-      }
-      if (results.length === 1) {
-        const { lat, lon, display_name } = results[0];
-        const shortName = display_name.split(',').slice(0, 2).join(',').trim();
-        saveLocation({ latitude: parseFloat(lat), longitude: parseFloat(lon), name: shortName });
-      } else {
-        setCitySuggestions(results);
-      }
-    } catch {
-      setCityError(t('prayerTimes.searchFailed', 'Search failed. Check your internet connection.'));
-    }
-    setCitySearching(false);
-  }, [cityInput, saveLocation, t]);
-
-  const pickSuggestion = useCallback(
-    (s: { lat: string; lon: string; display_name: string }) => {
-      const shortName = s.display_name.split(',').slice(0, 2).join(',').trim();
-      saveLocation({ latitude: parseFloat(s.lat), longitude: parseFloat(s.lon), name: shortName });
-      setCitySuggestions([]);
-    },
-    [saveLocation]
-  );
+  // Self-heal: a location saved while reverse geocoding failed (network
+  // blip, rate limit) is stuck showing raw coordinates forever, since
+  // nothing else re-triggers the lookup. Quietly retry once per visit.
+  useEffect(() => {
+    if (!location || !looksLikeRawCoordinates(location.name)) return;
+    let cancelled = false;
+    void reverseGeocodeCity(location.latitude, location.longitude).then((city) => {
+      if (city && !cancelled) saveLocation({ ...location, name: city });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when the coordinates themselves change, not on every saveLocation identity
+  }, [location?.latitude, location?.longitude]);
 
   const info = times ? getCurrentAndNextPrayer(times, now) : null;
 
@@ -588,14 +558,6 @@ export default function PrayerTimes() {
               🧭 {t('qibla.title', 'Qibla Compass')}
             </Link>
             <div className="flex items-center gap-2 min-w-0">
-              <button
-                onClick={() => setShowSettings(true)}
-                aria-label={t('salatSettings.title', 'Salat settings')}
-                title={t('salatSettings.title', 'Salat settings')}
-                className="shrink-0 p-1.5 rounded-xl border border-brand-emerald/20 bg-white/5 text-white/50 hover:text-brand-emerald hover:border-brand-emerald/40 transition-colors"
-              >
-                <Cog6ToothIcon className="w-4 h-4" />
-              </button>
               {location && (
                 <div className="flex items-center gap-1.5 text-white/50 text-xs min-w-0">
                   <MapPinIcon className="w-3.5 h-3.5 text-brand-emerald shrink-0" />
@@ -603,139 +565,35 @@ export default function PrayerTimes() {
                 </div>
               )}
               <button
-                onClick={() => {
-                  setShowCitySearch(!showCitySearch);
-                  setLocError('');
-                }}
-                className="btn btn-xs bg-brand-surface border border-brand-border text-white/50 hover:text-white shrink-0"
+                onClick={() => setShowSettings(true)}
+                aria-label={t('prayerTimeSettings.title', 'Prayer time settings')}
+                title={t('prayerTimeSettings.title', 'Prayer time settings')}
+                className="shrink-0 p-1.5 rounded-xl border border-brand-emerald/20 bg-white/5 text-white/50 hover:text-brand-emerald hover:border-brand-emerald/40 transition-colors"
               >
-                <MapPinIcon className="w-3 h-3" />{' '}
-                {location
-                  ? t('prayerTimes.change', 'Change')
-                  : t('prayerTimes.setLocation', 'Set Location')}
+                <Cog6ToothIcon className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          <SalatSettings open={showSettings} onClose={() => setShowSettings(false)} />
+          <PrayerTimeSettings
+            open={showSettings}
+            onClose={() => setShowSettings(false)}
+            location={location}
+            onLocationChange={saveLocation}
+          />
 
-          {/* Location panel — shows when no location or user clicks Change */}
-          <AnimatePresence>
-            {(showCitySearch || !location) && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="card bg-brand-surface border border-brand-border rounded-2xl">
-                  <div className="card-body p-4 space-y-3">
-                    <p className="text-white/60 text-sm font-semibold">
-                      {!location
-                        ? t(
-                            'prayerTimes.setLocationPrompt',
-                            'Set your location to see prayer times'
-                          )
-                        : t('prayerTimes.updateLocation', 'Update location')}
-                    </p>
-
-                    {/* Option 1: GPS */}
-                    <button
-                      onClick={requestLocation}
-                      disabled={locLoading}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-brand-emerald/10 border border-brand-emerald/30 hover:border-brand-emerald/60 text-left transition-all"
-                    >
-                      {locLoading ? (
-                        <span className="loading loading-spinner loading-xs text-brand-emerald" />
-                      ) : (
-                        <span className="text-lg">📡</span>
-                      )}
-                      <div>
-                        <p className="text-brand-emerald font-semibold text-sm">
-                          {t('prayerTimes.useGps', 'Use GPS (recommended)')}
-                        </p>
-                        <p className="text-white/30 text-xs">
-                          {t(
-                            'prayerTimes.gpsDesc',
-                            'Most accurate. Requires browser location permission.'
-                          )}
-                        </p>
-                      </div>
-                    </button>
-                    {locError && <p className="text-red-400 text-xs">{locError}</p>}
-
-                    {/* Divider */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-px bg-brand-border" />
-                      <span className="text-white/20 text-xs">{t('prayerTimes.or', 'or')}</span>
-                      <div className="flex-1 h-px bg-brand-border" />
-                    </div>
-
-                    {/* Option 2: City search */}
-                    <div>
-                      <p className="text-white/40 text-xs mb-2">
-                        {t(
-                          'prayerTimes.citySearchDesc',
-                          'Search by city — no GPS needed, times are still accurate'
-                        )}
-                      </p>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={cityInput}
-                          onChange={(e) => setCityInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') void searchByCity();
-                          }}
-                          placeholder={t(
-                            'prayerTimes.cityPlaceholder',
-                            'e.g. Dhaka, London, Karachi...'
-                          )}
-                          className="input input-sm flex-1 bg-brand-deep border border-brand-border text-white placeholder-white/20 focus:border-brand-emerald/40 focus:outline-none"
-                        />
-                        <button
-                          onClick={() => void searchByCity()}
-                          disabled={citySearching || !cityInput.trim()}
-                          className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim text-white border-none"
-                        >
-                          {citySearching ? (
-                            <span className="loading loading-spinner loading-xs" />
-                          ) : (
-                            t('prayerTimes.search', 'Search')
-                          )}
-                        </button>
-                      </div>
-                      {cityError && <p className="text-red-400 text-xs mt-1">{cityError}</p>}
-                      {citySuggestions.length > 0 && (
-                        <div className="mt-2 space-y-1">
-                          <p className="text-white/40 text-[11px]">
-                            {t('prayerTimes.pickCity', 'Pick your city:')}
-                          </p>
-                          {citySuggestions.map((s, i) => (
-                            <button
-                              key={i}
-                              onClick={() => pickSuggestion(s)}
-                              className="w-full text-left px-3 py-2 rounded-lg bg-white/5 border border-brand-border hover:border-brand-emerald/40 text-white/70 hover:text-white text-xs transition-all"
-                            >
-                              {s.display_name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <p className="text-white/15 text-xs">
-                      {t(
-                        'prayerTimes.locationPrivacy',
-                        'Your location is stored only in this browser and never sent to our servers.'
-                      )}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* First-run prompt — no location saved yet. Once set, changing it
+              lives in Prayer time settings (⚙️ above), not inline here. */}
+          {!location && (
+            <div className="card bg-brand-surface border border-brand-border rounded-2xl">
+              <div className="card-body p-4 space-y-3">
+                <p className="text-white/60 text-sm font-semibold">
+                  {t('prayerTimes.setLocationPrompt', 'Set your location to see prayer times')}
+                </p>
+                <LocationPicker onLocationChange={saveLocation} />
+              </div>
+            </div>
+          )}
 
           {/* Header */}
           <motion.div
@@ -1040,102 +898,71 @@ export default function PrayerTimes() {
                 })}
               </div>
 
-              {/* Sources note */}
+              {/* Sources — collapsed by default */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="card bg-brand-surface/60 border border-brand-border/60 rounded-2xl"
+                className="card bg-brand-surface/60 border border-brand-border/60 rounded-2xl overflow-hidden"
               >
-                <div className="card-body p-4">
-                  <p className="text-white/30 text-xs font-semibold uppercase tracking-wide mb-2 flex items-center gap-1">
-                    <InformationCircleIcon className="w-3.5 h-3.5" /> Sources
-                  </p>
-                  <div className="space-y-1.5 text-xs text-white/25 leading-relaxed">
-                    <p>
-                      <span className="text-white/40 font-semibold">Prayer times</span> — calculated
-                      locally using the <span className="text-white/40">adhan</span> library with
-                      the <span className="text-white/40">Moonsighting Committee</span> method
-                      (suitable for worldwide use). No external API — all calculations use your GPS
-                      coordinates only.
-                    </p>
-                    <p>
-                      <span className="text-white/40 font-semibold">Forbidden times</span> — Ṣaḥīḥ
-                      al-Bukhārī 581, 585, 586 ·{' '}
-                      <a
-                        href="https://sunnah.com/bukhari:581"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white/40 underline hover:text-white/60"
-                      >
-                        sunnah.com/bukhari:581
-                      </a>{' '}
-                      · Ṣaḥīḥ Muslim 831 ·{' '}
-                      <a
-                        href="https://sunnah.com/muslim:831"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white/40 underline hover:text-white/60"
-                      >
-                        sunnah.com/muslim:831
-                      </a>
-                    </p>
-                    <p>
-                      <span className="text-white/40 font-semibold">Ishraq/Duha</span> — Tirmidhī
-                      586 ·{' '}
-                      <a
-                        href="https://sunnah.com/tirmidhi:586"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white/40 underline hover:text-white/60"
-                      >
-                        sunnah.com/tirmidhi:586
-                      </a>{' '}
-                      · Ṣaḥīḥ Muslim 717 ·{' '}
-                      <a
-                        href="https://sunnah.com/muslim:717"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white/40 underline hover:text-white/60"
-                      >
-                        sunnah.com/muslim:717
-                      </a>
-                    </p>
-                    <p>
-                      <span className="text-white/40 font-semibold">Awwabin</span> — Ibn Mājah 1167
-                      ·{' '}
-                      <a
-                        href="https://sunnah.com/ibnmajah:1167"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white/40 underline hover:text-white/60"
-                      >
-                        sunnah.com/ibnmajah:1167
-                      </a>
-                    </p>
-                    <p>
-                      <span className="text-white/40 font-semibold">Tahajjud</span> — Ṣaḥīḥ
-                      al-Bukhārī 1145 ·{' '}
-                      <a
-                        href="https://sunnah.com/bukhari:1145"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white/40 underline hover:text-white/60"
-                      >
-                        sunnah.com/bukhari:1145
-                      </a>{' '}
-                      · Ṣaḥīḥ Muslim 758, 1163 ·{' '}
-                      <a
-                        href="https://sunnah.com/muslim:758"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white/40 underline hover:text-white/60"
-                      >
-                        sunnah.com/muslim:758
-                      </a>
-                    </p>
-                  </div>
-                </div>
+                <button
+                  onClick={() => setSourcesExpanded((v) => !v)}
+                  className="w-full card-body p-4 flex-row items-center justify-between gap-2 text-left"
+                >
+                  <span className="text-white/30 text-xs font-semibold uppercase tracking-wide flex items-center gap-1">
+                    <InformationCircleIcon className="w-3.5 h-3.5" />{' '}
+                    {t('prayerTimes.sourcesTitle', 'Sources')}
+                  </span>
+                  <ChevronDownIcon
+                    className={`w-3.5 h-3.5 text-white/30 shrink-0 transition-transform ${sourcesExpanded ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                <AnimatePresence>
+                  {sourcesExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 pb-4 space-y-1.5 text-xs text-white/25 leading-relaxed">
+                        <p>
+                          <span className="text-white/40 font-semibold">
+                            {t('prayerTimes.sourcesPrayerTimesLabel', 'Prayer times')}
+                          </span>{' '}
+                          —{' '}
+                          {t(
+                            'prayerTimes.sourcesPrayerTimesDesc',
+                            'Calculated locally using the adhan library with the Moonsighting Committee method (suitable for worldwide use). No external API — all calculations use your GPS coordinates only.'
+                          )}
+                        </p>
+                        {SOURCE_REFS.map((entry) => (
+                          <p key={entry.key}>
+                            <span className="text-white/40 font-semibold">
+                              {t(entry.labelKey, entry.labelFallback)}
+                            </span>{' '}
+                            —{' '}
+                            {entry.refs.map((ref, i) => (
+                              <span key={ref.url}>
+                                {i > 0 && ' · '}
+                                {translateReference(ref.cite, i18n.language)} ·{' '}
+                                <a
+                                  href={ref.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-white/40 underline hover:text-white/60"
+                                >
+                                  {ref.url.replace('https://', '')}
+                                </a>
+                              </span>
+                            ))}
+                          </p>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             </>
           ) : null}

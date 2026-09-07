@@ -22,7 +22,6 @@ import {
   useSalatAnalytics,
   useSalatDebt,
   useSetSalatDebt,
-  useResetSalatDebt,
   PrayerId,
   PrayerStatus,
   PrayerLocation,
@@ -43,7 +42,6 @@ import { useCycleActive } from '../hooks/useCycle.js';
 import { useFastingHistory, useUpsertFastingLog } from '../hooks/useFasting.js';
 import ExcusedCard from '../components/ExcusedCard.js';
 import SalatSettings from '../components/SalatSettings.js';
-import ConfirmDialog from '../components/ConfirmDialog.js';
 import Seo from '../components/Seo.js';
 import { useZikrStore } from '../store/useZikrStore.js';
 import {
@@ -308,11 +306,9 @@ export default function SalatTracker() {
   // "Reset" gives a demotivated user a clean slate without losing history.
   const { data: debt } = useSalatDebt();
   const setDebtExact = useSetSalatDebt();
-  const resetDebt = useResetSalatDebt();
   const [debtExpanded, setDebtExpanded] = useState(false);
   const [legendExpanded, setLegendExpanded] = useState(false);
   const [debtDrafts, setDebtDrafts] = useState<Partial<Record<PrayerId, string>>>({});
-  const [confirmDebtReset, setConfirmDebtReset] = useState(false);
 
   const commitDebtEdit = (prayer: PrayerId, rawValue: string) => {
     setDebtDrafts((d) => {
@@ -328,22 +324,6 @@ export default function SalatTracker() {
       return;
     }
     setDebtExact.mutate({ prayer, count, date: todayStr() });
-  };
-  const handleDebtReset = () => {
-    resetDebt.mutate(
-      { today: todayStr() },
-      {
-        onSuccess: () => {
-          toast.success(
-            t('salatTracker.kazaDebtResetDone', 'Kaza debt reset — counting fresh from today'),
-            { icon: '🌱' }
-          );
-        },
-        onError: () =>
-          toast.error(t('salatTracker.kazaDebtResetFail', 'Could not reset — try again')),
-      }
-    );
-    setConfirmDebtReset(false);
   };
 
   const naflEntry = log?.nafl ?? { completed: false, types: [], rakat: 2 };
@@ -1720,17 +1700,14 @@ export default function SalatTracker() {
                           })}
                           {(debt?.totalOwed ?? 0) > 0 && (
                             <div className="pt-2.5 mt-1 border-t border-brand-emerald/5">
-                              <p className="text-white/25 text-[11px] leading-relaxed mb-2">
-                                {t(
-                                  'salatTracker.kazaDebtResetHint',
-                                  "Fallen behind for a while? A running total can feel discouraging rather than useful — reset it and count fresh from today. Your prayer history isn't affected, and you can always add debt back above if you need to."
-                                )}
-                              </p>
                               <button
-                                onClick={() => setConfirmDebtReset(true)}
-                                className="btn btn-xs border border-brand-gold/25 bg-brand-gold/5 text-brand-gold/80 hover:bg-brand-gold/15 gap-1"
+                                onClick={() => setShowSettings(true)}
+                                className="text-brand-gold/60 hover:text-brand-gold text-[11px] underline underline-offset-2"
                               >
-                                🌱 {t('salatTracker.kazaDebtReset', 'Reset kaza debt')}
+                                {t(
+                                  'salatTracker.kazaDebtResetPointer',
+                                  '🌱 Reset it in ⚙️ Salat settings'
+                                )}
                               </button>
                             </div>
                           )}
@@ -1740,22 +1717,6 @@ export default function SalatTracker() {
                   </AnimatePresence>
                 </motion.div>
               )}
-
-              <ConfirmDialog
-                open={confirmDebtReset}
-                title={t('salatTracker.kazaDebtResetConfirmTitle', 'Reset kaza debt?')}
-                message={t(
-                  'salatTracker.kazaDebtResetConfirmMsg',
-                  'All prayers owed will be set to 0 and counting restarts from today. Nothing is deleted — your logged prayers stay as they are, and you can add debt back by hand afterward if you need to.'
-                )}
-                confirmLabel={
-                  resetDebt.isPending
-                    ? t('salatTracker.kazaDebtResetting', 'Resetting…')
-                    : t('salatTracker.kazaDebtResetConfirm', 'Yes, start fresh')
-                }
-                onConfirm={handleDebtReset}
-                onCancel={() => setConfirmDebtReset(false)}
-              />
 
               {/* Legend */}
               <div className="card bg-brand-surface border border-brand-border rounded-2xl overflow-hidden">

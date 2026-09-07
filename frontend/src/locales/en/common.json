@@ -863,6 +863,15 @@
     "description": "The page you're looking for doesn't exist or has been moved.",
     "heading": "Page not found"
   },
+  "prayerTimeSettings": {
+    "close": "Close prayer time settings",
+    "locationDesc": "Prayer times are calculated from this location, on this device — it never leaves your browser.",
+    "locationTitle": "📍 Location",
+    "locationUpdated": "Location updated",
+    "noLocation": "Not set",
+    "title": "Prayer time settings",
+    "trackerHint": "Looking for tasbīḥ counting or kaza debt? That's in"
+  },
   "prayerTimes": {
     "seoTitle": "Prayer Times — Accurate Salat Times for Your Location",
     "seoDescription": "On-device prayer time calculator for Fajr, Dhuhr, Asr, Maghrib and Isha, with multiple calculation methods, Hanafi/standard Asr settings and a live countdown.",
@@ -909,6 +918,13 @@
     "setLocation": "Set Location",
     "setLocationHint": "Set your location above to calculate prayer times",
     "setLocationPrompt": "Set your location to see prayer times",
+    "sourcesAwwabinLabel": "Awwabin",
+    "sourcesForbiddenLabel": "Forbidden times",
+    "sourcesIshraqLabel": "Ishraq/Duha",
+    "sourcesPrayerTimesDesc": "Calculated locally using the adhan library with the Moonsighting Committee method (suitable for worldwide use). No external API — all calculations use your GPS coordinates only.",
+    "sourcesPrayerTimesLabel": "Prayer times",
+    "sourcesTahajjudLabel": "Tahajjud",
+    "sourcesTitle": "Sources",
     "startsAt": "starts at",
     "sunsetEvent": "Sunset — Forbidden Window Ends",
     "sunsetEventNote": "Sun sets. The sunset forbidden window ends. Maghrib begins shortly after.",
@@ -1674,6 +1690,7 @@
     "calcMethodTitle": "🌐 Calculation method",
     "close": "Close salat settings",
     "dangerZoneHint": "Looking for data deletion? Everything lives in",
+    "kazaDebtResetDesc": "Fallen behind for a while? A running total can feel discouraging rather than useful — reset it and count fresh from today. Your prayer history isn't affected, and you can always add debt back on the tracker if you need to.",
     "locationNote": "Your saved location never leaves this device — prayer times are computed here.",
     "resetConfirm": "Yes, start fresh",
     "resetConfirmMsg": "Your streak and analytics will start fresh from today. All past prayer logs will be preserved — they just won't count toward the new stats.",
@@ -1788,6 +1805,7 @@
     "kazaDebtResetting": "Resetting…",
     "kazaDebtResetDone": "Kaza debt reset — counting fresh from today",
     "kazaDebtResetFail": "Could not reset — try again",
+    "kazaDebtResetPointer": "🌱 Reset it in ⚙️ Salat settings",
     "jumuahAutoMosque": "🕌 Marked at the mosque automatically — Jumu'ah is only valid in congregation.",
     "jumuahKazaAlone": "⏰ Made up as an ordinary Dhuhr, prayed alone — Jumu'ah itself has no kaza."
   },
