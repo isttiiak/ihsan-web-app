@@ -52,8 +52,11 @@ import {
   getAutoCountDhikr,
   wasDhikrCredited,
   setDhikrCredited,
+  getShowSunnahGuide,
+  getShowNaflGuide,
 } from '../utils/salatPrefs.js';
 import { recitationsFor, recitationHref } from '../utils/postSalatQuran.js';
+import { SUNNAH_GUIDE, type SunnahSlot } from '../utils/sunnahGuide.js';
 import { getFridayHour, FRIDAY_HOUR_REF } from '../utils/fridayHour.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 import { translateReference } from '../utils/localeReference.js';
@@ -100,6 +103,68 @@ function isFuturePrayer(
 }
 function isCurrentPrayer(prayerId: string, currentId: string | undefined): boolean {
   return prayerId === currentId;
+}
+
+/** One before/after sunnah-rak'ah guidance row — same visual contract as the
+ * existing Witr reminder block (gold accent), just re-colored per emphasis:
+ * emerald for Sunnah Mu'akkadah (confirmed), info-blue for the lighter
+ * ghair-mu'akkadah/nafl set, so the two toggles read as visually distinct. */
+function SunnahGuidanceRow({
+  slot,
+  position,
+  lang,
+}: {
+  slot: SunnahSlot;
+  position: 'before' | 'after';
+  lang: string;
+}) {
+  const { t } = useTranslation();
+  const muakkadah = slot.emphasis === 'muakkadah';
+  // Tailwind's JIT scanner needs literal class strings — a templated
+  // `border-${accent}/20` would never get generated into the built CSS.
+  const cls = muakkadah
+    ? {
+        wrap: 'px-3 py-2.5 border-t border-brand-emerald/20 flex items-start gap-2 bg-brand-emerald/5',
+        title: 'text-brand-emerald font-bold text-xs leading-tight',
+        sub: 'text-brand-emerald/70 font-normal',
+        link: 'text-brand-emerald/50 text-xs underline hover:text-brand-emerald/80 transition-colors mt-0.5 inline-block',
+      }
+    : {
+        wrap: 'px-3 py-2.5 border-t border-brand-info/20 flex items-start gap-2 bg-brand-info/5',
+        title: 'text-brand-info font-bold text-xs leading-tight',
+        sub: 'text-brand-info/70 font-normal',
+        link: 'text-brand-info/50 text-xs underline hover:text-brand-info/80 transition-colors mt-0.5 inline-block',
+      };
+  return (
+    <div className={cls.wrap}>
+      <span className="text-base shrink-0">{position === 'before' ? '⏮️' : '⏭️'}</span>
+      <div className="min-w-0">
+        <p className={cls.title}>
+          {position === 'before'
+            ? t('salatTracker.sunnahBefore', '{{rakat}} rakʿah sunnah before', {
+                rakat: slot.rakat,
+              })
+            : t('salatTracker.sunnahAfter', '{{rakat}} rakʿah sunnah after', { rakat: slot.rakat })}
+          {' · '}
+          <span className={cls.sub}>
+            {muakkadah
+              ? t('salatTracker.sunnahMuakkadah', 'Muʾakkadah — confirmed')
+              : t('salatTracker.sunnahGhairMuakkadah', 'Nafl — recommended')}
+          </span>
+        </p>
+        <p className="text-white/30 text-xs leading-relaxed mt-0.5">{slot.note}</p>
+        <a
+          href={slot.sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className={cls.link}
+        >
+          📖 {translateReference(slot.source, lang)} · {translateReference(slot.grade, lang)}
+        </a>
+      </div>
+    </div>
+  );
 }
 function weekDotColor(completed: number): string {
   if (completed >= 5) return '#10b981'; // brand-emerald
@@ -1344,6 +1409,35 @@ export default function SalatTracker() {
                             </span>
                           </button>
                         )}
+
+                        {/* Sunnah/nafl rak'ah guidance — same "time has started"
+                            gate as Witr below, independently toggleable per
+                            emphasis (Salat settings). */}
+                        {!isFuture &&
+                          (() => {
+                            const guide = SUNNAH_GUIDE[prayerId];
+                            if (!guide) return null;
+                            const showMuakkadah = getShowSunnahGuide();
+                            const showNafl = getShowNaflGuide();
+                            const slots: Array<{ slot: SunnahSlot; position: 'before' | 'after' }> =
+                              [];
+                            if (guide.before)
+                              slots.push({ slot: guide.before, position: 'before' });
+                            if (guide.after) slots.push({ slot: guide.after, position: 'after' });
+                            return slots.map(({ slot, position }) => {
+                              const visible =
+                                slot.emphasis === 'muakkadah' ? showMuakkadah : showNafl;
+                              if (!visible) return null;
+                              return (
+                                <SunnahGuidanceRow
+                                  key={`${prayerId}-${position}`}
+                                  slot={slot}
+                                  position={position}
+                                  lang={i18n.language}
+                                />
+                              );
+                            });
+                          })()}
 
                         {/* Witr reminder — only once Isha has actually started (not
                             while it's still upcoming today) */}

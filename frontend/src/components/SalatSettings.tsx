@@ -15,6 +15,10 @@ import {
   AYATUL_KURSI_REF,
   getAutoCountDhikr,
   setAutoCountDhikr,
+  getShowSunnahGuide,
+  setShowSunnahGuide,
+  getShowNaflGuide,
+  setShowNaflGuide,
 } from '../utils/salatPrefs.js';
 import { translateReference } from '../utils/localeReference.js';
 import { useSalatDebt, useResetSalatDebt } from '../hooks/useSalatLog.js';
@@ -35,6 +39,8 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
   const queryClient = useQueryClient();
   const [tasbih, setTasbih] = useState<TasbihMode>(() => getTasbihMode());
   const [autoCount, setAutoCount] = useState<boolean>(() => getAutoCountDhikr());
+  const [showSunnah, setShowSunnah] = useState<boolean>(() => getShowSunnahGuide());
+  const [showNafl, setShowNafl] = useState<boolean>(() => getShowNaflGuide());
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
   const { data: debt } = useSalatDebt();
@@ -73,6 +79,16 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
   const toggleAutoCount = (value: boolean) => {
     setAutoCount(value);
     setAutoCountDhikr(value);
+  };
+
+  const toggleShowSunnah = (value: boolean) => {
+    setShowSunnah(value);
+    setShowSunnahGuide(value);
+  };
+
+  const toggleShowNafl = (value: boolean) => {
+    setShowNafl(value);
+    setShowNaflGuide(value);
   };
 
   const handleDebtReset = () => {
@@ -238,6 +254,63 @@ export default function SalatSettings({ open, onClose }: { open: boolean; onClos
                   {translateReference(AYATUL_KURSI_REF.source, i18n.language)} ·{' '}
                   {translateReference(AYATUL_KURSI_REF.grade, i18n.language)}
                 </p>
+              </section>
+
+              {/* ── Sunnah/nafl rakʿah guidance ─────────────────────── */}
+              <section className="rounded-2xl border border-brand-emerald/20 bg-brand-emerald/[0.06] p-4 space-y-4">
+                <div>
+                  <h3 className="text-brand-emerald font-bold text-sm">
+                    {t('salatSettings.sunnahGuideTitle', '🕋 Sunnah & nafl guidance')}
+                  </h3>
+                  <p className="text-white/40 text-xs mt-1 leading-relaxed">
+                    {t(
+                      'salatSettings.sunnahGuideDesc',
+                      "Which rakʿahs to pray around each farḍ — shown on the tracker once that prayer's time starts."
+                    )}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-white/80 text-xs font-semibold">
+                      {t('salatSettings.sunnahMuakkadahToggle', 'Sunnah Muʾakkadah')}
+                    </p>
+                    <p className="text-white/35 text-[11px] mt-0.5">
+                      {t(
+                        'salatSettings.sunnahMuakkadahToggleDesc',
+                        'The confirmed rawātib — Fajr, Ẓuhr, Maghrib, ʿIshāʾ'
+                      )}
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-success toggle-sm shrink-0"
+                    checked={showSunnah}
+                    onChange={(e) => toggleShowSunnah(e.target.checked)}
+                    aria-label={t('salatSettings.sunnahMuakkadahToggle', 'Sunnah Muʾakkadah')}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-white/80 text-xs font-semibold">
+                      {t('salatSettings.naflGuideToggle', 'Nafl guidance')}
+                    </p>
+                    <p className="text-white/35 text-[11px] mt-0.5">
+                      {t(
+                        'salatSettings.naflGuideToggleDesc',
+                        'Lighter-emphasis extras — 4 before ʿAṣr, 2 before Maghrib'
+                      )}
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-info toggle-sm shrink-0"
+                    checked={showNafl}
+                    onChange={(e) => toggleShowNafl(e.target.checked)}
+                    aria-label={t('salatSettings.naflGuideToggle', 'Nafl guidance')}
+                  />
+                </div>
               </section>
 
               {/* ── Kaza debt reset ─────────────────────────────────── */}

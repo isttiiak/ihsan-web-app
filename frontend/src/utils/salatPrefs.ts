@@ -195,6 +195,54 @@ export function setDhikrCredited(
   writeCreditedRecord(today, record);
 }
 
+// ─── sunnah/nafl rak'ah guidance toggles ────────────────────────────────────
+
+/** Sunnah Mu'akkadah (confirmed rawātib — Fajr/Dhuhr/Maghrib/Isha) guidance
+ * shown once each prayer's time has started. On by default — same
+ * always-visible precedent as the existing Witr reminder. */
+const SHOW_SUNNAH_KEY = 'ihsan_show_sunnah_guide';
+export const DEFAULT_SHOW_SUNNAH_GUIDE = true;
+
+export function getShowSunnahGuide(): boolean {
+  try {
+    const v = localStorage.getItem(SHOW_SUNNAH_KEY);
+    return v === null ? DEFAULT_SHOW_SUNNAH_GUIDE : v === '1';
+  } catch {
+    return DEFAULT_SHOW_SUNNAH_GUIDE;
+  }
+}
+
+export function setShowSunnahGuide(value: boolean): void {
+  try {
+    localStorage.setItem(SHOW_SUNNAH_KEY, value ? '1' : '0');
+  } catch {
+    /* private mode */
+  }
+}
+
+/** Ghair Mu'akkadah / lighter nafl guidance (4 before ʿAṣr, 2 before
+ * Maghrib) — a separate toggle since these carry a lighter emphasis than
+ * the confirmed rawātib and some users may only want the confirmed set. */
+const SHOW_NAFL_KEY = 'ihsan_show_nafl_guide';
+export const DEFAULT_SHOW_NAFL_GUIDE = true;
+
+export function getShowNaflGuide(): boolean {
+  try {
+    const v = localStorage.getItem(SHOW_NAFL_KEY);
+    return v === null ? DEFAULT_SHOW_NAFL_GUIDE : v === '1';
+  } catch {
+    return DEFAULT_SHOW_NAFL_GUIDE;
+  }
+}
+
+export function setShowNaflGuide(value: boolean): void {
+  try {
+    localStorage.setItem(SHOW_NAFL_KEY, value ? '1' : '0');
+  } catch {
+    /* private mode */
+  }
+}
+
 // ─── ʿAṣr calculation school ────────────────────────────────────────────────
 
 /**
