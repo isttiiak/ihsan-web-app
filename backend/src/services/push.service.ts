@@ -16,12 +16,28 @@ const vapidPublicKey = process.env.VAPID_PUBLIC_KEY ?? '';
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY ?? '';
 const vapidSubject = process.env.VAPID_SUBJECT ?? 'mailto:admin@example.com';
 
+// A malformed key/subject makes web-push throw SYNCHRONOUSLY, right here at
+// module load. This file is imported transitively by app.ts (via
+// push.controller -> push.routes), so an uncaught throw here previously took
+// down the ENTIRE Express app on cold start — every route, not just push
+// ones — since the whole module graph failed to load. Push notifications
+// must never be able to crash the rest of the API; they just stay disabled.
+let vapidConfigured = false;
 if (vapidPublicKey && vapidPrivateKey) {
-  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+  try {
+    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+    vapidConfigured = true;
+  } catch (err) {
+    console.error('[push] Invalid VAPID configuration — push notifications disabled:', err);
+  }
 }
 
 export function getVapidPublicKey(): string {
-  return vapidPublicKey;
+  return vapidConfigured ? vapidPublicKey : '';
+}
+
+export function isPushConfigured(): boolean {
+  return vapidConfigured;
 }
 
 const DEFAULT_CATEGORIES: IPushCategories = {

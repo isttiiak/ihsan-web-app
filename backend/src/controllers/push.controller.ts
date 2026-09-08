@@ -12,6 +12,10 @@ export const subscribeHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    if (!pushService.isPushConfigured()) {
+      res.status(503).json({ ok: false, error: 'Push notifications are not configured' });
+      return;
+    }
     const { endpoint, keys, categories, timezoneOffset, location } = req.body as {
       endpoint: string;
       keys: { p256dh: string; auth: string };
