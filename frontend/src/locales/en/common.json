@@ -2458,8 +2458,12 @@
     "syncing": "syncing",
     "tapSound": "Tap sound",
     "tapSoundDesc": "A soft click on every count, like wooden tasbih beads.",
+    "tasbihCustom": "Custom",
     "tasbihMode": "Tasbih mode",
-    "tasbihModeDesc": "Auto-advance SubhanAllah → Alhamdulillah → Allahu Akbar every 33 counts, looping back after 99.",
+    "tasbihModeDesc": "Count down from a target instead of up — pick how many, then each tap counts down. A distinct vibration + celebration marks the set complete, then it starts over.",
+    "tasbihOfTarget": "{{done}} of {{target}} · lifetime {{lifetime}}",
+    "tasbihSetComplete": "{{count}} done — set complete",
+    "tasbihTargetLabel": "Target",
     "toast": {
       "addFailed": "Could not add — try again",
       "added": "Added to your list",

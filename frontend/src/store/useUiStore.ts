@@ -11,8 +11,12 @@ interface UiState {
   vibrationEnabled: boolean;
   /** Subtle click sound on each zikr count tap */
   zikrSoundEnabled: boolean;
-  /** Tasbih mode: auto-cycle SubhanAllah → Alhamdulillah → Allahu Akbar every 33 counts */
+  /** Tasbih mode: count DOWN from tasbihTarget for the selected dhikr, with
+   * a distinct completion feedback at 0 (a session-scoped countdown, not
+   * tied to the dhikr's lifetime total). */
   tasbihMode: boolean;
+  /** How many counts one tasbih segment is worth (33/34/99/100/custom) */
+  tasbihTarget: number;
   /** Master toggle for zikr audio playback features */
   zikrAudioEnabled: boolean;
   /** Volume for zikr audio (0–1) */
@@ -24,6 +28,7 @@ interface UiState {
   setVibrationEnabled: (val: boolean) => void;
   setZikrSoundEnabled: (val: boolean) => void;
   setTasbihMode: (val: boolean) => void;
+  setTasbihTarget: (val: number) => void;
   setZikrAudioEnabled: (val: boolean) => void;
   setZikrAudioVolume: (val: number) => void;
 }
@@ -36,6 +41,10 @@ export const useUiStore = create<UiState>((set) => ({
   vibrationEnabled: localStorage.getItem('ihsan_vibration') !== '0',
   zikrSoundEnabled: localStorage.getItem('ihsan_zikr_sound') !== '0',
   tasbihMode: localStorage.getItem('ihsan_tasbih_mode') === '1',
+  tasbihTarget: Math.max(
+    1,
+    parseInt(localStorage.getItem('ihsan_tasbih_target') || '33', 10) || 33
+  ),
   zikrAudioEnabled: localStorage.getItem('ihsan_zikr_audio') !== '0',
   zikrAudioVolume: parseFloat(localStorage.getItem('ihsan_zikr_volume') || '0.7'),
 
@@ -72,6 +81,12 @@ export const useUiStore = create<UiState>((set) => ({
   setTasbihMode: (val) => {
     localStorage.setItem('ihsan_tasbih_mode', val ? '1' : '0');
     set({ tasbihMode: !!val });
+  },
+
+  setTasbihTarget: (val) => {
+    const clamped = Math.max(1, Math.min(1000, Math.round(val) || 33));
+    localStorage.setItem('ihsan_tasbih_target', String(clamped));
+    set({ tasbihTarget: clamped });
   },
 
   setZikrAudioEnabled: (val) => {

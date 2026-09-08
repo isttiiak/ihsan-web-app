@@ -249,10 +249,6 @@ const FULL_PREDEFINED: Record<
   },
 };
 
-// Classic Tasbih Fatima cycle — tasbih mode auto-advances through these three
-// at 33 each (99 total) before looping back to the start.
-const TASBIH_CYCLE = ['SubhanAllah', 'Alhamdulillah', 'Allahu Akbar'];
-
 const GLOW_PALETTE = [
   {
     glow: 'rgba(122,158,110,0.9)',
@@ -318,6 +314,7 @@ export default function ZikrCounter() {
   const vibrationEnabled = useUiStore((s) => s.vibrationEnabled);
   const zikrSoundEnabled = useUiStore((s) => s.zikrSoundEnabled);
   const tasbihMode = useUiStore((s) => s.tasbihMode);
+  const tasbihTarget = useUiStore((s) => s.tasbihTarget);
   const zikrAudioEnabled = useUiStore((s) => s.zikrAudioEnabled);
   const zikrAudioVolume = useUiStore((s) => s.zikrAudioVolume);
   const setZikrAudioVolume = useUiStore((s) => s.setZikrAudioVolume);
@@ -492,27 +489,57 @@ export default function ZikrCounter() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deps intentionally narrowed; the omitted values are stable or would retrigger this effect unnecessarily
   }, [fetchedTypes?.length, hiddenTypes]);
 
+  // Tasbih mode: a SESSION-scoped countdown, independent of the dhikr's
+  // lifetime total. `segmentStart` is the lifetime count at the moment the
+  // current segment began — "done so far" is always currentCount minus this,
+  // so it survives re-renders without its own running counter. Reset
+  // whenever tasbih mode turns on, the dhikr changes, or the target changes.
+  const [segmentStart, setSegmentStart] = useState<number | null>(null);
+  useEffect(() => {
+    if (tasbihMode) setSegmentStart(currentCount);
+    else setSegmentStart(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately NOT reacting to currentCount (would reset the segment on every tap); only these three should start a fresh segment
+  }, [tasbihMode, selected, tasbihTarget]);
+
+  const tasbihDoneInSegment = segmentStart === null ? 0 : currentCount - segmentStart;
+  const tasbihRemaining =
+    segmentStart === null ? null : Math.max(0, tasbihTarget - tasbihDoneInSegment);
+
   const onIncrement = useCallback(() => {
     increment();
     scheduleFlush();
     setColorIdx((i) => (i + 1) % GLOW_PALETTE.length);
     if (zikrSoundEnabled) playZikrClick();
-    // Haptic pulse on supported mobile browsers — a plain short pulse on every
-    // tap, and a distinct, longer pattern at each 33/66/99 tasbih milestone so
-    // an eyes-free user can feel their position in the cycle without looking.
-    if (vibrationEnabled && 'vibrate' in navigator) {
+
+    if (tasbihMode && segmentStart !== null) {
+      const doneAfter = currentCount + 1 - segmentStart;
+      if (doneAfter >= tasbihTarget) {
+        // Segment complete — the one moment tasbih mode needs feedback loud
+        // enough to notice without looking (this REPLACES the plain-tap
+        // pulse below for this tap, not on top of it).
+        if (vibrationEnabled && 'vibrate' in navigator) {
+          navigator.vibrate([60, 80, 60, 80, 250]);
+        }
+        celebrateGoal();
+        toast.success(
+          t('zikr.tasbihSetComplete', '{{count}} done — set complete', { count: tasbihTarget }),
+          { icon: '📿', duration: 2600 }
+        );
+        setSegmentStart(currentCount + 1);
+      } else if (vibrationEnabled && 'vibrate' in navigator) {
+        navigator.vibrate(10);
+      }
+    } else if (vibrationEnabled && 'vibrate' in navigator) {
+      // Haptic pulse on supported mobile browsers — a plain short pulse on
+      // every tap, and a distinct, longer pattern at each 33/66/99 lifetime
+      // milestone so an eyes-free user can feel their overall progress.
+      // Skipped in tasbih mode above — the segment-complete pulse takes over
+      // as the meaningful milestone there instead.
       const newCount = currentCount + 1;
       if (newCount % 99 === 0) navigator.vibrate([20, 50, 20, 50, 20, 50, 30]);
       else if (newCount % 66 === 0) navigator.vibrate([15, 40, 15, 40, 15]);
       else if (newCount % 33 === 0) navigator.vibrate([15, 40, 15]);
       else navigator.vibrate(10);
-    }
-    // Tasbih mode: every 33rd count on a cycle dhikr auto-advances to the next one
-    if (tasbihMode) {
-      const cycleIdx = TASBIH_CYCLE.indexOf(selected);
-      if (cycleIdx !== -1 && (currentCount + 1) % 33 === 0) {
-        selectType(TASBIH_CYCLE[(cycleIdx + 1) % TASBIH_CYCLE.length]!);
-      }
     }
   }, [
     increment,
@@ -520,19 +547,11 @@ export default function ZikrCounter() {
     zikrSoundEnabled,
     vibrationEnabled,
     tasbihMode,
-    selected,
+    segmentStart,
+    tasbihTarget,
     currentCount,
-    selectType,
+    t,
   ]);
-
-  // Entering tasbih mode mid-session jumps to the start of the cycle so the
-  // 33-count boundaries line up correctly.
-  useEffect(() => {
-    if (tasbihMode && !TASBIH_CYCLE.includes(selected)) {
-      selectType(TASBIH_CYCLE[0]!);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to tasbihMode flipping on
-  }, [tasbihMode]);
 
   // Decrements must flush too — they queue a negative pending delta so the
   // minus button reaches the database, not just the local count.
@@ -895,7 +914,7 @@ export default function ZikrCounter() {
               reduce-motion users get an instant swap. */}
           <div className="pt-10 pb-4 text-center">
             <motion.div
-              key={`${selected}:${currentCount}`}
+              key={`${selected}:${tasbihRemaining ?? currentCount}`}
               initial={reduceMotion ? false : { scale: 0.9 }}
               animate={{ scale: 1 }}
               transition={{ type: 'tween', duration: 0.12, ease: 'easeOut' }}
@@ -907,18 +926,28 @@ export default function ZikrCounter() {
                   transition: 'text-shadow 0.25s ease',
                 }}
               >
-                {formatLocaleNumber(currentCount)}
+                {formatLocaleNumber(tasbihRemaining ?? currentCount)}
               </div>
             </motion.div>
-            <button
-              onClick={() => {
-                setSetCountValue(String(currentCount));
-                setShowSetCount(true);
-              }}
-              className="mt-1 text-[11px] text-white/30 hover:text-brand-emerald underline underline-offset-2 transition-colors"
-            >
-              {t('zikr.setCountBtn', 'Set')}
-            </button>
+            {tasbihRemaining !== null ? (
+              <p className="mt-1 text-[11px] text-white/40">
+                {t('zikr.tasbihOfTarget', '{{done}} of {{target}} · lifetime {{lifetime}}', {
+                  done: formatLocaleNumber(tasbihDoneInSegment),
+                  target: formatLocaleNumber(tasbihTarget),
+                  lifetime: formatLocaleNumber(currentCount),
+                })}
+              </p>
+            ) : (
+              <button
+                onClick={() => {
+                  setSetCountValue(String(currentCount));
+                  setShowSetCount(true);
+                }}
+                className="mt-1 text-[11px] text-white/30 hover:text-brand-emerald underline underline-offset-2 transition-colors"
+              >
+                {t('zikr.setCountBtn', 'Set')}
+              </button>
+            )}
           </div>
 
           {/* Divider */}
@@ -1473,7 +1502,7 @@ export default function ZikrCounter() {
 
                 {/* Huge counter number — one soft pop per tap, steady gentle glow */}
                 <motion.span
-                  key={`fs:${selected}:${currentCount}`}
+                  key={`fs:${selected}:${tasbihRemaining ?? currentCount}`}
                   initial={reduceMotion ? false : { scale: 0.94 }}
                   animate={{ scale: 1 }}
                   transition={{ type: 'tween', duration: 0.14, ease: 'easeOut' }}
@@ -1483,8 +1512,18 @@ export default function ZikrCounter() {
                     textShadow: '0 0 60px rgba(122,158,110,0.35)',
                   }}
                 >
-                  {formatLocaleNumber(currentCount)}
+                  {formatLocaleNumber(tasbihRemaining ?? currentCount)}
                 </motion.span>
+
+                {tasbihRemaining !== null && (
+                  <p className="text-white/25 text-xs sm:text-sm -mt-2">
+                    {t('zikr.tasbihOfTarget', '{{done}} of {{target}} · lifetime {{lifetime}}', {
+                      done: formatLocaleNumber(tasbihDoneInSegment),
+                      target: formatLocaleNumber(tasbihTarget),
+                      lifetime: formatLocaleNumber(currentCount),
+                    })}
+                  </p>
+                )}
 
                 {/* Transliteration — faint caption below number */}
                 {meaning?.transliteration && (

@@ -15,6 +15,8 @@ import api from '../lib/api.js';
 import ConfirmDialog from './ConfirmDialog.js';
 import { useUiStore } from '../store/useUiStore.js';
 
+const TASBIH_TARGET_PRESETS = [33, 34, 99, 100];
+
 export default function ZikrSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -22,6 +24,9 @@ export default function ZikrSettings({ open, onClose }: { open: boolean; onClose
   const [resetting, setResetting] = useState(false);
   const tasbihMode = useUiStore((s) => s.tasbihMode);
   const setTasbihMode = useUiStore((s) => s.setTasbihMode);
+  const tasbihTarget = useUiStore((s) => s.tasbihTarget);
+  const setTasbihTarget = useUiStore((s) => s.setTasbihTarget);
+  const [customTarget, setCustomTarget] = useState('');
   const zikrSoundEnabled = useUiStore((s) => s.zikrSoundEnabled);
   const setZikrSoundEnabled = useUiStore((s) => s.setZikrSoundEnabled);
   const zikrAudioEnabled = useUiStore((s) => s.zikrAudioEnabled);
@@ -101,9 +106,53 @@ export default function ZikrSettings({ open, onClose }: { open: boolean; onClose
                 <p className="text-white/40 text-xs leading-relaxed mt-2">
                   {t(
                     'zikr.tasbihModeDesc',
-                    'Auto-advance SubhanAllah → Alhamdulillah → Allahu Akbar every 33 counts, looping back after 99.'
+                    'Count down from a target instead of up — pick how many, then each tap counts down. A distinct vibration + celebration marks the set complete, then it starts over.'
                   )}
                 </p>
+                {tasbihMode && (
+                  <div className="mt-3">
+                    <p className="text-white/50 text-xs mb-1.5">
+                      {t('zikr.tasbihTargetLabel', 'Target')}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {TASBIH_TARGET_PRESETS.map((n) => (
+                        <button
+                          key={n}
+                          onClick={() => {
+                            setTasbihTarget(n);
+                            setCustomTarget('');
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
+                            tasbihTarget === n
+                              ? 'border-brand-emerald/50 bg-brand-emerald/15 text-brand-emerald'
+                              : 'border-brand-emerald/10 bg-white/5 text-white/50 hover:border-brand-emerald/30'
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                      <input
+                        type="number"
+                        min={1}
+                        max={1000}
+                        inputMode="numeric"
+                        placeholder={t('zikr.tasbihCustom', 'Custom')}
+                        value={customTarget}
+                        onChange={(e) => setCustomTarget(e.target.value)}
+                        onBlur={() => {
+                          const n = parseInt(customTarget, 10);
+                          if (Number.isFinite(n) && n > 0) setTasbihTarget(n);
+                          setCustomTarget('');
+                        }}
+                        className={`w-20 px-2.5 py-1.5 rounded-xl text-xs font-bold border bg-white/5 text-white/80 placeholder:text-white/25 focus:outline-none ${
+                          !TASBIH_TARGET_PRESETS.includes(tasbihTarget) && !customTarget
+                            ? 'border-brand-emerald/50 bg-brand-emerald/15 text-brand-emerald'
+                            : 'border-brand-emerald/10'
+                        }`}
+                      />
+                    </div>
+                  </div>
+                )}
               </section>
 
               <section className="rounded-2xl border border-brand-emerald/20 bg-brand-emerald/[0.06] p-4">
