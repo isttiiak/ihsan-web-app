@@ -22,6 +22,8 @@ import {
 } from '../hooks/useSalatLog.js';
 import { PRAYER_META } from '../utils/prayerTimes.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
+import KazaDebtChart from '../components/analytics/KazaDebtChart.js';
+import MosqueTrendChart from '../components/analytics/MosqueTrendChart.js';
 
 const PERIOD_OPTIONS = [
   { label: '30d', value: 30 },
@@ -615,81 +617,15 @@ export default function SalatAnalytics() {
                     </div>
                   </div>
 
-                  {/* Kaza debt chart — weekly accumulation vs payback, stacked bars */}
+                  {/* Kaza debt chart — weekly accumulation vs payback, grouped bars */}
                   {debtHistory && debtHistory.some((w) => w.accumulated > 0 || w.paidBack > 0) && (
                     <div className="space-y-3">
                       <h2 className="text-white font-black text-sm flex items-center gap-2">
                         <ChartBarIcon className="w-4 h-4 text-brand-emerald" />{' '}
                         {t('salatAnalytics.kazaDebtChart')}
                       </h2>
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="card bg-brand-deep/80 border border-brand-border rounded-2xl overflow-x-auto"
-                      >
-                        <div className="card-body p-5">
-                          <div className="flex items-center gap-3 text-[11px] text-white/50 mb-3">
-                            <span className="flex items-center gap-1">
-                              <span className="w-2.5 h-2.5 rounded-sm bg-red-500/70 inline-block" />{' '}
-                              {t('salatAnalytics.kazaDebtAccumulated')}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <span className="w-2.5 h-2.5 rounded-sm bg-brand-emerald inline-block" />{' '}
-                              {t('salatAnalytics.kazaDebtPaidBack')}
-                            </span>
-                          </div>
-                          {(() => {
-                            const maxTotal = Math.max(
-                              1,
-                              ...debtHistory.map((w) => w.accumulated + w.paidBack)
-                            );
-                            return (
-                              <div className="flex items-end gap-2 h-36 min-w-max">
-                                {debtHistory.map((w, i) => {
-                                  const total = w.accumulated + w.paidBack;
-                                  const barHeightPct = (total / maxTotal) * 100;
-                                  const accShare = total > 0 ? (w.accumulated / total) * 100 : 0;
-                                  const paidShare = total > 0 ? (w.paidBack / total) * 100 : 0;
-                                  return (
-                                    <div
-                                      key={w.weekStart}
-                                      className="flex flex-col items-center gap-1.5 w-9 shrink-0"
-                                    >
-                                      <div className="w-full h-24 bg-white/5 rounded-md flex flex-col justify-end overflow-hidden">
-                                        <motion.div
-                                          initial={{ height: 0 }}
-                                          animate={{ height: `${barHeightPct}%` }}
-                                          transition={{ duration: 0.5, delay: i * 0.03 }}
-                                          className="w-full flex flex-col justify-end rounded-t-sm overflow-hidden"
-                                        >
-                                          <div
-                                            style={{ height: `${accShare}%` }}
-                                            className="w-full bg-red-500/70"
-                                            title={`+${w.accumulated}`}
-                                          />
-                                          <div
-                                            style={{ height: `${paidShare}%` }}
-                                            className="w-full bg-brand-emerald"
-                                            title={`-${w.paidBack}`}
-                                          />
-                                        </motion.div>
-                                      </div>
-                                      <span className="text-white/25 text-[9px]">
-                                        {formatLocaleDate(new Date(w.weekStart + 'T12:00:00'), {
-                                          month: 'short',
-                                          day: 'numeric',
-                                        })}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            );
-                          })()}
-                          <p className="text-white/25 text-[10px] mt-3">
-                            {t('salatAnalytics.kazaDebtChartHint')}
-                          </p>
-                        </div>
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                        <KazaDebtChart data={debtHistory} />
                       </motion.div>
                     </div>
                   )}
@@ -701,42 +637,8 @@ export default function SalatAnalytics() {
                         <ChartBarIcon className="w-4 h-4 text-brand-emerald" />{' '}
                         {t('salatAnalytics.mosqueTrend')}
                       </h2>
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="card bg-brand-deep/80 border border-brand-border rounded-2xl overflow-x-auto"
-                      >
-                        <div className="card-body p-5">
-                          <div className="flex items-end gap-2 h-36 min-w-max">
-                            {data.weeklyMosqueTrend.map((w, i) => (
-                              <div
-                                key={w.weekStart}
-                                className="flex flex-col items-center gap-1.5 w-9 shrink-0"
-                              >
-                                <span className="text-white/40 text-[10px] font-bold">
-                                  {formatLocaleNumber(w.rate)}%
-                                </span>
-                                <div className="w-full h-24 bg-white/5 rounded-md flex items-end overflow-hidden">
-                                  <motion.div
-                                    initial={{ height: 0 }}
-                                    animate={{ height: `${w.rate}%` }}
-                                    transition={{ duration: 0.5, delay: i * 0.03 }}
-                                    className="w-full bg-gradient-to-t from-brand-emerald to-brand-info rounded-t-sm"
-                                  />
-                                </div>
-                                <span className="text-white/25 text-[9px]">
-                                  {formatLocaleDate(new Date(w.weekStart + 'T12:00:00'), {
-                                    month: 'short',
-                                    day: 'numeric',
-                                  })}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                          <p className="text-white/25 text-[10px] mt-3">
-                            {t('salatAnalytics.mosqueTrendHint')}
-                          </p>
-                        </div>
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                        <MosqueTrendChart data={data.weeklyMosqueTrend} />
                       </motion.div>
                     </div>
                   )}
