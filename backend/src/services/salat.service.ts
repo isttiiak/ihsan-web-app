@@ -382,11 +382,19 @@ export async function getSalatAnalytics(
 
   // Weekly mosque attendance trend — 7-day buckets ending "today", oldest
   // first, capped at the last 12 weeks so a 1-year view doesn't render 52 bars.
+  // Below 14 days, bucket by DAY instead — weekly buckets on a short window
+  // (e.g. "current month so far" on the 8th) produce one real 7-day week
+  // plus a lopsided 1-day leftover, with x-axis labels a day apart that read
+  // as a bug (reported directly by a user looking at exactly this case; see
+  // the identical fix in salatDebt.service.ts's getDebtHistory).
   const weeklyMosqueTrend: SalatAnalyticsResult['weeklyMosqueTrend'] = [];
-  const totalWeeks = Math.min(12, Math.ceil(effectiveDays / 7));
+  const mosqueBucketIsDaily = effectiveDays < 14;
+  const totalWeeks = mosqueBucketIsDaily
+    ? effectiveDays
+    : Math.min(12, Math.ceil(effectiveDays / 7));
   for (let w = totalWeeks - 1; w >= 0; w--) {
-    const weekEnd = shiftDateStr(today, -(w * 7));
-    const weekStart = shiftDateStr(weekEnd, -6);
+    const weekEnd = mosqueBucketIsDaily ? shiftDateStr(today, -w) : shiftDateStr(today, -(w * 7));
+    const weekStart = mosqueBucketIsDaily ? weekEnd : shiftDateStr(weekEnd, -6);
     const clampedStart = weekStart < statsCutoff ? statsCutoff : weekStart;
     let weekMosque = 0;
     let weekPrayed = 0;

@@ -52,6 +52,9 @@ router.get(
   validate(salatDebtHistorySchema),
   salatController.getDebtHistory
 );
+// GET /api/salat/debt/insights — derived from the itemized kaza ledger (oldest
+// owed, average payoff time) — see KazaUnit's doc comment
+router.get('/debt/insights', requireAuth, salatController.getDebtInsights);
 
 // GET /api/salat/journey — full history of phases (account creation → each reset → today)
 router.get('/journey', requireAuth, salatController.getJourney);

@@ -2,6 +2,7 @@ import SalatDebt, { ISalatDebt } from '../models/SalatDebt.js';
 import SalatDebtEvent from '../models/SalatDebtEvent.js';
 import SalatLog from '../models/SalatLog.js';
 import { PRAYER_IDS, PrayerId } from '../models/SalatLog.js';
+import KazaUnit from '../models/KazaUnit.js';
 
 export interface SalatDebtSummary {
   owed: Record<PrayerId, number>;
@@ -76,7 +77,44 @@ export async function adjustDebt(
     { upsert: true, new: true }
   );
   await logEvent(userId, prayer, actualDelta, date);
+
+  // Itemize only the single-unit, date-specific case (a specific day's log
+  // moving into/out of 'missed' — see updatePrayerStatus in salat.service.ts,
+  // the only caller that passes both). A bulk/multi-unit adjustment here has
+  // no single real date to attach, so it's left out of the itemized ledger
+  // entirely rather than guessing — see KazaUnit's own doc comment.
+  if (date) {
+    if (actualDelta === 1) {
+      await KazaUnit.updateOne(
+        { userId, prayer, missedDate: date },
+        { $setOnInsert: { status: 'owed' } },
+        { upsert: true }
+      );
+    } else if (actualDelta === -1) {
+      await resolveKazaUnit(userId, prayer, date);
+    }
+  }
+
   return toSummary(doc);
+}
+
+/**
+ * Marks one owed KazaUnit paid. Prefers the exact (prayer, date) match —
+ * correct when the caller is undoing that SPECIFIC day's missed mark —
+ * falling back to the oldest owed unit for this prayer (FIFO) for the
+ * generic "pay back one" tap, which has no specific date to target.
+ */
+async function resolveKazaUnit(userId: string, prayer: PrayerId, date: string): Promise<void> {
+  const exact = await KazaUnit.findOneAndUpdate(
+    { userId, prayer, missedDate: date, status: 'owed' },
+    { $set: { status: 'paid', paidAt: new Date() } }
+  );
+  if (exact) return;
+  await KazaUnit.findOneAndUpdate(
+    { userId, prayer, status: 'owed' },
+    { $set: { status: 'paid', paidAt: new Date() } },
+    { sort: { missedDate: 1 } }
+  );
 }
 
 /** Absolute set — used for the one-time "how many do you estimate you owe" setup. */
@@ -100,6 +138,7 @@ export async function setDebt(
 export async function deleteDebt(userId: string): Promise<void> {
   await SalatDebt.deleteOne({ userId });
   await SalatDebtEvent.deleteMany({ userId });
+  await KazaUnit.deleteMany({ userId });
 }
 
 /**
@@ -184,6 +223,25 @@ export async function ensureCaughtUp(userId: string, today?: string): Promise<vo
 
   for (const log of dirtyLogs) await log.save();
   if (events.length) await SalatDebtEvent.insertMany(events);
+  if (events.length) {
+    // Every event here has a genuine specific date (the day it swept into
+    // 'missed') — the one caller where bulk itemization is exactly right.
+    // ordered:false so a duplicate (re-running the sweep over an already
+    // -processed day, which shouldn't happen given the cursor above, but
+    // this is cheap insurance) skips just that row instead of aborting the
+    // whole batch.
+    await KazaUnit.insertMany(
+      events.map((e) => ({
+        userId: e.userId,
+        prayer: e.prayer,
+        missedDate: e.date,
+        status: 'owed',
+      })),
+      { ordered: false }
+    ).catch(() => {
+      /* duplicate-key on an already-itemized day — safe to ignore */
+    });
+  }
 
   const inc = Object.fromEntries(
     PRAYER_IDS.filter((id) => totals[id] > 0).map((id) => [`owed.${id}`, totals[id]])
@@ -212,6 +270,13 @@ export interface SalatDebtHistoryWeek {
  * Weekly accumulation-vs-payback buckets for the debt chart — same 7-day,
  * last-12-weeks windowing as the mosque frequency trend, for visual
  * consistency between the two analytics charts.
+ *
+ * Below 14 days this switches to one bucket PER DAY instead: weekly buckets
+ * on a short window produce a lopsided, confusing chart — e.g. an 8-day
+ * window (the "current month so far" default for a new tracker, or just
+ * early September) used to render as one real 7-day week plus one leftover
+ * 1-day "week", with x-axis labels one day apart that read as a bug
+ * (reported directly by a user looking at exactly this case).
  */
 export async function getDebtHistory(
   userId: string,
@@ -221,6 +286,21 @@ export async function getDebtHistory(
   const end = today ?? todayDateString();
   const start = shiftDateStr(end, -(days - 1));
   const events = await SalatDebtEvent.find({ userId, date: { $gte: start, $lte: end } });
+
+  if (days < 14) {
+    const buckets: SalatDebtHistoryWeek[] = [];
+    for (let day = start; day <= end; day = shiftDateStr(day, 1)) {
+      let accumulated = 0;
+      let paidBack = 0;
+      for (const ev of events) {
+        if (ev.date !== day) continue;
+        if (ev.delta > 0) accumulated += ev.delta;
+        else paidBack += -ev.delta;
+      }
+      buckets.push({ weekStart: day, weekEnd: day, accumulated, paidBack });
+    }
+    return buckets;
+  }
 
   const totalWeeks = Math.min(12, Math.ceil(days / 7));
   const weeks: SalatDebtHistoryWeek[] = [];
@@ -238,4 +318,50 @@ export async function getDebtHistory(
     weeks.push({ weekStart, weekEnd, accumulated, paidBack });
   }
   return weeks;
+}
+
+export interface KazaInsights {
+  /** Longest-unpaid missed prayer still owed, or null if none are itemized. */
+  oldestOwed: { prayer: PrayerId; missedDate: string } | null;
+  /** Mean days between a prayer being missed and being marked paid back —
+   * null when nothing itemized has been paid back yet to average. */
+  avgPayoffDays: number | null;
+  /** How many of the current total owed are itemized (have a real date) —
+   * always <= SalatDebtSummary.totalOwed; the gap is debt added via the
+   * anonymous +/- adjuster or the one-time estimate, which was never given
+   * a specific date (see KazaUnit's doc comment for why). */
+  itemizedOwedCount: number;
+  itemizedPaidCount: number;
+}
+
+/**
+ * Derived from the itemized KazaUnit ledger — genuinely new analysis that
+ * an anonymous running counter can't answer, e.g. "what's the oldest thing
+ * you still owe" and "how long does it usually take you to catch up."
+ */
+export async function getKazaInsights(userId: string): Promise<KazaInsights> {
+  const [oldestOwed, paidUnits, itemizedOwedCount] = await Promise.all([
+    KazaUnit.findOne({ userId, status: 'owed' }).sort({ missedDate: 1 }),
+    KazaUnit.find({ userId, status: 'paid', paidAt: { $exists: true } }),
+    KazaUnit.countDocuments({ userId, status: 'owed' }),
+  ]);
+
+  let avgPayoffDays: number | null = null;
+  if (paidUnits.length > 0) {
+    const totalDays = paidUnits.reduce((sum, u) => {
+      const missed = Date.parse(`${u.missedDate}T00:00:00Z`);
+      const paid = (u.paidAt as Date).getTime();
+      return sum + Math.max(0, (paid - missed) / 86_400_000);
+    }, 0);
+    avgPayoffDays = Math.round((totalDays / paidUnits.length) * 10) / 10;
+  }
+
+  return {
+    oldestOwed: oldestOwed
+      ? { prayer: oldestOwed.prayer, missedDate: oldestOwed.missedDate }
+      : null,
+    avgPayoffDays,
+    itemizedOwedCount,
+    itemizedPaidCount: paidUnits.length,
+  };
 }

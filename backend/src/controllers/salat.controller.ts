@@ -212,6 +212,19 @@ export const getDebtHistory = async (
   }
 };
 
+export const getDebtInsights = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const insights = await salatDebtService.getKazaInsights(req.user.uid);
+    res.json({ ok: true, ...insights });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const deleteAllLogs = async (
   req: Request,
   res: Response,

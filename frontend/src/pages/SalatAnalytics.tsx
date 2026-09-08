@@ -18,9 +18,10 @@ import {
   useSalatAnalytics,
   useSalatDebt,
   useSalatDebtHistory,
+  useSalatDebtInsights,
   useSalatJourney,
 } from '../hooks/useSalatLog.js';
-import { PRAYER_META } from '../utils/prayerTimes.js';
+import { PRAYER_META, translateSalatName } from '../utils/prayerTimes.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 import KazaDebtChart from '../components/analytics/KazaDebtChart.js';
 import MosqueTrendChart from '../components/analytics/MosqueTrendChart.js';
@@ -105,6 +106,7 @@ export default function SalatAnalytics() {
   const { data, isLoading, isError } = useSalatAnalytics(analyticsDays, analyticsToday);
   const { data: debt } = useSalatDebt();
   const { data: debtHistory } = useSalatDebtHistory(analyticsDays);
+  const { data: kazaInsights } = useSalatDebtInsights();
   const { data: journeyPhases, isLoading: journeyLoading } = useSalatJourney(civilToday);
 
   // Group calendar data into weeks (Fri–Thu, Islamic week) for the heatmap
@@ -629,6 +631,64 @@ export default function SalatAnalytics() {
                       </motion.div>
                     </div>
                   )}
+
+                  {/* Kaza insights — derived from the itemized ledger (see KazaUnit),
+                      only shown once there's at least one itemized entry to say
+                      anything about. */}
+                  {kazaInsights &&
+                    (kazaInsights.itemizedOwedCount > 0 || kazaInsights.itemizedPaidCount > 0) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="card bg-brand-deep/80 border border-brand-border rounded-2xl"
+                      >
+                        <div className="card-body p-5 space-y-3">
+                          <h2 className="text-white font-black text-sm flex items-center gap-2">
+                            <ChartBarIcon className="w-4 h-4 text-brand-emerald" />{' '}
+                            {t('salatAnalytics.kazaInsightsTitle', 'Kaza insights')}
+                          </h2>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {kazaInsights.oldestOwed && (
+                              <div className="rounded-xl border border-red-500/20 bg-red-500/[0.06] p-3">
+                                <p className="text-white/40 text-[11px]">
+                                  {t('salatAnalytics.kazaOldestOwed', 'Oldest still owed')}
+                                </p>
+                                <p className="text-red-400 font-bold text-sm mt-0.5">
+                                  {translateSalatName(
+                                    kazaInsights.oldestOwed.prayer,
+                                    kazaInsights.oldestOwed.prayer,
+                                    t
+                                  )}{' '}
+                                  ·{' '}
+                                  {formatLocaleDate(
+                                    new Date(kazaInsights.oldestOwed.missedDate + 'T12:00:00'),
+                                    { month: 'short', day: 'numeric', year: 'numeric' }
+                                  )}
+                                </p>
+                              </div>
+                            )}
+                            {kazaInsights.avgPayoffDays !== null && (
+                              <div className="rounded-xl border border-brand-emerald/20 bg-brand-emerald/[0.06] p-3">
+                                <p className="text-white/40 text-[11px]">
+                                  {t('salatAnalytics.kazaAvgPayoff', 'Average time to pay back')}
+                                </p>
+                                <p className="text-brand-emerald font-bold text-sm mt-0.5">
+                                  {t('salatAnalytics.kazaAvgPayoffDays', '{{days}} days', {
+                                    days: formatLocaleNumber(kazaInsights.avgPayoffDays),
+                                  })}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-white/25 text-[10px]">
+                            {t(
+                              'salatAnalytics.kazaInsightsHint',
+                              'Based on prayers the tracker knows an exact missed date for — a rough estimate you added by hand may not be counted here.'
+                            )}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
 
                   {/* Mosque frequency trend — weekly attendance rate, last 12 weeks max */}
                   {data.weeklyMosqueTrend.length > 0 && (

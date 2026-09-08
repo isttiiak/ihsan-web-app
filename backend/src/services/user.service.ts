@@ -7,6 +7,7 @@ import ZikrStreak from '../models/ZikrStreak.js';
 import SalatLog from '../models/SalatLog.js';
 import SalatDebt from '../models/SalatDebt.js';
 import SalatDebtEvent from '../models/SalatDebtEvent.js';
+import KazaUnit from '../models/KazaUnit.js';
 import FastingLog from '../models/FastingLog.js';
 import FastingProfile from '../models/FastingProfile.js';
 import QuranLog from '../models/QuranLog.js';
@@ -93,6 +94,7 @@ export async function deleteAccount(uid: string): Promise<void> {
     SalatLog.deleteMany({ userId: uid }),
     SalatDebt.deleteMany({ userId: uid }),
     SalatDebtEvent.deleteMany({ userId: uid }),
+    KazaUnit.deleteMany({ userId: uid }),
     FastingLog.deleteMany({ userId: uid }),
     FastingProfile.deleteMany({ userId: uid }),
     QuranLog.deleteMany({ userId: uid }),

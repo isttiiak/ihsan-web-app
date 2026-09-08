@@ -92,11 +92,16 @@ export default function KazaDebtChart({ data }: KazaDebtChartProps) {
 
   const { groups, ticks, innerH, barW } = model;
   const active = hover != null ? groups[hover] : null;
+  // Under 14 days, the backend buckets by day instead of by week (see
+  // getDebtHistory's doc comment) — weekStart === weekEnd then, so show one
+  // date instead of a redundant "Sep 3 – Sep 3" range.
   const weekLabel = (w: DebtWeek): string =>
-    `${formatLocaleDate(new Date(w.weekStart + 'T12:00:00'), { month: 'short', day: 'numeric' })} – ${formatLocaleDate(
-      new Date(w.weekEnd + 'T12:00:00'),
-      { month: 'short', day: 'numeric' }
-    )}`;
+    w.weekStart === w.weekEnd
+      ? formatLocaleDate(new Date(w.weekStart + 'T12:00:00'), { month: 'short', day: 'numeric' })
+      : `${formatLocaleDate(new Date(w.weekStart + 'T12:00:00'), { month: 'short', day: 'numeric' })} – ${formatLocaleDate(
+          new Date(w.weekEnd + 'T12:00:00'),
+          { month: 'short', day: 'numeric' }
+        )}`;
 
   return (
     <div className="card bg-brand-deep/80 border border-brand-border rounded-2xl overflow-x-auto">

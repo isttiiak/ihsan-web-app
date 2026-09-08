@@ -558,6 +558,30 @@ export function useSalatDebtHistory(days = 30) {
   });
 }
 
+export interface KazaInsights {
+  oldestOwed: { prayer: PrayerId; missedDate: string } | null;
+  avgPayoffDays: number | null;
+  itemizedOwedCount: number;
+  itemizedPaidCount: number;
+}
+
+/** Derived from the itemized kaza ledger — only meaningful once at least a
+ * few prayers have gone through the automatic missed/paid-back cycle, so
+ * this quietly returns mostly-null data for a new tracker rather than an
+ * error; the UI only shows itself once itemizedOwedCount/PaidCount > 0. */
+export function useSalatDebtInsights() {
+  const user = useAuthStore((s) => s.user);
+  return useQuery({
+    queryKey: ['salat', 'debtInsights'],
+    queryFn: async () => {
+      const { data } = await api.get<{ ok: boolean } & KazaInsights>('/api/salat/debt/insights');
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+}
+
 export interface JourneyPhase {
   index: number;
   from: string;
