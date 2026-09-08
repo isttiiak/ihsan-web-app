@@ -279,7 +279,17 @@ export default function App() {
   // updates queued in the same window (see useSalatLog.ts) replay here too.
   useEffect(() => {
     const onOnline = () => {
-      void useZikrStore.getState().flush();
+      // Invalidate ONLY after the flush actually resolves — analytics pages
+      // (e.g. ZikrAnalytics's "Today" stat) otherwise stay stale until their
+      // own staleTime expires, since the default refetchOnReconnect can race
+      // ahead of this POST and fetch before the server has the new counts.
+      // Previously only ZikrCounter.tsx invalidated on its own flush, which
+      // did nothing for whichever OTHER page happened to be open when
+      // connectivity came back.
+      void useZikrStore
+        .getState()
+        .flush()
+        .then(() => queryClient.invalidateQueries({ queryKey: ['analytics'] }));
       void replaySalatOutbox(queryClient);
     };
     window.addEventListener('online', onOnline);

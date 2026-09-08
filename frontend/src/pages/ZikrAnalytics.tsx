@@ -837,8 +837,27 @@ export default function ZikrAnalytics() {
   }
 
   const { chartData, today, goal, streak, allTime } = analyticsData;
-  const todayTypes = today?.perType ?? [];
-  const todayTotal = today?.total ?? 0;
+  // Blend in the local optimistic store so "Today" can't under-report a tap
+  // that hasn't synced yet (offline, or a flush that just hasn't been
+  // reflected by a refetch) — same Math.max(local, server) fallback
+  // Home.tsx and ZikrCounter.tsx already use for their own "today" figures;
+  // this page was the one place in the zikr UI without it.
+  const serverTodayTypes = today?.perType ?? [];
+  const todayTypeMap = new Map<string, number>();
+  for (const { zikrType, total } of serverTodayTypes) todayTypeMap.set(zikrType, total);
+  // A brand-new type tapped for the first time today (not yet synced) won't
+  // be in serverTodayTypes at all — Map.set here still needs to add it, not
+  // just raise an existing entry.
+  for (const [zikrType, count] of Object.entries(localCounts ?? {})) {
+    todayTypeMap.set(zikrType, Math.max(todayTypeMap.get(zikrType) ?? 0, count));
+  }
+  const todayTypes = [...todayTypeMap.entries()]
+    .filter(([, total]) => total > 0)
+    .map(([zikrType, total]) => ({ zikrType, total }));
+  const todayTotal = Math.max(
+    today?.total ?? 0,
+    [...todayTypeMap.values()].reduce((a, b) => a + b, 0)
+  );
   const allTimeTypes = analyticsData.perType ?? [];
   const displayData = activeTab === 'today' ? todayTypes : allTimeTypes;
   const displayTotal = activeTab === 'today' ? todayTotal : (allTime?.totalCount ?? 0);
