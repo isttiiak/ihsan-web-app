@@ -39,7 +39,7 @@ export const useUiStore = create<UiState>((set) => ({
   showNoorAllTime: localStorage.getItem('ihsan_noor_alltime') === '1',
   showNoorToday: localStorage.getItem('ihsan_noor_today') === '1',
   vibrationEnabled: localStorage.getItem('ihsan_vibration') !== '0',
-  zikrSoundEnabled: localStorage.getItem('ihsan_zikr_sound') !== '0',
+  zikrSoundEnabled: localStorage.getItem('ihsan_zikr_sound') === '1',
   tasbihMode: localStorage.getItem('ihsan_tasbih_mode') === '1',
   tasbihTarget: Math.max(
     1,

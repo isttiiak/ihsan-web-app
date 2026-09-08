@@ -65,10 +65,14 @@ export const TASBIH_MODES: TasbihModeMeta[] = [
   },
 ];
 
-const TASBIH_KEY = 'ihsan_tasbih_mode';
-/** Muslim 597a — the combination most commonly taught, and the one that gives
- * the tahlīl its place. Chosen as the default; either is authentic. */
-export const DEFAULT_TASBIH_MODE: TasbihMode = 'tahlil';
+// NOT 'ihsan_tasbih_mode' — that key belongs to useUiStore's unrelated
+// Zikr-counter countdown toggle (also called "tasbih mode"). The two used
+// to collide on the same key: setting one silently corrupted the other's
+// stored value (a boolean '1'/'0' doesn't match 'tahlil'/'takbir34', so
+// getTasbihMode() below would silently fall back to the default the moment
+// someone toggled the Zikr counter's tasbih mode on).
+const TASBIH_KEY = 'ihsan_tasbih_breakdown';
+export const DEFAULT_TASBIH_MODE: TasbihMode = 'takbir34';
 
 export function getTasbihMode(): TasbihMode {
   try {
@@ -224,7 +228,7 @@ export function setShowSunnahGuide(value: boolean): void {
  * Maghrib) — a separate toggle since these carry a lighter emphasis than
  * the confirmed rawātib and some users may only want the confirmed set. */
 const SHOW_NAFL_KEY = 'ihsan_show_nafl_guide';
-export const DEFAULT_SHOW_NAFL_GUIDE = true;
+export const DEFAULT_SHOW_NAFL_GUIDE = false;
 
 export function getShowNaflGuide(): boolean {
   try {
