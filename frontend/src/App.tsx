@@ -21,6 +21,20 @@ import GenderGate from './components/GenderGate.js';
 import DemoBanner from './components/DemoBanner.js';
 import type { AuthUser } from './types/api.js';
 
+// `body { overflow-x: hidden }` (styles/global.css, added to stop mobile
+// horizontal bounce) makes the browser compute `overflow-y: auto` on <body>
+// too, per the CSS Overflow spec's visible/non-visible pairing rule. Combined
+// with `html, body, #root { height: 100% }` (styles.css), that turns <body>
+// itself into the real scrolling box — window/<html> never scroll, so
+// `window.scrollTo()` alone is a no-op and the page visibly "keeps" whatever
+// scroll position <body> was left at when you navigate back to it (reported:
+// coming "back" to Home landed at the bottom). The route-change effect below
+// resets `document.body.scrollTop` for this reason. Also disable native
+// scroll restoration so nothing else fights that reset on back/forward.
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
+
 // Route-level code splitting — keeps each tracker's page weight off the shell
 // and Profile/Settings are large; keep them out of the initial bundle.
 const ZikrAnalytics = lazy(() => import('./pages/ZikrAnalytics.js'));
@@ -330,7 +344,10 @@ export default function App() {
   // scroll position by default (opening /quran from Home landed mid-page).
   // A #hash target (e.g. /quran#duas after finishing a duʿā) wins instead.
   useEffect(() => {
-    if (!location.hash) window.scrollTo(0, 0);
+    if (!location.hash) {
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+    }
   }, [location.pathname, location.hash]);
 
   // Google Analytics 4: SPA page views (the gtag loader in index.html sets
