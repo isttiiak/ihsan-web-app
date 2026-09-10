@@ -62,10 +62,22 @@ function providers(customKey?: string): Provider[] {
 export const AI_AVAILABLE = (): boolean => !!process.env.GROQ_API_KEY;
 
 // ── Bring-your-own Groq key (Settings > AI) ──────────────────────────────────
-async function resolveGroqKey(userId?: string): Promise<string | undefined> {
-  if (!userId) return undefined;
-  const user = await User.findOne({ uid: userId }).select('groqApiKeyEnc');
-  return decryptJson<string>(user?.groqApiKeyEnc) ?? undefined;
+/** Naseeh is opt-in (User.aiEnabled, default false — synced from Settings'
+ * toggle via PATCH /api/user/me). This was previously enforced ONLY on the
+ * frontend, per-component (see StreakCoaching/NaseehInsights/FastingCompanion) —
+ * a component that forgot the check (ComebackNudge did) silently got a real
+ * reply from the app's SHARED Groq key regardless of the toggle. Checking it
+ * here, in the one function every AI feature funnels through, closes that for
+ * good instead of relying on every caller remembering to gate itself. `null`
+ * when disabled/no user is treated exactly like "no provider" — every caller
+ * already has a static-text fallback for that. */
+async function resolveAiAccess(userId?: string): Promise<{ enabled: boolean; customKey?: string }> {
+  if (!userId) return { enabled: false };
+  const user = await User.findOne({ uid: userId }).select('aiEnabled groqApiKeyEnc');
+  return {
+    enabled: !!user?.aiEnabled,
+    customKey: decryptJson<string>(user?.groqApiKeyEnc) ?? undefined,
+  };
 }
 
 export async function getGroqKeyStatus(
@@ -259,9 +271,13 @@ async function complete(
   maxTokens = 600,
   meta?: { feature: string; userId?: string }
 ): Promise<{ text: string; provider: string } | null> {
-  const customKey = await resolveGroqKey(meta?.userId);
-  const out = await completeRaw(`${GUARDRAIL}\n\n${system}`, user, maxTokens, customKey);
   const feature = meta?.feature ?? 'unknown';
+  const access = await resolveAiAccess(meta?.userId);
+  if (!access.enabled) {
+    logAiCall({ feature, userId: meta?.userId, success: false, filtered: 'ai-disabled' });
+    return null;
+  }
+  const out = await completeRaw(`${GUARDRAIL}\n\n${system}`, user, maxTokens, access.customKey);
   if (!out) {
     logAiCall({ feature, userId: meta?.userId, success: false });
     return null;
