@@ -2034,8 +2034,11 @@
     "theme": "Card style",
     "translations": "Translations (up to 2)",
     "includeTransliteration": "Include transliteration",
+    "copy": "Copy",
     "download": "Download",
     "share": "Share",
+    "copied": "Copied — paste it anywhere",
+    "copyError": "Couldn't copy the image — try downloading instead.",
     "captureError": "Couldn't generate the image — try again.",
     "shareButton": "Share as image"
   },

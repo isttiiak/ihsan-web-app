@@ -4,7 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { toBlob } from 'html-to-image';
-import { XMarkIcon, ArrowDownTrayIcon, ShareIcon } from '@heroicons/react/24/outline';
+import {
+  XMarkIcon,
+  ArrowDownTrayIcon,
+  ShareIcon,
+  ClipboardDocumentIcon,
+} from '@heroicons/react/24/outline';
 import AyahShareCard, {
   SHARE_CARD_SIZE,
   SHARE_CARD_THEMES,
@@ -44,7 +49,7 @@ export default function ShareAyahModal({
   const [themeId, setThemeId] = useState<string>(DEFAULT_SHARE_CARD_THEME.id);
   const [ayah, setAyah] = useState<AyahText | null>(null);
   const [loading, setLoading] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<'copy' | 'download' | 'share' | null>(null);
 
   const theme = SHARE_CARD_THEMES.find((th) => th.id === themeId) ?? DEFAULT_SHARE_CARD_THEME;
 
@@ -97,8 +102,22 @@ export default function ShareAyahModal({
     });
   };
 
+  const handleCopy = async () => {
+    setBusyAction('copy');
+    try {
+      const blob = await capture();
+      if (!blob) throw new Error('capture failed');
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      toast.success(t('shareAyah.copied', 'Copied — paste it anywhere'));
+    } catch {
+      toast.error(t('shareAyah.copyError', "Couldn't copy the image — try downloading instead."));
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
   const handleDownload = async () => {
-    setBusy(true);
+    setBusyAction('download');
     try {
       const blob = await capture();
       if (!blob) throw new Error('capture failed');
@@ -111,12 +130,12 @@ export default function ShareAyahModal({
     } catch {
       toast.error(t('shareAyah.captureError', "Couldn't generate the image — try again."));
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   };
 
   const handleShare = async () => {
-    setBusy(true);
+    setBusyAction('share');
     try {
       const blob = await capture();
       if (!blob) throw new Error('capture failed');
@@ -138,7 +157,7 @@ export default function ShareAyahModal({
         toast.error(t('shareAyah.captureError', "Couldn't generate the image — try again."));
       }
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   };
 
@@ -152,6 +171,16 @@ export default function ShareAyahModal({
         return false;
       }
     })();
+
+  // Clipboard image writes need both the API and a secure context (https or
+  // localhost) — plain http falls through to Download/Share instead of a
+  // silently-failing Copy button.
+  const canCopyImage =
+    typeof navigator !== 'undefined' &&
+    !!navigator.clipboard &&
+    typeof navigator.clipboard.write === 'function' &&
+    typeof ClipboardItem !== 'undefined' &&
+    window.isSecureContext;
 
   return createPortal(
     <AnimatePresence>
@@ -273,32 +302,45 @@ export default function ShareAyahModal({
               </label>
             </div>
 
-            <div className="flex gap-2 mt-5">
-              {/* Explicit "just the file" option only makes sense alongside a
-                  real native share sheet — on a device without one, Share and
-                  Download would be two buttons doing the exact same thing. */}
-              {canShareFiles && (
+            {/* Copy always leads — it's the fastest path to "paste into WhatsApp/
+                Messenger" without a download round-trip. Share only appears
+                alongside a real native share sheet (Download vs. Share would
+                otherwise be two buttons doing the exact same thing) — see
+                `canShareFiles`. Whichever action is last gets the highlighted
+                style, so there's always exactly one obvious primary action. */}
+            <div
+              className="grid gap-2 mt-5"
+              style={{
+                gridTemplateColumns: `repeat(${1 + (canCopyImage ? 1 : 0) + (canShareFiles ? 1 : 0)}, minmax(0, 1fr))`,
+              }}
+            >
+              {canCopyImage && (
                 <button
-                  className="flex-1 btn btn-sm rounded-xl bg-white/5 border-brand-emerald/10 text-white/70"
-                  onClick={handleDownload}
-                  disabled={busy || loading || !ayah}
+                  className="btn btn-sm rounded-xl bg-white/5 border-brand-emerald/10 text-white/70 disabled:opacity-50"
+                  onClick={handleCopy}
+                  disabled={!!busyAction || loading || !ayah}
                 >
-                  <ArrowDownTrayIcon className="w-4 h-4" />
-                  {t('shareAyah.download', 'Download')}
+                  {busyAction === 'copy' ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : (
+                    <>
+                      <ClipboardDocumentIcon className="w-4 h-4" />
+                      {t('shareAyah.copy', 'Copy')}
+                    </>
+                  )}
                 </button>
               )}
               <button
-                className="flex-1 btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-emerald-dim disabled:opacity-50"
-                onClick={canShareFiles ? handleShare : handleDownload}
-                disabled={busy || loading || !ayah}
+                className={`btn btn-sm rounded-xl disabled:opacity-50 ${
+                  canShareFiles
+                    ? 'bg-white/5 border-brand-emerald/10 text-white/70'
+                    : 'border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-emerald-dim'
+                }`}
+                onClick={handleDownload}
+                disabled={!!busyAction || loading || !ayah}
               >
-                {busy ? (
+                {busyAction === 'download' ? (
                   <span className="loading loading-spinner loading-xs" />
-                ) : canShareFiles ? (
-                  <>
-                    <ShareIcon className="w-4 h-4" />
-                    {t('shareAyah.share', 'Share')}
-                  </>
                 ) : (
                   <>
                     <ArrowDownTrayIcon className="w-4 h-4" />
@@ -306,6 +348,22 @@ export default function ShareAyahModal({
                   </>
                 )}
               </button>
+              {canShareFiles && (
+                <button
+                  className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-emerald-dim disabled:opacity-50"
+                  onClick={handleShare}
+                  disabled={!!busyAction || loading || !ayah}
+                >
+                  {busyAction === 'share' ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : (
+                    <>
+                      <ShareIcon className="w-4 h-4" />
+                      {t('shareAyah.share', 'Share')}
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </motion.div>
         </motion.div>
