@@ -178,13 +178,20 @@ const Protected = ({ children }: ProtectedProps) => {
       return;
     }
     if (!grace) return;
-    const t = setTimeout(() => setGrace(false), 2000);
+    // A returning user whose cached idToken has expired needs Firebase to
+    // silently refresh it over the network before onAuthStateChanged confirms
+    // them — on a slow/high-latency connection (e.g. freshly relocated,
+    // patchy wifi) that can take noticeably longer than a couple of seconds.
+    // Too short a grace window here was flashing "Sign in required" at
+    // legitimate users mid-refresh. 6s trades a slightly longer spinner for
+    // not kicking a signed-in user back to the login screen.
+    const t = setTimeout(() => setGrace(false), 6000);
     return () => clearTimeout(t);
   }, [user, grace]);
   // Hooks above must run unconditionally on every render (react-hooks/rules-of-hooks) —
   // these early returns come after.
   if (authLoading) return null;
-  if (grace) return null;
+  if (grace) return <RouteFallback />;
   if (!user) {
     const redirectTarget = location.pathname + location.search;
     return (
@@ -275,7 +282,22 @@ export default function App() {
   // Daily-reset listeners registered once; route changes also trigger a check below.
   useEffect(() => {
     const onVisibility = () => {
-      if (!document.hidden) checkAndResetIfNewDay();
+      if (!document.hidden) {
+        checkAndResetIfNewDay();
+        // A device waking from sleep/lock can leave the network stack briefly
+        // unready while this tab's mount-time queries fire — they fail with a
+        // connection error (net::ERR_CONNECTION_*), and since
+        // refetchOnWindowFocus is off (deliberately — see queryClient config
+        // in main.tsx, it was flooding the rate limiter) and the browser's
+        // 'online' event doesn't reliably fire for this exact case (the OS
+        // often never considers the adapter "disconnected", just briefly
+        // unable to route), nothing ever retried them — the dashboard stayed
+        // stuck on blank/dash placeholders until a manual reload. Retrying
+        // ONLY queries already sitting in an error state (never a blanket
+        // invalidate) fixes that without reintroducing the refetch storm
+        // refetchOnWindowFocus was disabled for.
+        void queryClient.refetchQueries({ predicate: (q) => q.state.status === 'error' });
+      }
     };
     const onFocus = () => checkAndResetIfNewDay();
     document.addEventListener('visibilitychange', onVisibility);
@@ -284,7 +306,7 @@ export default function App() {
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('focus', onFocus);
     };
-  }, [checkAndResetIfNewDay]);
+  }, [checkAndResetIfNewDay, queryClient]);
 
   // Offline sync: zikr taps made while offline stay queued in `pending`
   // (persisted to localStorage, so a reload doesn't lose them either) — this
@@ -305,6 +327,11 @@ export default function App() {
         .flush()
         .then(() => queryClient.invalidateQueries({ queryKey: ['analytics'] }));
       void replaySalatOutbox(queryClient);
+      // Belt-and-suspenders alongside the visibilitychange handler above: if
+      // 'online' DID fire but a query's own automatic refetchOnReconnect
+      // attempt raced ahead of the network actually being ready and failed
+      // again, this catches it — again scoped to error-state queries only.
+      void queryClient.refetchQueries({ predicate: (q) => q.state.status === 'error' });
     };
     window.addEventListener('online', onOnline);
     // Also try once on mount: a queue can survive a reload while the browser
