@@ -24,6 +24,7 @@ import { syncQuranTranslationWithLang } from '../utils/quranData.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useUiStore } from '../store/useUiStore.js';
 import { useGroqKeyStatus, useSetGroqKey, useClearGroqKey } from '../hooks/useAi.js';
+import { formatLocaleDate } from '../utils/localeDate.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import ZikrLibrarySection from '../components/ZikrLibrarySection.js';
 import NotificationSettings from '../components/NotificationSettings.js';
@@ -39,6 +40,7 @@ import {
   ShieldCheckIcon,
   LanguageIcon,
   KeyIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 
 // ── Unified danger zone (Istiak's spec): EVERY data-erase control lives here,
@@ -260,10 +262,17 @@ function Toggle({
 }
 
 function GroqKeySetting({ t }: { t: (key: string) => string }) {
-  const { data: hasOwnKey, isLoading } = useGroqKeyStatus();
+  const { data, isLoading } = useGroqKeyStatus();
   const setKey = useSetGroqKey();
   const clearKey = useClearGroqKey();
   const [value, setValue] = useState('');
+  // Distinct from "no key yet" — lets an existing key be replaced without
+  // first tapping Remove (previously the only way to rotate a key at all).
+  const [changing, setChanging] = useState(false);
+
+  const hasOwnKey = data?.hasOwnKey ?? false;
+  const setAt = data?.setAt ?? null;
+  const showForm = !isLoading && (!hasOwnKey || changing);
 
   const handleSave = () => {
     const apiKey = value.trim();
@@ -271,14 +280,24 @@ function GroqKeySetting({ t }: { t: (key: string) => string }) {
     setKey.mutate(apiKey, {
       onSuccess: () => {
         setValue('');
-        toast.success(t('settings.groqKeySaved'));
+        setChanging(false);
+        // Longer duration + a stable id (react-hot-toast dedupes/replaces by
+        // id) so a quick re-click can't stack duplicate toasts, and the
+        // message has a real chance to be seen instead of a default 4s blip.
+        toast.success(t('settings.groqKeySaved'), { id: 'groq-key', duration: 5000 });
       },
-      onError: () => toast.error(t('settings.groqKeyInvalid')),
+      onError: () => toast.error(t('settings.groqKeyInvalid'), { id: 'groq-key', duration: 6000 }),
     });
   };
 
   const handleRemove = () => {
-    clearKey.mutate(undefined, { onSuccess: () => toast.success(t('settings.groqKeyRemoved')) });
+    clearKey.mutate(undefined, {
+      onSuccess: () => {
+        setChanging(false);
+        toast.success(t('settings.groqKeyRemoved'), { id: 'groq-key' });
+      },
+      onError: () => toast.error(t('settings.groqKeyInvalid'), { id: 'groq-key' }),
+    });
   };
 
   return (
@@ -298,38 +317,83 @@ function GroqKeySetting({ t }: { t: (key: string) => string }) {
           {t('settings.groqKeyGetOne')}
         </a>
       </p>
-      {!isLoading && hasOwnKey ? (
-        <div className="flex items-center justify-between gap-3 pt-1">
-          <span className="text-xs text-brand-emerald font-medium">
-            ✓ {t('settings.groqKeyActive')}
-          </span>
-          <button
-            type="button"
-            onClick={handleRemove}
-            disabled={clearKey.isPending}
-            className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10"
-          >
-            {t('settings.groqKeyRemove')}
-          </button>
+
+      {!isLoading && hasOwnKey && !showForm && (
+        <div className="pt-1 space-y-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs text-brand-emerald font-medium">
+              ✓ {t('settings.groqKeyActive')}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setChanging(true)}
+                className="btn btn-xs btn-ghost gap-1 text-white/50 hover:text-white"
+              >
+                <PencilSquareIcon className="w-3.5 h-3.5" />
+                {t('settings.groqKeyChange')}
+              </button>
+              <button
+                type="button"
+                onClick={handleRemove}
+                disabled={clearKey.isPending}
+                className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10"
+              >
+                {t('settings.groqKeyRemove')}
+              </button>
+            </div>
+          </div>
+          {setAt && (
+            <p className="text-white/25 text-[11px]">
+              {t('settings.groqKeyAddedOn')}{' '}
+              {formatLocaleDate(new Date(setAt), {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })}
+            </p>
+          )}
+          <p className="text-white/25 text-[11px]">{t('settings.groqKeySyncNote')}</p>
         </div>
-      ) : (
-        <div className="flex items-center gap-2 pt-1">
-          <input
-            type="password"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder={t('settings.groqKeyPlaceholder')}
-            autoComplete="off"
-            className="input input-xs bg-black/30 border-brand-border text-white flex-1"
-          />
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!value.trim() || setKey.isPending}
-            className="btn btn-xs bg-brand-deep border border-brand-border text-white/70 hover:text-white"
-          >
-            {t('settings.groqKeySave')}
-          </button>
+      )}
+
+      {showForm && (
+        <div className="pt-1 space-y-1.5">
+          <div className="flex items-center gap-2">
+            <input
+              type="password"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder={t('settings.groqKeyPlaceholder')}
+              autoComplete="off"
+              className="input input-xs bg-black/30 border-brand-border text-white flex-1"
+            />
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!value.trim() || setKey.isPending}
+              className="btn btn-xs bg-brand-emerald border-0 text-white hover:bg-brand-emerald-dim"
+            >
+              {setKey.isPending ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : (
+                t('settings.groqKeySave')
+              )}
+            </button>
+            {hasOwnKey && (
+              <button
+                type="button"
+                onClick={() => {
+                  setChanging(false);
+                  setValue('');
+                }}
+                className="btn btn-xs btn-ghost text-white/40 hover:text-white/70"
+              >
+                {t('common.cancel')}
+              </button>
+            )}
+          </div>
+          <p className="text-white/25 text-[11px]">{t('settings.groqKeySyncNote')}</p>
         </div>
       )}
     </div>

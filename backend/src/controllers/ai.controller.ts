@@ -159,7 +159,7 @@ export const setGroqKeyHandler = async (
       res.status(400).json({ ok: false, error: result.error });
       return;
     }
-    res.json({ ok: true, hasOwnKey: result.hasOwnKey });
+    res.json({ ok: true, hasOwnKey: result.hasOwnKey, setAt: result.setAt });
   } catch (err) {
     next(err);
   }
@@ -172,7 +172,7 @@ export const clearGroqKeyHandler = async (
 ): Promise<void> => {
   try {
     const result = await aiService.setGroqKey(req.user.uid, null);
-    res.json({ ok: true, hasOwnKey: result.hasOwnKey });
+    res.json({ ok: true, hasOwnKey: result.hasOwnKey, setAt: result.setAt });
   } catch (err) {
     next(err);
   }

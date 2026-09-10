@@ -68,9 +68,11 @@ async function resolveGroqKey(userId?: string): Promise<string | undefined> {
   return decryptJson<string>(user?.groqApiKeyEnc) ?? undefined;
 }
 
-export async function getGroqKeyStatus(userId: string): Promise<{ hasOwnKey: boolean }> {
-  const user = await User.findOne({ uid: userId }).select('groqApiKeyEnc');
-  return { hasOwnKey: !!user?.groqApiKeyEnc };
+export async function getGroqKeyStatus(
+  userId: string
+): Promise<{ hasOwnKey: boolean; setAt: Date | null }> {
+  const user = await User.findOne({ uid: userId }).select('groqApiKeyEnc groqApiKeySetAt');
+  return { hasOwnKey: !!user?.groqApiKeyEnc, setAt: user?.groqApiKeySetAt ?? null };
 }
 
 /** A cheap, no-completion call — just confirms Groq accepts the key. */
@@ -92,17 +94,26 @@ async function verifyGroqKey(apiKey: string): Promise<boolean> {
 export async function setGroqKey(
   userId: string,
   apiKey: string | null
-): Promise<{ ok: boolean; hasOwnKey: boolean; error?: string }> {
+): Promise<{ ok: boolean; hasOwnKey: boolean; setAt: Date | null; error?: string }> {
   if (apiKey === null) {
-    await User.updateOne({ uid: userId }, { $set: { groqApiKeyEnc: null } });
-    return { ok: true, hasOwnKey: false };
+    await User.updateOne({ uid: userId }, { $set: { groqApiKeyEnc: null, groqApiKeySetAt: null } });
+    return { ok: true, hasOwnKey: false, setAt: null };
   }
   const valid = await verifyGroqKey(apiKey);
   if (!valid) {
-    return { ok: false, hasOwnKey: false, error: 'That key could not be verified with Groq.' };
+    return {
+      ok: false,
+      hasOwnKey: false,
+      setAt: null,
+      error: 'That key could not be verified with Groq.',
+    };
   }
-  await User.updateOne({ uid: userId }, { $set: { groqApiKeyEnc: encryptJson(apiKey) } });
-  return { ok: true, hasOwnKey: true };
+  const setAt = new Date();
+  await User.updateOne(
+    { uid: userId },
+    { $set: { groqApiKeyEnc: encryptJson(apiKey), groqApiKeySetAt: setAt } }
+  );
+  return { ok: true, hasOwnKey: true, setAt };
 }
 
 /** The immutable guardrail prepended to every system prompt. */

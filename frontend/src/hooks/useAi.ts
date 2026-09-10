@@ -145,12 +145,18 @@ export function useAiActivityInsight() {
 // only ever knows whether one is set, not its value.
 const GROQ_KEY_QUERY_KEY = ['ai', 'groq-key-status'] as const;
 
+export interface GroqKeyStatus {
+  hasOwnKey: boolean;
+  /** ISO date string the current key was saved, or null if none/cleared. */
+  setAt: string | null;
+}
+
 export function useGroqKeyStatus() {
   return useQuery({
     queryKey: GROQ_KEY_QUERY_KEY,
     queryFn: async () => {
-      const { data } = await api.get<{ ok: boolean; hasOwnKey: boolean }>('/api/ai/groq-key');
-      return data.hasOwnKey;
+      const { data } = await api.get<{ ok: boolean } & GroqKeyStatus>('/api/ai/groq-key');
+      return { hasOwnKey: data.hasOwnKey, setAt: data.setAt };
     },
   });
 }
@@ -159,12 +165,12 @@ export function useSetGroqKey() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (apiKey: string) => {
-      const { data } = await api.put<{ ok: boolean; hasOwnKey: boolean }>('/api/ai/groq-key', {
+      const { data } = await api.put<{ ok: boolean } & GroqKeyStatus>('/api/ai/groq-key', {
         apiKey,
       });
-      return data.hasOwnKey;
+      return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: GROQ_KEY_QUERY_KEY }),
+    onSuccess: (data) => queryClient.setQueryData(GROQ_KEY_QUERY_KEY, data),
   });
 }
 
@@ -172,9 +178,9 @@ export function useClearGroqKey() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data } = await api.delete<{ ok: boolean; hasOwnKey: boolean }>('/api/ai/groq-key');
-      return data.hasOwnKey;
+      const { data } = await api.delete<{ ok: boolean } & GroqKeyStatus>('/api/ai/groq-key');
+      return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: GROQ_KEY_QUERY_KEY }),
+    onSuccess: (data) => queryClient.setQueryData(GROQ_KEY_QUERY_KEY, data),
   });
 }

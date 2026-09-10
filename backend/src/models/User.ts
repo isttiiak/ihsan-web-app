@@ -51,6 +51,11 @@ export interface IUser extends Document {
    * perspective: never decrypted back out to a client, only used server-side
    * in ai.service.ts. Null/unset means "use the shared key". */
   groqApiKeyEnc?: string | null;
+  /** When the current groqApiKeyEnc was saved — surfaced read-only in
+   * Settings ("added on ...") so the user has some confirmation the key is
+   * actually stored, without ever re-exposing the key itself. Cleared
+   * alongside groqApiKeyEnc. */
+  groqApiKeySetAt?: Date | null;
   salatResetDate?: string;
   salatResetHistory: ISalatResetEntry[];
   totalCount: number;
@@ -98,6 +103,7 @@ const userSchema = new Schema(
     hijriOffset: { type: Number, default: 0, min: -1, max: 1 },
     aiEnabled: { type: Boolean, default: false },
     groqApiKeyEnc: { type: String, default: null },
+    groqApiKeySetAt: { type: Date, default: null },
     salatResetDate: { type: String, default: undefined },
     salatResetHistory: {
       type: [
