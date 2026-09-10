@@ -12,8 +12,6 @@ import fastingRoutes from './routes/fasting.routes.js';
 import quranRoutes from './routes/quran.routes.js';
 import socialRoutes from './routes/social.routes.js';
 import cycleRoutes from './routes/cycle.routes.js';
-import pushRoutes from './routes/push.routes.js';
-import cronRoutes from './routes/cron.routes.js';
 import insightsRoutes from './routes/insights.routes.js';
 import connectPreviewRoutes from './routes/connectPreview.routes.js';
 import { generalLimiter, authLimiter, zikrLimiter, aiLimiter } from './middleware/rateLimiter.js';
@@ -128,8 +126,6 @@ app.use('/api/fasting', fastingRoutes);
 app.use('/api/quran', quranRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/cycle', cycleRoutes);
-app.use('/api/push', pushRoutes);
-app.use('/api/cron', cronRoutes);
 app.use('/api/insights', insightsRoutes);
 
 // 404 handler

@@ -1,16 +1,30 @@
-// The Ihsan TRACKING DAY — the app's day boundary is FAJR, not midnight
-// (Istiak's spec, 2026-07-18). A new worship day begins at the local Fajr
-// time: Isha prayed at 1 AM and tahajjud/suhoor before dawn belong to the
+// The Ihsan TRACKING DAY — the app's day boundary, by default, is FAJR, not
+// midnight (Istiak's spec, 2026-07-18). A new worship day begins at the local
+// Fajr time: Isha prayed at 1 AM and tahajjud/suhoor before dawn belong to the
 // CLOSING day, matching the rhythm of ibadah.
 //
-// Every "today" the app sends to the server (zikr buckets, salat/fasting/
-// quran/social date strings) must come from getTrackingDay() — never from
-// raw new Date() / getTodayLocal().
+// As of the P7 international-readiness pass (2026-09-10), this boundary is a
+// user preference (`dayStartMode`, synced server-side on User like
+// hijriOffset — see Settings.tsx) with three options:
+//   - 'fajr'     (default) — day starts at local Fajr, as above.
+//   - 'midnight' — plain civil-midnight boundary.
+//   - 'maghrib'  — the Hijri/Islamic calendar day, which starts at sunset,
+//                  not midnight: before today's Maghrib is still "yesterday".
 //
-// Fallback: Fajr needs coordinates. Users who haven't set a location
-// (localStorage `ihsan_location`) keep the civil-midnight boundary until
-// they do.
+// Every "today" the app sends to the server (zikr buckets, salat/quran/
+// social date strings) must come from getTrackingDay() — never from raw
+// new Date() / getTodayLocal(). Fasting and the salat kaza-debt HISTORY view
+// deliberately do NOT use this (see their own localTodayStr()) — a fast is
+// dawn-to-sunset of a fixed calendar date regardless of this preference.
+//
+// Fallback: 'fajr'/'maghrib' need coordinates. Users who haven't set a
+// location (localStorage `ihsan_location`) keep the civil-midnight boundary
+// until they do, same as always.
 import { calcPrayerTimes } from './prayerTimes.js';
+
+export type DayStartMode = 'fajr' | 'midnight' | 'maghrib';
+
+const DAY_START_MODE_KEY = 'ihsan_day_start_mode';
 
 interface StoredLocation {
   latitude: number;
@@ -34,6 +48,26 @@ function toYMD(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+export function getDayStartMode(): DayStartMode {
+  try {
+    const v = localStorage.getItem(DAY_START_MODE_KEY);
+    if (v === 'fajr' || v === 'midnight' || v === 'maghrib') return v;
+  } catch {
+    // ignore
+  }
+  return 'fajr';
+}
+
+/** Persists the mode locally (mirrors the server value — see App.tsx's sync
+ * on sign-in and Settings.tsx's PATCH on change). */
+export function setDayStartModeLocal(mode: DayStartMode): void {
+  try {
+    localStorage.setItem(DAY_START_MODE_KEY, mode);
+  } catch {
+    // ignore
+  }
+}
+
 /** Local Fajr time for the civil date of `date`, or null without a location. */
 export function getFajrTime(date: Date = new Date()): Date | null {
   const loc = readLocation();
@@ -45,14 +79,32 @@ export function getFajrTime(date: Date = new Date()): Date | null {
   }
 }
 
+/** Local Maghrib time for the civil date of `date`, or null without a location. */
+export function getMaghribTime(date: Date = new Date()): Date | null {
+  const loc = readLocation();
+  if (!loc) return null;
+  try {
+    return calcPrayerTimes(loc.latitude, loc.longitude, date).maghrib;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * The current tracking day as YYYY-MM-DD.
- * Before today's Fajr → still yesterday's tracking day.
- * Without a saved location → civil date (midnight boundary).
+ * The current tracking day as YYYY-MM-DD, per the user's dayStartMode:
+ * - 'midnight' → always the plain civil date.
+ * - 'fajr'     → before today's Fajr is still yesterday's tracking day.
+ * - 'maghrib'  → before today's Maghrib is still yesterday's tracking day
+ *                (the Hijri day starts at sunset).
+ * Both 'fajr' and 'maghrib' fall back to the civil date without a saved
+ * location — there's no prayer-time math to anchor the boundary to.
  */
 export function getTrackingDay(now: Date = new Date()): string {
-  const fajr = getFajrTime(now);
-  if (fajr && now < fajr) {
+  const mode = getDayStartMode();
+  if (mode === 'midnight') return toYMD(now);
+
+  const boundary = mode === 'maghrib' ? getMaghribTime(now) : getFajrTime(now);
+  if (boundary && now < boundary) {
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     return toYMD(yesterday);

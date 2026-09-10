@@ -44,6 +44,7 @@ export const updateUserHandler = async (
       city,
       country,
       hijriOffset,
+      dayStartMode,
     } = req.body as {
       displayName?: string;
       photoUrl?: string;
@@ -56,6 +57,7 @@ export const updateUserHandler = async (
       city?: string;
       country?: string;
       hijriOffset?: number;
+      dayStartMode?: 'fajr' | 'midnight' | 'maghrib';
     };
 
     const user = await userService.updateUser(req.user.uid, {
@@ -70,6 +72,7 @@ export const updateUserHandler = async (
       city,
       country,
       hijriOffset,
+      dayStartMode,
     });
 
     res.json({ ok: true, user });

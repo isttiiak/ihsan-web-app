@@ -20,6 +20,7 @@ import {
   getHijriToday,
   formatHijriDate,
 } from '../utils/islamicCalendar.js';
+import { getDayStartMode, setDayStartModeLocal, type DayStartMode } from '../utils/trackingDay.js';
 import { syncQuranTranslationWithLang } from '../utils/quranData.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useUiStore } from '../store/useUiStore.js';
@@ -27,13 +28,12 @@ import { useGroqKeyStatus, useSetGroqKey, useClearGroqKey } from '../hooks/useAi
 import { formatLocaleDate } from '../utils/localeDate.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import ZikrLibrarySection from '../components/ZikrLibrarySection.js';
-import NotificationSettings from '../components/NotificationSettings.js';
 import {
   Cog6ToothIcon,
   SparklesIcon,
   MoonIcon,
   EyeIcon,
-  BellIcon,
+  ClockIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   TrashIcon,
@@ -423,6 +423,7 @@ export default function Settings() {
   const queryClient = useQueryClient();
 
   const [hijriAdj, setHijriAdjState] = useState(getHijriAdjustment());
+  const [dayStartMode, setDayStartModeState] = useState<DayStartMode>(getDayStartMode());
   const [savedLocation, setSavedLocation] = useState<string | null>(() => {
     try {
       const s = localStorage.getItem('ihsan_location');
@@ -450,6 +451,12 @@ export default function Settings() {
     setHijriAdjustment(days);
     setHijriAdjState(days);
     if (user) api.patch('/api/user/me', { hijriOffset: days }).catch(() => {});
+  };
+
+  const applyDayStartMode = (mode: DayStartMode) => {
+    setDayStartModeLocal(mode);
+    setDayStartModeState(mode);
+    if (user) api.patch('/api/user/me', { dayStartMode: mode }).catch(() => {});
   };
 
   // ── Data export / import ────────────────────────────────────────────────────
@@ -801,6 +808,54 @@ export default function Settings() {
             </p>
           </SectionCard>
 
+          {/* ── Tracking day boundary ── */}
+          <SectionCard
+            icon={<ClockIcon className="w-5 h-5 text-brand-emerald" />}
+            title={t('settings.dayStartSection')}
+            subtitle={t('settings.dayStartSubtitle')}
+            delay={0.11}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {(
+                [
+                  {
+                    mode: 'fajr',
+                    label: t('settings.dayStartFajr'),
+                    detail: t('settings.dayStartFajrDetail'),
+                  },
+                  {
+                    mode: 'midnight',
+                    label: t('settings.dayStartMidnight'),
+                    detail: t('settings.dayStartMidnightDetail'),
+                  },
+                  {
+                    mode: 'maghrib',
+                    label: t('settings.dayStartMaghrib'),
+                    detail: t('settings.dayStartMaghribDetail'),
+                  },
+                ] as { mode: DayStartMode; label: string; detail: string }[]
+              ).map(({ mode, label, detail }) => (
+                <button
+                  key={mode}
+                  onClick={() => applyDayStartMode(mode)}
+                  className={`text-left p-3 rounded-xl border transition-colors ${
+                    dayStartMode === mode
+                      ? 'bg-brand-emerald/10 border-brand-emerald text-white'
+                      : 'bg-brand-deep text-white/50 border-brand-border hover:text-white'
+                  }`}
+                >
+                  <p className="font-semibold text-sm">{label}</p>
+                  <p className="text-xs text-white/40 mt-0.5 leading-snug">{detail}</p>
+                </button>
+              ))}
+            </div>
+            {(dayStartMode === 'fajr' || dayStartMode === 'maghrib') && !savedLocation && (
+              <p className="text-brand-gold/70 text-xs mt-3 leading-relaxed">
+                ⚠️ {t('settings.dayStartLocationNudge')}
+              </p>
+            )}
+          </SectionCard>
+
           {/* ── Accessibility ── */}
           <SectionCard
             icon={<EyeIcon className="w-5 h-5 text-brand-info" />}
@@ -828,15 +883,6 @@ export default function Settings() {
                 detail={t('settings.vibrationDetail')}
               />
             </div>
-          </SectionCard>
-
-          {/* ── Notifications ── */}
-          <SectionCard
-            icon={<BellIcon className="w-5 h-5 text-brand-emerald" />}
-            title={t('settings.notificationsSection', 'Notifications')}
-            delay={0.16}
-          >
-            <NotificationSettings />
           </SectionCard>
 
           {/* ── Naseeh AI companion ── */}

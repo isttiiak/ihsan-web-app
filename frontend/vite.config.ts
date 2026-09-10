@@ -20,11 +20,11 @@ export default defineConfig({
     // runtime caching. The API stays network-only (worship data must never be
     // stale-served); the free Quran text CDN and fonts cache aggressively.
     //
-    // Switched generateSW → injectManifest (push notifications, added later,
-    // need a hand-written service worker source to attach a `push` listener
-    // to — generateSW has no source file at all). All the caching behavior
-    // below is now implemented directly in src/sw.ts instead of this
-    // declarative `workbox` block; injectManifest only needs globPatterns
+    // Switched generateSW → injectManifest (originally for push notification
+    // handling, since removed — kept hand-written since src/sw.ts still needs
+    // explicit control over cache names/expiration/SPA fallback). All the
+    // caching behavior below is implemented directly in src/sw.ts instead of
+    // this declarative `workbox` block; injectManifest only needs globPatterns
     // here, to build the precache manifest injected as self.__WB_MANIFEST.
     VitePWA({
       strategies: 'injectManifest',

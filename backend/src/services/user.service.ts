@@ -16,7 +16,6 @@ import CycleLog from '../models/CycleLog.js';
 import CycleDay from '../models/CycleDay.js';
 import CycleProfile from '../models/CycleProfile.js';
 import SocialProfile from '../models/SocialProfile.js';
-import PushSubscription from '../models/PushSubscription.js';
 
 // Belt-and-braces: the Zod schema catches invalid photoUrls at the HTTP boundary;
 // this helper protects direct service calls (backup restore, future callers).
@@ -43,6 +42,7 @@ export interface UserUpdateFields {
   city?: string;
   country?: string;
   hijriOffset?: number;
+  dayStartMode?: 'fajr' | 'midnight' | 'maghrib';
 }
 
 export async function linkGoogleProvider(
@@ -103,7 +103,6 @@ export async function deleteAccount(uid: string): Promise<void> {
     CycleDay.deleteMany({ userId: uid }),
     CycleProfile.deleteMany({ userId: uid }),
     SocialProfile.deleteMany({ userId: uid }),
-    PushSubscription.deleteMany({ userId: uid }),
     User.deleteOne({ uid }),
   ]);
 
@@ -145,6 +144,8 @@ export async function updateUser(uid: string, fields: UserUpdateFields): Promise
   if (fields.country !== undefined) updates.country = fields.country;
   if (fields.hijriOffset !== undefined)
     (updates as Record<string, unknown>).hijriOffset = fields.hijriOffset;
+  if (fields.dayStartMode !== undefined)
+    (updates as Record<string, unknown>).dayStartMode = fields.dayStartMode;
 
   return User.findOneAndUpdate({ uid }, updates, { new: true, runValidators: true });
 }

@@ -10,6 +10,7 @@ import { useAuthStore } from './store/useAuthStore.js';
 import { useZikrStore, flushZikrLocalPersistence } from './store/useZikrStore.js';
 import { replaySalatOutbox } from './hooks/useSalatLog.js';
 import { clearSalatOutbox } from './utils/salatOutbox.js';
+import { setDayStartModeLocal, type DayStartMode } from './utils/trackingDay.js';
 import { idbRemove } from './utils/idbCache.js';
 import Navbar from './components/Navbar.js';
 import Home from './pages/Home.js';
@@ -482,6 +483,7 @@ export default function App() {
                   photoUrl?: string;
                   gender?: AuthUser['gender'];
                   hijriOffset?: number;
+                  dayStartMode?: DayStartMode;
                 };
               };
               const authUser: AuthUser = {
@@ -495,6 +497,10 @@ export default function App() {
               // Sync hijri offset from server → localStorage
               if (verifyData?.user?.hijriOffset !== undefined) {
                 localStorage.setItem('ihsan_hijri_offset', String(verifyData.user.hijriOffset));
+              }
+              // Sync day-start mode from server → localStorage
+              if (verifyData?.user?.dayStartMode !== undefined) {
+                setDayStartModeLocal(verifyData.user.dayStartMode);
               }
             } catch {
               /* ignore parse error — optimistic values stand */

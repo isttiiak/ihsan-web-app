@@ -1,12 +1,8 @@
 /// <reference lib="webworker" />
-// Hand-written service worker (vite-plugin-pwa "injectManifest" strategy).
-//
-// Migrated from the plugin's auto-generated "generateSW" mode specifically to
-// add push notification handling below — generateSW has no source file to
-// attach a `push` event listener to. Everything above the push handlers is a
-// faithful port of the previous declarative `workbox` config in
-// vite.config.ts (same cache names, same expiration, same SPA fallback) so
-// existing offline/caching behavior does not regress.
+// Hand-written service worker (vite-plugin-pwa "injectManifest" strategy —
+// originally migrated from "generateSW" to support push notifications, since
+// removed; kept as hand-written since other code here relies on the explicit
+// control this mode gives over cache names/expiration/SPA fallback below).
 
 import { clientsClaim } from 'workbox-core';
 import {
@@ -77,41 +73,3 @@ registerRoute(
     ],
   })
 );
-
-// ── Push notifications ──────────────────────────────────────────────────────
-
-self.addEventListener('push', (event) => {
-  if (!event.data) return;
-  let payload: { title?: string; body?: string; url?: string };
-  try {
-    payload = event.data.json() as { title?: string; body?: string; url?: string };
-  } catch {
-    return;
-  }
-
-  event.waitUntil(
-    self.registration.showNotification(payload.title ?? 'Ihsan', {
-      body: payload.body,
-      icon: '/pwa-192.png',
-      badge: '/pwa-192.png',
-      data: { url: payload.url ?? '/' },
-    })
-  );
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  const url = (event.notification.data as { url?: string } | undefined)?.url ?? '/';
-
-  event.waitUntil(
-    (async () => {
-      const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      const existing = allClients.find((c) => new URL(c.url).pathname === url);
-      if (existing) {
-        await (existing as WindowClient).focus();
-        return;
-      }
-      await self.clients.openWindow(url);
-    })()
-  );
-});

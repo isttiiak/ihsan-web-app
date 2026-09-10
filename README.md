@@ -72,7 +72,7 @@ verse and hadith links to quran.com or sunnah.com with its exact number and grad
 
 - Hijri dates with a ±1-day moon-sighting adjustment; every quote linked to quran.com / sunnah.com with grading
 - Wherever a **ḍaʿīf** (weak) grade appears, a `<DaifExplainer>` card before the footer names the claim, the collection, the _specific_ defect in the chain, the verdict, and how Ihsan uses it anyway — we never ship a weak label without the reasoning
-- **Fajr-to-Fajr worship day** (the day flips at dawn, not midnight); celebration animations that respect reduced-motion
+- **Configurable tracking day** — Fajr-to-Fajr (default, the day flips at dawn), civil Midnight, or the Hijri day (starts at Maghrib); celebration animations that respect reduced-motion
 - **PWA**: installable, offline-ready, and self-updating (workbox `skipWaiting` + `clientsClaim`)
 - **i18n** (English + Bengali) on the core screens; **full backup** export / restore and per-feature deletion from Settings
 

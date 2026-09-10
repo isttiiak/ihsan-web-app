@@ -20,7 +20,7 @@ export const verifyHandler = async (req: Request, res: Response): Promise<void> 
     let decoded: Record<string, unknown>;
 
     if (isFirebaseInitialized()) {
-      decoded = await verifyFirebaseToken(idToken) as unknown as Record<string, unknown>;
+      decoded = (await verifyFirebaseToken(idToken)) as unknown as Record<string, unknown>;
     } else if (process.env.NODE_ENV !== 'production' && process.env.DEV_AUTH_BYPASS === '1') {
       const payload = decodeUnverifiedJwt(idToken);
       if (!payload?.['uid']) {
@@ -35,7 +35,7 @@ export const verifyHandler = async (req: Request, res: Response): Promise<void> 
 
     const uid = decoded['uid'] as string;
     const email = decoded['email'] as string;
-    const displayName = (decoded['name'] as string | undefined);
+    const displayName = decoded['name'] as string | undefined;
     const picture = decoded['picture'] as string | undefined;
     const gender = (req.body as { gender?: string })?.gender;
     const validGenders = ['male', 'female', 'other', 'prefer_not_say'];
@@ -60,13 +60,17 @@ export const verifyHandler = async (req: Request, res: Response): Promise<void> 
         setDefaultsOnInsert: true,
         // Frontend only reads displayName/photoUrl here — don't ship the
         // zikr lifetime map and the rest of the doc on every session start.
-        projection: 'uid email displayName photoUrl gender hijriOffset',
+        projection: 'uid email displayName photoUrl gender hijriOffset dayStartMode',
       }
     );
 
     res.json({ ok: true, user });
   } catch (err) {
-    const error = err as { code?: string; message?: string; errorInfo?: { code: string; message: string } };
+    const error = err as {
+      code?: string;
+      message?: string;
+      errorInfo?: { code: string; message: string };
+    };
     const code = error?.code ?? error?.errorInfo?.code ?? null;
     const message = error?.message ?? error?.errorInfo?.message ?? 'Unauthorized';
     if (process.env.NODE_ENV !== 'test') {

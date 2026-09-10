@@ -33,18 +33,12 @@ export interface IUser extends Document {
   bio?: string;
   city?: string;
   country?: string;
-  /** Minutes offset from UTC, e.g. 360 for UTC+6. Populated opportunistically
-   * whenever the client subscribes to push (see push.service.ts) — used ONLY
-   * by the cron-driven push scheduler, which has no live request to read a
-   * fresh timezoneOffset param from. Every other endpoint still takes
-   * timezoneOffset as a transient per-request param; this is not a second
-   * source of truth for those. */
-  timezoneOffset?: number;
-  /** Saved location, reused (never re-requested) from the client's own
-   * `ihsan_location` — populated the same way as timezoneOffset, for a future
-   * server-side adhan-time push scheduler. Not read by anything yet. */
-  location?: { lat: number; lng: number };
   hijriOffset: number;
+  /** How the user's daily tracking day begins for zikr/salat/quran (see
+   * frontend/src/utils/trackingDay.ts) — mirrored to localStorage for the
+   * offline-first client calc. Fasting and salat kaza-debt history always
+   * use civil midnight regardless of this setting. */
+  dayStartMode: 'fajr' | 'midnight' | 'maghrib';
   aiEnabled: boolean;
   /** User's own Groq API key (AES-256-GCM, see utils/fieldCrypto.ts) — opt-in
    * alternative to the app's shared GROQ_API_KEY. Write-only from the API's
@@ -88,12 +82,6 @@ const userSchema = new Schema(
     bio: { type: String, maxlength: 250 },
     city: { type: String },
     country: { type: String },
-    timezoneOffset: { type: Number },
-    location: {
-      type: new Schema({ lat: Number, lng: Number }, { _id: false }),
-      required: false,
-      default: undefined,
-    },
     gender: {
       type: String,
       enum: ['male', 'female', 'other', 'prefer_not_say'],
@@ -101,6 +89,11 @@ const userSchema = new Schema(
     },
     birthDate: { type: Date },
     hijriOffset: { type: Number, default: 0, min: -1, max: 1 },
+    dayStartMode: {
+      type: String,
+      enum: ['fajr', 'midnight', 'maghrib'],
+      default: 'fajr',
+    },
     aiEnabled: { type: Boolean, default: false },
     groqApiKeyEnc: { type: String, default: null },
     groqApiKeySetAt: { type: Date, default: null },
