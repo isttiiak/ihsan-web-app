@@ -15,6 +15,7 @@ import cycleRoutes from './routes/cycle.routes.js';
 import pushRoutes from './routes/push.routes.js';
 import cronRoutes from './routes/cron.routes.js';
 import insightsRoutes from './routes/insights.routes.js';
+import connectPreviewRoutes from './routes/connectPreview.routes.js';
 import { generalLimiter, authLimiter, zikrLimiter, aiLimiter } from './middleware/rateLimiter.js';
 import { globalErrorHandler } from './middleware/errorHandler.js';
 
@@ -109,6 +110,12 @@ app.use(generalLimiter);
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ ok: true, message: 'Ihsan API is healthy' });
 });
+
+// Bot-only invite-link unfurl preview — NOT under /api; only reached in
+// production when vercel.json's User-Agent-matched rewrite routes a
+// link-unfurl crawler here instead of the normal SPA shell. See
+// connectPreview.routes.ts.
+app.use('/connect', connectPreviewRoutes);
 
 // Routes with per-route rate limiters
 app.use('/api/auth', authLimiter, authRoutes);

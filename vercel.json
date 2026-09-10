@@ -14,6 +14,17 @@
   "crons": [{ "path": "/api/cron/push-check", "schedule": "0 14 * * *" }],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" },
+    {
+      "source": "/connect/:code",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(facebookexternalhit|WhatsApp|Twitterbot|LinkedInBot|Slackbot|TelegramBot|Discordbot|SkypeUriPreview|Pinterest|redditbot|W3C_Validator|vkShare).*"
+        }
+      ],
+      "destination": "/api/index"
+    },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [

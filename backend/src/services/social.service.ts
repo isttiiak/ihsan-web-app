@@ -125,6 +125,26 @@ export interface PendingRequestItem {
   photoUrl?: string;
 }
 
+export interface InvitePreview {
+  displayName: string;
+}
+
+/**
+ * Public, unauthenticated lookup for an invite link's unfurl preview (see
+ * connectPreview.controller.ts) — deliberately returns ONLY a display name,
+ * never anything else on the profile. A blocked/private relationship has no
+ * bearing here: the code's owner already chose to share this exact link, and
+ * a name shown in a link preview isn't more exposed than it already is on
+ * the "you're invited" landing page every recipient of the link sees anyway.
+ */
+export async function getInvitePreview(code: string): Promise<InvitePreview | null> {
+  const owner = await SocialProfile.findOne({ inviteCode: code }).select('userId');
+  if (!owner) return null;
+  const user = await User.findOne({ uid: owner.userId }).select('displayName');
+  if (!user?.displayName) return null;
+  return { displayName: user.displayName };
+}
+
 function toPendingItems(
   uids: string[],
   users: Array<{ uid: string; displayName?: string; photoUrl?: string }>
