@@ -1489,10 +1489,13 @@ export default function SalatTracker() {
                           </button>
                         )}
 
-                        {/* Sunnah/nafl rak'ah guidance — same "time has started"
-                            gate as Witr below, independently toggleable per
-                            emphasis (Salat settings). */}
-                        {!isFuture &&
+                        {/* Sunnah/nafl rak'ah guidance — tied to the prayer's
+                            OWN window (isCurrent), not "any time from when it
+                            started onward" (!isFuture): the latter never
+                            closed once a prayer's time had passed, so Fajr's
+                            guidance was still showing at Isha. Independently
+                            toggleable per emphasis (Salat settings). */}
+                        {isCurrent &&
                           (() => {
                             const guide = SUNNAH_GUIDE[prayerId];
                             if (!guide) return null;
