@@ -14,6 +14,7 @@ import './styles.css';
 import './styles/global.css';
 import ThemeInit from './components/ThemeInit.js';
 import UiInit from './components/UiInit.js';
+import ErrorBoundary from './components/ErrorBoundary.js';
 import { idbGet, idbSet, idbRemove } from './utils/idbCache.js';
 
 const queryClient = new QueryClient({
@@ -71,7 +72,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <BrowserRouter future={{ v7_relativeSplatPath: true }}>
         <ThemeInit />
         <UiInit />
-        <App />
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
       </BrowserRouter>
       <ReactQueryDevtools initialIsOpen={false} />
     </PersistQueryClientProvider>
