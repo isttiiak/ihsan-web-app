@@ -11,6 +11,8 @@ import { useQuranSummary } from '../hooks/useQuran.js';
 import { StreakBadge, GoalBadge } from '../components/StatusBadges.js';
 import ComebackNudge from '../components/ComebackNudge.js';
 import NaseehInsights from '../components/ai/NaseehInsights.js';
+import MuhasabahReport from '../components/ai/MuhasabahReport.js';
+import NaturalLogEntry from '../components/ai/NaturalLogEntry.js';
 import StreakCoaching from '../components/ai/StreakCoaching.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import {
@@ -725,9 +727,20 @@ export default function Home() {
           })}
         </div>
 
+        {/* Natural-language quick log (Naseeh) */}
+        <div className="mb-4 empty:mb-0">
+          <NaturalLogEntry />
+        </div>
+
         {/* AI weekly reflection + monthly patterns (Naseeh) */}
-        <div className="mb-8 empty:mb-0">
+        <div className="mb-4 empty:mb-0">
           <NaseehInsights />
+        </div>
+
+        {/* Weekly muhāsabah — distinct from NaseehInsights above: a dedicated
+            self-accounting report paired with a verified (never AI-written) āyah/hadith */}
+        <div className="mb-8 empty:mb-0">
+          <MuhasabahReport />
         </div>
 
         {/* ── Friends / Share activities ── */}

@@ -12,6 +12,7 @@ import {
   resetSalatDebtSchema,
   salatDebtHistorySchema,
   resetSalatSchema,
+  salatCorrelationsSchema,
 } from '../validation/salat.schemas.js';
 import * as salatController from '../controllers/salat.controller.js';
 
@@ -31,6 +32,14 @@ router.get('/history', requireAuth, validate(salatHistorySchema), salatControlle
 
 // GET /api/salat/analytics
 router.get('/analytics', requireAuth, validate(salatHistorySchema), salatController.getAnalytics);
+
+// GET /api/salat/correlations — Isha-time vs next-day Fajr on-time rate
+router.get(
+  '/correlations',
+  requireAuth,
+  validate(salatCorrelationsSchema),
+  salatController.getCorrelations
+);
 
 // GET /api/salat/debt — kaza (missed-prayer) debt per prayer
 router.get('/debt', requireAuth, validate(getSalatDebtSchema), salatController.getDebt);

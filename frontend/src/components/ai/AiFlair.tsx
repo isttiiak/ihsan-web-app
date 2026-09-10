@@ -17,7 +17,10 @@ export function AiBadge({ label }: { label?: string }) {
       <motion.span
         aria-hidden
         className="absolute inset-0 opacity-90"
-        style={{ background: 'linear-gradient(90deg,#7a9e6e,#06b6d4,#a855f7,#ec4899,#c9a96e,#7a9e6e)', backgroundSize: '300% 100%' }}
+        style={{
+          background: 'linear-gradient(90deg,#7a9e6e,#06b6d4,#a855f7,#ec4899,#c9a96e,#7a9e6e)',
+          backgroundSize: '300% 100%',
+        }}
         animate={{ backgroundPosition: ['0% 50%', '300% 50%'] }}
         transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
       />
@@ -43,7 +46,7 @@ export function AiThinking({ label }: { label?: string }) {
       <div className="relative flex items-center gap-2">
         {colors.map((c, i) => (
           <motion.span
-            key={c}
+            key={i}
             className="w-2.5 h-2.5 rounded-full"
             style={{ background: c, boxShadow: `0 0 10px ${c}` }}
             animate={{ y: [0, -8, 0], opacity: [0.4, 1, 0.4] }}
@@ -51,7 +54,9 @@ export function AiThinking({ label }: { label?: string }) {
           />
         ))}
       </div>
-      <p className="relative text-white/50 text-xs font-semibold tracking-wide">{label ?? t('aiFlair.thinkingLabel', 'Naseeh is reflecting…')}</p>
+      <p className="relative text-white/50 text-xs font-semibold tracking-wide">
+        {label ?? t('aiFlair.thinkingLabel', 'Naseeh is reflecting…')}
+      </p>
     </div>
   );
 }
@@ -67,15 +72,14 @@ export function AiPanel({ children, className = '' }: { children: ReactNode; cla
         aria-hidden
         className="absolute inset-0 rounded-3xl"
         style={{
-          background: 'linear-gradient(100deg,#0f766e,#0e7490,#4f46e5,#7e22ce,#be185d,#b45309,#0f766e)',
+          background:
+            'linear-gradient(100deg,#0f766e,#0e7490,#4f46e5,#7e22ce,#be185d,#b45309,#0f766e)',
           backgroundSize: '300% 100%',
         }}
         animate={{ backgroundPosition: ['0% 50%', '300% 50%'] }}
         transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
       />
-      <div className="relative rounded-[calc(1.5rem-2px)] bg-brand-deep">
-        {children}
-      </div>
+      <div className="relative rounded-[calc(1.5rem-2px)] bg-brand-deep">{children}</div>
     </div>
   );
 }
@@ -88,8 +92,14 @@ export function AiDisclaimer() {
       <span aria-hidden>✨</span>
       <span>
         {t('aiFlair.disclaimerPrefix', 'AI-generated encouragement — a companion,')}{' '}
-        <b className="text-white/50">{t('aiFlair.disclaimerBold', 'never a source of religious evidence')}</b>.{' '}
-        {t('aiFlair.disclaimerSuffix', "For rulings or proofs, see the app's verified references or ask a qualified scholar.")}
+        <b className="text-white/50">
+          {t('aiFlair.disclaimerBold', 'never a source of religious evidence')}
+        </b>
+        .{' '}
+        {t(
+          'aiFlair.disclaimerSuffix',
+          "For rulings or proofs, see the app's verified references or ask a qualified scholar."
+        )}
       </span>
     </p>
   );

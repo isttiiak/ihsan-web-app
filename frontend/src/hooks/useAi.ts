@@ -19,6 +19,13 @@ export interface WeeklyResult {
   ai: boolean;
   provider?: string;
 }
+export interface MuhasabahResult {
+  wentWell: string;
+  slipped: string;
+  suggestion: string;
+  ai: boolean;
+  provider?: string;
+}
 export interface NudgeResult {
   message: string;
   ai: boolean;
@@ -59,6 +66,17 @@ export function useAiWeekly() {
   return useMutation({
     mutationFn: async (stats: Record<string, unknown>) => {
       const { data } = await api.post<WeeklyResult & { ok: boolean }>('/api/ai/weekly-summary', {
+        stats,
+      });
+      return data;
+    },
+  });
+}
+
+export function useAiMuhasabah() {
+  return useMutation({
+    mutationFn: async (stats: Record<string, unknown>) => {
+      const { data } = await api.post<MuhasabahResult & { ok: boolean }>('/api/ai/muhasabah', {
         stats,
       });
       return data;

@@ -405,6 +405,63 @@ describe('AI: language support (bn)', () => {
   });
 });
 
+describe('AI: weekly muhāsabah report', () => {
+  const originalFetch = global.fetch;
+  const originalKey = process.env.GROQ_API_KEY;
+
+  beforeEach(() => {
+    process.env.GROQ_API_KEY = 'test-key';
+    // Always a jest mock by default — the disabled-user test below asserts
+    // it was never called, which needs fetch to already be a spy.
+    mockGroqReply(JSON.stringify({ wentWell: '', slipped: '', suggestion: '' }));
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    process.env.GROQ_API_KEY = originalKey;
+    jest.restoreAllMocks();
+  });
+
+  test('a clean reply passes through as AI-generated', async () => {
+    mockGroqReply(
+      JSON.stringify({
+        wentWell: 'Your salah completion rate held at 90% this week.',
+        slipped: "Qur'an reading was lighter than usual, just a couple of days.",
+        suggestion: 'Try reading right after Fajr, before the day gets busy.',
+      })
+    );
+    const result = await aiService.getMuhasabahReport({ salatPct: 90 }, AI_ENABLED_UID);
+    expect(result.ai).toBe(true);
+    expect(result.wentWell).toContain('90%');
+    expect(result.suggestion).toContain('Fajr');
+  });
+
+  test('a reply containing a hadith citation is blocked and falls back to the static message', async () => {
+    mockGroqReply(
+      JSON.stringify({
+        wentWell: 'As narrated in Sahih Bukhari, your week was blessed.',
+        slipped: 'Nothing much.',
+        suggestion: 'Keep going.',
+      })
+    );
+    const result = await aiService.getMuhasabahReport({}, AI_ENABLED_UID);
+    expect(result.ai).toBe(false);
+  });
+
+  test('a disabled user gets the static fallback and the provider is never called', async () => {
+    const result = await aiService.getMuhasabahReport({}, AI_DISABLED_UID);
+    expect(result.ai).toBe(false);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('a provider failure with language "bn" falls back to the Bengali static message', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500 });
+    const result = await aiService.getMuhasabahReport({}, AI_ENABLED_UID, 'bn');
+    expect(result.ai).toBe(false);
+    expect(result.wentWell).toMatch(/[ঀ-৿]/);
+  });
+});
+
 describe('AI schemas: fastType is locked to the real fasting-category/voluntary-kind set', () => {
   test('accepts a known category', () => {
     const parsed = aiFastingCompanionSchema.safeParse({

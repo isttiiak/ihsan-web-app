@@ -18,6 +18,12 @@ export const aiWeeklySchema = z.object({
   }),
 });
 
+export const aiMuhasabahSchema = z.object({
+  body: z.object({
+    stats: z.record(z.string(), z.unknown()).optional(),
+  }),
+});
+
 export const aiComebackSchema = z.object({
   body: z.object({
     daysAway: z.number().int().min(1).max(3650),

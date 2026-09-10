@@ -13,6 +13,7 @@ import quranRoutes from './routes/quran.routes.js';
 import socialRoutes from './routes/social.routes.js';
 import cycleRoutes from './routes/cycle.routes.js';
 import insightsRoutes from './routes/insights.routes.js';
+import naturalLogRoutes from './routes/naturalLog.routes.js';
 import connectPreviewRoutes from './routes/connectPreview.routes.js';
 import { generalLimiter, authLimiter, zikrLimiter, aiLimiter } from './middleware/rateLimiter.js';
 import { globalErrorHandler } from './middleware/errorHandler.js';
@@ -127,6 +128,7 @@ app.use('/api/quran', quranRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/cycle', cycleRoutes);
 app.use('/api/insights', insightsRoutes);
+app.use('/api/natural-log', aiLimiter, naturalLogRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

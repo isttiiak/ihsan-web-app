@@ -715,3 +715,183 @@ Be warm and specific — name the actual numbers you see, not generic praise. Va
     provider: out.provider,
   };
 }
+
+// ── Feature 8: natural-language logging parser ───────────────────────────────
+// "Prayed fajr in jamaah, read 5 pages, 100 istighfar" → structured entries
+// across salat/quran/zikr. This is pure extraction, not encouragement — but it
+// still routes through complete() so it inherits the aiEnabled gate, BYOK key
+// and audit logging every other feature gets. There is no non-AI fallback:
+// unlike the encouragement features, a parse failure has nothing sensible to
+// fall back to — the caller shows "couldn't understand that" instead.
+const VALID_PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+const VALID_LOCATIONS = ['home', 'mosque', 'jamat'] as const;
+type ParsedPrayer = (typeof VALID_PRAYERS)[number];
+type ParsedLocation = (typeof VALID_LOCATIONS)[number];
+
+function isValidPrayer(v: unknown): v is ParsedPrayer {
+  return typeof v === 'string' && (VALID_PRAYERS as readonly string[]).includes(v);
+}
+function isValidLocation(v: unknown): v is ParsedLocation {
+  return typeof v === 'string' && (VALID_LOCATIONS as readonly string[]).includes(v);
+}
+
+export interface ParsedSalatEntry {
+  prayer: ParsedPrayer;
+  status: 'completed' | 'kaza';
+  location?: ParsedLocation;
+}
+export interface ParsedZikrEntry {
+  /** Copied verbatim from the user's existing zikr type list when it matches — never invented. */
+  typeName: string;
+  count: number;
+}
+export interface ParsedQuranEntry {
+  ayat: number;
+  /** true when derived from a "pages" mention via a rough page→ayat average, not stated directly. */
+  approximate: boolean;
+}
+export interface ParsedLogResult {
+  ok: boolean;
+  salat: ParsedSalatEntry[];
+  zikr: ParsedZikrEntry[];
+  quran: ParsedQuranEntry | null;
+  provider?: string;
+}
+
+const EMPTY_PARSE: ParsedLogResult = { ok: false, salat: [], zikr: [], quran: null };
+// The Hafs mushaf averages ~6236 ayat over 604 pages — used only when the
+// user's note gives a page count instead of an ayah count.
+const AVG_AYAT_PER_PAGE = 10;
+const QURAN_TOTAL_AYAT = 6236;
+
+export async function parseNaturalLog(
+  text: string,
+  existingZikrTypes: string[],
+  userId?: string,
+  language: AiLanguage = 'en'
+): Promise<ParsedLogResult> {
+  const clean = sanitizeForPrompt(text, 400);
+  if (!clean) return EMPTY_PARSE;
+  const typesList = existingZikrTypes.length
+    ? existingZikrTypes.join(', ')
+    : 'SubhanAllah, Alhamdulillah, Allahu Akbar, La ilaha illallah';
+  const out = await complete(
+    `Extract a worship log from the user's short note into STRICT JSON. Rules:
+- "salat": array of {"prayer": one of fajr|dhuhr|asr|maghrib|isha, "status": "completed"|"kaza", "location": one of home|mosque|jamat (omit if not mentioned)}. Only include prayers explicitly mentioned as prayed/done/kaza. "in jamaah"/"in congregation"/"at the mosque" -> location "jamat" unless a masjid is named without any congregation wording, then "mosque". Never guess a prayer that wasn't mentioned.
+- "zikr": array of {"typeName": string, "count": number}. typeName MUST be copied EXACTLY (same spelling/case) from this user's existing list when it clearly matches: [${typesList}]. Map common synonyms to the closest one in that list (e.g. "istighfar" -> whichever exact string in the list means Astaghfirullah; "tasbih" -> whichever exact string means SubhanAllah). If nothing in the list is a reasonable match, return your own best short transliterated name instead — never a translation or a citation.
+- "quran": null, or {"amount": number, "unit": "count"|"pages"} — "unit":"pages" when the user said pages/juz rather than a direct verse count, otherwise "unit":"count". Report the raw number the user stated with the correct unit; do not do any conversion yourself. Never write the Arabic transliterated words for "verse" or "chapter" anywhere in your reply — use only "count"/"pages" as shown.
+- Ignore anything not about salat, zikr, or Quran reading — never invent an entry that wasn't mentioned.
+- Output ONLY this JSON shape, nothing else: {"salat": [...], "zikr": [...], "quran": {"amount": number, "unit": "count"|"pages"} | null}`,
+    asUntrustedData('Their worship note', clean),
+    // Generous budget: gpt-oss-120b is a reasoning model that spends part of
+    // its completion tokens on hidden reasoning before the final JSON — too
+    // small a budget here means the reply gets cut off before any JSON comes
+    // out at all (empty content), not a shorter-but-valid one.
+    700,
+    { feature: 'natural-log', userId, language }
+  );
+  if (!out) return EMPTY_PARSE;
+  const parsed = parseLoose<{
+    salat?: Array<{ prayer?: unknown; status?: unknown; location?: unknown }>;
+    zikr?: Array<{ typeName?: unknown; count?: unknown }>;
+    quran?: { amount?: unknown; unit?: unknown } | null;
+  }>(out.text);
+  if (!parsed) return { ...EMPTY_PARSE, provider: out.provider };
+
+  const salat: ParsedSalatEntry[] = (parsed.salat ?? [])
+    .filter(
+      (s): s is { prayer: ParsedPrayer; status: 'completed' | 'kaza'; location?: unknown } =>
+        isValidPrayer(s.prayer) && (s.status === 'completed' || s.status === 'kaza')
+    )
+    .map((s) => ({
+      prayer: s.prayer,
+      status: s.status,
+      location: isValidLocation(s.location) ? s.location : undefined,
+    }))
+    .slice(0, 5);
+
+  const zikr: ParsedZikrEntry[] = (parsed.zikr ?? [])
+    .filter(
+      (z): z is { typeName: string; count: number } =>
+        typeof z.typeName === 'string' &&
+        z.typeName.trim().length > 0 &&
+        typeof z.count === 'number' &&
+        Number.isFinite(z.count) &&
+        z.count > 0
+    )
+    .map((z) => ({
+      typeName: z.typeName.trim().slice(0, 60),
+      count: Math.min(Math.round(z.count), 100000),
+    }))
+    .slice(0, 10);
+
+  let quran: ParsedQuranEntry | null = null;
+  const q = parsed.quran;
+  if (q && typeof q.amount === 'number' && Number.isFinite(q.amount) && q.amount > 0) {
+    const n = Math.round(q.amount);
+    quran =
+      q.unit === 'pages'
+        ? { ayat: Math.min(n * AVG_AYAT_PER_PAGE, QURAN_TOTAL_AYAT), approximate: true }
+        : { ayat: Math.min(n, QURAN_TOTAL_AYAT), approximate: false };
+  }
+
+  return { ok: true, salat, zikr, quran, provider: out.provider };
+}
+
+// ── Feature 9: weekly muhāsabah report ───────────────────────────────────────
+// Distinct from getWeeklySummary (Feature 2, the shorter Home-page recap):
+// this is a dedicated self-accounting report — what went well, what slipped,
+// ONE small suggestion — framed as reflection, never judgement. The verified
+// āyah/hadith that accompanies it is NEVER generated here: the guardrail
+// already strips any citation this text might contain, and the caller pairs
+// this reflection with a citation picked from the app's own static, hand
+// -verified corpus (frontend muhasabahCorpus.ts) — never from this call.
+export interface MuhasabahResult {
+  wentWell: string;
+  slipped: string;
+  suggestion: string;
+  ai: boolean;
+  provider?: string;
+}
+
+export async function getMuhasabahReport(
+  stats: Record<string, unknown>,
+  userId?: string,
+  language: AiLanguage = 'en'
+): Promise<MuhasabahResult> {
+  const out = await complete(
+    `You are given a Muslim user's worship numbers for the past week (prayers, dhikr, Qur'an, fasting, streaks). Write a short weekly muhāsabah (self-accounting), as a gentle mirror, never a scold. Three short fields:
+- "wentWell": ONE sentence naming something SPECIFIC that went well (a real number from the data — a streak, a percentage, a count).
+- "slipped": ONE sentence gently naming the ONE tracker that lagged most, framed as an honest observation, not a failure or guilt trip. If nothing meaningfully lagged, say so warmly instead of inventing a gap.
+- "suggestion": ONE small, CONCRETE action for next week tied to whatever slipped (not a vague platitude like "try harder").
+No hadith, no verse, no ruling, no citation of any kind — that is handled separately. Reply ONLY as JSON: {"wentWell": string, "slipped": string, "suggestion": string}.`,
+    `This week's numbers (JSON): ${JSON.stringify(stats).slice(0, 800)}`,
+    600,
+    { feature: 'muhasabah', userId, language }
+  );
+  const fallback: MuhasabahResult =
+    language === 'bn'
+      ? {
+          wentWell: 'এই সপ্তাহে আপনি ধারাবাহিকভাবে হাজির ছিলেন — প্রতিটি ছোট আমলই গণনায় এসেছে।',
+          slipped: 'কোনো একটি ট্র্যাকার হয়তো একটু পিছিয়ে ছিল — আর তা ঠিক আছে।',
+          suggestion:
+            'আগামী সপ্তাহে একটি ছোট, নির্দিষ্ট লক্ষ্য বেছে নিন এবং শুধু সেটাতেই মনোযোগ দিন।',
+          ai: false,
+        }
+      : {
+          wentWell: 'You showed up consistently this week — every small act counted.',
+          slipped: 'One tracker may have lagged a little behind the rest — and that is alright.',
+          suggestion: 'Pick one small, specific target for next week and give it your focus.',
+          ai: false,
+        };
+  if (!out) return fallback;
+  const parsed = parseLoose<{ wentWell?: string; slipped?: string; suggestion?: string }>(out.text);
+  if (!parsed?.wentWell || !parsed.slipped || !parsed.suggestion) return fallback;
+  return {
+    wentWell: String(parsed.wentWell),
+    slipped: String(parsed.slipped),
+    suggestion: String(parsed.suggestion),
+    ai: true,
+    provider: out.provider,
+  };
+}

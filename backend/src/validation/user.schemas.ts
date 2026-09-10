@@ -56,5 +56,6 @@ export const updateUserSchema = z.object({
     country: z.string().max(100).optional(),
     hijriOffset: z.number().int().min(-1).max(1).optional(),
     dayStartMode: z.enum(['fajr', 'midnight', 'maghrib']).optional(),
+    aiEnabled: z.boolean().optional(),
   }),
 });

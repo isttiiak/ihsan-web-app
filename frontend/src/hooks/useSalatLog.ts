@@ -5,6 +5,7 @@ import api from '../lib/api.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { enqueueSalatOp, peekSalatOutbox, removeSalatOp } from '../utils/salatOutbox.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
+import { getUserTimezoneOffset } from '../utils/timezone.js';
 
 // Thrown from a mutationFn to tell onError/onSettled "this wasn't a real
 // failure — it's queued for replay, keep the optimistic UI as-is."
@@ -670,6 +671,33 @@ export function useSalatAnalytics(days = 30, todayOverride?: string) {
     },
     enabled: !!user,
     staleTime: 5 * 60_000,
+  });
+}
+
+export interface IshaFajrCorrelation {
+  available: boolean;
+  earlyIshaFajrRate: number | null;
+  lateIshaFajrRate: number | null;
+  earlySampleSize: number;
+  lateSampleSize: number;
+}
+
+/** Isha-time vs next-day Fajr on-time rate — derived from prayedAt data
+ * already collected, no separate "log your bedtime" step needed. */
+export function useSalatCorrelation() {
+  const user = useAuthStore((s) => s.user);
+  const today = getTrackingDay();
+  const timezoneOffset = getUserTimezoneOffset();
+  return useQuery({
+    queryKey: ['salat', 'correlations', today, timezoneOffset],
+    queryFn: async () => {
+      const { data } = await api.get<IshaFajrCorrelation & { ok: boolean }>(
+        `/api/salat/correlations?today=${today}&timezoneOffset=${timezoneOffset}`
+      );
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 30 * 60_000,
   });
 }
 

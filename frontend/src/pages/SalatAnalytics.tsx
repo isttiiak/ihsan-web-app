@@ -20,6 +20,7 @@ import {
   useSalatDebtHistory,
   useSalatDebtInsights,
   useSalatJourney,
+  useSalatCorrelation,
   PrayerId,
 } from '../hooks/useSalatLog.js';
 import { PRAYER_META, translateSalatName } from '../utils/prayerTimes.js';
@@ -109,6 +110,7 @@ export default function SalatAnalytics() {
   const { data: debtHistory } = useSalatDebtHistory(analyticsDays);
   const { data: kazaInsights } = useSalatDebtInsights();
   const { data: journeyPhases, isLoading: journeyLoading } = useSalatJourney(civilToday);
+  const { data: correlation } = useSalatCorrelation();
 
   // Group calendar data into weeks (Fri–Thu, Islamic week) for the heatmap
   const calendarWeeks = (() => {
@@ -911,6 +913,63 @@ export default function SalatAnalytics() {
                         </div>
                       </motion.div>
                     )}
+
+                  {/* Isha-time vs next-day Fajr correlation — derived from prayedAt
+                      timestamps already logged, no new logging UI needed */}
+                  {correlation?.available && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="card bg-brand-deep/80 border border-brand-border rounded-2xl"
+                    >
+                      <div className="card-body p-5 space-y-3">
+                        <h2 className="text-white font-black text-sm flex items-center gap-2">
+                          <ChartBarIcon className="w-4 h-4 text-brand-emerald" />{' '}
+                          {t('salatAnalytics.correlationTitle', 'Isha & Fajr connection')}
+                        </h2>
+                        <p className="text-white/40 text-xs">
+                          {t(
+                            'salatAnalytics.correlationDesc',
+                            'How your Isha time relates to whether you catch Fajr the next morning.'
+                          )}
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="rounded-xl border border-brand-emerald/20 bg-brand-emerald/[0.06] p-3">
+                            <p className="text-white/40 text-[11px]">
+                              {t('salatAnalytics.correlationEarly', 'Isha before 11pm')}
+                            </p>
+                            <p className="text-brand-emerald font-bold text-lg mt-0.5">
+                              {t('salatAnalytics.correlationRate', '{{rate, number}}%', {
+                                rate: correlation.earlyIshaFajrRate ?? 0,
+                              })}
+                            </p>
+                            <p className="text-white/25 text-[10px] mt-0.5">
+                              {t('salatAnalytics.correlationFajrOnTime', 'Fajr on time')}
+                            </p>
+                          </div>
+                          <div className="rounded-xl border border-brand-gold/20 bg-brand-gold/[0.06] p-3">
+                            <p className="text-white/40 text-[11px]">
+                              {t('salatAnalytics.correlationLate', 'Isha after 11pm')}
+                            </p>
+                            <p className="text-brand-gold font-bold text-lg mt-0.5">
+                              {t('salatAnalytics.correlationRate', '{{rate, number}}%', {
+                                rate: correlation.lateIshaFajrRate ?? 0,
+                              })}
+                            </p>
+                            <p className="text-white/25 text-[10px] mt-0.5">
+                              {t('salatAnalytics.correlationFajrOnTime', 'Fajr on time')}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-white/25 text-[10px]">
+                          {t(
+                            'salatAnalytics.correlationHint',
+                            'Based on the last 90 days of prayer times you already logged.'
+                          )}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
 
                   {/* Mosque frequency trend — weekly attendance rate, last 12 weeks max */}
                   {data.weeklyMosqueTrend.length > 0 && (

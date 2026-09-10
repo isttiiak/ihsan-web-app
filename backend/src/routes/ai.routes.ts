@@ -6,6 +6,7 @@ import * as aiController from '../controllers/ai.controller.js';
 import {
   aiSuggestSchema,
   aiWeeklySchema,
+  aiMuhasabahSchema,
   aiComebackSchema,
   aiComfortSchema,
   aiStreakCoachSchema,
@@ -33,6 +34,13 @@ router.post(
   aiUserLimiter,
   validate(aiWeeklySchema),
   aiController.weeklyHandler
+);
+router.post(
+  '/muhasabah',
+  requireAuth,
+  aiUserLimiter,
+  validate(aiMuhasabahSchema),
+  aiController.muhasabahHandler
 );
 router.post(
   '/comeback',

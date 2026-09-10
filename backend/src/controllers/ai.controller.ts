@@ -45,6 +45,24 @@ export const weeklyHandler = async (
   }
 };
 
+export const muhasabahHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { stats } = req.body as { stats?: Record<string, unknown> };
+    const result = await aiService.getMuhasabahReport(
+      stats ?? {},
+      req.user?.uid,
+      requestLanguage(req)
+    );
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const comebackHandler = async (
   req: Request,
   res: Response,

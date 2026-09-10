@@ -606,6 +606,78 @@ export async function getSalatJourney(
   return phases.reverse(); // newest first
 }
 
+export interface IshaFajrCorrelation {
+  /** False when there isn't enough data yet to say anything meaningful —
+   * render nothing rather than a shaky/misleading percentage. */
+  available: boolean;
+  /** % of days Fajr was prayed on time (not kaza/missed) the morning after
+   * an Isha logged before local 11pm. */
+  earlyIshaFajrRate: number | null;
+  /** Same, for mornings after an Isha logged at/after local 11pm. */
+  lateIshaFajrRate: number | null;
+  earlySampleSize: number;
+  lateSampleSize: number;
+}
+
+const CORRELATION_MIN_SAMPLE = 5;
+const ISHA_CUTOFF_HOUR = 23; // 11pm local
+
+/**
+ * The one correlation insight actually shippable from data already
+ * collected (no new "log your bedtime" feature needed): does praying Isha
+ * before local 11pm correlate with an on-time Fajr the next morning?
+ * Reads `prayedAt` (UTC) off both entries and converts to the user's local
+ * hour via the same `timezoneOffset` param every other analytics endpoint
+ * already takes. Looks back up to 90 days; needs at least
+ * `CORRELATION_MIN_SAMPLE` days in EACH bucket before showing anything —
+ * a 2-data-point "71%" would be noise dressed up as insight.
+ */
+export async function getIshaFajrCorrelation(
+  userId: string,
+  timezoneOffset: number,
+  today?: string
+): Promise<IshaFajrCorrelation> {
+  const end = today ?? todayDateString();
+  const since = shiftDateStr(end, -90);
+  const logs = await SalatLog.find({ userId, date: { $gte: since, $lte: end } })
+    .select('date prayers.isha.prayedAt prayers.fajr.status')
+    .sort({ date: 1 });
+
+  const byDate = new Map(logs.map((l) => [l.date, l]));
+
+  let earlyOnTime = 0,
+    earlyTotal = 0,
+    lateOnTime = 0,
+    lateTotal = 0;
+
+  for (const log of logs) {
+    const ishaAt = log.prayers.isha?.prayedAt;
+    if (!ishaAt) continue;
+    const nextDate = shiftDateStr(log.date, 1);
+    const nextLog = byDate.get(nextDate);
+    const fajrStatus = nextLog?.prayers.fajr?.status;
+    if (!fajrStatus || fajrStatus === 'pending') continue; // next day not resolved yet
+
+    const localHour = new Date(ishaAt.getTime() + timezoneOffset * 60_000).getUTCHours();
+    const onTime = fajrStatus === 'completed';
+    if (localHour < ISHA_CUTOFF_HOUR) {
+      earlyTotal++;
+      if (onTime) earlyOnTime++;
+    } else {
+      lateTotal++;
+      if (onTime) lateOnTime++;
+    }
+  }
+
+  return {
+    available: earlyTotal >= CORRELATION_MIN_SAMPLE && lateTotal >= CORRELATION_MIN_SAMPLE,
+    earlyIshaFajrRate: earlyTotal ? Math.round((earlyOnTime / earlyTotal) * 100) : null,
+    lateIshaFajrRate: lateTotal ? Math.round((lateOnTime / lateTotal) * 100) : null,
+    earlySampleSize: earlyTotal,
+    lateSampleSize: lateTotal,
+  };
+}
+
 export async function deleteAllUserSalatLogs(userId: string): Promise<{ deletedCount: number }> {
   const result = await SalatLog.deleteMany({ userId });
   await salatDebtService.deleteDebt(userId);

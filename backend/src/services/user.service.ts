@@ -43,6 +43,7 @@ export interface UserUpdateFields {
   country?: string;
   hijriOffset?: number;
   dayStartMode?: 'fajr' | 'midnight' | 'maghrib';
+  aiEnabled?: boolean;
 }
 
 export async function linkGoogleProvider(
@@ -146,6 +147,7 @@ export async function updateUser(uid: string, fields: UserUpdateFields): Promise
     (updates as Record<string, unknown>).hijriOffset = fields.hijriOffset;
   if (fields.dayStartMode !== undefined)
     (updates as Record<string, unknown>).dayStartMode = fields.dayStartMode;
+  if (fields.aiEnabled !== undefined) updates.aiEnabled = fields.aiEnabled;
 
   return User.findOneAndUpdate({ uid }, updates, { new: true, runValidators: true });
 }

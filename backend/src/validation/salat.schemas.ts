@@ -46,6 +46,17 @@ export const getSalatDebtSchema = z.object({
   body: z.object({}).optional(),
 });
 
+export const salatCorrelationsSchema = z.object({
+  query: z.object({
+    today: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    timezoneOffset: z.coerce.number().int().min(-720).max(840).optional(),
+  }),
+  body: z.object({}).optional(),
+});
+
 export const salatHistorySchema = z.object({
   query: z.object({
     days: z.coerce.number().int().positive().max(365).default(30),
