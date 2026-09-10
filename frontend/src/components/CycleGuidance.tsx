@@ -84,7 +84,7 @@ export default function CycleGuidance({
         <div className="flex items-center gap-2 mt-2">
           {['#c4825a', '#c4825a', '#5a9e8e'].map((c, i) => (
             <motion.span
-              key={c}
+              key={i}
               className="w-2 h-2 rounded-full"
               style={{ background: c }}
               animate={{ opacity: [0.3, 1, 0.3] }}

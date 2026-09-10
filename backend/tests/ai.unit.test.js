@@ -329,6 +329,82 @@ describe('AI: cycle-phase guidance (Rayhanah)', () => {
   });
 });
 
+describe('AI: language support (bn)', () => {
+  const originalFetch = global.fetch;
+  const originalKey = process.env.GROQ_API_KEY;
+
+  beforeEach(() => {
+    process.env.GROQ_API_KEY = 'test-key';
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    process.env.GROQ_API_KEY = originalKey;
+    jest.restoreAllMocks();
+  });
+
+  test('passing language: "bn" puts a Bengali-response instruction in the system prompt sent to the provider', async () => {
+    mockGroqReply(JSON.stringify({ message: 'বিশ্রাম আপনার জন্য লেখা — নিজের প্রতি নরম থাকুন।' }));
+    await aiService.getCycleGuidance(
+      { phase: 'hayd', dayCount: 2, beyondMax: false },
+      AI_ENABLED_UID,
+      'bn'
+    );
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    const systemMessage = body.messages.find((m) => m.role === 'system').content;
+    expect(systemMessage).toMatch(/Bengali/i);
+  });
+
+  test('omitting language (defaults to "en") puts an English-response instruction in the system prompt', async () => {
+    mockGroqReply(JSON.stringify({ message: 'Rest is written for you — be gentle.' }));
+    await aiService.getCycleGuidance(
+      { phase: 'hayd', dayCount: 2, beyondMax: false },
+      AI_ENABLED_UID
+    );
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    const systemMessage = body.messages.find((m) => m.role === 'system').content;
+    expect(systemMessage).toMatch(/Respond in English/);
+  });
+
+  test('a Bengali-script hadith citation is blocked by the output guardrail (the English-only patterns would miss it)', async () => {
+    mockGroqReply(JSON.stringify({ message: 'সহীহ বুখারীতে বর্ণিত আছে যে এই দিনগুলো ধৈর্যের।' }));
+    const result = await aiService.getCycleGuidance(
+      { phase: 'hayd', dayCount: 2, beyondMax: false },
+      AI_ENABLED_UID,
+      'bn'
+    );
+    expect(result.ai).toBe(false);
+    expect(result.message).not.toContain('বুখারী');
+  });
+
+  test('a Bengali-script ruling word (হারাম) is blocked by the output guardrail', async () => {
+    mockGroqReply(JSON.stringify({ message: 'এই সময়ে রোযা রাখা হারাম, তাই চিন্তা করবেন না।' }));
+    const result = await aiService.getFastingCompanion(
+      { period: 'morning', fastType: 'general' },
+      AI_ENABLED_UID,
+      'bn'
+    );
+    expect(result.ai).toBe(false);
+  });
+
+  test('a Bengali-script verse citation (সূরা) is blocked by the output guardrail', async () => {
+    mockGroqReply(JSON.stringify({ message: 'সূরা বাকারায় বলা হয়েছে যে এটি সহজ হবে।' }));
+    const result = await aiService.getComebackNudge({ daysAway: 3 }, AI_ENABLED_UID, 'bn');
+    expect(result.ai).toBe(false);
+  });
+
+  test('a provider failure with language: "bn" falls back to the Bengali static message, not the English one', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500 });
+    const result = await aiService.getCycleGuidance(
+      { phase: 'hayd', dayCount: 2, beyondMax: false },
+      AI_ENABLED_UID,
+      'bn'
+    );
+    expect(result.ai).toBe(false);
+    expect(result.message).toMatch(/[ঀ-৿]/); // contains Bengali script
+  });
+});
+
 describe('AI schemas: fastType is locked to the real fasting-category/voluntary-kind set', () => {
   test('accepts a known category', () => {
     const parsed = aiFastingCompanionSchema.safeParse({

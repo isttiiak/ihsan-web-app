@@ -96,7 +96,7 @@ app.use(
     // Auth uses Bearer tokens, not cookies — credentials false is correct here.
     credentials: false,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-App-Language'],
     optionsSuccessStatus: 204,
   })
 );

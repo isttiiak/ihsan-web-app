@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { auth } from '../firebase.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { getDemoResponse } from '../utils/demoData.js';
+import i18n from '../i18n.js';
 
 /**
  * Backend origin. In production the API lives on the SAME Vercel deployment
@@ -64,6 +65,15 @@ api.interceptors.request.use(async (config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
+});
+
+// Tell the backend which language the UI is currently showing — used by
+// Naseeh (AI) replies so a Bengali-reading user doesn't get an English reply
+// glued into an otherwise-translated page. Not personal data, no consent gate
+// needed (it's the same language already visible in this browser's UI).
+api.interceptors.request.use((config) => {
+  config.headers['X-App-Language'] = i18n.language?.startsWith('bn') ? 'bn' : 'en';
   return config;
 });
 
