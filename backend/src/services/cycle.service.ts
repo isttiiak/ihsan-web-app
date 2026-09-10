@@ -1,7 +1,10 @@
 import CycleLog, { ICycleLog } from '../models/CycleLog.js';
 import CycleProfile, { ICycleProfile } from '../models/CycleProfile.js';
-import CycleDay, { ICycleDay } from '../models/CycleDay.js';
+import CycleDay, { ICycleDayContent } from '../models/CycleDay.js';
 import SocialProfile from '../models/SocialProfile.js';
+import { encryptJson, decryptJson } from '../utils/fieldCrypto.js';
+
+const EMPTY_DAY_CONTENT: ICycleDayContent = { flow: null, symptoms: [], moods: [], garden: [] };
 
 /**
  * Rayhanah Cycle — menstrual (hayd) & post-natal (nifas) tracking.
@@ -142,9 +145,7 @@ export async function getSummary(userId: string, today: string): Promise<CycleSu
   const [status, logs, days] = await Promise.all([
     getStatus(userId, today),
     CycleLog.find({ userId }).sort({ startDate: -1 }).limit(24).select('type startDate endDate'),
-    CycleDay.find({ userId, date: { $gte: daysSince, $lte: today } }).select(
-      'date flow symptoms moods mood garden'
-    ),
+    CycleDay.find({ userId, date: { $gte: daysSince, $lte: today } }).select('date enc'),
   ]);
   return {
     ...status,
@@ -154,15 +155,15 @@ export async function getSummary(userId: string, today: string): Promise<CycleSu
       startDate: l.startDate,
       endDate: l.endDate,
     })),
-    days: days.map((d) => ({
-      date: d.date,
-      flow: d.flow,
-      symptoms: d.symptoms,
-      // Merge any legacy single mood into the new array.
-      moods: d.moods?.length ? d.moods : d.mood ? [d.mood] : [],
-      garden: d.garden ?? [],
-    })),
+    days: days.map((d) => {
+      const content = decryptJson<ICycleDayContent>(d.enc) ?? EMPTY_DAY_CONTENT;
+      return { date: d.date, ...content };
+    }),
   };
+}
+
+export interface CycleDayResult extends ICycleDayContent {
+  date: string;
 }
 
 export async function upsertDay(
@@ -174,21 +175,21 @@ export async function upsertDay(
     moods?: string[];
     garden?: string[];
   }
-): Promise<ICycleDay> {
-  const set: Record<string, unknown> = {};
-  if (input.flow !== undefined) set.flow = input.flow;
-  if (input.symptoms !== undefined) set.symptoms = input.symptoms;
-  // Writing moods clears the legacy single-mood field to avoid double-counting.
-  if (input.moods !== undefined) {
-    set.moods = input.moods;
-    set.mood = null;
-  }
-  if (input.garden !== undefined) set.garden = input.garden;
-  return await CycleDay.findOneAndUpdate(
+): Promise<CycleDayResult> {
+  const existing = await CycleDay.findOne({ userId, date: input.date }).select('enc');
+  const current = decryptJson<ICycleDayContent>(existing?.enc) ?? EMPTY_DAY_CONTENT;
+  const next: ICycleDayContent = {
+    flow: input.flow !== undefined ? input.flow : current.flow,
+    symptoms: input.symptoms !== undefined ? input.symptoms : current.symptoms,
+    moods: input.moods !== undefined ? input.moods : current.moods,
+    garden: input.garden !== undefined ? input.garden : current.garden,
+  } as ICycleDayContent;
+  await CycleDay.findOneAndUpdate(
     { userId, date: input.date },
-    { $set: set, $setOnInsert: { userId, date: input.date } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { $set: { enc: encryptJson(next) }, $setOnInsert: { userId, date: input.date } },
+    { upsert: true, setDefaultsOnInsert: true }
   );
+  return { date: input.date, ...next };
 }
 
 export async function startCycle(

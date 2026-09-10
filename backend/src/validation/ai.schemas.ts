@@ -65,3 +65,12 @@ export const aiActivityInsightSchema = z.object({
     stats: z.record(z.string(), z.unknown()).optional(),
   }),
 });
+
+// Bring-your-own Groq key (Settings > AI). Loosely validated — Groq keys
+// aren't a documented fixed format beyond the "gsk_" prefix; the real check
+// is whether the key actually works, which happens on first use.
+export const aiSetGroqKeySchema = z.object({
+  body: z.object({
+    apiKey: z.string().trim().min(10).max(200),
+  }),
+});

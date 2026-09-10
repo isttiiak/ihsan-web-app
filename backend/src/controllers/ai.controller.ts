@@ -131,3 +131,49 @@ export const activityInsightHandler = async (
     next(err);
   }
 };
+
+// ── Bring-your-own Groq key ───────────────────────────────────────────────────
+
+export const groqKeyStatusHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await aiService.getGroqKeyStatus(req.user.uid);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const setGroqKeyHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { apiKey } = req.body as { apiKey: string };
+    const result = await aiService.setGroqKey(req.user.uid, apiKey);
+    if (!result.ok) {
+      res.status(400).json({ ok: false, error: result.error });
+      return;
+    }
+    res.json({ ok: true, hasOwnKey: result.hasOwnKey });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const clearGroqKeyHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await aiService.setGroqKey(req.user.uid, null);
+    res.json({ ok: true, hasOwnKey: result.hasOwnKey });
+  } catch (err) {
+    next(err);
+  }
+};

@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api.js';
 
 /**
@@ -137,5 +137,44 @@ export function useAiActivityInsight() {
       });
       return data;
     },
+  });
+}
+
+// ── Bring-your-own Groq key (Settings > AI) ──────────────────────────────────
+// Write-only by design: the key is never echoed back once saved, so the UI
+// only ever knows whether one is set, not its value.
+const GROQ_KEY_QUERY_KEY = ['ai', 'groq-key-status'] as const;
+
+export function useGroqKeyStatus() {
+  return useQuery({
+    queryKey: GROQ_KEY_QUERY_KEY,
+    queryFn: async () => {
+      const { data } = await api.get<{ ok: boolean; hasOwnKey: boolean }>('/api/ai/groq-key');
+      return data.hasOwnKey;
+    },
+  });
+}
+
+export function useSetGroqKey() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (apiKey: string) => {
+      const { data } = await api.put<{ ok: boolean; hasOwnKey: boolean }>('/api/ai/groq-key', {
+        apiKey,
+      });
+      return data.hasOwnKey;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: GROQ_KEY_QUERY_KEY }),
+  });
+}
+
+export function useClearGroqKey() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.delete<{ ok: boolean; hasOwnKey: boolean }>('/api/ai/groq-key');
+      return data.hasOwnKey;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: GROQ_KEY_QUERY_KEY }),
   });
 }

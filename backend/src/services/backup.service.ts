@@ -20,7 +20,12 @@ import PushSubscription from '../models/PushSubscription.js';
  * over fresh data overwrites only the days present in the file.
  */
 
-export const BACKUP_VERSION = 1;
+// Bumped 2 -> Rayhanah's CycleDay fields (flow/symptoms/moods/garden) moved
+// behind field-level encryption (see models/CycleDay.ts). Import uses raw
+// bulkWrite/replaceOne, which bypasses the Mongoose schema entirely, so a
+// pre-encryption (v1) backup file is rejected rather than silently writing
+// its plaintext fields straight into the collection.
+export const BACKUP_VERSION = 2;
 
 type PlainDoc = Record<string, unknown>;
 

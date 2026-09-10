@@ -23,6 +23,7 @@ import {
 import { syncQuranTranslationWithLang } from '../utils/quranData.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useUiStore } from '../store/useUiStore.js';
+import { useGroqKeyStatus, useSetGroqKey, useClearGroqKey } from '../hooks/useAi.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import ZikrLibrarySection from '../components/ZikrLibrarySection.js';
 import NotificationSettings from '../components/NotificationSettings.js';
@@ -37,6 +38,7 @@ import {
   TrashIcon,
   ShieldCheckIcon,
   LanguageIcon,
+  KeyIcon,
 } from '@heroicons/react/24/outline';
 
 // ── Unified danger zone (Istiak's spec): EVERY data-erase control lives here,
@@ -257,6 +259,83 @@ function Toggle({
   );
 }
 
+function GroqKeySetting({ t }: { t: (key: string) => string }) {
+  const { data: hasOwnKey, isLoading } = useGroqKeyStatus();
+  const setKey = useSetGroqKey();
+  const clearKey = useClearGroqKey();
+  const [value, setValue] = useState('');
+
+  const handleSave = () => {
+    const apiKey = value.trim();
+    if (!apiKey) return;
+    setKey.mutate(apiKey, {
+      onSuccess: () => {
+        setValue('');
+        toast.success(t('settings.groqKeySaved'));
+      },
+      onError: () => toast.error(t('settings.groqKeyInvalid')),
+    });
+  };
+
+  const handleRemove = () => {
+    clearKey.mutate(undefined, { onSuccess: () => toast.success(t('settings.groqKeyRemoved')) });
+  };
+
+  return (
+    <div className="p-3 rounded-xl border border-brand-border bg-brand-deep/50 space-y-2">
+      <div className="flex items-center gap-2">
+        <KeyIcon className="w-4 h-4 text-brand-gold shrink-0" />
+        <p className="font-semibold text-white/80 text-sm">{t('settings.groqKeySection')}</p>
+      </div>
+      <p className="text-white/30 text-xs leading-snug">
+        {t('settings.groqKeyDetail')}{' '}
+        <a
+          href="https://console.groq.com/keys"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-brand-emerald underline"
+        >
+          {t('settings.groqKeyGetOne')}
+        </a>
+      </p>
+      {!isLoading && hasOwnKey ? (
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <span className="text-xs text-brand-emerald font-medium">
+            ✓ {t('settings.groqKeyActive')}
+          </span>
+          <button
+            type="button"
+            onClick={handleRemove}
+            disabled={clearKey.isPending}
+            className="btn btn-xs btn-ghost text-red-400/60 hover:text-red-400 hover:bg-red-500/10"
+          >
+            {t('settings.groqKeyRemove')}
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 pt-1">
+          <input
+            type="password"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={t('settings.groqKeyPlaceholder')}
+            autoComplete="off"
+            className="input input-xs bg-black/30 border-brand-border text-white flex-1"
+          />
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!value.trim() || setKey.isPending}
+            className="btn btn-xs bg-brand-deep border border-brand-border text-white/70 hover:text-white"
+          >
+            {t('settings.groqKeySave')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Settings() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -421,7 +500,7 @@ export default function Settings() {
     setImporting(true);
     try {
       const parsed = JSON.parse(await file.text()) as { app?: string; version?: number };
-      if (parsed?.app !== 'ihsan' || parsed?.version !== 1) {
+      if (parsed?.app !== 'ihsan') {
         toast.error('That is not an Ihsan backup file — export one from this page first.');
         return;
       }
@@ -435,8 +514,11 @@ export default function Settings() {
         `Restored: ${c.zikrDays ?? 0} zikr · ${c.salatDays ?? 0} salat · ${c.fastingDays ?? 0} fasting · ${c.quranDays ?? 0} quran day(s) ✅`,
         { duration: 6000 }
       );
-    } catch {
-      toast.error('Import failed — the file may be damaged, or the connection dropped.');
+    } catch (err) {
+      // The version mismatch is the one import error worth naming specifically
+      // (backend/services/backup.service.ts) — an old export needs a fresh one.
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      toast.error(msg ?? 'Import failed — the file may be damaged, or the connection dropped.');
     } finally {
       setImporting(false);
     }
@@ -700,16 +782,19 @@ export default function Settings() {
             subtitle={t('settings.naseehSubtitle')}
             delay={0.18}
           >
-            <Toggle
-              checked={aiEnabled}
-              onChange={(v) => {
-                setAiEnabled(v);
-                if (user) api.patch('/api/user/me', { aiEnabled: v }).catch(() => {});
-              }}
-              title={t('settings.enableNaseeh')}
-              detail={t('settings.enableNaseehDetail')}
-              accent="toggle-warning"
-            />
+            <div className="space-y-3">
+              <Toggle
+                checked={aiEnabled}
+                onChange={(v) => {
+                  setAiEnabled(v);
+                  if (user) api.patch('/api/user/me', { aiEnabled: v }).catch(() => {});
+                }}
+                title={t('settings.enableNaseeh')}
+                detail={t('settings.enableNaseehDetail')}
+                accent="toggle-warning"
+              />
+              {aiEnabled && <GroqKeySetting t={t} />}
+            </div>
           </SectionCard>
 
           {/* ── Zikr library ── */}

@@ -46,6 +46,11 @@ export interface IUser extends Document {
   location?: { lat: number; lng: number };
   hijriOffset: number;
   aiEnabled: boolean;
+  /** User's own Groq API key (AES-256-GCM, see utils/fieldCrypto.ts) — opt-in
+   * alternative to the app's shared GROQ_API_KEY. Write-only from the API's
+   * perspective: never decrypted back out to a client, only used server-side
+   * in ai.service.ts. Null/unset means "use the shared key". */
+  groqApiKeyEnc?: string | null;
   salatResetDate?: string;
   salatResetHistory: ISalatResetEntry[];
   totalCount: number;
@@ -92,6 +97,7 @@ const userSchema = new Schema(
     birthDate: { type: Date },
     hijriOffset: { type: Number, default: 0, min: -1, max: 1 },
     aiEnabled: { type: Boolean, default: false },
+    groqApiKeyEnc: { type: String, default: null },
     salatResetDate: { type: String, default: undefined },
     salatResetHistory: {
       type: [

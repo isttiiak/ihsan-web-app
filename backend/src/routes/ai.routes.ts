@@ -12,6 +12,7 @@ import {
   aiFastingCompanionSchema,
   aiActivityInsightSchema,
   aiCycleGuidanceSchema,
+  aiSetGroqKeySchema,
 } from '../validation/ai.schemas.js';
 
 const router = Router();
@@ -75,5 +76,11 @@ router.post(
   validate(aiActivityInsightSchema),
   aiController.activityInsightHandler
 );
+
+// Bring-your-own Groq key (Settings > AI) — a settings write, not a Groq
+// call itself, so it doesn't sit behind aiUserLimiter.
+router.get('/groq-key', requireAuth, aiController.groqKeyStatusHandler);
+router.put('/groq-key', requireAuth, validate(aiSetGroqKeySchema), aiController.setGroqKeyHandler);
+router.delete('/groq-key', requireAuth, aiController.clearGroqKeyHandler);
 
 export default router;

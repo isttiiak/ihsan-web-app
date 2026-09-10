@@ -47,6 +47,7 @@ export default function Footer() {
             <span>{t('footer.secure')}</span>
           </div>
           <p className="text-[10px] text-white/25 tabular-nums">v{__APP_VERSION__}</p>
+          <p className="text-[10px] text-white/25">{t('footer.platformNote')}</p>
         </div>
       </div>
     </footer>

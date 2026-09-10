@@ -220,6 +220,46 @@ export default function Landing() {
           </Link>
         </motion.section>
 
+        {/* ── Privacy & security ── */}
+        <motion.section {...fadeUp} className="mb-12">
+          <div className="rounded-3xl border border-brand-emerald/25 bg-gradient-to-br from-brand-emerald/10 via-brand-deep/60 to-brand-info/10 p-6 sm:p-10">
+            <div className="text-center mb-8">
+              <div className="text-5xl mb-3">🔒</div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white">
+                {t('landing.privacyTitle')}
+              </h2>
+              <p className="text-white/50 text-sm sm:text-base mt-3 max-w-2xl mx-auto leading-relaxed">
+                {t('landing.privacyDesc')}
+              </p>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div className="rounded-2xl border border-brand-emerald/20 bg-brand-deep/50 p-5">
+                <div className="text-3xl mb-2">🔐</div>
+                <h3 className="text-white font-bold text-sm">
+                  {t('landing.privacyEncryptedTitle')}
+                </h3>
+                <p className="text-white/40 text-xs mt-1.5 leading-relaxed">
+                  {t('landing.privacyEncryptedDesc')}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-brand-emerald/20 bg-brand-deep/50 p-5">
+                <div className="text-3xl mb-2">🙈</div>
+                <h3 className="text-white font-bold text-sm">{t('landing.privacyPartnerTitle')}</h3>
+                <p className="text-white/40 text-xs mt-1.5 leading-relaxed">
+                  {t('landing.privacyPartnerDesc')}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-brand-emerald/20 bg-brand-deep/50 p-5">
+                <div className="text-3xl mb-2">🔑</div>
+                <h3 className="text-white font-bold text-sm">{t('landing.privacyAiKeyTitle')}</h3>
+                <p className="text-white/40 text-xs mt-1.5 leading-relaxed">
+                  {t('landing.privacyAiKeyDesc')}
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
         {/* ── Authenticity strip ── */}
         <motion.section {...fadeUp} className="mb-12">
           <div className="rounded-3xl border border-brand-gold/25 bg-gradient-to-r from-brand-gold/10 to-transparent p-6 sm:p-8 sm:flex items-center gap-6">

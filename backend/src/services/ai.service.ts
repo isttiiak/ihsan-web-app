@@ -16,6 +16,9 @@
  * period) so a typical user makes 1-3 calls per week.
  */
 
+import User from '../models/User.js';
+import { encryptJson, decryptJson } from '../utils/fieldCrypto.js';
+
 interface Provider {
   name: string;
   url: string;
@@ -28,18 +31,27 @@ interface Provider {
 // the odds of the model drifting into citation/ruling language.
 const TEMPERATURE = 0.5;
 
-function providers(): Provider[] {
-  const key = process.env.GROQ_API_KEY;
+/**
+ * `customKey` is a user's own Groq key (see setGroqKey below) — when set, it
+ * is used INSTEAD of the shared GROQ_API_KEY, not as a fallback pair with it,
+ * so her usage is never mixed into the app's shared quota/billing. If her key
+ * fails, `complete()`'s existing static-text fallback applies, same as any
+ * other provider failure — we never silently reuse the shared key underneath
+ * a key she deliberately provided.
+ */
+function providers(customKey?: string): Provider[] {
+  const key = customKey || process.env.GROQ_API_KEY;
   if (!key) return [];
+  const suffix = customKey ? '-byok' : '';
   return [
     {
-      name: 'groq-120b',
+      name: `groq-120b${suffix}`,
       url: 'https://api.groq.com/openai/v1/chat/completions',
       key,
       model: 'openai/gpt-oss-120b',
     },
     {
-      name: 'groq-20b',
+      name: `groq-20b${suffix}`,
       url: 'https://api.groq.com/openai/v1/chat/completions',
       key,
       model: 'openai/gpt-oss-20b',
@@ -48,6 +60,50 @@ function providers(): Provider[] {
 }
 
 export const AI_AVAILABLE = (): boolean => !!process.env.GROQ_API_KEY;
+
+// ── Bring-your-own Groq key (Settings > AI) ──────────────────────────────────
+async function resolveGroqKey(userId?: string): Promise<string | undefined> {
+  if (!userId) return undefined;
+  const user = await User.findOne({ uid: userId }).select('groqApiKeyEnc');
+  return decryptJson<string>(user?.groqApiKeyEnc) ?? undefined;
+}
+
+export async function getGroqKeyStatus(userId: string): Promise<{ hasOwnKey: boolean }> {
+  const user = await User.findOne({ uid: userId }).select('groqApiKeyEnc');
+  return { hasOwnKey: !!user?.groqApiKeyEnc };
+}
+
+/** A cheap, no-completion call — just confirms Groq accepts the key. */
+async function verifyGroqKey(apiKey: string): Promise<boolean> {
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Save (or, with apiKey null, clear) the caller's own Groq key. Write-only —
+ * never returned back to a client once saved. A save is verified against
+ * Groq first so a mistyped/revoked key is rejected immediately rather than
+ * silently falling back to static text on every future AI call. */
+export async function setGroqKey(
+  userId: string,
+  apiKey: string | null
+): Promise<{ ok: boolean; hasOwnKey: boolean; error?: string }> {
+  if (apiKey === null) {
+    await User.updateOne({ uid: userId }, { $set: { groqApiKeyEnc: null } });
+    return { ok: true, hasOwnKey: false };
+  }
+  const valid = await verifyGroqKey(apiKey);
+  if (!valid) {
+    return { ok: false, hasOwnKey: false, error: 'That key could not be verified with Groq.' };
+  }
+  await User.updateOne({ uid: userId }, { $set: { groqApiKeyEnc: encryptJson(apiKey) } });
+  return { ok: true, hasOwnKey: true };
+}
 
 /** The immutable guardrail prepended to every system prompt. */
 const GUARDRAIL = `You are "Naseeh", the gentle worship companion inside Ihsan, a Muslim habit app.
@@ -96,9 +152,10 @@ async function callProvider(
 async function completeRaw(
   system: string,
   user: string,
-  maxTokens = 600
+  maxTokens = 600,
+  customKey?: string
 ): Promise<{ text: string; provider: string } | null> {
-  for (const p of providers()) {
+  for (const p of providers(customKey)) {
     const text = await callProvider(p, system, user, maxTokens);
     if (text && text.trim()) return { text: text.trim(), provider: p.name };
   }
@@ -191,7 +248,8 @@ async function complete(
   maxTokens = 600,
   meta?: { feature: string; userId?: string }
 ): Promise<{ text: string; provider: string } | null> {
-  const out = await completeRaw(`${GUARDRAIL}\n\n${system}`, user, maxTokens);
+  const customKey = await resolveGroqKey(meta?.userId);
+  const out = await completeRaw(`${GUARDRAIL}\n\n${system}`, user, maxTokens, customKey);
   const feature = meta?.feature ?? 'unknown';
   if (!out) {
     logAiCall({ feature, userId: meta?.userId, success: false });
