@@ -4,6 +4,7 @@ import app from '../src/app.js';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import ZikrDaily from '../src/models/ZikrDaily.js';
 import User from '../src/models/User.js';
+import { BACKUP_VERSION } from '../src/services/backup.service.js';
 
 // For tests, we'll use DEV_AUTH_BYPASS and a fake JWT with uid/email
 const fakeJwt = (payload) => {
@@ -99,7 +100,7 @@ describe('User profile API', () => {
     expect(exp.status).toBe(200);
     const backup = exp.body.backup;
     expect(backup.app).toBe('ihsan');
-    expect(backup.version).toBe(1);
+    expect(backup.version).toBe(BACKUP_VERSION);
     expect(backup.zikr.zikrTotals.SubhanAllah).toBe(33);
     expect(backup.quran.logs.length).toBe(1);
     expect(backup.fasting.logs.length).toBe(1);

@@ -156,13 +156,14 @@ export const importAllHandler = async (
 ): Promise<void> => {
   try {
     const body = req.body as { app?: string; version?: number } & Record<string, unknown>;
-    if (body?.app !== 'ihsan' || body?.version !== 1) {
-      res
-        .status(400)
-        .json({ ok: false, error: 'Not an Ihsan backup file (expected app "ihsan", version 1).' });
+    const backupService = await import('../services/backup.service.js');
+    if (body?.app !== 'ihsan' || body?.version !== backupService.BACKUP_VERSION) {
+      res.status(400).json({
+        ok: false,
+        error: `Not an Ihsan backup file (expected app "ihsan", version ${backupService.BACKUP_VERSION}).`,
+      });
       return;
     }
-    const backupService = await import('../services/backup.service.js');
     const counts = await backupService.importAll(
       req.user.uid,
       body as unknown as import('../services/backup.service.js').BackupFile
