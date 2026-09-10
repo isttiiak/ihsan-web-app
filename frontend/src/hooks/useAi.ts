@@ -84,6 +84,18 @@ export function useAiComfort() {
   });
 }
 
+export function useAiCycleGuidance() {
+  return useMutation({
+    mutationFn: async (vars: { phase: 'hayd' | 'nifas'; dayCount: number; beyondMax: boolean }) => {
+      const { data } = await api.post<NudgeResult & { ok: boolean }>(
+        '/api/ai/cycle-guidance',
+        vars
+      );
+      return data;
+    },
+  });
+}
+
 export function useAiStreakCoach() {
   return useMutation({
     mutationFn: async (vars: {

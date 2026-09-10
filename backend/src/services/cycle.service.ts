@@ -1,6 +1,7 @@
 import CycleLog, { ICycleLog } from '../models/CycleLog.js';
 import CycleProfile, { ICycleProfile } from '../models/CycleProfile.js';
 import CycleDay, { ICycleDay } from '../models/CycleDay.js';
+import SocialProfile from '../models/SocialProfile.js';
 
 /**
  * Rayhanah Cycle — menstrual (hayd) & post-natal (nifas) tracking.
@@ -68,6 +69,7 @@ export interface CycleStatus {
     basedOnCycles: number;
   };
   madhab: ICycleProfile['madhab'];
+  partnerSync: { enabled: boolean; partnerUid: string | null };
 }
 
 export async function getStatus(userId: string, today: string): Promise<CycleStatus> {
@@ -116,6 +118,10 @@ export async function getStatus(userId: string, today: string): Promise<CycleSta
     active,
     prediction: { nextStart, avgCycleDays, avgPeriodDays, basedOnCycles: gaps.length },
     madhab: profile.madhab,
+    partnerSync: {
+      enabled: profile.partnerSyncEnabled,
+      partnerUid: profile.partnerUid ?? null,
+    },
   };
 }
 
@@ -346,4 +352,69 @@ export async function getExcusedIntervals(
 ): Promise<Array<{ start: string; end: string | null }>> {
   const rows = await CycleLog.find({ userId }).select('startDate endDate');
   return rows.map((r) => ({ start: r.startDate, end: r.endDate }));
+}
+
+/**
+ * Opt-in, revocable partner status-sharing. Sharing is deliberately narrow:
+ * the partner must already be a mutual friend (reuses the existing, proven
+ * friend graph rather than a new invite mechanism), and what's ever shared
+ * is a single boolean ("on her cycle" / "not") — see statsForUser's use of
+ * this in social.service.ts, which only ever reads `enabled`+`partnerUid`
+ * and computes the boolean itself from data that already never leaves the
+ * server unfiltered.
+ */
+export async function setPartnerSync(
+  userId: string,
+  input: { enabled: boolean; partnerUid?: string }
+): Promise<{ ok: boolean; error?: string; enabled: boolean; partnerUid: string | null }> {
+  if (!input.enabled) {
+    // Revoking is always allowed, no validation — a partner must never be
+    // able to block her from turning this off.
+    await CycleProfile.findOneAndUpdate(
+      { userId },
+      { $set: { partnerSyncEnabled: false, partnerUid: null } },
+      { upsert: true, setDefaultsOnInsert: true }
+    );
+    return { ok: true, enabled: false, partnerUid: null };
+  }
+
+  const partnerUid = input.partnerUid;
+  if (!partnerUid) {
+    return { ok: false, error: 'Choose a friend to share with.', enabled: false, partnerUid: null };
+  }
+  if (partnerUid === userId) {
+    return { ok: false, error: 'You cannot link yourself.', enabled: false, partnerUid: null };
+  }
+
+  const mine = await SocialProfile.findOne({ userId }).select('friends');
+  if (!mine?.friends.includes(partnerUid)) {
+    return {
+      ok: false,
+      error: 'You can only share with someone already on your friends list.',
+      enabled: false,
+      partnerUid: null,
+    };
+  }
+
+  await CycleProfile.findOneAndUpdate(
+    { userId },
+    { $set: { partnerSyncEnabled: true, partnerUid } },
+    { upsert: true, setDefaultsOnInsert: true }
+  );
+  return { ok: true, enabled: true, partnerUid };
+}
+
+/**
+ * Which of `uids` are currently sharing their cycle status with `viewerUid`?
+ * One query for the whole leaderboard, mirroring getExcusedSet's shape —
+ * called from social.service.ts right alongside it.
+ */
+export async function getPartnerShareSet(uids: string[], viewerUid: string): Promise<Set<string>> {
+  if (!uids.length) return new Set();
+  const rows = await CycleProfile.find({
+    userId: { $in: uids },
+    partnerSyncEnabled: true,
+    partnerUid: viewerUid,
+  }).select('userId');
+  return new Set(rows.map((r) => r.userId));
 }

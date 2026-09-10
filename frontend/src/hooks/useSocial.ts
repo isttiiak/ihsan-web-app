@@ -26,6 +26,9 @@ export interface FriendStats {
   quranPagesToday: number;
   quranGoal: number;
   score: number;
+  /** Present ONLY for the one friend who has opted in to share her cycle
+   * status with you specifically — see Rayhanah's partner-sync setting. */
+  onCycle?: boolean;
 }
 
 export interface SocialSummary {

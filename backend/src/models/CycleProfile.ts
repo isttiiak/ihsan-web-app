@@ -9,12 +9,20 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface ICycleProfile extends Document {
   userId: string;
   madhab: 'hanafi' | 'majority';
+  /** Opt-in, revocable partner status-sharing (see cycle.service.ts). Off by
+   * default; sharing anything requires BOTH partnerSyncEnabled=true AND a
+   * partnerUid set — a partnerUid alone (e.g. left over after disabling)
+   * shares nothing. */
+  partnerSyncEnabled: boolean;
+  partnerUid?: string;
 }
 
 const CycleProfileSchema = new Schema<ICycleProfile>(
   {
     userId: { type: String, required: true, unique: true, index: true },
     madhab: { type: String, enum: ['hanafi', 'majority'], default: 'majority' },
+    partnerSyncEnabled: { type: Boolean, default: false },
+    partnerUid: { type: String },
   },
   { timestamps: true }
 );

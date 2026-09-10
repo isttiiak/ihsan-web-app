@@ -52,6 +52,14 @@ export const aiFastingCompanionSchema = z.object({
   }),
 });
 
+export const aiCycleGuidanceSchema = z.object({
+  body: z.object({
+    phase: z.enum(['hayd', 'nifas']),
+    dayCount: z.number().int().min(1).max(120),
+    beyondMax: z.boolean(),
+  }),
+});
+
 export const aiActivityInsightSchema = z.object({
   body: z.object({
     stats: z.record(z.string(), z.unknown()).optional(),

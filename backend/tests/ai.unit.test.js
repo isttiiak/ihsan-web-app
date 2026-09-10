@@ -187,6 +187,56 @@ describe('AI mental-health boundary: mood comfort resource note', () => {
   });
 });
 
+describe('AI: cycle-phase guidance (Rayhanah)', () => {
+  const originalFetch = global.fetch;
+  const originalKey = process.env.GROQ_API_KEY;
+
+  beforeEach(() => {
+    process.env.GROQ_API_KEY = 'test-key';
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    process.env.GROQ_API_KEY = originalKey;
+    jest.restoreAllMocks();
+  });
+
+  test('a clean reply passes through as AI-generated', async () => {
+    mockGroqReply(JSON.stringify({ message: 'Rest is written for you today — be gentle.' }));
+    const result = await aiService.getCycleGuidance({
+      phase: 'hayd',
+      dayCount: 3,
+      beyondMax: false,
+    });
+    expect(result.ai).toBe(true);
+    expect(result.message).toContain('Rest is written');
+  });
+
+  test('a reply naming istihada is blocked by the output guardrail (ruling-language filter)', async () => {
+    mockGroqReply(
+      JSON.stringify({ message: 'Since this is istihada, wudu is now wajib for each salah.' })
+    );
+    const result = await aiService.getCycleGuidance({
+      phase: 'hayd',
+      dayCount: 14,
+      beyondMax: true,
+    });
+    expect(result.ai).toBe(false);
+    expect(result.message).not.toContain('istihada');
+  });
+
+  test('a provider failure falls back to the static message', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500 });
+    const result = await aiService.getCycleGuidance({
+      phase: 'nifas',
+      dayCount: 10,
+      beyondMax: false,
+    });
+    expect(result.ai).toBe(false);
+    expect(result.message.length).toBeGreaterThan(0);
+  });
+});
+
 describe('AI schemas: fastType is locked to the real fasting-category/voluntary-kind set', () => {
   test('accepts a known category', () => {
     const parsed = aiFastingCompanionSchema.safeParse({

@@ -42,6 +42,13 @@ export const editCycleLogSchema = z.object({
     }),
 });
 
+export const partnerSyncSchema = z.object({
+  body: z.object({
+    enabled: z.boolean(),
+    partnerUid: z.string().min(1).max(128).optional(),
+  }),
+});
+
 export const cycleDaySchema = z.object({
   body: z.object({
     date: dateField,

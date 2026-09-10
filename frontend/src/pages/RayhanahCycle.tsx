@@ -14,19 +14,23 @@ import {
   useIsFemale,
   useUpsertCycleDay,
   useEditCycleLog,
+  usePartnerSync,
   type CycleFlow,
   type CycleMood,
 } from '../hooks/useCycle.js';
+import { useFriendsList } from '../hooks/useSocial.js';
 import CycleCalendar from '../components/CycleCalendar.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
 import TabNav from '../components/TabNav.js';
 import { useFastingSummary, useUpdateFastingProfile } from '../hooks/useFasting.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
 import { getHijriDate } from '../utils/islamicCalendar.js';
+import { getRamadanWindow } from '../utils/ramadan.js';
 import { celebrateSmall } from '../utils/celebrate.js';
 import { formatLocaleDate } from '../utils/localeDate.js';
 import { translateReference } from '../utils/localeReference.js';
 import MoodComfort from '../components/MoodComfort.js';
+import CycleGuidance from '../components/CycleGuidance.js';
 
 // ─── Sweet, powerful phrases for excused days (Istiak's spec) ─────────────────
 const PHRASES = [
@@ -196,6 +200,10 @@ export default function RayhanahCycle() {
   const deleteLog = useDeleteCycleLog();
   const updateFastingProfile = useUpdateFastingProfile();
   const upsertDay = useUpsertCycleDay();
+  const partnerSync = usePartnerSync();
+
+  const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
+  const { data: friends } = useFriendsList(partnerPickerOpen || !!summary?.partnerSync.enabled);
 
   const [startOpen, setStartOpen] = useState(false);
   const [startDate, setStartDate] = useState(today);
@@ -346,6 +354,12 @@ export default function RayhanahCycle() {
   const qadaOwed = fastingSummary?.profile?.qadaOwed ?? 0;
   const qadaCompleted = fastingSummary?.qadaCompleted ?? 0;
   const qadaRemaining = Math.max(0, qadaOwed - qadaCompleted);
+  const ramadanWindow = getRamadanWindow();
+  const showRamadanQadaWarning =
+    !ramadanWindow.active &&
+    ramadanWindow.daysUntil > 0 &&
+    ramadanWindow.daysUntil <= 30 &&
+    qadaRemaining > 0;
 
   if (!user) return null;
   if (!isFemale) {
@@ -453,6 +467,15 @@ export default function RayhanahCycle() {
                   ). {t('rayhanah.scholarAdvice', 'Please confirm with a scholar you trust.')}
                 </div>
               )}
+
+              <div className="mt-4">
+                <CycleGuidance
+                  day={today}
+                  phase={active.type}
+                  dayCount={active.dayCount}
+                  beyondMax={active.beyondMax}
+                />
+              </div>
 
               <button
                 className="mt-5 w-full btn h-14 rounded-2xl border-0 text-white text-base font-black bg-gradient-to-r from-brand-pink to-brand-pink hover:from-brand-pink hover:to-brand-pink shadow-lg shadow-brand-pink-dim/40"
@@ -858,6 +881,16 @@ export default function RayhanahCycle() {
               </a>
               ).
             </p>
+            {showRamadanQadaWarning && (
+              <p className="text-brand-gold/90 text-xs mt-2 leading-relaxed">
+                🌙{' '}
+                {t(
+                  'rayhanah.ramadanQadaWarning',
+                  'Ramadan starts in {{days}} days — {{count}} still to go before then.',
+                  { days: ramadanWindow.daysUntil, count: qadaRemaining }
+                )}
+              </p>
+            )}
             <div className="mt-3 grid grid-cols-3 gap-3">
               <div className="rounded-xl bg-brand-gold/10 border border-brand-gold/15 p-3 text-center">
                 <p className="text-xl font-black text-brand-gold">{qadaOwed}</p>
@@ -1201,6 +1234,80 @@ export default function RayhanahCycle() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* ── Partner sync — opt-in, revocable, status-only ── */}
+          <div className="pt-3 border-t border-brand-border/50">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-white font-bold text-sm">
+                  🤝 {t('rayhanah.partnerSyncTitle', 'Share cycle status')}
+                </p>
+                <p className="text-white/30 text-xs leading-relaxed">
+                  {t(
+                    'rayhanah.partnerSyncDesc',
+                    'One friend sees only "on her cycle" / "not" — never dates, symptoms, or notes. Turn off anytime.'
+                  )}
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-sm border-brand-pink/40 [--tglbg:theme(colors.brand-surface)] checked:bg-brand-pink checked:border-brand-pink shrink-0"
+                checked={summary?.partnerSync.enabled ?? false}
+                disabled={partnerSync.isPending}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setPartnerPickerOpen(true);
+                  } else {
+                    partnerSync.mutate({ enabled: false });
+                    setPartnerPickerOpen(false);
+                  }
+                }}
+              />
+            </div>
+
+            {summary?.partnerSync.enabled && summary.partnerSync.partnerUid && (
+              <p className="text-brand-emerald/70 text-xs mt-2">
+                {t('rayhanah.sharingWith', 'Currently sharing with {{name}}', {
+                  name:
+                    friends?.find((f) => f.uid === summary.partnerSync.partnerUid)?.displayName ??
+                    t('rayhanah.aFriend', 'a friend'),
+                })}
+              </p>
+            )}
+
+            {partnerPickerOpen && !summary?.partnerSync.enabled && (
+              <div className="mt-2 space-y-1.5">
+                {!friends?.length ? (
+                  <p className="text-white/25 text-xs">
+                    {t(
+                      'rayhanah.partnerSyncNoFriends',
+                      'Connect with a friend first — Friends page — then come back here.'
+                    )}
+                  </p>
+                ) : (
+                  friends.map((f) => (
+                    <button
+                      key={f.uid}
+                      className="w-full flex items-center gap-2 rounded-xl bg-white/5 hover:bg-white/10 px-3 py-2 text-xs text-white/70 text-left transition-colors"
+                      onClick={() => {
+                        partnerSync.mutate({ enabled: true, partnerUid: f.uid });
+                        setPartnerPickerOpen(false);
+                      }}
+                    >
+                      <span>👤</span>
+                      <span className="truncate">{f.displayName}</span>
+                    </button>
+                  ))
+                )}
+                <button
+                  className="text-white/25 text-xs hover:text-white/50"
+                  onClick={() => setPartnerPickerOpen(false)}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+              </div>
+            )}
           </div>
 
           <button

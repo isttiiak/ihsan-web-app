@@ -711,6 +711,19 @@ export default function Friends() {
                               {t('friends.you')}
                             </span>
                           )}
+                          {f.onCycle !== undefined && (
+                            <span
+                              className={`ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full align-middle ${
+                                f.onCycle
+                                  ? 'bg-brand-pink/25 text-brand-pink'
+                                  : 'bg-white/10 text-white/40'
+                              }`}
+                            >
+                              {f.onCycle
+                                ? t('friends.onCycle', '🌸 on her cycle')
+                                : t('friends.notOnCycle', 'not on her cycle')}
+                            </span>
+                          )}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex-1 bg-white/10 rounded-full h-1.5 overflow-hidden">

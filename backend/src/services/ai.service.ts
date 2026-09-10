@@ -368,6 +368,38 @@ export async function getMoodComfort(
   };
 }
 
+/**
+ * Cycle-phase-aware encouragement (Rayhanah). This is deliberately the ONLY
+ * thing the AI supplies here — fiqh content (istihada rulings, ghusl steps)
+ * stays as static, citation-carrying copy already shown elsewhere in
+ * RayhanahCycle.tsx; the guardrail below would strip a ruling/citation out of
+ * the model's own output anyway, but the prompt also tells it not to try.
+ */
+export async function getCycleGuidance(
+  input: {
+    phase: 'hayd' | 'nifas';
+    dayCount: number;
+    beyondMax: boolean;
+  },
+  userId?: string
+): Promise<NudgeResult> {
+  const out = await complete(
+    `A Muslim woman is currently on day ${input.dayCount} of her ${input.phase === 'nifas' ? 'post-natal bleeding (nifas)' : 'monthly cycle (hayd)'} — salat is excused for her right now. Write ONE short, warm, sisterly encouragement line (max 2 sentences) for exactly this day of her cycle. Do NOT mention istihada, wudu, or any ruling even if it seems relevant — that guidance is shown to her separately. Do NOT cite anything. Reply ONLY as JSON: {"message": string}.`,
+    `Day ${input.dayCount} of ${input.phase}.`,
+    180,
+    { feature: 'cycle-guidance', userId }
+  );
+  const fallback =
+    "Rest is written for you these days — your dhikr and du'a still reach Him just the same.";
+  if (!out) return { message: fallback, ai: false };
+  const parsed = parseLoose<{ message?: string }>(out.text);
+  return {
+    message: parsed?.message ? String(parsed.message) : fallback,
+    ai: !!parsed?.message,
+    provider: out.provider,
+  };
+}
+
 // ── Feature 5: streak coaching (milestones & recovery) ───────────────────────
 export interface CoachResult {
   message: string;

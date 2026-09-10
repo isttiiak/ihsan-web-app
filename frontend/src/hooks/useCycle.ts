@@ -35,6 +35,7 @@ export interface CycleSummary {
   madhab: 'hanafi' | 'majority';
   logs: Array<{ _id: string; type: 'hayd' | 'nifas'; startDate: string; endDate: string | null }>;
   days: CycleDayNote[];
+  partnerSync: { enabled: boolean; partnerUid: string | null };
 }
 
 /** True for signed-in female users — the only ones who see Rayhanah UI. */
@@ -92,6 +93,26 @@ export function useEndCycle() {
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       toast.error(msg ?? 'Could not save — try again.', { id: 'cycle-end' });
+    },
+  });
+}
+
+/** Opt-in, revocable status-only sharing with one existing friend. */
+export function usePartnerSync() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { enabled: boolean; partnerUid?: string }) => {
+      const { data } = await api.patch<{
+        ok: boolean;
+        enabled: boolean;
+        partnerUid: string | null;
+      }>('/api/cycle/partner-sync', vars);
+      return data;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['cycle'] }),
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      toast.error(msg ?? 'Could not update — try again.', { id: 'cycle-partner-sync' });
     },
   });
 }

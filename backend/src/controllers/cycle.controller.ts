@@ -65,6 +65,24 @@ export const updateProfile = async (
   }
 };
 
+export const setPartnerSync = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { enabled, partnerUid } = req.body as { enabled: boolean; partnerUid?: string };
+    const result = await cycleService.setPartnerSync(req.user.uid, { enabled, partnerUid });
+    if (!result.ok) {
+      res.status(400).json({ ok: false, error: result.error });
+      return;
+    }
+    res.json({ ok: true, enabled: result.enabled, partnerUid: result.partnerUid });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const addPastCycle = async (
   req: Request,
   res: Response,

@@ -57,6 +57,24 @@ export const comfortHandler = async (
   }
 };
 
+export const cycleGuidanceHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { phase, dayCount, beyondMax } = req.body as {
+      phase: 'hayd' | 'nifas';
+      dayCount: number;
+      beyondMax: boolean;
+    };
+    const result = await aiService.getCycleGuidance({ phase, dayCount, beyondMax }, req.user?.uid);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const streakCoachHandler = async (
   req: Request,
   res: Response,

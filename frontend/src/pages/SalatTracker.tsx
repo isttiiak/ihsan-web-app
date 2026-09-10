@@ -1548,6 +1548,41 @@ export default function SalatTracker() {
                             </div>
                           </div>
                         )}
+
+                        {/* Istihadha wudu-renewal reminder — only for TODAY's
+                        prayers, and only while her logged cycle is actively
+                        flagged beyond the madhab's hayd/nifas maximum. */}
+                        {isToday && !isFuture && cycleActive?.beyondMax && (
+                          <div className="px-3 py-2.5 border-t border-brand-pink/20 flex items-start gap-2 bg-brand-pink/5">
+                            <span className="text-base shrink-0">🩸</span>
+                            <div className="min-w-0">
+                              <p className="text-brand-pink font-bold text-xs leading-tight">
+                                {t(
+                                  'salatTracker.istihadaReminderTitle',
+                                  'Fresh wuḍū for this prayer'
+                                )}
+                              </p>
+                              <p className="text-white/30 text-xs leading-relaxed mt-0.5">
+                                {t(
+                                  'salatTracker.istihadaReminderDesc',
+                                  "You're in istiḥāḍa — perform wuḍū again right before this prayer, then pray as usual."
+                                )}
+                              </p>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate('/cycle');
+                                }}
+                                className="text-brand-pink/50 text-xs underline hover:text-brand-pink/80 transition-colors mt-0.5 inline-block"
+                              >
+                                {t(
+                                  'salatTracker.istihadaReminderLink',
+                                  '🌸 Learn more in Rayhanah'
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </motion.div>
                     );
                   })}

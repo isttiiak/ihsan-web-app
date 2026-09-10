@@ -11,7 +11,7 @@ import QuranProfile from '../models/QuranProfile.js';
 import ZikrGoal from '../models/ZikrGoal.js';
 import ZikrDaily from '../models/ZikrDaily.js';
 import { getStreakStatus } from './streak.service.js';
-import { getExcusedSet, getExcusedIntervals } from './cycle.service.js';
+import { getExcusedSet, getExcusedIntervals, getPartnerShareSet } from './cycle.service.js';
 import { DEFAULT_TIMEZONE_OFFSET, bucketDateForDayString } from '../utils/timezone-flexible.js';
 
 /** Zikr type names that count as salawat/istighfar for the excused-day Noor */
@@ -353,6 +353,11 @@ export interface FriendStats {
   quranPagesToday: number;
   quranGoal: number;
   score: number; // Noor, 0..100
+  /** Present ONLY for the one friend who has opted in to share cycle status
+   * with THIS viewer specifically (see cycle.service.ts#setPartnerSync) —
+   * absent for everyone else, preserving the same "cannot tell from the
+   * leaderboard" privacy the excused-day score substitution relies on. */
+  onCycle?: boolean;
 }
 
 /**
@@ -440,7 +445,8 @@ async function statsForUser(
   viewerUid: string,
   today: string,
   timezoneOffset: number,
-  excusedToday = false
+  excusedToday = false,
+  sharesCycleWithViewer = false
 ): Promise<FriendStats> {
   const monthStart = today.substring(0, 8) + '01';
   const quranSince = shiftDateStr(today, -30);
@@ -545,6 +551,7 @@ async function statsForUser(
     ...(user?.country ? { country: user.country } : {}),
     ...base,
     score,
+    ...(sharesCycleWithViewer ? { onCycle: excusedToday } : {}),
   };
 }
 
@@ -577,9 +584,14 @@ export async function getSummary(
   // Everyone is judged on the VIEWER's calendar date — a consistent basis for
   // one ranked list (documented in CLAUDE.md).
   const uids = [userId, ...visibleFriendUids];
-  const excused = await getExcusedSet(uids, end);
+  const [excused, cycleShares] = await Promise.all([
+    getExcusedSet(uids, end),
+    getPartnerShareSet(uids, userId),
+  ]);
   const stats = await Promise.all(
-    uids.map((uid) => statsForUser(uid, userId, end, timezoneOffset, excused.has(uid)))
+    uids.map((uid) =>
+      statsForUser(uid, userId, end, timezoneOffset, excused.has(uid), cycleShares.has(uid))
+    )
   );
 
   stats.sort(

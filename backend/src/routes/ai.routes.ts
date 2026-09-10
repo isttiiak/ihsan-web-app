@@ -11,6 +11,7 @@ import {
   aiStreakCoachSchema,
   aiFastingCompanionSchema,
   aiActivityInsightSchema,
+  aiCycleGuidanceSchema,
 } from '../validation/ai.schemas.js';
 
 const router = Router();
@@ -45,6 +46,13 @@ router.post(
   aiUserLimiter,
   validate(aiComfortSchema),
   aiController.comfortHandler
+);
+router.post(
+  '/cycle-guidance',
+  requireAuth,
+  aiUserLimiter,
+  validate(aiCycleGuidanceSchema),
+  aiController.cycleGuidanceHandler
 );
 router.post(
   '/streak-coaching',

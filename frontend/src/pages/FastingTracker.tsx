@@ -9,6 +9,7 @@ import TabNav from '../components/TabNav.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { celebrateFast } from '../utils/celebrate.js';
 import { useCycleActive } from '../hooks/useCycle.js';
+import { getRamadanWindow } from '../utils/ramadan.js';
 import ExcusedCard from '../components/ExcusedCard.js';
 import FastingCompanion from '../components/ai/FastingCompanion.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
@@ -246,6 +247,16 @@ export default function FastingTracker() {
   const qadaDone = summary?.qadaCompleted ?? 0;
   const qadaRemaining = Math.max(0, qadaOwed - qadaDone);
 
+  // Advance warning: surface the qada debt BEFORE Ramadan starts, not only
+  // when the tracker happens to be opened during it — a proactive nudge, not
+  // just passive data sitting in the qada card.
+  const ramadanWindow = getRamadanWindow();
+  const showRamadanQadaWarning =
+    !ramadanWindow.active &&
+    ramadanWindow.daysUntil > 0 &&
+    ramadanWindow.daysUntil <= 30 &&
+    qadaRemaining > 0;
+
   // Suhoor / iftar for the selected date (location optional)
   const dayTimes = useMemo(() => {
     try {
@@ -480,6 +491,33 @@ export default function FastingTracker() {
               <CalendarDaysIcon className="w-4 h-4" />
             </button>
           </div>
+
+          {/* ── Ramadan qada advance warning — surfaced proactively before the
+               month starts, not only once it has ── */}
+          {showRamadanQadaWarning && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-brand-gold/25 bg-brand-gold/[0.06] p-3.5 flex items-center gap-3"
+            >
+              <span className="text-2xl shrink-0">🌙</span>
+              <p className="text-white/70 text-xs leading-relaxed">
+                <Trans
+                  i18nKey="fasting.ramadanQadaWarning"
+                  values={{
+                    days: ramadanWindow.daysUntil,
+                    count: qadaRemaining,
+                    fastsWord:
+                      qadaRemaining === 1
+                        ? t('fasting.qadaFastSingular', 'fast')
+                        : t('fasting.qadaFastPlural', 'fasts'),
+                  }}
+                  defaults="Ramadan starts in <b>{{days}} days</b> — you still have <b>{{count}} qada {{fastsWord}}</b> to make up."
+                  components={{ b: <span className="text-brand-gold font-bold" /> }}
+                />
+              </p>
+            </motion.div>
+          )}
 
           {/* ── Month calendar (full control over any past day) ── */}
           <AnimatePresence>
