@@ -307,7 +307,10 @@ export default function ShareAyahModal({
                 alongside a real native share sheet (Download vs. Share would
                 otherwise be two buttons doing the exact same thing) — see
                 `canShareFiles`. Whichever action is last gets the highlighted
-                style, so there's always exactly one obvious primary action. */}
+                style, so there's always exactly one obvious primary action.
+                Icon-over-label (not icon+label in a row) so a narrow column
+                on mobile never squeezes "Download" into a wrap that escapes
+                the button's box — a fixed-height row layout did exactly that. */}
             <div
               className="grid gap-2 mt-5"
               style={{
@@ -316,7 +319,7 @@ export default function ShareAyahModal({
             >
               {canCopyImage && (
                 <button
-                  className="btn btn-sm rounded-xl bg-white/5 border-brand-emerald/10 text-white/70 disabled:opacity-50"
+                  className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl border bg-white/5 border-brand-emerald/10 text-white/70 disabled:opacity-50"
                   onClick={handleCopy}
                   disabled={!!busyAction || loading || !ayah}
                 >
@@ -324,17 +327,17 @@ export default function ShareAyahModal({
                     <span className="loading loading-spinner loading-xs" />
                   ) : (
                     <>
-                      <ClipboardDocumentIcon className="w-4 h-4" />
-                      {t('shareAyah.copy', 'Copy')}
+                      <ClipboardDocumentIcon className="w-5 h-5" />
+                      <span className="text-[11px] font-bold">{t('shareAyah.copy', 'Copy')}</span>
                     </>
                   )}
                 </button>
               )}
               <button
-                className={`btn btn-sm rounded-xl disabled:opacity-50 ${
+                className={`flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl border disabled:opacity-50 ${
                   canShareFiles
                     ? 'bg-white/5 border-brand-emerald/10 text-white/70'
-                    : 'border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-emerald-dim'
+                    : 'border-0 text-white bg-gradient-to-r from-brand-emerald to-brand-emerald-dim'
                 }`}
                 onClick={handleDownload}
                 disabled={!!busyAction || loading || !ayah}
@@ -343,14 +346,16 @@ export default function ShareAyahModal({
                   <span className="loading loading-spinner loading-xs" />
                 ) : (
                   <>
-                    <ArrowDownTrayIcon className="w-4 h-4" />
-                    {t('shareAyah.download', 'Download')}
+                    <ArrowDownTrayIcon className="w-5 h-5" />
+                    <span className="text-[11px] font-bold">
+                      {t('shareAyah.download', 'Download')}
+                    </span>
                   </>
                 )}
               </button>
               {canShareFiles && (
                 <button
-                  className="btn btn-sm rounded-xl border-0 text-white font-bold bg-gradient-to-r from-brand-emerald to-brand-emerald-dim disabled:opacity-50"
+                  className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl border-0 text-white bg-gradient-to-r from-brand-emerald to-brand-emerald-dim disabled:opacity-50"
                   onClick={handleShare}
                   disabled={!!busyAction || loading || !ayah}
                 >
@@ -358,8 +363,8 @@ export default function ShareAyahModal({
                     <span className="loading loading-spinner loading-xs" />
                   ) : (
                     <>
-                      <ShareIcon className="w-4 h-4" />
-                      {t('shareAyah.share', 'Share')}
+                      <ShareIcon className="w-5 h-5" />
+                      <span className="text-[11px] font-bold">{t('shareAyah.share', 'Share')}</span>
                     </>
                   )}
                 </button>

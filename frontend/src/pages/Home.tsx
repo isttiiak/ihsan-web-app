@@ -71,7 +71,13 @@ export default function Home() {
   }, [location.pathname]);
 
   const { data: analyticsData } = useAnalytics(1);
-  const { data: salatLog } = useSalatLog();
+  // Salat itself is civil-dated (see useSalatLog's own note), but the
+  // dashboard card is titled "today" and must agree with what SalatTracker
+  // shows for "today" — which follows the user's fajr-to-fajr tracking day.
+  // Without this, the card silently rolled onto the new civil date right at
+  // midnight, showing 0/5 for prayers already logged under the still-open
+  // tracking day until the next Fajr.
+  const { data: salatLog } = useSalatLog(getTrackingDay());
   const { data: fastingSummary } = useFastingSummary();
   const { data: quranSummary } = useQuranSummary();
   const { data: salatAnalytics } = useSalatAnalytics(90);

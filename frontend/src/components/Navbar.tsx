@@ -182,7 +182,7 @@ export default function Navbar() {
   return (
     <>
       <nav className="sticky top-0 z-40 bg-gradient-to-r from-[#14130e] via-brand-deep to-brand-deep border-b border-brand-emerald/20 shadow-[0_2px_16px_rgba(122,158,110,0.08)]">
-        <div className="flex items-center h-14 px-3 sm:px-4 gap-2">
+        <div className="flex items-center h-14 px-2 sm:px-4 gap-1 sm:gap-2">
           {/* ── Left: logo + back + title ─────────────────── */}
           <div className="flex items-center gap-0.5 flex-shrink-0 min-w-0">
             <Link
@@ -257,7 +257,7 @@ export default function Navbar() {
                 syncQuranTranslationWithLang(next);
               }}
               aria-label={t('nav.switchLang')}
-              className="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all"
+              className="flex items-center gap-1 px-1 sm:px-2 py-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all"
             >
               <GlobeAltIcon className="w-4 h-4" />
               <span className="text-[10px] font-bold uppercase hidden sm:inline">
@@ -271,19 +271,22 @@ export default function Navbar() {
                     className="tooltip tooltip-bottom"
                     data-tip="Today's Noor — fresh light every day, resets at midnight"
                   >
-                    <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-brand-emerald/15 border border-brand-emerald/40 text-brand-emerald text-xs font-bold flex items-center gap-0.5 sm:gap-1 whitespace-nowrap">
+                    <span className="px-1 sm:px-2 py-0.5 rounded-full bg-brand-emerald/15 border border-brand-emerald/40 text-brand-emerald text-xs font-bold flex items-center gap-0.5 sm:gap-1 whitespace-nowrap">
                       ✨ {formatLocaleNumber(noor.today)}
                     </span>
                   </div>
                 )}
                 {noorAllTimeVisible && (
-                  // Hidden below 360px — on the narrowest phones the left
-                  // (back+title) and right (lang+noor+avatar) nav sections
-                  // don't both fit at their minimum widths even after
-                  // trimming padding; today's Noor is the more actionable
-                  // one, so it stays, all-time drops first.
+                  // Hidden below sm (640px) — below that, the left (back+title)
+                  // and right (lang+noor+avatar) nav sections don't both fit at
+                  // their minimum widths even after trimming padding, and on
+                  // some pages (Friends, which forces both badges) both badges
+                  // together pushed the profile avatar fully off-screen behind
+                  // the global `overflow-x:hidden` even at 375px — a much wider
+                  // phone than the old 360px cutoff assumed. Today's Noor is the
+                  // more actionable one, so it stays; all-time drops first.
                   <div
-                    className="hidden min-[360px]:block tooltip tooltip-bottom"
+                    className="hidden sm:block tooltip tooltip-bottom"
                     data-tip="All-time Noor — every day's light, gathered. Never resets"
                   >
                     <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-brand-gold/15 border border-brand-gold/40 text-brand-gold text-xs font-bold flex items-center gap-0.5 sm:gap-1 whitespace-nowrap">
@@ -306,7 +309,7 @@ export default function Navbar() {
             )}
 
             {user ? (
-              <div className="relative ml-0.5" ref={dropdownRef}>
+              <div className="relative shrink-0" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen((o) => !o)}
                   aria-label={t('navbar.openAccountMenu', 'Open account menu')}

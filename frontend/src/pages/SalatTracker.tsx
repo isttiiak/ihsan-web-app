@@ -894,7 +894,7 @@ export default function SalatTracker() {
                     aria-label={t('salatTracker.selectDay', 'Select {{day}}', {
                       day: friendlyDate(d.date, t),
                     })}
-                    className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border transition-all ${
+                    className={`flex-1 min-w-0 flex flex-col items-center gap-1 py-2 rounded-xl border transition-all ${
                       isSel
                         ? 'bg-white/10 border-brand-emerald/30'
                         : 'bg-white/[0.03] border-brand-emerald/5 hover:border-brand-emerald/20'
@@ -923,7 +923,7 @@ export default function SalatTracker() {
                 }}
                 aria-label={t('salatTracker.openCalendar', 'Open month calendar')}
                 title={t('salatTracker.openCalendar', 'Open month calendar')}
-                className={`flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-xl border transition-all ${
+                className={`shrink-0 flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-xl border transition-all ${
                   calendarOpen
                     ? 'bg-brand-emerald/20 border-brand-emerald/40 text-brand-emerald'
                     : 'bg-white/[0.03] border-brand-emerald/5 text-white/40 hover:border-brand-emerald/20 hover:text-white/70'

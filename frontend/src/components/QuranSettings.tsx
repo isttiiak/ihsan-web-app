@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -154,7 +155,13 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
     );
   };
 
-  return (
+  // Portaled to <body> — this drawer is opened from inside AnimatedBackground's
+  // `relative z-10` wrapper, which creates its own stacking context. Without a
+  // portal, no z-index here can escape that context, so the drawer (and its
+  // close button) rendered visually BELOW the navbar's sticky z-40 despite its
+  // own higher z-index. Every sibling settings drawer (Salat, Zikr, Prayer
+  // Times) already does this — this one was the one missing it.
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -559,6 +566,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
           />
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
