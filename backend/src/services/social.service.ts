@@ -12,14 +12,14 @@ import ZikrGoal from '../models/ZikrGoal.js';
 import ZikrDaily from '../models/ZikrDaily.js';
 import { getStreakStatus } from './streak.service.js';
 import { getExcusedSet, getExcusedIntervals, getPartnerShareSet } from './cycle.service.js';
-import { DEFAULT_TIMEZONE_OFFSET, bucketDateForDayString } from '../utils/timezone-flexible.js';
+import {
+  DEFAULT_TIMEZONE_OFFSET,
+  bucketDateForDayString,
+  getTodayString,
+} from '../utils/timezone-flexible.js';
 
 /** Zikr type names that count as salawat/istighfar for the excused-day Noor */
 const SALAWAT_RE = /(salawat|ṣalawāt|durud|darood|salat.?.?ala|istighfar|astaghfir)/i;
-
-function todayDateString(): string {
-  return new Date().toISOString().substring(0, 10);
-}
 
 function shiftDateStr(dateStr: string, delta: number): string {
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -569,7 +569,13 @@ export async function getSummary(
   today?: string,
   timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
 ): Promise<SocialSummary> {
-  const end = today ?? todayDateString();
+  // The real frontend always sends `today` explicitly; this fallback only
+  // matters for callers that omit it. It must still honor timezoneOffset —
+  // the plain UTC date silently disagreed with the caller's own "today" for
+  // several hours around the UTC day boundary (e.g. UTC+6 callers between
+  // 18:00–23:59 UTC), which showed friends' own excused/cycle days as
+  // ordinary ones.
+  const end = today ?? getTodayString(timezoneOffset);
   const profile = await getOrCreateProfile(userId);
 
   // A friend who has gone invisible (see ISocialProfile.invisible) is a full
@@ -626,7 +632,8 @@ export async function getNoor(
   today?: string,
   timezoneOffset: number = DEFAULT_TIMEZONE_OFFSET
 ): Promise<NoorResult> {
-  const end = today ?? todayDateString();
+  // See getSummary's identical fallback for why this must honor timezoneOffset.
+  const end = today ?? getTodayString(timezoneOffset);
   const since = shiftDateStr(end, -364);
 
   const excusedIntervals = await getExcusedIntervals(userId);
