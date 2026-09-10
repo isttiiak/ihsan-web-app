@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { translateReference } from '../utils/localeReference.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import Seo from '../components/Seo.js';
+import InstallPwaBanner from '../components/InstallPwaBanner.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 
 const fadeUp = {
@@ -81,6 +82,7 @@ export default function Landing() {
 
   return (
     <AnimatedBackground variant="dark">
+      <InstallPwaBanner />
       <Seo
         title={t('landing.seoTitle', 'Ihsan — Muslim Worship & Productivity Tracker')}
         description={t(

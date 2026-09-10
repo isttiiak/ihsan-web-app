@@ -1089,6 +1089,14 @@
     "useGooglePhoto": "Use Google Account Photo",
     "useThisPhoto": "Use This Photo"
   },
+  "pwa": {
+    "installTitle": "Install Ihsan",
+    "installDesc": "Add Ihsan to your home screen for a faster, full-screen experience — offline-ready and one tap away.",
+    "install": "Install",
+    "howTo": "How to install",
+    "iosSteps": "Tap the Share icon in Safari's toolbar, then choose \"Add to Home Screen\".",
+    "notNow": "Not now"
+  },
   "qibla": {
     "seoTitle": "Qibla Compass — Find the Direction to Makkah",
     "seoDescription": "Free on-device Qibla compass. Point your phone to find the exact direction to the Kaaba in Makkah for prayer, wherever you are.",
