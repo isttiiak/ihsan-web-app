@@ -8,6 +8,7 @@
 // vite.config.ts (same cache names, same expiration, same SPA fallback) so
 // existing offline/caching behavior does not regress.
 
+import { clientsClaim } from 'workbox-core';
 import {
   precacheAndRoute,
   cleanupOutdatedCaches,
@@ -26,6 +27,18 @@ declare const self: ServiceWorkerGlobalScope;
 // closed, so users kept being served the previous precached bundle. Taking
 // over immediately on install/activate fixes that.
 self.skipWaiting();
+
+// skipWaiting() alone only lets the NEW worker become "active" sooner — it
+// does NOT hand it control of tabs that were already open before it
+// activated (those keep talking to the old worker, including for the SPA
+// navigation-fallback route below, until they fully close and reopen).
+// clientsClaim() closes that gap by taking control of every open client the
+// moment this worker activates. This was the actual reason a plain
+// Ctrl+Shift+R on desktop kept serving a stale build while the same update
+// showed up fine on Android — a mobile PWA gets fully relaunched far more
+// often, incidentally getting a fresh controller each time; a laptop tab left
+// open for a long stretch never did.
+clientsClaim();
 
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);

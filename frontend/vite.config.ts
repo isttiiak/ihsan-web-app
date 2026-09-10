@@ -31,6 +31,15 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.ts',
       registerType: 'autoUpdate',
+      // The plugin's default auto-injected registration script is a bare
+      // `navigator.serviceWorker.register('/sw.js')` on window load — it never
+      // re-checks for updates afterwards. A tab left open for a long stretch
+      // (the common desktop pattern) could go a long time without picking up
+      // a new deploy. Registering manually via `virtual:pwa-register` in
+      // main.tsx instead adds a periodic + on-visibility `registration.update()`
+      // check, so `injectRegister: null` turns off the plugin's own script to
+      // avoid registering twice.
+      injectRegister: null,
       includeAssets: ['favicon.svg', 'og-image.jpg', 'robots.txt'],
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],

@@ -16,6 +16,9 @@ import ThemeInit from './components/ThemeInit.js';
 import UiInit from './components/UiInit.js';
 import ErrorBoundary from './components/ErrorBoundary.js';
 import { idbGet, idbSet, idbRemove } from './utils/idbCache.js';
+import { initPwaUpdates } from './pwaUpdate.js';
+
+initPwaUpdates();
 
 const queryClient = new QueryClient({
   defaultOptions: {
