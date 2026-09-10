@@ -14,6 +14,7 @@ import socialRoutes from './routes/social.routes.js';
 import cycleRoutes from './routes/cycle.routes.js';
 import pushRoutes from './routes/push.routes.js';
 import cronRoutes from './routes/cron.routes.js';
+import insightsRoutes from './routes/insights.routes.js';
 import { generalLimiter, authLimiter, zikrLimiter, aiLimiter } from './middleware/rateLimiter.js';
 import { globalErrorHandler } from './middleware/errorHandler.js';
 
@@ -122,6 +123,7 @@ app.use('/api/social', socialRoutes);
 app.use('/api/cycle', cycleRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/cron', cronRoutes);
+app.use('/api/insights', insightsRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

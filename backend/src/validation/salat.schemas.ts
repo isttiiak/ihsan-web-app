@@ -11,6 +11,12 @@ export const updatePrayerSchema = z.object({
     location: z.enum(['home', 'mosque', 'jamat']).optional(),
     tasbeeh: z.boolean().optional(),
     ayatulKursi: z.boolean().optional(),
+    // Client-computed prayer-window bounds (adhan library) — only meaningful
+    // alongside status completed/kaza; ignored otherwise. ISO datetime.
+    windowStart: z.string().datetime().optional(),
+    windowEnd: z.string().datetime().optional(),
+    // Optional, user-chosen context for a 'missed' tap — never required.
+    missedReason: z.enum(['sleep', 'travel', 'forgot', 'busy', 'other']).optional(),
   }),
 });
 

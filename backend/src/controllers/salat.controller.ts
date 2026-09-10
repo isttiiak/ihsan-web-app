@@ -1,7 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import * as salatService from '../services/salat.service.js';
 import * as salatDebtService from '../services/salatDebt.service.js';
-import { PrayerId, PrayerStatus, PrayerLocation, NaflType } from '../models/SalatLog.js';
+import {
+  PrayerId,
+  PrayerStatus,
+  PrayerLocation,
+  NaflType,
+  MissedReason,
+} from '../models/SalatLog.js';
 
 export const getLog = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -21,13 +27,26 @@ export const updatePrayer = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { prayer, status, date, location, tasbeeh, ayatulKursi } = req.body as {
+    const {
+      prayer,
+      status,
+      date,
+      location,
+      tasbeeh,
+      ayatulKursi,
+      windowStart,
+      windowEnd,
+      missedReason,
+    } = req.body as {
       prayer: PrayerId;
       status: PrayerStatus;
       date?: string;
       location?: PrayerLocation;
       tasbeeh?: boolean;
       ayatulKursi?: boolean;
+      windowStart?: string;
+      windowEnd?: string;
+      missedReason?: MissedReason;
     };
     const log = await salatService.updatePrayerStatus(
       req.user.uid,
@@ -36,7 +55,10 @@ export const updatePrayer = async (
       date,
       location,
       tasbeeh,
-      ayatulKursi
+      ayatulKursi,
+      windowStart,
+      windowEnd,
+      missedReason
     );
     res.json({ ok: true, log });
   } catch (err) {

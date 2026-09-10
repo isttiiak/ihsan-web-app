@@ -1,10 +1,12 @@
 import SalatLog, {
   PRAYER_IDS,
   NAFL_TYPE_IDS,
+  MISSED_REASONS,
   PrayerId,
   PrayerStatus,
   PrayerLocation,
   NaflType,
+  MissedReason,
 } from '../models/SalatLog.js';
 import * as salatDebtService from './salatDebt.service.js';
 
@@ -85,7 +87,10 @@ export async function updatePrayerStatus(
   date?: string,
   location?: PrayerLocation,
   tasbeeh?: boolean,
-  ayatulKursi?: boolean
+  ayatulKursi?: boolean,
+  windowStart?: string,
+  windowEnd?: string,
+  missedReason?: MissedReason
 ) {
   const d = date ?? todayDateString();
   const log = await getOrCreateLog(userId, d);
@@ -108,10 +113,27 @@ export async function updatePrayerStatus(
       : (location ?? 'home');
     entry.tasbeeh = tasbeeh ?? false;
     entry.ayatulKursi = ayatulKursi ?? false;
+    // Window bounds come from the client's own adhan-library computation
+    // (only meaningful for the day being marked) — store them only when both
+    // are given, and only in this branch, so an older client that never
+    // sends them just leaves the field unset rather than storing a partial pair.
+    entry.windowStart = windowStart ? new Date(windowStart) : undefined;
+    entry.windowEnd = windowEnd ? new Date(windowEnd) : undefined;
+    entry.missedReason = undefined;
+  } else if (status === 'missed') {
+    entry.location = undefined;
+    entry.tasbeeh = false;
+    entry.ayatulKursi = false;
+    entry.windowStart = undefined;
+    entry.windowEnd = undefined;
+    entry.missedReason = missedReason;
   } else {
     entry.location = undefined;
     entry.tasbeeh = false;
     entry.ayatulKursi = false;
+    entry.windowStart = undefined;
+    entry.windowEnd = undefined;
+    entry.missedReason = undefined;
   }
 
   await log.save();
@@ -202,6 +224,18 @@ export interface SalatAnalyticsResult {
     prayedCount: number;
     rate: number;
   }>;
+  /** Completion by day of week (JS getDay(): 0=Sun … 6=Sat), across the
+   * whole window — e.g. "you miss Fajr on weekends more than weekdays". */
+  byWeekday: Record<number, { completed: number; kaza: number; missed: number; total: number }>;
+  /** How far into a prayer's window it was marked done, for prayers where
+   * both the window bounds and the mark timestamp are known (older logs,
+   * or ones marked without a saved location, are simply not counted here —
+   * see IPrayerEntry.windowStart/windowEnd). */
+  timeOfWindow: { early: number; mid: number; late: number; unknown: number };
+  /** Counts of the optional reason tag on prayers explicitly marked missed.
+   * Prayers swept into 'missed' by the day-rollover, or marked missed
+   * without picking a reason, are not counted here. */
+  missedReasons: Record<string, number>;
 }
 
 export async function getSalatAnalytics(
@@ -257,6 +291,17 @@ export async function getSalatAnalytics(
     };
   }
 
+  const byWeekday: SalatAnalyticsResult['byWeekday'] = {};
+  for (let w = 0; w < 7; w++) byWeekday[w] = { completed: 0, kaza: 0, missed: 0, total: 0 };
+  const timeOfWindow: SalatAnalyticsResult['timeOfWindow'] = {
+    early: 0,
+    mid: 0,
+    late: 0,
+    unknown: 0,
+  };
+  const missedReasons: Record<string, number> = {};
+  for (const r of MISSED_REASONS) missedReasons[r] = 0;
+
   // Iterate every date in the analytics window. Unlogged past days count as 5
   // missed prayers. Pending prayers on past logged days also count as missed.
   for (let i = 0; i < effectiveDays; i++) {
@@ -264,11 +309,15 @@ export async function getSalatAnalytics(
     const isPast = dateStr < today;
     const log = logMap.get(dateStr);
 
+    const weekday = new Date(dateStr + 'T12:00:00').getDay();
+
     if (!log) {
       // No log row for this date. Past days = fully missed; today = all pending.
       if (isPast) {
         missedCount += 5;
         for (const pid of PRAYER_IDS) perPrayer[pid].missed++;
+        byWeekday[weekday]!.missed += 5;
+        byWeekday[weekday]!.total += 5;
       }
       // (today with no log: 5 pending — don't count against completion)
       continue;
@@ -284,12 +333,20 @@ export async function getSalatAnalytics(
       if (effective === 'completed') {
         completedCount++;
         perPrayer[pid].completed++;
+        byWeekday[weekday]!.completed++;
+        byWeekday[weekday]!.total++;
       } else if (effective === 'kaza') {
         kazaCount++;
         perPrayer[pid].kaza++;
+        byWeekday[weekday]!.kaza++;
+        byWeekday[weekday]!.total++;
       } else if (effective === 'missed') {
         missedCount++;
         perPrayer[pid].missed++;
+        byWeekday[weekday]!.missed++;
+        byWeekday[weekday]!.total++;
+        const reason = entry?.missedReason;
+        if (reason && reason in missedReasons) missedReasons[reason]!++;
       } else {
         perPrayer[pid].pending++;
       }
@@ -308,6 +365,24 @@ export async function getSalatAnalytics(
         if (entry?.tasbeeh) {
           tasbeehCount++;
           perPrayer[pid].tasbeeh++;
+        }
+
+        // Punctuality within the prayer's window — only computable when the
+        // client sent both bounds at mark time AND we have the mark timestamp.
+        if (entry?.windowStart && entry.windowEnd && entry.prayedAt) {
+          const winStart = entry.windowStart.getTime();
+          const winEnd = entry.windowEnd.getTime();
+          const span = winEnd - winStart;
+          if (span > 0) {
+            const frac = Math.min(1, Math.max(0, (entry.prayedAt.getTime() - winStart) / span));
+            if (frac <= 1 / 3) timeOfWindow.early++;
+            else if (frac <= 2 / 3) timeOfWindow.mid++;
+            else timeOfWindow.late++;
+          } else {
+            timeOfWindow.unknown++;
+          }
+        } else {
+          timeOfWindow.unknown++;
         }
       }
     }
@@ -466,6 +541,9 @@ export async function getSalatAnalytics(
     last7Days,
     calendarData,
     weeklyMosqueTrend,
+    byWeekday,
+    timeOfWindow,
+    missedReasons,
   };
 }
 

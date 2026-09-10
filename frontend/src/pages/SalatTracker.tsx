@@ -28,6 +28,8 @@ import {
   NaflType,
   NAFL_TYPE_META,
   SELECTABLE_NAFL_TYPES,
+  MISSED_REASONS,
+  MissedReason,
 } from '../hooks/useSalatLog.js';
 import {
   PRAYER_META,
@@ -543,6 +545,13 @@ export default function SalatTracker() {
 
     // If setting to completed/kaza, open sub-tag row; keep existing location if re-selecting
     if (newStatus === 'completed' || newStatus === 'kaza') {
+      // Window bounds for the "prayed early/mid/late" analytic — computed
+      // here (not read back later) since only the client has the adhan
+      // library + saved location. Omitted when there's no location set.
+      const windowStartDate = todayPrayerTimes?.times[prayer];
+      const windowEndDate = todayPrayerTimes?.full
+        ? getPrayerEndTime(prayer, todayPrayerTimes.full)
+        : undefined;
       updatePrayer.mutate({
         prayer,
         status: newStatus,
@@ -552,6 +561,8 @@ export default function SalatTracker() {
         // Was previously omitted — re-tapping an already-completed prayer wiped
         // an existing Ayatul Kursi mark (and, now, its linked zikr count).
         ayatulKursi: current?.ayatulKursi ?? false,
+        windowStart: windowStartDate ? windowStartDate.toISOString() : undefined,
+        windowEnd: windowEndDate ? windowEndDate.toISOString() : undefined,
       });
       // Celebrate: small burst per prayer, big double burst when all 5 are in
       const doneAfter = trackablePrayers.filter((p) => {
@@ -561,6 +572,14 @@ export default function SalatTracker() {
       if (doneAfter >= 5) celebrateAllPrayers();
       else celebrateSmall();
       setExpandedPrayer(prayer); // open sub-tags
+    } else if (newStatus === 'missed') {
+      updatePrayer.mutate({
+        prayer,
+        status: newStatus,
+        date: selectedDate,
+        missedReason: current?.missedReason,
+      });
+      setExpandedPrayer(prayer); // open the optional reason picker
     } else {
       updatePrayer.mutate({
         prayer,
@@ -569,6 +588,24 @@ export default function SalatTracker() {
       });
       setExpandedPrayer(null);
     }
+  };
+
+  // Handle the optional "why was it missed" tag — purely for the user's own
+  // pattern analysis, never required to mark a prayer missed.
+  const handleMissedReason = (prayer: PrayerId, reason: MissedReason) => {
+    if (!user) {
+      setShowGuestDialog(true);
+      return;
+    }
+    const current = log?.prayers[prayer];
+    // Tapping the already-selected reason clears it (toggle off).
+    const next = current?.missedReason === reason ? undefined : reason;
+    updatePrayer.mutate({
+      prayer,
+      status: 'missed',
+      date: selectedDate,
+      missedReason: next,
+    });
   };
 
   // Handle sub-tag change
@@ -1345,8 +1382,42 @@ export default function SalatTracker() {
                           )}
                         </AnimatePresence>
 
-                        {/* Expand/collapse toggle for sub-tags (only when completed/kaza) */}
-                        {hasSubTag && !isFuture && (
+                        {/* Optional "why missed" reason picker — never required */}
+                        <AnimatePresence>
+                          {status === 'missed' && isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.18 }}
+                              className="overflow-hidden border-t border-brand-emerald/10"
+                            >
+                              <div className="px-3 py-2.5 flex items-center gap-1.5 flex-wrap">
+                                <span className="text-white/30 text-[11px] sm:text-xs">
+                                  {t('salatTracker.missedReasonLabel', 'Why? (optional)')}
+                                </span>
+                                {MISSED_REASONS.map((reason) => (
+                                  <motion.button
+                                    key={reason}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={() => handleMissedReason(prayerId, reason)}
+                                    className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold border transition-all ${
+                                      entry?.missedReason === reason
+                                        ? 'bg-red-500/20 border-red-400/60 text-red-300'
+                                        : 'bg-brand-deep border-brand-border text-white/40 hover:text-white/70'
+                                    }`}
+                                  >
+                                    {t(`salatTracker.missedReason.${reason}`, reason)}
+                                  </motion.button>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Expand/collapse toggle for sub-tags (completed/kaza) or the
+                        optional missed-reason picker */}
+                        {(hasSubTag || status === 'missed') && !isFuture && (
                           <button
                             onClick={() => setExpandedPrayer(isExpanded ? null : prayerId)}
                             className="w-full flex items-center justify-center gap-1 py-1 border-t border-brand-emerald/5 text-white/20 hover:text-white/50 text-xs transition-colors"
@@ -1363,6 +1434,14 @@ export default function SalatTracker() {
                               )}
                             {entry?.tasbeeh && <span className="text-brand-info/60">📿</span>}
                             {entry?.ayatulKursi && <span className="text-brand-gold/60">📖</span>}
+                            {entry?.missedReason && (
+                              <span className="text-red-400/60">
+                                {t(
+                                  `salatTracker.missedReason.${entry.missedReason}`,
+                                  entry.missedReason
+                                )}
+                              </span>
+                            )}
                           </button>
                         )}
 

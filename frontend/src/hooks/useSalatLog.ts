@@ -26,6 +26,9 @@ export type PrayerStatus = 'completed' | 'kaza' | 'missed' | 'pending';
 export type PrayerLocation = 'home' | 'mosque' | 'jamat';
 export type PrayerId = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
 
+export const MISSED_REASONS = ['sleep', 'travel', 'forgot', 'busy', 'other'] as const;
+export type MissedReason = (typeof MISSED_REASONS)[number];
+
 // NOTE: 'witr' stays in the union so existing logs that recorded it still
 // type-check and render, but it is NOT offered in the picker — Witr belongs
 // with Isha, not with voluntary rak'ah counting (Istiak's spec). See
@@ -237,6 +240,9 @@ export interface PrayerEntry {
   location?: PrayerLocation;
   tasbeeh?: boolean;
   ayatulKursi?: boolean;
+  windowStart?: string;
+  windowEnd?: string;
+  missedReason?: MissedReason;
 }
 
 export interface NaflEntry {
@@ -261,6 +267,9 @@ export interface UpdatePrayerVars {
   location?: PrayerLocation;
   tasbeeh?: boolean;
   ayatulKursi?: boolean;
+  windowStart?: string;
+  windowEnd?: string;
+  missedReason?: MissedReason;
 }
 
 export interface UpdateNaflVars {
@@ -311,6 +320,9 @@ export interface SalatAnalytics {
     prayedCount: number;
     rate: number;
   }>;
+  byWeekday: Record<number, { completed: number; kaza: number; missed: number; total: number }>;
+  timeOfWindow: { early: number; mid: number; late: number; unknown: number };
+  missedReasons: Record<string, number>;
 }
 
 const EMPTY_PRAYERS: Record<PrayerId, PrayerEntry> = {
@@ -393,6 +405,13 @@ export function useUpdatePrayer() {
                 vars.status === 'completed' || vars.status === 'kaza'
                   ? (vars.ayatulKursi ?? false)
                   : false,
+              windowStart:
+                vars.status === 'completed' || vars.status === 'kaza'
+                  ? vars.windowStart
+                  : undefined,
+              windowEnd:
+                vars.status === 'completed' || vars.status === 'kaza' ? vars.windowEnd : undefined,
+              missedReason: vars.status === 'missed' ? vars.missedReason : undefined,
             },
           },
         };
@@ -563,6 +582,17 @@ export interface KazaInsights {
   avgPayoffDays: number | null;
   itemizedOwedCount: number;
   itemizedPaidCount: number;
+  perPrayer: Partial<
+    Record<
+      PrayerId,
+      {
+        owedCount: number;
+        oldestOwedDate: string | null;
+        avgPayoffDays: number | null;
+        paidCount: number;
+      }
+    >
+  >;
 }
 
 /** Derived from the itemized kaza ledger — only meaningful once at least a

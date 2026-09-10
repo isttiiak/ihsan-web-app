@@ -20,6 +20,7 @@ import {
   useSalatDebtHistory,
   useSalatDebtInsights,
   useSalatJourney,
+  PrayerId,
 } from '../hooks/useSalatLog.js';
 import { PRAYER_META, translateSalatName } from '../utils/prayerTimes.js';
 import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
@@ -156,6 +157,17 @@ export default function SalatAnalytics() {
     t('salatAnalytics.dayWed'),
     t('salatAnalytics.dayThu'),
   ];
+  // Same Fri-first ordering as DAY_LABELS, mapped to JS Date#getDay() indices
+  // (0=Sun…6=Sat) — that's how the backend keys byWeekday.
+  const FRI_FIRST_JS_DAYS = [5, 6, 0, 1, 2, 3, 4];
+
+  const MISSED_REASON_EMOJI: Record<string, string> = {
+    sleep: '😴',
+    travel: '✈️',
+    forgot: '💭',
+    busy: '⏳',
+    other: '❓',
+  };
 
   if (isDemoMode) {
     return (
@@ -619,6 +631,177 @@ export default function SalatAnalytics() {
                     </div>
                   </div>
 
+                  {/* By day of week — completion rate per weekday, Islamic-week order */}
+                  {data.byWeekday && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="card bg-brand-deep/80 border border-brand-border rounded-2xl"
+                    >
+                      <div className="card-body p-5 space-y-3">
+                        <h2 className="text-white font-black text-sm flex items-center gap-2">
+                          <ChartBarIcon className="w-4 h-4 text-brand-emerald" />{' '}
+                          {t('salatAnalytics.byWeekday', 'By Day of Week')}
+                        </h2>
+                        <div className="flex items-end justify-between gap-2 h-24">
+                          {FRI_FIRST_JS_DAYS.map((jsDay, idx) => {
+                            const w = data.byWeekday[jsDay] ?? {
+                              completed: 0,
+                              kaza: 0,
+                              missed: 0,
+                              total: 0,
+                            };
+                            const pct =
+                              w.total > 0
+                                ? Math.round(((w.completed + w.kaza) / w.total) * 100)
+                                : 0;
+                            const h = w.total > 0 ? Math.max(6, pct) : 4;
+                            return (
+                              <div
+                                key={jsDay}
+                                className="flex-1 flex flex-col items-center gap-1 tooltip"
+                                data-tip={`${DAY_LABELS[idx]}: ${formatLocaleNumber(pct)}%`}
+                              >
+                                <span className="text-[10px] font-bold text-white/50 h-3 leading-none">
+                                  {w.total > 0 ? `${formatLocaleNumber(pct)}%` : ''}
+                                </span>
+                                <motion.div
+                                  initial={{ height: 0 }}
+                                  animate={{ height: `${h}%` }}
+                                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                                  className="w-full rounded-t-[4px] bg-brand-emerald"
+                                  style={{ opacity: w.total > 0 ? 0.5 + (pct / 100) * 0.5 : 0.15 }}
+                                />
+                                <span className="text-[10px] text-white/30">{DAY_LABELS[idx]}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Prayer timing + missed reasons — side by side on wider screens */}
+                  {(data.timeOfWindow || data.missedReasons) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Prayer timing: how far into the window prayers were marked done */}
+                      {data.timeOfWindow &&
+                        data.timeOfWindow.early + data.timeOfWindow.mid + data.timeOfWindow.late >
+                          0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="card bg-brand-deep/80 border border-brand-border rounded-2xl"
+                          >
+                            <div className="card-body p-5 space-y-3">
+                              <h2 className="text-white font-black text-sm flex items-center gap-2">
+                                <ChartBarIcon className="w-4 h-4 text-brand-emerald" />{' '}
+                                {t('salatAnalytics.prayerTiming', 'Prayer Timing')}
+                              </h2>
+                              {(() => {
+                                const { early, mid, late } = data.timeOfWindow;
+                                const known = early + mid + late;
+                                return (
+                                  <>
+                                    <div className="w-full h-4 rounded-full overflow-hidden flex bg-white/10">
+                                      {[
+                                        { count: early, color: 'bg-brand-emerald' },
+                                        { count: mid, color: 'bg-brand-gold' },
+                                        { count: late, color: 'bg-red-600/70' },
+                                      ].map(({ count, color }, i) => (
+                                        <motion.div
+                                          key={i}
+                                          initial={{ width: 0 }}
+                                          animate={{ width: `${(count / known) * 100}%` }}
+                                          transition={{ duration: 0.7 }}
+                                          className={`h-full ${color}`}
+                                        />
+                                      ))}
+                                    </div>
+                                    <div className="flex flex-wrap gap-3 text-xs">
+                                      {[
+                                        {
+                                          label: t('salatAnalytics.timingEarly', 'Early'),
+                                          count: early,
+                                          color: 'bg-brand-emerald',
+                                        },
+                                        {
+                                          label: t('salatAnalytics.timingMid', 'Mid-window'),
+                                          count: mid,
+                                          color: 'bg-brand-gold',
+                                        },
+                                        {
+                                          label: t('salatAnalytics.timingLate', 'Late'),
+                                          count: late,
+                                          color: 'bg-red-600/70',
+                                        },
+                                      ].map(({ label, count, color }) => (
+                                        <div key={label} className="flex items-center gap-1.5">
+                                          <span className={`w-2.5 h-2.5 rounded-sm ${color}`} />
+                                          <span className="text-white/50">{label}</span>
+                                          <span className="text-white font-bold">
+                                            {formatLocaleNumber(count)}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <p className="text-white/20 text-[10px]">
+                                      {t(
+                                        'salatAnalytics.timingHint',
+                                        'How far into each prayer’s window it was marked done — only counted when your location was set at the time.'
+                                      )}
+                                    </p>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </motion.div>
+                        )}
+
+                      {/* Missed reasons — only the ones the user actually picked */}
+                      {data.missedReasons &&
+                        Object.values(data.missedReasons).some((c) => c > 0) && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="card bg-brand-deep/80 border border-brand-border rounded-2xl"
+                          >
+                            <div className="card-body p-5 space-y-3">
+                              <h2 className="text-white font-black text-sm flex items-center gap-2">
+                                <ChartBarIcon className="w-4 h-4 text-brand-emerald" />{' '}
+                                {t('salatAnalytics.missedReasonsTitle', 'Missed Reasons')}
+                              </h2>
+                              <div className="flex flex-wrap gap-2">
+                                {Object.entries(data.missedReasons)
+                                  .filter(([, count]) => count > 0)
+                                  .sort(([, a], [, b]) => b - a)
+                                  .map(([reason, count]) => (
+                                    <div
+                                      key={reason}
+                                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/[0.04] border border-brand-border text-xs"
+                                    >
+                                      <span>{MISSED_REASON_EMOJI[reason] ?? '❓'}</span>
+                                      <span className="text-white/60">
+                                        {t(`salatTracker.missedReason.${reason}`, reason)}
+                                      </span>
+                                      <span className="text-white font-bold">
+                                        {formatLocaleNumber(count)}
+                                      </span>
+                                    </div>
+                                  ))}
+                              </div>
+                              <p className="text-white/20 text-[10px]">
+                                {t(
+                                  'salatAnalytics.missedReasonsHint',
+                                  'Only counts prayers where you picked a reason after marking them missed — entirely optional.'
+                                )}
+                              </p>
+                            </div>
+                          </motion.div>
+                        )}
+                    </div>
+                  )}
+
                   {/* Kaza debt chart — weekly accumulation vs payback, grouped bars */}
                   {debtHistory && debtHistory.some((w) => w.accumulated > 0 || w.paidBack > 0) && (
                     <div className="space-y-3">
@@ -680,6 +863,45 @@ export default function SalatAnalytics() {
                               </div>
                             )}
                           </div>
+
+                          {/* Per-prayer payoff speed — which prayer's kaza lingers longest */}
+                          {kazaInsights.perPrayer &&
+                            Object.keys(kazaInsights.perPrayer).length > 0 && (
+                              <div className="space-y-1.5 pt-1">
+                                <p className="text-white/30 text-[11px] font-bold uppercase tracking-wide">
+                                  {t('salatAnalytics.kazaPerPrayer', 'By prayer')}
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {PRAYER_META.filter((p) => p.isTrackable).map((prayer) => {
+                                    const pp = kazaInsights.perPrayer[prayer.id as PrayerId];
+                                    if (!pp) return null;
+                                    return (
+                                      <div
+                                        key={prayer.id}
+                                        className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] border border-brand-border px-2.5 py-1.5 text-xs"
+                                      >
+                                        <span className="text-white/60 flex items-center gap-1.5">
+                                          <span>{prayer.icon}</span>
+                                          {translateSalatName(prayer.id, prayer.name, t)}
+                                        </span>
+                                        <span className="text-white/40">
+                                          {pp.owedCount > 0 &&
+                                            t('salatAnalytics.kazaOwedCount', '{{n}} owed', {
+                                              n: formatLocaleNumber(pp.owedCount),
+                                            })}
+                                          {pp.owedCount > 0 && pp.avgPayoffDays !== null && ' · '}
+                                          {pp.avgPayoffDays !== null &&
+                                            t('salatAnalytics.kazaAvgPayoffDays', '{{days}} days', {
+                                              days: formatLocaleNumber(pp.avgPayoffDays),
+                                            })}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
                           <p className="text-white/25 text-[10px]">
                             {t(
                               'salatAnalytics.kazaInsightsHint',

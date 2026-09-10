@@ -3,9 +3,20 @@ import mongoose, { Schema, Document } from 'mongoose';
 export type PrayerStatus = 'completed' | 'kaza' | 'missed' | 'pending';
 export type PrayerLocation = 'home' | 'mosque' | 'jamat';
 
+export const MISSED_REASONS = ['sleep', 'travel', 'forgot', 'busy', 'other'] as const;
+export type MissedReason = (typeof MISSED_REASONS)[number];
+
 export const NAFL_TYPE_IDS = [
-  'tahajjud', 'ishraq', 'duha', 'awwabin', 'witr',
-  'tahiyyat_wudu', 'tahiyyat_masjid', 'hajat', 'istikharah', 'tarawih',
+  'tahajjud',
+  'ishraq',
+  'duha',
+  'awwabin',
+  'witr',
+  'tahiyyat_wudu',
+  'tahiyyat_masjid',
+  'hajat',
+  'istikharah',
+  'tarawih',
 ] as const;
 export type NaflType = (typeof NAFL_TYPE_IDS)[number];
 
@@ -18,6 +29,17 @@ export interface IPrayerEntry {
   location?: PrayerLocation;
   tasbeeh?: boolean;
   ayatulKursi?: boolean;
+  /** Start/end of this prayer's valid window on the day it was marked — sent
+   * by the client (it already computes these via the adhan library for
+   * display) only when status becomes completed/kaza. Powers the "prayed
+   * early/mid/late in the window" analytics; absent for logs written before
+   * this field existed or when the client had no location set. */
+  windowStart?: Date;
+  windowEnd?: Date;
+  /** Optional, user-chosen context for why a prayer was missed — set only
+   * when status is 'missed'. Never required; purely for the user's own
+   * pattern analysis (see salatAnalytics.missedReasons). */
+  missedReason?: MissedReason;
 }
 
 export interface INaflEntry {
@@ -43,6 +65,9 @@ const prayerEntrySchema = new Schema<IPrayerEntry>(
     location: { type: String, enum: ['home', 'mosque', 'jamat'] },
     tasbeeh: { type: Boolean, default: false },
     ayatulKursi: { type: Boolean, default: false },
+    windowStart: { type: Date },
+    windowEnd: { type: Date },
+    missedReason: { type: String, enum: MISSED_REASONS },
   },
   { _id: false }
 );
@@ -65,11 +90,11 @@ const salatLogSchema = new Schema<ISalatLog>(
     userId: { type: String, required: true },
     date: { type: String, required: true },
     prayers: {
-      fajr:    { type: prayerEntrySchema, default: defaultEntry },
-      dhuhr:   { type: prayerEntrySchema, default: defaultEntry },
-      asr:     { type: prayerEntrySchema, default: defaultEntry },
+      fajr: { type: prayerEntrySchema, default: defaultEntry },
+      dhuhr: { type: prayerEntrySchema, default: defaultEntry },
+      asr: { type: prayerEntrySchema, default: defaultEntry },
       maghrib: { type: prayerEntrySchema, default: defaultEntry },
-      isha:    { type: prayerEntrySchema, default: defaultEntry },
+      isha: { type: prayerEntrySchema, default: defaultEntry },
     },
     nafl: { type: naflEntrySchema, default: defaultNafl },
   },

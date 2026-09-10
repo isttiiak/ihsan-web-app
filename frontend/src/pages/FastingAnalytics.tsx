@@ -17,6 +17,8 @@ import {
   FastingLog,
 } from '../hooks/useFasting.js';
 import { FastingCategory, VOLUNTARY_BY_ID } from '../utils/fastingRules.js';
+import { useWorshipCorrelation } from '../hooks/useInsights.js';
+import { formatLocaleNumber } from '../utils/localeDate.js';
 
 // Chart palette — validated (dataviz six checks, dark surface): identity per
 // category, fixed order, never cycled. Chips elsewhere use the app's lighter
@@ -53,6 +55,7 @@ export default function FastingAnalytics() {
   const isDemoMode = useAuthStore((s) => s.isDemoMode);
   const { data: summary } = useFastingSummary();
   const { data: logs, isLoading } = useFastingHistory(365, true);
+  const { data: correlation } = useWorshipCorrelation(90);
   const upsert = useUpsertFastingLog();
   const clearLog = useClearFastingLog();
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -307,6 +310,89 @@ export default function FastingAnalytics() {
                   })}
                 </div>
               </motion.div>
+
+              {/* ── Fasting & Worship correlation ── */}
+              {correlation && !correlation.insufficientData && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.18 }}
+                  className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-4 space-y-3"
+                >
+                  <div>
+                    <p className="text-white/70 font-bold text-sm">
+                      {t('fastingAnalytics.correlationTitle', 'Fasting & Worship')}
+                    </p>
+                    <p className="text-white/25 text-[10px]">
+                      {t(
+                        'fastingAnalytics.correlationSubtitle',
+                        'Your salat, zikr, and Quran on fasting days vs. others — last {{days}} days',
+                        { days: correlation.windowDays }
+                      )}
+                    </p>
+                  </div>
+                  <div className="space-y-2.5">
+                    {[
+                      {
+                        label: t('fastingAnalytics.correlationSalat', 'Salat completion'),
+                        fasting: correlation.fastingDays.avgSalatCompletionPct,
+                        rest: correlation.nonFastingDays.avgSalatCompletionPct,
+                        unit: '%',
+                      },
+                      {
+                        label: t('fastingAnalytics.correlationZikr', 'Zikr per day'),
+                        fasting: correlation.fastingDays.avgZikrCount,
+                        rest: correlation.nonFastingDays.avgZikrCount,
+                        unit: '',
+                      },
+                      {
+                        label: t('fastingAnalytics.correlationQuran', 'Quran units per day'),
+                        fasting: correlation.fastingDays.avgQuranUnits,
+                        rest: correlation.nonFastingDays.avgQuranUnits,
+                        unit: '',
+                      },
+                    ].map((row) => {
+                      const f = row.fasting ?? 0;
+                      const r = row.rest ?? 0;
+                      const higher = f > r ? 'fasting' : f < r ? 'rest' : null;
+                      return (
+                        <div key={row.label} className="flex items-center justify-between gap-3">
+                          <span className="text-white/50 text-xs">{row.label}</span>
+                          <span className="text-xs font-bold tabular-nums flex items-center gap-1.5">
+                            <span
+                              className={
+                                higher === 'fasting' ? 'text-brand-emerald' : 'text-white/60'
+                              }
+                            >
+                              {formatLocaleNumber(f)}
+                              {row.unit}
+                            </span>
+                            <span className="text-white/20 font-normal">
+                              {t('fastingAnalytics.vsNonFasting', 'vs')}
+                            </span>
+                            <span
+                              className={higher === 'rest' ? 'text-brand-emerald' : 'text-white/60'}
+                            >
+                              {formatLocaleNumber(r)}
+                              {row.unit}
+                            </span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-white/20 text-[10px]">
+                    {t(
+                      'fastingAnalytics.correlationHint',
+                      '{{fastingDays}} fasting days vs. {{restDays}} others in this window — a comparison, not a claim about cause and effect.',
+                      {
+                        fastingDays: correlation.fastingDays.days,
+                        restDays: correlation.nonFastingDays.days,
+                      }
+                    )}
+                  </p>
+                </motion.div>
+              )}
 
               {/* ── History (edit / delete) ── */}
               <motion.div

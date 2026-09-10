@@ -332,6 +332,20 @@ export interface KazaInsights {
    * a specific date (see KazaUnit's doc comment for why). */
   itemizedOwedCount: number;
   itemizedPaidCount: number;
+  /** Same two numbers, broken out per prayer — "which prayer's kaza lingers
+   * longest" is a different, more actionable question than the overall
+   * average. A prayer with no itemized data at all is omitted. */
+  perPrayer: Partial<
+    Record<
+      PrayerId,
+      {
+        owedCount: number;
+        oldestOwedDate: string | null;
+        avgPayoffDays: number | null;
+        paidCount: number;
+      }
+    >
+  >;
 }
 
 /**
@@ -340,28 +354,42 @@ export interface KazaInsights {
  * you still owe" and "how long does it usually take you to catch up."
  */
 export async function getKazaInsights(userId: string): Promise<KazaInsights> {
-  const [oldestOwed, paidUnits, itemizedOwedCount] = await Promise.all([
+  const [oldestOwed, paidUnits, owedUnits] = await Promise.all([
     KazaUnit.findOne({ userId, status: 'owed' }).sort({ missedDate: 1 }),
     KazaUnit.find({ userId, status: 'paid', paidAt: { $exists: true } }),
-    KazaUnit.countDocuments({ userId, status: 'owed' }),
+    KazaUnit.find({ userId, status: 'owed' }).sort({ missedDate: 1 }),
   ]);
 
-  let avgPayoffDays: number | null = null;
-  if (paidUnits.length > 0) {
-    const totalDays = paidUnits.reduce((sum, u) => {
+  const avgOf = (units: typeof paidUnits): number | null => {
+    if (units.length === 0) return null;
+    const totalDays = units.reduce((sum, u) => {
       const missed = Date.parse(`${u.missedDate}T00:00:00Z`);
       const paid = (u.paidAt as Date).getTime();
       return sum + Math.max(0, (paid - missed) / 86_400_000);
     }, 0);
-    avgPayoffDays = Math.round((totalDays / paidUnits.length) * 10) / 10;
+    return Math.round((totalDays / units.length) * 10) / 10;
+  };
+
+  const perPrayer: KazaInsights['perPrayer'] = {};
+  for (const pid of PRAYER_IDS) {
+    const owed = owedUnits.filter((u) => u.prayer === pid);
+    const paid = paidUnits.filter((u) => u.prayer === pid);
+    if (owed.length === 0 && paid.length === 0) continue;
+    perPrayer[pid] = {
+      owedCount: owed.length,
+      oldestOwedDate: owed[0]?.missedDate ?? null,
+      avgPayoffDays: avgOf(paid),
+      paidCount: paid.length,
+    };
   }
 
   return {
     oldestOwed: oldestOwed
       ? { prayer: oldestOwed.prayer, missedDate: oldestOwed.missedDate }
       : null,
-    avgPayoffDays,
-    itemizedOwedCount,
+    avgPayoffDays: avgOf(paidUnits),
+    itemizedOwedCount: owedUnits.length,
     itemizedPaidCount: paidUnits.length,
+    perPrayer,
   };
 }
