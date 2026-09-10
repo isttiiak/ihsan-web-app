@@ -21,6 +21,11 @@ interface UiState {
   zikrAudioEnabled: boolean;
   /** Volume for zikr audio (0–1) */
   zikrAudioVolume: number;
+  /** Rayhanah discreet mode: swaps the pink 🌸 "Rayhanah"/cycle-day wording
+   * on the home screen and nav for a neutral "Wellness" label — for a
+   * shared device or over-the-shoulder scenario. Purely cosmetic/local; the
+   * underlying data and page are unaffected once she's actually on /cycle. */
+  discreetMode: boolean;
   setReduceMotion: (val: boolean) => void;
   setHighContrast: (val: boolean) => void;
   setShowNoorAllTime: (val: boolean) => void;
@@ -31,6 +36,7 @@ interface UiState {
   setTasbihTarget: (val: number) => void;
   setZikrAudioEnabled: (val: boolean) => void;
   setZikrAudioVolume: (val: number) => void;
+  setDiscreetMode: (val: boolean) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -47,6 +53,7 @@ export const useUiStore = create<UiState>((set) => ({
   ),
   zikrAudioEnabled: localStorage.getItem('ihsan_zikr_audio') !== '0',
   zikrAudioVolume: parseFloat(localStorage.getItem('ihsan_zikr_volume') || '0.7'),
+  discreetMode: localStorage.getItem('ihsan_discreet_mode') === '1',
 
   setReduceMotion: (val) => {
     localStorage.setItem('ihsan_reduce_motion', val ? '1' : '0');
@@ -98,5 +105,10 @@ export const useUiStore = create<UiState>((set) => ({
     const clamped = Math.max(0, Math.min(1, val));
     localStorage.setItem('ihsan_zikr_volume', String(clamped));
     set({ zikrAudioVolume: clamped });
+  },
+
+  setDiscreetMode: (val) => {
+    localStorage.setItem('ihsan_discreet_mode', val ? '1' : '0');
+    set({ discreetMode: !!val });
   },
 }));

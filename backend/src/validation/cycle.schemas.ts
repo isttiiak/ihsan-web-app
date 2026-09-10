@@ -21,6 +21,13 @@ export const cycleProfileSchema = z.object({
   }),
 });
 
+export const pregnancySchema = z.object({
+  body: z.object({
+    active: z.boolean(),
+    dueDate: dateField.optional(),
+  }),
+});
+
 export const pastCycleSchema = z.object({
   body: z.object({
     startDate: dateField,

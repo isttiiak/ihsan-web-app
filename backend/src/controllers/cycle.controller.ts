@@ -83,6 +83,20 @@ export const setPartnerSync = async (
   }
 };
 
+export const setPregnancy = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { active, dueDate } = req.body as { active: boolean; dueDate?: string };
+    const profile = await cycleService.setPregnancy(req.user.uid, active, dueDate);
+    res.json({ ok: true, pregnancy: profile.pregnancy ?? { active: false } });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const addPastCycle = async (
   req: Request,
   res: Response,

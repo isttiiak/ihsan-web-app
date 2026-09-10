@@ -198,6 +198,11 @@ export default function FastingAnalytics() {
                       ? t('fastingAnalytics.consecutiveDays', 'consecutive days')
                       : t('fastingAnalytics.startFasting', 'start a streak'),
                   },
+                  {
+                    label: t('fastingAnalytics.bestMonThuStreak', 'Best Mon/Thu streak'),
+                    value: summary?.stats.bestMonThuStreak ?? 0,
+                    sub: t('fastingAnalytics.longestEver', 'longest ever'),
+                  },
                 ].map((s, i) => (
                   <motion.div
                     key={s.label}
@@ -209,7 +214,9 @@ export default function FastingAnalytics() {
                     <p className="text-white/30 text-[10px] uppercase tracking-widest font-bold">
                       {s.label}
                     </p>
-                    <p className="text-white font-black text-2xl tabular-nums mt-0.5">{s.value}</p>
+                    <p className="text-white font-black text-2xl tabular-nums mt-0.5">
+                      {formatLocaleNumber(s.value)}
+                    </p>
                     <p className="text-white/25 text-[10px]">{s.sub}</p>
                   </motion.div>
                 ))}

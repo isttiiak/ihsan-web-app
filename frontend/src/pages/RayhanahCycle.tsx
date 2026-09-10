@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import { useAuthStore } from '../store/useAuthStore.js';
+import { useUiStore } from '../store/useUiStore.js';
 import {
   useCycleSummary,
   useStartCycle,
@@ -15,6 +16,7 @@ import {
   useUpsertCycleDay,
   useEditCycleLog,
   usePartnerSync,
+  useSetPregnancy,
   type CycleFlow,
   type CycleMood,
 } from '../hooks/useCycle.js';
@@ -27,7 +29,7 @@ import { getTrackingDay } from '../utils/trackingDay.js';
 import { getHijriDate } from '../utils/islamicCalendar.js';
 import { getRamadanWindow } from '../utils/ramadan.js';
 import { celebrateSmall } from '../utils/celebrate.js';
-import { formatLocaleDate } from '../utils/localeDate.js';
+import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 import { translateReference } from '../utils/localeReference.js';
 import MoodComfort from '../components/MoodComfort.js';
 import CycleGuidance from '../components/CycleGuidance.js';
@@ -189,6 +191,8 @@ export default function RayhanahCycle() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+  const discreetMode = useUiStore((s) => s.discreetMode);
+  const setDiscreetMode = useUiStore((s) => s.setDiscreetMode);
   const isFemale = useIsFemale();
   const today = getTrackingDay();
 
@@ -201,9 +205,13 @@ export default function RayhanahCycle() {
   const updateFastingProfile = useUpdateFastingProfile();
   const upsertDay = useUpsertCycleDay();
   const partnerSync = usePartnerSync();
+  const setPregnancy = useSetPregnancy();
 
   const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
   const { data: friends } = useFriendsList(partnerPickerOpen || !!summary?.partnerSync.enabled);
+
+  const [pregnancyFormOpen, setPregnancyFormOpen] = useState(false);
+  const [dueDateInput, setDueDateInput] = useState('');
 
   const [startOpen, setStartOpen] = useState(false);
   const [startDate, setStartDate] = useState(today);
@@ -327,7 +335,7 @@ export default function RayhanahCycle() {
           toast.success(
             t(
               'rayhanah.qadaAddedToast',
-              '{{count}} qaḍā day(s) added — the tracker will guide you 🌸',
+              '{{count, number}} qaḍā day(s) added — the tracker will guide you 🌸',
               { count: qadaPrompt.days }
             )
           );
@@ -428,7 +436,7 @@ export default function RayhanahCycle() {
                   : `🌸 ${t('rayhanah.haydHeader', 'Rayhanah days')}`}
               </div>
               <h1 className="text-3xl font-black text-white mt-2">
-                {t('rayhanah.dayCount', 'Day {{count}}', { count: active.dayCount })}
+                {t('rayhanah.dayCount', 'Day {{count, number}}', { count: active.dayCount })}
                 <span className="text-white/40 text-lg font-semibold">
                   {' '}
                   ·{' '}
@@ -444,7 +452,7 @@ export default function RayhanahCycle() {
                   <span className="font-bold">
                     {t(
                       'rayhanah.beyondMaxWarning',
-                      'Day {{dayCount}} has passed the {{maxDays}}-day maximum ({{madhab}} view{{nifas}}).',
+                      'Day {{dayCount, number}} has passed the {{maxDays, number}}-day maximum ({{madhab}} view{{nifas}}).',
                       {
                         dayCount: active.dayCount,
                         maxDays: active.maxDays,
@@ -496,6 +504,36 @@ export default function RayhanahCycle() {
               </p>
             </div>
           </motion.div>
+        ) : summary?.pregnancy.active ? (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-3xl p-6 sm:p-8 border border-brand-emerald/20 bg-gradient-to-br from-brand-emerald/10 via-brand-deep/80 to-brand-info/10 relative overflow-hidden"
+          >
+            <div className="flex items-center gap-2 text-brand-emerald/80 text-xs font-bold uppercase tracking-widest">
+              🤰 {t('rayhanah.pregnancyHeader', 'Expecting')}
+            </div>
+            <h1 className="text-2xl font-black text-white mt-2">
+              {summary.pregnancy.weeksAlong != null
+                ? t('rayhanah.pregnancyWeek', 'Week {{week, number}}', {
+                    week: summary.pregnancy.weeksAlong,
+                  })
+                : t('rayhanah.pregnancyHeader', 'Expecting')}
+            </h1>
+            <p className="text-white/50 text-sm mt-2 leading-relaxed">
+              {t(
+                'rayhanah.pregnancyMessage',
+                "May Allah grant you ease and a safe delivery. Cycle predictions are paused while you're expecting — salat and fasting are unaffected by pregnancy alone."
+              )}
+            </p>
+            {summary.pregnancy.dueDate && (
+              <p className="text-white/30 text-xs mt-3">
+                {t('rayhanah.pregnancyDueDate', 'Expected due date: {{date}}', {
+                  date: formatDay(summary.pregnancy.dueDate),
+                })}
+              </p>
+            )}
+          </motion.div>
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -519,8 +557,8 @@ export default function RayhanahCycle() {
                     'Based on your history, your next period is expected around'
                   )}{' '}
                   <span className="text-brand-pink font-semibold">{nextStartLabel}</span>{' '}
-                  {t('rayhanah.avgCycleNote', '(avg cycle {{days}} days).', {
-                    days: summary?.prediction.avgCycleDays,
+                  {t('rayhanah.avgCycleNote', '(avg cycle {{days, number}} days).', {
+                    days: summary?.prediction.avgCycleDays ?? 0,
                   })}
                 </>
               ) : (
@@ -537,9 +575,11 @@ export default function RayhanahCycle() {
                     ? t('rayhanah.pmsToday', '🌸 Your period may start today')
                     : daysUntilNext === 1
                       ? t('rayhanah.pmsTomorrow', '🌸 Your period may start tomorrow')
-                      : t('rayhanah.pmsCountdown', '🌸 ~{{days}} days until your expected period', {
-                          days: daysUntilNext,
-                        })}
+                      : t(
+                          'rayhanah.pmsCountdown',
+                          '🌸 ~{{days, number}} days until your expected period',
+                          { days: daysUntilNext }
+                        )}
                 </span>
                 <p className="text-white/40 mt-1">
                   {t(
@@ -590,7 +630,7 @@ export default function RayhanahCycle() {
                 {t('rayhanah.gardenOfLight', '🪻 Garden of Light')}
               </h2>
               <span className="text-xs font-bold text-brand-pink/80">
-                {t('rayhanah.gardenProgress', '{{done}}/{{total}} today', {
+                {t('rayhanah.gardenProgress', '{{done, number}}/{{total, number}} today', {
                   done: gardenDone,
                   total: GARDEN_ITEMS.length,
                 })}
@@ -886,26 +926,33 @@ export default function RayhanahCycle() {
                 🌙{' '}
                 {t(
                   'rayhanah.ramadanQadaWarning',
-                  'Ramadan starts in {{days}} days — {{count}} still to go before then.',
-                  { days: ramadanWindow.daysUntil, count: qadaRemaining }
+                  'Ramadan starts in {{days, number}} days — {{count, number}} still to go before then.',
+                  {
+                    days: ramadanWindow.daysUntil,
+                    count: qadaRemaining,
+                  }
                 )}
               </p>
             )}
             <div className="mt-3 grid grid-cols-3 gap-3">
               <div className="rounded-xl bg-brand-gold/10 border border-brand-gold/15 p-3 text-center">
-                <p className="text-xl font-black text-brand-gold">{qadaOwed}</p>
+                <p className="text-xl font-black text-brand-gold">{formatLocaleNumber(qadaOwed)}</p>
                 <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
                   {t('rayhanah.owed', 'owed')}
                 </p>
               </div>
               <div className="rounded-xl bg-brand-emerald/10 border border-brand-emerald/15 p-3 text-center">
-                <p className="text-xl font-black text-brand-emerald">{qadaCompleted}</p>
+                <p className="text-xl font-black text-brand-emerald">
+                  {formatLocaleNumber(qadaCompleted)}
+                </p>
                 <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
                   {t('rayhanah.madeUp', 'made up')}
                 </p>
               </div>
               <div className="rounded-xl bg-white/5 border border-brand-border p-3 text-center">
-                <p className="text-xl font-black text-white/70">{qadaRemaining}</p>
+                <p className="text-xl font-black text-white/70">
+                  {formatLocaleNumber(qadaRemaining)}
+                </p>
                 <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
                   {t('rayhanah.remaining', 'remaining')}
                 </p>
@@ -917,7 +964,7 @@ export default function RayhanahCycle() {
                   ? t('rayhanah.oneDayToGo', 'One more day to go — you can do it!')
                   : t(
                       'rayhanah.daysRemainingNote',
-                      '{{count}} days remaining. Take your time — every made-up fast counts.',
+                      '{{count, number}} days remaining. Take your time — every made-up fast counts.',
                       { count: qadaRemaining }
                     )}
               </p>
@@ -972,7 +1019,7 @@ export default function RayhanahCycle() {
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
               <p className="text-2xl font-black text-brand-pink">
-                {summary.prediction?.avgCycleDays}
+                {formatLocaleNumber(summary.prediction?.avgCycleDays ?? 0)}
               </p>
               <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">
                 {t('rayhanah.avgCycleDays', 'avg cycle days')}
@@ -980,7 +1027,7 @@ export default function RayhanahCycle() {
             </div>
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
               <p className="text-2xl font-black text-brand-pink">
-                {summary.prediction?.avgPeriodDays}
+                {formatLocaleNumber(summary.prediction?.avgPeriodDays ?? 0)}
               </p>
               <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">
                 {t('rayhanah.avgPeriodDays', 'avg period days')}
@@ -988,7 +1035,7 @@ export default function RayhanahCycle() {
             </div>
             <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
               <p className="text-2xl font-black text-brand-pink">
-                {(summary.prediction?.basedOnCycles ?? 0) + 1}
+                {formatLocaleNumber((summary.prediction?.basedOnCycles ?? 0) + 1)}
               </p>
               <p className="text-white/30 text-[10px] font-bold uppercase tracking-wide mt-1">
                 {t('rayhanah.cyclesLearned', 'cycles learned')}
@@ -1310,12 +1357,101 @@ export default function RayhanahCycle() {
             )}
           </div>
 
+          {/* ── Pregnancy — pauses hayd predictions only; salat/fasting unaffected ── */}
+          <div className="pt-3 border-t border-brand-border/50">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-white font-bold text-sm">
+                  🤰 {t('rayhanah.pregnancyToggleTitle', "I'm currently pregnant")}
+                </p>
+                <p className="text-white/30 text-xs leading-relaxed">
+                  {t(
+                    'rayhanah.pregnancyToggleDesc',
+                    'Pauses period predictions and shows a week count instead. Does not change your salat or fasting tracking.'
+                  )}
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-sm border-brand-emerald/40 [--tglbg:theme(colors.brand-surface)] checked:bg-brand-emerald checked:border-brand-emerald shrink-0"
+                checked={summary?.pregnancy.active ?? false}
+                disabled={setPregnancy.isPending}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setDueDateInput(summary?.pregnancy.dueDate ?? '');
+                    setPregnancyFormOpen(true);
+                  } else {
+                    setPregnancy.mutate({ active: false });
+                    setPregnancyFormOpen(false);
+                  }
+                }}
+              />
+            </div>
+
+            {pregnancyFormOpen && !summary?.pregnancy.active && (
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="date"
+                  className="input input-sm bg-white/5 border-brand-border text-white/80 flex-1"
+                  value={dueDateInput}
+                  onChange={(e) => setDueDateInput(e.target.value)}
+                />
+                <button
+                  className="btn btn-sm bg-brand-emerald/20 border-brand-emerald/30 text-brand-emerald disabled:opacity-40"
+                  disabled={!dueDateInput || setPregnancy.isPending}
+                  onClick={() => {
+                    setPregnancy.mutate({ active: true, dueDate: dueDateInput });
+                    setPregnancyFormOpen(false);
+                  }}
+                >
+                  {t('rayhanah.pregnancySave', 'Save')}
+                </button>
+                <button
+                  className="text-white/25 text-xs hover:text-white/50"
+                  onClick={() => setPregnancyFormOpen(false)}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+              </div>
+            )}
+            {!pregnancyFormOpen && summary?.pregnancy.active && summary.pregnancy.dueDate && (
+              <p className="text-brand-emerald/70 text-xs mt-2">
+                {t('rayhanah.pregnancyDueDate', 'Expected due date: {{date}}', {
+                  date: formatDay(summary.pregnancy.dueDate),
+                })}
+              </p>
+            )}
+          </div>
+
+          {/* ── Discreet mode — neutralizes the home screen + nav wording ── */}
+          <div className="pt-3 border-t border-brand-border/50">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-white font-bold text-sm">
+                  🍃 {t('rayhanah.discreetModeTitle', 'Discreet mode')}
+                </p>
+                <p className="text-white/30 text-xs leading-relaxed">
+                  {t(
+                    'rayhanah.discreetModeDesc',
+                    'Hides "Rayhanah"/cycle-day wording from the home screen and menu — for a shared device. This page itself is unchanged once you open it.'
+                  )}
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-sm border-brand-pink/40 [--tglbg:theme(colors.brand-surface)] checked:bg-brand-pink checked:border-brand-pink shrink-0"
+                checked={discreetMode}
+                onChange={(e) => setDiscreetMode(e.target.checked)}
+              />
+            </div>
+          </div>
+
           <button
             className="w-full text-left text-sm text-white/60 hover:text-white flex items-center justify-between"
             onClick={() => setHistoryOpen((v) => !v)}
           >
             <span>
-              {t('rayhanah.cycleHistoryCount', '🗓️ Cycle history ({{count}})', {
+              {t('rayhanah.cycleHistoryCount', '🗓️ Cycle history ({{count, number}})', {
                 count: summary?.logs.length ?? 0,
               })}
             </span>
@@ -1685,9 +1821,11 @@ export default function RayhanahCycle() {
                 {t('rayhanah.ramadanDaysToMakeUp', '🌙 Ramadan days to make up')}
               </h3>
               <p className="text-white/60 text-sm leading-relaxed">
-                {t('rayhanah.qadaPromptCount', '{{count}} day(s) of this cycle fell in Ramadan.', {
-                  count: qadaPrompt.days,
-                })}{' '}
+                {t(
+                  'rayhanah.qadaPromptCount',
+                  '{{count, number}} day(s) of this cycle fell in Ramadan.',
+                  { count: qadaPrompt.days }
+                )}{' '}
                 {t('rayhanah.missedFastsMadeUp', 'Missed Ramadan fasts are made up after')} (
                 <a
                   className="underline"

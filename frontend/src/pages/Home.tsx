@@ -24,6 +24,7 @@ import { formatLocaleNumber } from '../utils/localeDate.js';
 import { translateReference } from '../utils/localeReference.js';
 import { isFriday, getTodaySpecialDays } from '../utils/islamicCalendar.js';
 import { useCycleActive, useCycleSummary } from '../hooks/useCycle.js';
+import { useUiStore } from '../store/useUiStore.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
 import { getRamadanWindow } from '../utils/ramadan.js';
 import { getFridayHour, FRIDAY_HOUR_REF } from '../utils/fridayHour.js';
@@ -129,6 +130,7 @@ export default function Home() {
 
   const cycleActive = useCycleActive();
   const { data: cycleSummary } = useCycleSummary();
+  const discreetMode = useUiStore((s) => s.discreetMode);
   // The whole ummah counts down to Ramadan — a small pill on the fasting card
   const ramadan = useMemo(() => getRamadanWindow(), []);
   // Friday specials — reuse the same minute tick that drives the prayer widget
@@ -242,16 +244,38 @@ export default function Home() {
             className="mb-6"
           >
             <Link to="/cycle">
-              <div className="rounded-2xl border border-brand-pink/20 bg-brand-pink/10 px-5 py-3.5 hover:border-brand-pink/30 transition-all">
-                <p className="text-brand-pink/90 font-bold text-sm">
-                  🌷{' '}
-                  {upcomingCycleDays === 0
-                    ? t('home.periodMayBegin')
-                    : upcomingCycleDays > 1
-                      ? t('home.periodMayBeginInPlural', { days: upcomingCycleDays })
-                      : t('home.periodMayBeginIn', { days: upcomingCycleDays })}
+              <div
+                className={
+                  discreetMode
+                    ? 'rounded-2xl border border-brand-border bg-white/5 px-5 py-3.5 hover:border-white/20 transition-all'
+                    : 'rounded-2xl border border-brand-pink/20 bg-brand-pink/10 px-5 py-3.5 hover:border-brand-pink/30 transition-all'
+                }
+              >
+                <p
+                  className={
+                    discreetMode
+                      ? 'text-white/70 font-bold text-sm'
+                      : 'text-brand-pink/90 font-bold text-sm'
+                  }
+                >
+                  {discreetMode ? (
+                    <>🔔 {t('home.discreetPrePeriod', 'Something to check')}</>
+                  ) : (
+                    <>
+                      🌷{' '}
+                      {upcomingCycleDays === 0
+                        ? t('home.periodMayBegin')
+                        : upcomingCycleDays! > 1
+                          ? t('home.periodMayBeginInPlural', { days: upcomingCycleDays })
+                          : t('home.periodMayBeginIn', { days: upcomingCycleDays })}
+                    </>
+                  )}
                 </p>
-                <p className="text-white/30 text-xs mt-0.5">{t('home.openRayhanah')}</p>
+                <p className="text-white/30 text-xs mt-0.5">
+                  {discreetMode
+                    ? t('home.discreetOpenWellness', 'Open Wellness')
+                    : t('home.openRayhanah')}
+                </p>
               </div>
             </Link>
           </motion.div>
@@ -265,11 +289,29 @@ export default function Home() {
             className="mb-6"
           >
             <Link to="/cycle">
-              <div className="rounded-2xl border border-brand-pink/25 bg-gradient-to-r from-brand-pink/15 via-brand-pink/10 to-brand-warm/10 px-5 py-4 hover:border-brand-pink/40 transition-all">
-                <p className="text-brand-pink font-bold text-sm">
-                  🌸 {t('home.rayhanahDay', { day: cycleActive.dayCount })}
+              <div
+                className={
+                  discreetMode
+                    ? 'rounded-2xl border border-brand-border bg-white/5 px-5 py-4 hover:border-white/20 transition-all'
+                    : 'rounded-2xl border border-brand-pink/25 bg-gradient-to-r from-brand-pink/15 via-brand-pink/10 to-brand-warm/10 px-5 py-4 hover:border-brand-pink/40 transition-all'
+                }
+              >
+                <p
+                  className={
+                    discreetMode
+                      ? 'text-white/70 font-bold text-sm'
+                      : 'text-brand-pink font-bold text-sm'
+                  }
+                >
+                  {discreetMode
+                    ? `🍃 ${t('home.discreetActiveDay', 'Wellness mode — day {{day, number}}', { day: cycleActive.dayCount })}`
+                    : `🌸 ${t('home.rayhanahDay', { day: cycleActive.dayCount })}`}
                 </p>
-                <p className="text-white/40 text-xs mt-1">{t('home.rayhanahDetail')}</p>
+                <p className="text-white/40 text-xs mt-1">
+                  {discreetMode
+                    ? t('home.discreetActiveDetail', 'Some trackers are paused today.')
+                    : t('home.rayhanahDetail')}
+                </p>
               </div>
             </Link>
           </motion.div>

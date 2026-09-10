@@ -10,6 +10,7 @@ import {
   pastCycleSchema,
   editCycleLogSchema,
   partnerSyncSchema,
+  pregnancySchema,
 } from '../validation/cycle.schemas.js';
 
 const router = Router();
@@ -40,6 +41,10 @@ router.patch(
   validate(partnerSyncSchema),
   cycleController.setPartnerSync
 );
+
+// PATCH /api/cycle/pregnancy — pregnancy status + due date (suspends hayd
+// predictions only; does not touch salat/fasting exemption logic)
+router.patch('/pregnancy', requireAuth, validate(pregnancySchema), cycleController.setPregnancy);
 
 // DELETE /api/cycle/logs/:logId — remove one episode
 // PATCH /api/cycle/logs/:logId — edit dates, or endDate:null to REOPEN the

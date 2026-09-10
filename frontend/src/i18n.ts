@@ -31,7 +31,12 @@ void i18n
     },
     defaultNS: 'common',
     fallbackLng: 'en',
-    interpolation: { escapeValue: false }, // React escapes already
+    // escapeValue: false — React escapes already. i18next ships a built-in
+    // Intl.NumberFormat-backed `number` formatter, so any `{{value, number}}`
+    // placeholder already renders বাংলা digits (০১২৩...) in Bengali mode with
+    // no extra config here — see utils/localeDate.ts#formatLocaleNumber for
+    // the equivalent for raw (non-interpolated) JSX-rendered numbers.
+    interpolation: { escapeValue: false },
     detection: {
       order: ['localStorage', 'navigator'],
       lookupLocalStorage: 'ihsan_lang',

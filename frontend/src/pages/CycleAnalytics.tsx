@@ -15,7 +15,7 @@ import {
 import { useFastingSummary } from '../hooks/useFasting.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { getTrackingDay } from '../utils/trackingDay.js';
-import { formatLocaleDate } from '../utils/localeDate.js';
+import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 import { translateReference } from '../utils/localeReference.js';
 
 function shiftStr(dateStr: string, delta: number): string {
@@ -349,14 +349,16 @@ export default function CycleAnalytics() {
             {/* Stat tiles */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                <p className="text-2xl font-black text-brand-pink">{stats.haydCount}</p>
+                <p className="text-2xl font-black text-brand-pink">
+                  {formatLocaleNumber(stats.haydCount)}
+                </p>
                 <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
                   {t('cycleAnalytics.cyclesTracked', 'cycles tracked')}
                 </p>
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                 <p className="text-2xl font-black text-brand-pink">
-                  {stats.gaps.length ? Math.round(stats.mean) : '—'}
+                  {stats.gaps.length ? formatLocaleNumber(Math.round(stats.mean)) : '—'}
                 </p>
                 <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
                   {t('cycleAnalytics.avgCycleDays', 'avg cycle days')}
@@ -364,7 +366,7 @@ export default function CycleAnalytics() {
               </div>
               <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                 <p className="text-2xl font-black text-brand-pink">
-                  {stats.lengths.length ? Math.round(stats.meanLen) : '—'}
+                  {stats.lengths.length ? formatLocaleNumber(Math.round(stats.meanLen)) : '—'}
                 </p>
                 <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
                   {t('cycleAnalytics.avgPeriodDays', 'avg period days')}
@@ -376,7 +378,7 @@ export default function CycleAnalytics() {
                 </p>
                 <p className="text-white/30 text-[10px] font-bold uppercase mt-1.5">
                   {t('cycleAnalytics.regularityLabel', 'regularity')}{' '}
-                  {stats.gaps.length > 1 ? `(±${Math.round(stats.sd)}d)` : ''}
+                  {stats.gaps.length > 1 ? `(±${formatLocaleNumber(Math.round(stats.sd))}d)` : ''}
                 </p>
               </div>
             </div>
@@ -385,13 +387,17 @@ export default function CycleAnalytics() {
             {stats.gaps.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                  <p className="text-2xl font-black text-brand-info">{stats.shortest ?? '—'}</p>
+                  <p className="text-2xl font-black text-brand-info">
+                    {stats.shortest != null ? formatLocaleNumber(stats.shortest) : '—'}
+                  </p>
                   <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
                     {t('cycleAnalytics.shortestCycle', 'shortest cycle')}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
-                  <p className="text-2xl font-black text-brand-info">{stats.longest ?? '—'}</p>
+                  <p className="text-2xl font-black text-brand-info">
+                    {stats.longest != null ? formatLocaleNumber(stats.longest) : '—'}
+                  </p>
                   <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
                     {t('cycleAnalytics.longestCycle', 'longest cycle')}
                   </p>
@@ -399,7 +405,7 @@ export default function CycleAnalytics() {
                 <div className="rounded-2xl bg-brand-deep/80 border border-brand-border p-4 text-center">
                   <p className="text-2xl font-black text-brand-info">
                     {stats.longest != null && stats.shortest != null
-                      ? stats.longest - stats.shortest
+                      ? formatLocaleNumber(stats.longest - stats.shortest)
                       : '—'}
                   </p>
                   <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
@@ -437,12 +443,12 @@ export default function CycleAnalytics() {
                     {stats.irregAlertDirection === 'longer'
                       ? t('cycleAnalytics.irregAlertLonger', {
                           defaultValue:
-                            'Your last cycle was {{days}} days longer than average — worth noting if this continues.',
+                            'Your last cycle was {{days, number}} days longer than average — worth noting if this continues.',
                           days: stats.irregAlertDays,
                         })
                       : t('cycleAnalytics.irregAlertShorter', {
                           defaultValue:
-                            'Your last cycle was {{days}} days shorter than average — worth noting if this continues.',
+                            'Your last cycle was {{days, number}} days shorter than average — worth noting if this continues.',
                           days: stats.irregAlertDays,
                         })}
                   </p>
@@ -550,7 +556,7 @@ export default function CycleAnalytics() {
                 <p className="text-white/30 text-xs mt-0.5">
                   {t(
                     'cycleAnalytics.prePeriodPatternDesc',
-                    'Symptoms and moods that tend to appear in the week before your period (based on {{count}} cycle(s)).',
+                    'Symptoms and moods that tend to appear in the week before your period (based on {{count, number}} cycle(s)).',
                     { count: stats.pmsPeriodsAnalyzed }
                   )}
                 </p>
@@ -568,7 +574,9 @@ export default function CycleAnalytics() {
                           style={{ width: `${p.pct}%` }}
                         />
                       </div>
-                      <span className="text-brand-gold/80 font-bold w-10 text-right">{p.pct}%</span>
+                      <span className="text-brand-gold/80 font-bold w-10 text-right">
+                        {formatLocaleNumber(p.pct)}%
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -602,7 +610,9 @@ export default function CycleAnalytics() {
                           style={{ width: `${(g.days / maxGap) * 100}%` }}
                         />
                       </div>
-                      <span className="text-brand-pink/80 font-bold w-8 text-right">{g.days}d</span>
+                      <span className="text-brand-pink/80 font-bold w-8 text-right">
+                        {formatLocaleNumber(g.days)}d
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -622,7 +632,7 @@ export default function CycleAnalytics() {
                             />
                           </div>
                           <span className="text-brand-warm/80 font-bold w-8 text-right">
-                            {l.days}d
+                            {formatLocaleNumber(l.days)}d
                           </span>
                         </div>
                       ))}
@@ -655,7 +665,7 @@ export default function CycleAnalytics() {
                           />
                         </div>
                         <span className="text-white/30 w-10 text-right">
-                          {t('cycleAnalytics.nDays', '{{count}} day(s)', { count: n })}
+                          {t('cycleAnalytics.nDays', '{{count, number}} day(s)', { count: n })}
                         </span>
                       </div>
                     ))}
@@ -689,7 +699,7 @@ export default function CycleAnalytics() {
                     <p className="text-white/25 text-[10px] mt-1">
                       {t(
                         'cycleAnalytics.flowMixSummary',
-                        '{{light}} light · {{medium}} medium · {{heavy}} heavy',
+                        '{{light, number}} light · {{medium, number}} medium · {{heavy, number}} heavy',
                         { light: stats.flowLight, medium: stats.flowMed, heavy: stats.flowHeavy }
                       )}
                     </p>
@@ -723,7 +733,7 @@ export default function CycleAnalytics() {
                 <div className="mt-3 grid grid-cols-3 gap-3">
                   <div className="rounded-xl bg-brand-gold/10 border border-brand-gold/15 p-3 text-center">
                     <p className="text-xl font-black text-brand-gold">
-                      {fastingSummary?.profile?.qadaOwed ?? 0}
+                      {formatLocaleNumber(fastingSummary?.profile?.qadaOwed ?? 0)}
                     </p>
                     <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
                       {t('cycleAnalytics.owed', 'owed')}
@@ -731,7 +741,7 @@ export default function CycleAnalytics() {
                   </div>
                   <div className="rounded-xl bg-brand-emerald/10 border border-brand-emerald/15 p-3 text-center">
                     <p className="text-xl font-black text-brand-emerald">
-                      {fastingSummary?.qadaCompleted ?? 0}
+                      {formatLocaleNumber(fastingSummary?.qadaCompleted ?? 0)}
                     </p>
                     <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
                       {t('cycleAnalytics.madeUp', 'made up')}
@@ -739,10 +749,12 @@ export default function CycleAnalytics() {
                   </div>
                   <div className="rounded-xl bg-white/5 border border-brand-border p-3 text-center">
                     <p className="text-xl font-black text-white/70">
-                      {Math.max(
-                        0,
-                        (fastingSummary?.profile?.qadaOwed ?? 0) -
-                          (fastingSummary?.qadaCompleted ?? 0)
+                      {formatLocaleNumber(
+                        Math.max(
+                          0,
+                          (fastingSummary?.profile?.qadaOwed ?? 0) -
+                            (fastingSummary?.qadaCompleted ?? 0)
+                        )
                       )}
                     </p>
                     <p className="text-white/30 text-[10px] font-bold uppercase mt-1">
@@ -808,7 +820,7 @@ export default function CycleAnalytics() {
                         {l.endDate && (
                           <span className="text-white/25">
                             {' '}
-                            · {daysBetween(l.startDate, l.endDate) + 1}d
+                            · {formatLocaleNumber(daysBetween(l.startDate, l.endDate) + 1)}d
                           </span>
                         )}
                       </span>

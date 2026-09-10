@@ -192,4 +192,42 @@ describe('Fasting API', () => {
     const get = await auth(request(app).get(`/api/fasting?date=2026-06-25`));
     expect(get.body.log).toBeNull();
   });
+
+  test('Mon/Thu streak: best-ever streak is tracked separately from the current one', async () => {
+    const token2 = fakeJwt({ uid: 'f-monthu', email: 'f-monthu@test.dev', name: 'F2' });
+    const auth2 = (r) => r.set('Authorization', `Bearer ${token2}`);
+    const logMonThu = (date) =>
+      auth2(request(app).put(`/api/fasting/log`)).send({
+        date,
+        category: 'voluntary',
+        voluntaryKind: 'mon_thu',
+        status: 'completed',
+      });
+
+    // A 10-fast run (Jan 5 – Feb 5, every Mon/Thu) — this becomes the best-ever streak.
+    for (const date of [
+      '2026-01-05',
+      '2026-01-08',
+      '2026-01-12',
+      '2026-01-15',
+      '2026-01-19',
+      '2026-01-22',
+      '2026-01-26',
+      '2026-01-29',
+      '2026-02-02',
+      '2026-02-05',
+    ]) {
+      const res = await logMonThu(date);
+      expect(res.status).toBe(200);
+    }
+    // Gap: Feb 9 (Mon) and Feb 12 (Thu) deliberately NOT logged — breaks the chain.
+    // Then a fresh, smaller run: Feb 16 (Mon) + Feb 19 (Thu).
+    await logMonThu('2026-02-16');
+    await logMonThu('2026-02-19');
+
+    const summary = await auth2(request(app).get(`/api/fasting/summary?today=2026-02-20`));
+    expect(summary.status).toBe(200);
+    expect(summary.body.stats.monThuStreak).toBe(2); // current run: just Feb 16 + Feb 19
+    expect(summary.body.stats.bestMonThuStreak).toBe(10); // the earlier unbroken run
+  });
 });

@@ -38,6 +38,7 @@ export interface FastingSummary {
     last30: number;
     voluntaryTotal: number;
     monThuStreak: number;
+    bestMonThuStreak: number;
   };
   recentLogs: FastingLog[];
 }

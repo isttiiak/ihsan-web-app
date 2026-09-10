@@ -147,7 +147,7 @@ export default function Navbar() {
   }, [location.pathname]);
 
   // Noor capsules: always on /friends; elsewhere per the Settings toggles
-  const { showNoorAllTime, showNoorToday } = useUiStore();
+  const { showNoorAllTime, showNoorToday, discreetMode } = useUiStore();
   const onFriendsPage = location.pathname === '/friends';
   const noorTodayVisible = onFriendsPage || showNoorToday;
   const noorAllTimeVisible = onFriendsPage || showNoorAllTime;
@@ -397,9 +397,9 @@ export default function Navbar() {
                           className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-brand-pink/10 text-sm transition-colors"
                         >
                           <span className="w-4 h-4 grid place-items-center text-brand-pink/90 text-sm leading-none">
-                            🌸
+                            {discreetMode ? '🍃' : '🌸'}
                           </span>
-                          {t('nav.rayhanahCycle')}
+                          {discreetMode ? t('nav.wellness', 'Wellness') : t('nav.rayhanahCycle')}
                         </Link>
                       )}
 

@@ -36,6 +36,7 @@ export interface CycleSummary {
   logs: Array<{ _id: string; type: 'hayd' | 'nifas'; startDate: string; endDate: string | null }>;
   days: CycleDayNote[];
   partnerSync: { enabled: boolean; partnerUid: string | null };
+  pregnancy: { active: boolean; dueDate: string | null; weeksAlong: number | null };
 }
 
 /** True for signed-in female users — the only ones who see Rayhanah UI. */
@@ -126,6 +127,23 @@ export function useSetMadhab() {
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['cycle'] }),
     onError: () => toast.error('Could not update setting.', { id: 'cycle-madhab' }),
+  });
+}
+
+/** Pregnancy status — suspends hayd predictions only; salat/fasting are
+ * untouched (that stays a per-day fiqh decision, not an automatic exemption). */
+export function useSetPregnancy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { active: boolean; dueDate?: string }) => {
+      const { data } = await api.patch('/api/cycle/pregnancy', vars);
+      return data;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['cycle'] }),
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      toast.error(msg ?? 'Could not update pregnancy status.', { id: 'cycle-pregnancy' });
+    },
   });
 }
 

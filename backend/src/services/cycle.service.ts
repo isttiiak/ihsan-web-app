@@ -56,6 +56,36 @@ export async function setMadhab(
   );
 }
 
+/** Turning pregnancy ON needs a due date (so a week count can be shown);
+ * turning it OFF always succeeds with no validation, same "revoking is never
+ * blocked" principle as partner sync. */
+export async function setPregnancy(
+  userId: string,
+  active: boolean,
+  dueDate?: string
+): Promise<ICycleProfile> {
+  if (active && (!dueDate || !DAY_STR_RE.test(dueDate))) {
+    const err = Object.assign(new Error('A valid due date is required to start pregnancy mode.'), {
+      statusCode: 400,
+    });
+    throw err;
+  }
+  return await CycleProfile.findOneAndUpdate(
+    { userId },
+    { $set: { pregnancy: active ? { active: true, dueDate } : { active: false } } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+}
+
+/** Weeks pregnant from a 40-week (280-day) gestation ending on `dueDate`,
+ * clamped to a sane display range. Null if the numbers don't make sense. */
+function weeksAlong(dueDate: string, today: string): number | null {
+  const daysUntilDue = daysBetween(today, dueDate);
+  const weeks = 40 - Math.ceil(daysUntilDue / 7);
+  if (!Number.isFinite(weeks)) return null;
+  return Math.max(0, Math.min(42, weeks));
+}
+
 export interface CycleStatus {
   active: {
     type: 'hayd' | 'nifas';
@@ -73,6 +103,7 @@ export interface CycleStatus {
   };
   madhab: ICycleProfile['madhab'];
   partnerSync: { enabled: boolean; partnerUid: string | null };
+  pregnancy: { active: boolean; dueDate: string | null; weeksAlong: number | null };
 }
 
 export async function getStatus(userId: string, today: string): Promise<CycleStatus> {
@@ -115,7 +146,12 @@ export async function getStatus(userId: string, today: string): Promise<CycleSta
     ? Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length)
     : 7;
   const lastStart = hayd.length ? hayd[hayd.length - 1]!.startDate : null;
-  const nextStart = !active && lastStart ? shiftDateStr(lastStart, avgCycleDays) : null;
+  const isPregnant = !!profile.pregnancy?.active;
+  // Predicting a "next period" while she's pregnant would be actively wrong
+  // (periods stop during pregnancy) — suppress it rather than show a stale
+  // or misleading forecast.
+  const nextStart =
+    !active && !isPregnant && lastStart ? shiftDateStr(lastStart, avgCycleDays) : null;
 
   return {
     active,
@@ -124,6 +160,14 @@ export async function getStatus(userId: string, today: string): Promise<CycleSta
     partnerSync: {
       enabled: profile.partnerSyncEnabled,
       partnerUid: profile.partnerUid ?? null,
+    },
+    pregnancy: {
+      active: isPregnant,
+      dueDate: profile.pregnancy?.dueDate ?? null,
+      weeksAlong:
+        isPregnant && profile.pregnancy?.dueDate
+          ? weeksAlong(profile.pregnancy.dueDate, today)
+          : null,
     },
   };
 }

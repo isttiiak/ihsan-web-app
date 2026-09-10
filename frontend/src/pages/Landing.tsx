@@ -315,6 +315,7 @@ export default function Landing() {
               {t('landing.readOurStory')}
             </Link>
           </div>
+          <p className="text-white/25 text-[11px] mt-5">{t('footer.platformNote')}</p>
         </motion.section>
       </div>
     </AnimatedBackground>

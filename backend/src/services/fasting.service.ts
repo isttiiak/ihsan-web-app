@@ -38,6 +38,33 @@ function computeMonThuStreak(monThuDates: Set<string>, today: string): number {
   return streak;
 }
 
+/** Longest-ever run of consecutive Mon/Thu fasts (not just the trailing one
+ * from today — see computeMonThuStreak for that). Walks every Mon/Thu
+ * calendar date from the earliest logged one through `today`, same
+ * gap-breaks-the-chain rule as the current streak. */
+function computeBestMonThuStreak(monThuDates: Set<string>, today: string): number {
+  if (monThuDates.size === 0) return 0;
+  const earliest = [...monThuDates].sort()[0]!;
+  let best = 0;
+  let current = 0;
+  const d = new Date(earliest + 'T12:00:00Z');
+  const end = today + 'T12:00:00Z';
+  while (d.getTime() <= new Date(end).getTime()) {
+    const dow = d.getUTCDay();
+    if (dow === 1 || dow === 4) {
+      const dateStr = d.toISOString().substring(0, 10);
+      if (monThuDates.has(dateStr)) {
+        current++;
+        if (current > best) best = current;
+      } else {
+        current = 0;
+      }
+    }
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return best;
+}
+
 export interface UpsertLogInput {
   date: string;
   category: FastingCategory;
@@ -175,6 +202,7 @@ export interface FastingSummary {
     last30: number;
     voluntaryTotal: number;
     monThuStreak: number;
+    bestMonThuStreak: number;
   };
   /** Last 60 days of logs (plus tomorrow's intention if any) for the calendar strip */
   recentLogs: IFastingLog[];
@@ -288,6 +316,7 @@ export async function getSummary(userId: string, today?: string): Promise<Fastin
       last30,
       voluntaryTotal,
       monThuStreak: computeMonThuStreak(monThuDateSet, end),
+      bestMonThuStreak: computeBestMonThuStreak(monThuDateSet, end),
     },
     recentLogs,
   };

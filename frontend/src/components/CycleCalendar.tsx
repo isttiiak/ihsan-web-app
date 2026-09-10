@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import type { CycleSummary } from '../hooks/useCycle.js';
-import { formatLocaleDate } from '../utils/localeDate.js';
+import { formatLocaleDate, formatLocaleNumber } from '../utils/localeDate.js';
 import { getDayRuling } from '../utils/fastingRules.js';
 
 /**
@@ -169,7 +169,7 @@ export default function CycleCalendar({
                 isToday ? 'ring-2 ring-white/70' : '',
               ].join(' ')}
             >
-              {i + 1}
+              {formatLocaleNumber(i + 1)}
               {recommendedFast && (
                 <span className="absolute top-0.5 right-0.5 text-[8px] leading-none text-brand-emerald">
                   🌙
