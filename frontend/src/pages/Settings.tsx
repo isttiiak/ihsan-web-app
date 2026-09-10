@@ -28,12 +28,14 @@ import { useGroqKeyStatus, useSetGroqKey, useClearGroqKey } from '../hooks/useAi
 import { formatLocaleDate } from '../utils/localeDate.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import ZikrLibrarySection from '../components/ZikrLibrarySection.js';
+import TrackingDayInfoModal from '../components/TrackingDayInfoModal.js';
 import {
   Cog6ToothIcon,
   SparklesIcon,
   MoonIcon,
   EyeIcon,
   ClockIcon,
+  InformationCircleIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   TrashIcon,
@@ -424,6 +426,7 @@ export default function Settings() {
 
   const [hijriAdj, setHijriAdjState] = useState(getHijriAdjustment());
   const [dayStartMode, setDayStartModeState] = useState<DayStartMode>(getDayStartMode());
+  const [dayStartInfoMode, setDayStartInfoMode] = useState<DayStartMode | null>(null);
   const [savedLocation, setSavedLocation] = useState<string | null>(() => {
     try {
       const s = localStorage.getItem('ihsan_location');
@@ -835,20 +838,38 @@ export default function Settings() {
                   },
                 ] as { mode: DayStartMode; label: string; detail: string }[]
               ).map(({ mode, label, detail }) => (
-                <button
+                <div
                   key={mode}
-                  onClick={() => applyDayStartMode(mode)}
-                  className={`text-left p-3 rounded-xl border transition-colors ${
+                  className={`relative rounded-xl border transition-colors ${
                     dayStartMode === mode
                       ? 'bg-brand-emerald/10 border-brand-emerald text-white'
                       : 'bg-brand-deep text-white/50 border-brand-border hover:text-white'
                   }`}
                 >
-                  <p className="font-semibold text-sm">{label}</p>
-                  <p className="text-xs text-white/40 mt-0.5 leading-snug">{detail}</p>
-                </button>
+                  <button
+                    onClick={() => applyDayStartMode(mode)}
+                    className="w-full text-left p-3 pr-9"
+                  >
+                    <p className="font-semibold text-sm">{label}</p>
+                    <p className="text-xs text-white/40 mt-0.5 leading-snug">{detail}</p>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDayStartInfoMode(mode);
+                    }}
+                    className="absolute top-2 right-2 w-6 h-6 grid place-items-center rounded-full text-white/30 hover:text-brand-emerald hover:bg-white/5 transition-colors"
+                    aria-label={t('settings.dayStartInfoAria', { option: label })}
+                  >
+                    <InformationCircleIcon className="w-4 h-4" />
+                  </button>
+                </div>
               ))}
             </div>
+            <TrackingDayInfoModal
+              mode={dayStartInfoMode}
+              onClose={() => setDayStartInfoMode(null)}
+            />
             {(dayStartMode === 'fajr' || dayStartMode === 'maghrib') && !savedLocation && (
               <p className="text-brand-gold/70 text-xs mt-3 leading-relaxed">
                 ⚠️ {t('settings.dayStartLocationNudge')}
