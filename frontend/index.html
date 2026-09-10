@@ -8,7 +8,12 @@
          system fonts and needs no download. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=El+Messiri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Scheherazade+New:wght@400;500&display=swap" rel="stylesheet" />
+    <!-- crossorigin: without it, libraries that read stylesheet.cssRules to
+         embed fonts into a canvas capture (html-to-image, for the shareable
+         āyah card) hit a SecurityError on this cross-origin sheet and silently
+         fall back to a system font. Google Fonts serves CORS headers on both
+         the CSS and the font files, so this costs nothing. -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=El+Messiri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Scheherazade+New:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous" />
     <title>Ihsan — Muslim Worship & Productivity Tracker</title>
     <meta
       name="description"

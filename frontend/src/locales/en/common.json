@@ -2029,6 +2029,16 @@
     "jumuahAutoMosque": "🕌 Marked at the mosque automatically — Jumu'ah is only valid in congregation.",
     "jumuahKazaAlone": "⏰ Made up as an ordinary Dhuhr, prayed alone — Jumu'ah itself has no kaza."
   },
+  "shareAyah": {
+    "title": "Share this āyah",
+    "theme": "Card style",
+    "translations": "Translations (up to 2)",
+    "includeTransliteration": "Include transliteration",
+    "download": "Download",
+    "share": "Share",
+    "captureError": "Couldn't generate the image — try again.",
+    "shareButton": "Share as image"
+  },
   "settings": {
     "accessibilitySection": "Accessibility",
     "accountNote": "Account details (name, photo, email) are managed from your Profile page.",

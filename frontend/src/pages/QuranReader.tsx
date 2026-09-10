@@ -20,6 +20,7 @@ import {
   SpeakerWaveIcon,
   SpeakerXMarkIcon,
   BookOpenIcon,
+  ShareIcon,
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolid, PlayIcon, PauseIcon } from '@heroicons/react/24/solid';
 import { useAuthStore } from '../store/useAuthStore.js';
@@ -49,6 +50,7 @@ import {
 import { formatLocaleNumber } from '../utils/localeDate.js';
 import { translateReference } from '../utils/localeReference.js';
 import { celebrateGoal, celebrateKhatm, celebrateSmall } from '../utils/celebrate.js';
+import ShareAyahModal from '../components/ShareAyahModal.js';
 
 /**
  * The ayah-by-ayah reading room (Istiak's design):
@@ -145,6 +147,7 @@ export default function QuranReader() {
   const [playing, setPlaying] = useState(false);
   const [wordIdx, setWordIdx] = useState(-1);
   const [resumeAyah, setResumeAyah] = useState<number | null>(null); // continue-or-restart prompt
+  const [shareOpen, setShareOpen] = useState(false);
   const [volume, setVolume] = useState<number>(() => {
     const raw = localStorage.getItem('ihsan_quran_volume');
     const v = Number(raw);
@@ -733,6 +736,16 @@ export default function QuranReader() {
                 )}
               </button>
             )}
+            {current && (
+              <button
+                aria-label={t('shareAyah.shareButton', 'Share as image')}
+                title={t('shareAyah.shareButton', 'Share as image')}
+                onClick={() => setShareOpen(true)}
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full grid place-items-center border bg-white/5 border-brand-emerald/10 text-white/50 hover:text-white hover:border-brand-emerald/50"
+              >
+                <ShareIcon className="w-4 h-4" />
+              </button>
+            )}
             {/* fullscreen-only: open the tafsir (split on desktop, stacked below on mobile) */}
             {fullscreen && (
               <button
@@ -1227,6 +1240,18 @@ export default function QuranReader() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {current && (
+        <ShareAyahModal
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          surahNo={surahNo}
+          surahMeta={surahMeta}
+          ayahNumberInSurah={current.numberInSurah}
+          initialEditions={editions}
+          initialTranslit={showTranslit}
+        />
+      )}
     </div>
   );
 }

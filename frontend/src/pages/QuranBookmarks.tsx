@@ -17,10 +17,14 @@ import {
   loadSurahList,
   loadSurahText,
   surahDisplayName,
+  selectedTranslations,
   type SurahMeta,
   type AyahText,
 } from '../utils/quranData.js';
+import { translitEnabled } from '../utils/quranPrefs.js';
 import { QURANIC_DUAS } from '../utils/quranMeta.js';
+import ShareAyahModal from '../components/ShareAyahModal.js';
+import { ShareIcon } from '@heroicons/react/24/outline';
 
 /**
  * 🔖 Saved — a full tab of its own (Istiak's spec) with TWO sub-tabs:
@@ -40,6 +44,7 @@ export default function QuranBookmarks() {
   const [pendingRemove, setPendingRemove] = useState<QuranBookmark | null>(null);
   const [pendingRemoveDua, setPendingRemoveDua] = useState<string | null>(null);
   const [tab, setTab] = useState<'ayat' | 'duas'>('ayat');
+  const [sharing, setSharing] = useState<QuranBookmark | null>(null);
 
   const savedDuas = useMemo(
     () =>
@@ -282,7 +287,14 @@ export default function QuranBookmarks() {
                             </p>
                           )}
                         </button>
-                        <div className="flex justify-end mt-1">
+                        <div className="flex justify-end items-center gap-3 mt-1">
+                          <button
+                            aria-label={t('shareAyah.shareButton', 'Share as image')}
+                            className="text-white/25 hover:text-brand-emerald text-xs flex items-center gap-1"
+                            onClick={() => setSharing(b)}
+                          >
+                            <ShareIcon className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             aria-label={t(
                               'quranBookmarks.removeBookmarkAria',
@@ -339,6 +351,18 @@ export default function QuranBookmarks() {
         }}
         onCancel={() => setPendingRemoveDua(null)}
       />
+
+      {sharing && (
+        <ShareAyahModal
+          open={!!sharing}
+          onClose={() => setSharing(null)}
+          surahNo={sharing.surah}
+          surahMeta={metaOf(sharing.surah) ?? null}
+          ayahNumberInSurah={sharing.ayah}
+          initialEditions={selectedTranslations()}
+          initialTranslit={translitEnabled()}
+        />
+      )}
     </AnimatedBackground>
   );
 }
