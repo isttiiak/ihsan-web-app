@@ -129,11 +129,11 @@ export default function AuthSignIn() {
     if (!resetEmail.trim()) return;
     setResetLoading(true);
     try {
-      // After Firebase resets the password on their own page, "Continue" lands on /login.
-      // Using /auth/action here caused "Invalid Link" because Firebase strips oobCode params.
+      // handleCodeInApp:true redirects to our branded /auth/action with oobCode intact.
+      // After the password is reset, AuthAction navigates the user to /login.
       await sendPasswordResetEmail(auth, resetEmail.trim(), {
-        url: `${window.location.origin}/login`,
-        handleCodeInApp: false,
+        url: 'https://bustandeen.com/auth/action',
+        handleCodeInApp: true,
       });
       setResetSent(true);
     } catch (err) {

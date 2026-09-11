@@ -158,12 +158,12 @@ export default function AuthSignUp() {
       }
       // Send verification email — redirect to home after verification
       try {
-        // continueUrl = home so that after Firebase verifies the email and the
-        // user clicks "Continue", they land on the app — not on /auth/action which
-        // would show "Invalid Link" because Firebase strips the oobCode params.
+        // handleCodeInApp:true makes Firebase's intermediate page immediately
+        // redirect to our branded /auth/action with mode+oobCode still in the URL,
+        // so the user never sees Firebase's generic action page.
         await sendEmailVerification(res.user, {
-          url: window.location.origin,
-          handleCodeInApp: false,
+          url: 'https://bustandeen.com/auth/action',
+          handleCodeInApp: true,
         });
       } catch {
         /* non-fatal */
@@ -184,7 +184,10 @@ export default function AuthSignUp() {
     try {
       const currentUser = auth.currentUser;
       if (currentUser) {
-        await sendEmailVerification(currentUser);
+        await sendEmailVerification(currentUser, {
+          url: 'https://bustandeen.com/auth/action',
+          handleCodeInApp: true,
+        });
         setResendSuccess(true);
       }
     } catch {

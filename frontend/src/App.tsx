@@ -106,7 +106,10 @@ function VerifyEmailGate({ email }: { email: string | null }) {
     if (resending || !auth.currentUser) return;
     setResending(true);
     try {
-      await sendEmailVerification(auth.currentUser);
+      await sendEmailVerification(auth.currentUser, {
+        url: 'https://bustandeen.com/auth/action',
+        handleCodeInApp: true,
+      });
       setResent(true);
     } catch {
       /* non-fatal */
