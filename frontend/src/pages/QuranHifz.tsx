@@ -4,6 +4,7 @@ import AnimatedBackground from '../components/AnimatedBackground.js';
 import QuranTabNav from '../components/QuranTabNav.js';
 import DemoSignInGate from '../components/DemoSignInGate.js';
 import HifzReviewModal from '../components/HifzReviewModal.js';
+import HifzLearnModal from '../components/HifzLearnModal.js';
 import ConfirmDialog from '../components/ConfirmDialog.js';
 import { useAuthStore } from '../store/useAuthStore.js';
 import {
@@ -48,6 +49,11 @@ export default function QuranHifz() {
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [pendingRemove, setPendingRemove] = useState<HifzQueueEntry | null>(null);
   const [reviewing, setReviewing] = useState<HifzQueueEntry | null>(null);
+  const [learning, setLearning] = useState<{
+    surah: number;
+    ayah: number;
+    mode: 'next' | 'manual';
+  } | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickSurah, setPickSurah] = useState(1);
   const [pickAyah, setPickAyah] = useState(1);
@@ -219,8 +225,9 @@ export default function QuranHifz() {
                 </p>
               </div>
               <button
-                disabled={addNext.isPending}
-                onClick={() => addNext.mutate()}
+                onClick={() =>
+                  setLearning({ surah: nextNew.surah, ayah: nextNew.ayah, mode: 'next' })
+                }
                 className="btn btn-sm bg-brand-emerald border-0 text-white"
               >
                 {t('hifz.startMemorising', 'Start memorising')}
@@ -271,13 +278,7 @@ export default function QuranHifz() {
                 />
               </label>
               <button
-                disabled={addEntry.isPending}
-                onClick={() =>
-                  addEntry.mutate(
-                    { surah: pickSurah, ayah: pickAyah },
-                    { onSuccess: () => setPickerOpen(false) }
-                  )
-                }
+                onClick={() => setLearning({ surah: pickSurah, ayah: pickAyah, mode: 'manual' })}
                 className="btn btn-xs bg-brand-emerald border-0 text-white"
               >
                 {t('hifz.add', 'Add')}
@@ -402,6 +403,31 @@ export default function QuranHifz() {
           ))}
         </div>
       </div>
+
+      {learning && (
+        <HifzLearnModal
+          surah={learning.surah}
+          ayah={learning.ayah}
+          surahMeta={metaOf(learning.surah)}
+          confirming={learning.mode === 'next' ? addNext.isPending : addEntry.isPending}
+          onClose={() => setLearning(null)}
+          onConfirm={() => {
+            if (learning.mode === 'next') {
+              addNext.mutate(undefined, { onSuccess: () => setLearning(null) });
+            } else {
+              addEntry.mutate(
+                { surah: learning.surah, ayah: learning.ayah },
+                {
+                  onSuccess: () => {
+                    setLearning(null);
+                    setPickerOpen(false);
+                  },
+                }
+              );
+            }
+          }}
+        />
+      )}
 
       {reviewing && (
         <HifzReviewModal

@@ -3022,6 +3022,9 @@
     "forgot": "Forgot",
     "hesitant": "Hesitant",
     "easy": "Easy",
-    "loadError": "Could not load the ayah text."
+    "loadError": "Could not load the ayah text.",
+    "readFirstTitle": "Read before you memorise",
+    "notYet": "Not yet",
+    "confirmMemorise": "I've read it — start memorising"
   }
 }
