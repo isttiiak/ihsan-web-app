@@ -87,6 +87,7 @@ export default function FeedbackForm({
         body: JSON.stringify({
           access_key: accessKey,
           from_name: 'Bustandeen app',
+          to_email: 'ansar@bustandeen.com',
           subject: `[Bustandeen ${kind}] ${selectedLabels.join(', ') || 'Message'}`,
           name: name.trim(),
           email: email.trim(),
