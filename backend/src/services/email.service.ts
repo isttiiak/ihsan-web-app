@@ -34,6 +34,15 @@ export interface SendMailOptions {
   subject: string;
   html: string;
   text: string;
+  /** Explicit Message-ID for this send (angle-bracket form, e.g.
+   *  "<sadaqah-<id>@bustandeen.com>") — set on the FIRST email in a thread so
+   *  later replies can reference it via inReplyTo/references. */
+  messageId?: string;
+  /** Threads this send as a reply in the recipient's mail client (Gmail,
+   *  Outlook) so a donation's received/verified/rejected emails group into
+   *  one conversation instead of three separate ones. */
+  inReplyTo?: string;
+  references?: string;
 }
 
 /**
@@ -42,19 +51,28 @@ export interface SendMailOptions {
  * fire-and-forget send here would intermittently just never go out. Never
  * throws: a failed/unsent email should not fail the request that triggered
  * it (the donation record is already the source of truth either way).
+ *
+ * Returns the Message-ID actually used (nodemailer generates one when
+ * `messageId` isn't passed), or null if nothing was sent/it failed — the
+ * caller can store this to thread later replies against it.
  */
-export const sendMail = async (opts: SendMailOptions): Promise<void> => {
+export const sendMail = async (opts: SendMailOptions): Promise<string | null> => {
   const t = getTransporter();
-  if (!t) return;
+  if (!t) return null;
   try {
-    await t.sendMail({
+    const info = await t.sendMail({
       from: `"Bustandeen" <${process.env.ZOHO_SMTP_USER}>`,
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
       text: opts.text,
+      messageId: opts.messageId,
+      inReplyTo: opts.inReplyTo,
+      references: opts.references,
     });
+    return info.messageId ?? null;
   } catch (err) {
     console.error('Failed to send email:', err);
+    return null;
   }
 };

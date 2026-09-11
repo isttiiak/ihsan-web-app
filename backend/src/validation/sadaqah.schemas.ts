@@ -67,10 +67,20 @@ export const adminListQuerySchema = z.object({
   }),
 });
 
+// Verify/reject now send a full, admin-edited email body (prefilled from a
+// draft, always reviewed before sending) rather than a short fixed reason.
+const emailBodyField = z.string().trim().min(1).max(5000);
+
+export const verifyDonationSchema = z.object({
+  body: z.object({ emailBody: emailBodyField }),
+});
+
 export const rejectDonationSchema = z.object({
-  body: z.object({
-    reason: z.string().trim().min(1).max(500),
-  }),
+  body: z.object({ emailBody: emailBodyField }),
+});
+
+export const emailDraftQuerySchema = z.object({
+  query: z.object({ type: z.enum(['verified', 'rejected']) }),
 });
 
 // 'YYYY-Qn' e.g. '2026-Q3' — sortable as a plain string, matches

@@ -3,7 +3,9 @@ import { requireAuth, requireAdminEmail } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import {
   adminListQuerySchema,
+  verifyDonationSchema,
   rejectDonationSchema,
+  emailDraftQuerySchema,
   quarterlyUpsertSchema,
   quarterlyParamSchema,
 } from '../validation/sadaqah.schemas.js';
@@ -21,7 +23,12 @@ router.get('/all', validate(adminListQuerySchema), adminSadaqahController.listAl
 // :id shape (valid ObjectId) isn't zod-validated — a malformed id throws a
 // Mongoose CastError, which the global error handler already turns into a
 // clean 400, same as everywhere else in this app that looks up by id.
-router.patch('/:id/verify', adminSadaqahController.verifyHandler);
+router.get(
+  '/:id/email-draft',
+  validate(emailDraftQuerySchema),
+  adminSadaqahController.emailDraftHandler
+);
+router.patch('/:id/verify', validate(verifyDonationSchema), adminSadaqahController.verifyHandler);
 router.patch('/:id/reject', validate(rejectDonationSchema), adminSadaqahController.rejectHandler);
 
 router.patch(

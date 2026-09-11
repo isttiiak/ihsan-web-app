@@ -8,6 +8,7 @@ import { useSadaqahStats } from '../hooks/useSadaqah.js';
 import {
   usePendingDonations,
   useAllDonations,
+  useEmailDraft,
   useVerifyDonation,
   useRejectDonation,
   useUpsertQuarterly,
@@ -29,10 +30,31 @@ function isThisMonth(iso: string | null): boolean {
 
 function PendingCard({ donation }: { donation: Donation }) {
   const { t } = useTranslation();
+  const draft = useEmailDraft();
   const verify = useVerifyDonation();
   const reject = useRejectDonation();
-  const [rejecting, setRejecting] = useState(false);
-  const [reason, setReason] = useState('');
+  const [mode, setMode] = useState<'idle' | 'verified' | 'rejected'>('idle');
+  const [emailText, setEmailText] = useState('');
+
+  // Verify/Reject never send immediately — both open the same editable,
+  // prefilled email textarea first, so nothing goes to a donor without the
+  // admin actually seeing (and being able to change) the exact wording.
+  const startAction = (type: 'verified' | 'rejected') => {
+    setMode(type);
+    setEmailText('');
+    draft.mutate({ id: donation._id, type }, { onSuccess: (d) => setEmailText(d.body) });
+  };
+  const cancel = () => {
+    setMode('idle');
+    setEmailText('');
+  };
+  const confirm = () => {
+    const emailBody = emailText.trim();
+    if (!emailBody) return;
+    if (mode === 'verified') verify.mutate({ id: donation._id, emailBody });
+    if (mode === 'rejected') reject.mutate({ id: donation._id, emailBody });
+  };
+  const sending = verify.isPending || reject.isPending;
 
   return (
     <motion.div
@@ -82,21 +104,16 @@ function PendingCard({ donation }: { donation: Donation }) {
         </p>
       )}
 
-      {!rejecting ? (
+      {mode === 'idle' ? (
         <div className="flex gap-2">
           <button
-            onClick={() => verify.mutate(donation._id)}
-            disabled={verify.isPending}
+            onClick={() => startAction('verified')}
             className="btn btn-sm flex-1 bg-brand-emerald hover:bg-brand-emerald-dim border-0 text-white"
           >
-            {verify.isPending ? (
-              <span className="loading loading-spinner loading-xs" />
-            ) : (
-              t('adminSadaqah.verify', 'Verify')
-            )}
+            {t('adminSadaqah.verify', 'Verify')}
           </button>
           <button
-            onClick={() => setRejecting(true)}
+            onClick={() => startAction('rejected')}
             className="btn btn-sm flex-1 bg-white/5 hover:bg-red-500/20 border border-red-400/30 text-red-300"
           >
             {t('adminSadaqah.reject', 'Reject')}
@@ -104,34 +121,47 @@ function PendingCard({ donation }: { donation: Donation }) {
         </div>
       ) : (
         <div className="space-y-2">
-          <textarea
-            autoFocus
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder={t(
-              'adminSadaqah.reasonPlaceholder',
-              'Reason (sent to the donor, kindly worded)'
+          <p className="text-white/40 text-xs">
+            {t(
+              'adminSadaqah.emailEditableNote',
+              'Prefilled — edit anything before sending. This is exactly what the donor receives.'
             )}
-            rows={2}
-            className="textarea textarea-bordered w-full bg-white/5 border-red-400/20 text-white text-sm"
-          />
+          </p>
+          {draft.isPending ? (
+            <p className="text-white/30 text-sm">{t('common.loading', 'Loading…')}</p>
+          ) : (
+            <textarea
+              autoFocus
+              value={emailText}
+              onChange={(e) => setEmailText(e.target.value)}
+              rows={8}
+              className={`textarea textarea-bordered w-full text-white text-sm leading-relaxed ${
+                mode === 'rejected'
+                  ? 'bg-white/5 border-red-400/20'
+                  : 'bg-white/5 border-brand-emerald/20'
+              }`}
+            />
+          )}
           <div className="flex gap-2">
             <button
-              onClick={() => reject.mutate({ id: donation._id, reason: reason.trim() })}
-              disabled={!reason.trim() || reject.isPending}
-              className="btn btn-sm flex-1 bg-red-500 hover:bg-red-600 border-0 text-white disabled:opacity-40"
+              onClick={confirm}
+              disabled={!emailText.trim() || sending || draft.isPending}
+              className={`btn btn-sm flex-1 border-0 text-white disabled:opacity-40 ${
+                mode === 'rejected'
+                  ? 'bg-red-500 hover:bg-red-600'
+                  : 'bg-brand-emerald hover:bg-brand-emerald-dim'
+              }`}
             >
-              {reject.isPending ? (
+              {sending ? (
                 <span className="loading loading-spinner loading-xs" />
+              ) : mode === 'rejected' ? (
+                t('adminSadaqah.sendReject', 'Send rejection email')
               ) : (
-                t('adminSadaqah.confirmReject', 'Confirm reject')
+                t('adminSadaqah.sendVerify', 'Send verification email')
               )}
             </button>
             <button
-              onClick={() => {
-                setRejecting(false);
-                setReason('');
-              }}
+              onClick={cancel}
               className="btn btn-sm bg-white/5 border border-white/10 text-white/60"
             >
               {t('common.cancel', 'Cancel')}

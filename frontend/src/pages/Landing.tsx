@@ -286,6 +286,23 @@ export default function Landing() {
           </div>
         </motion.section>
 
+        {/* ── Sadaqah — support the project, near the very bottom, low-key ── */}
+        <motion.section {...fadeUp} className="mb-12">
+          <Link
+            to="/sadaqah"
+            className="block rounded-3xl border border-brand-gold/25 bg-gradient-to-br from-brand-gold/10 to-brand-emerald/5 p-6 sm:p-8 text-center transition-transform hover:scale-[1.01] hover:shadow-lg"
+          >
+            <div className="text-4xl mb-2">🤲</div>
+            <h3 className="text-white font-black text-lg">{t('landing.sadaqahTitle')}</h3>
+            <p className="text-white/50 text-sm mt-2 max-w-xl mx-auto leading-relaxed">
+              {t('landing.sadaqahDesc')}
+            </p>
+            <span className="inline-block mt-3 text-xs font-semibold text-brand-gold/80">
+              {t('landing.sadaqahCta')}
+            </span>
+          </Link>
+        </motion.section>
+
         {/* ── Final CTA ── */}
         <motion.section {...fadeUp} className="text-center pb-4">
           <h2 className="text-2xl sm:text-3xl font-black text-white">

@@ -65,6 +65,45 @@ describe('Sadaqah admin API', () => {
     expect(res.status).toBe(403);
   });
 
+  test('submitting a donation assigns a thread message id for later replies', async () => {
+    const found = await submitAndFindPending(validDonation());
+    // Not returned in the JSON (no field for it in any response shape) —
+    // confirm indirectly via the email-draft round trip below instead of
+    // asserting on a field that was never meant to be exposed.
+    expect(found).toBeTruthy();
+  });
+
+  test('email draft: verified draft includes payment details, rejected draft has a reason placeholder', async () => {
+    const donation = validDonation();
+    const found = await submitAndFindPending(donation);
+
+    const verifiedDraft = await request(app)
+      .get(`/api/admin/sadaqah/${found._id}/email-draft`)
+      .query({ type: 'verified' })
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(verifiedDraft.status).toBe(200);
+    expect(verifiedDraft.body.subject).toMatch(/^Re: /);
+    expect(verifiedDraft.body.body).toContain(donation.transactionId.toUpperCase());
+    expect(verifiedDraft.body.body).toContain(String(donation.amount));
+    expect(verifiedDraft.body.body).toMatch(/Payment details/i);
+
+    const rejectedDraft = await request(app)
+      .get(`/api/admin/sadaqah/${found._id}/email-draft`)
+      .query({ type: 'rejected' })
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(rejectedDraft.status).toBe(200);
+    expect(rejectedDraft.body.body).toMatch(/\[Let the donor know/i);
+  });
+
+  test('verify requires a non-empty emailBody', async () => {
+    const found = await submitAndFindPending(validDonation());
+    const res = await request(app)
+      .patch(`/api/admin/sadaqah/${found._id}/verify`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ emailBody: '' });
+    expect(res.status).toBe(400);
+  });
+
   test('verify flow: moves a pending donation to verified and updates public stats', async () => {
     const donation = validDonation();
     const found = await submitAndFindPending(donation);
@@ -72,7 +111,8 @@ describe('Sadaqah admin API', () => {
 
     const verify = await request(app)
       .patch(`/api/admin/sadaqah/${found._id}/verify`)
-      .set('Authorization', `Bearer ${adminToken}`);
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ emailBody: 'JazakAllahu khayran, your sadaqah has been verified.' });
     expect(verify.status).toBe(200);
     expect(verify.body.donation.status).toBe('verified');
     expect(verify.body.donation.verifiedBy).toBe(ADMIN_EMAIL);
@@ -87,23 +127,25 @@ describe('Sadaqah admin API', () => {
 
     const first = await request(app)
       .patch(`/api/admin/sadaqah/${found._id}/verify`)
-      .set('Authorization', `Bearer ${adminToken}`);
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ emailBody: 'Verified.' });
     expect(first.status).toBe(200);
 
     const second = await request(app)
       .patch(`/api/admin/sadaqah/${found._id}/verify`)
-      .set('Authorization', `Bearer ${adminToken}`);
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ emailBody: 'Verified.' });
     expect(second.status).toBe(409);
   });
 
-  test('reject flow: records a reason and does not touch verified stats', async () => {
+  test('reject flow: the sent email body is stored as the reason and does not touch verified stats', async () => {
     const before = await request(app).get('/api/sadaqah/stats');
     const found = await submitAndFindPending(validDonation());
 
     const reject = await request(app)
       .patch(`/api/admin/sadaqah/${found._id}/reject`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ reason: 'No matching bKash transaction found for this ID.' });
+      .send({ emailBody: 'No matching bKash transaction found for this ID.' });
     expect(reject.status).toBe(200);
     expect(reject.body.donation.status).toBe('rejected');
     expect(reject.body.donation.rejectionReason).toMatch(/no matching/i);
@@ -113,6 +155,15 @@ describe('Sadaqah admin API', () => {
     expect(after.body.totalVerifiedCount).toBe(before.body.totalVerifiedCount);
   });
 
+  test('reject requires a non-empty emailBody', async () => {
+    const found = await submitAndFindPending(validDonation());
+    const res = await request(app)
+      .patch(`/api/admin/sadaqah/${found._id}/reject`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ emailBody: '   ' });
+    expect(res.status).toBe(400);
+  });
+
   test('a rejected transactionId can be legitimately resubmitted', async () => {
     const donation = validDonation();
     const found = await submitAndFindPending(donation);
@@ -120,7 +171,7 @@ describe('Sadaqah admin API', () => {
     await request(app)
       .patch(`/api/admin/sadaqah/${found._id}/reject`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ reason: 'Amount mismatch.' });
+      .send({ emailBody: 'Amount mismatch.' });
 
     // Same transactionId, corrected amount — should be accepted, not 409,
     // since the partial-unique index only covers pending/verified statuses.

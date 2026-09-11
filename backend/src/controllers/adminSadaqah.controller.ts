@@ -48,15 +48,31 @@ export const listAllHandler = async (
   }
 };
 
+export const emailDraftHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const type = req.query.type as 'verified' | 'rejected';
+    const draft = await sadaqahService.getEmailDraft(paramString(req.params.id), type);
+    res.json({ ok: true, ...draft });
+  } catch (err) {
+    handleServiceError(err, res, next);
+  }
+};
+
 export const verifyHandler = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
+    const { emailBody } = req.body as { emailBody: string };
     const donation = await sadaqahService.verifyDonation(
       paramString(req.params.id),
-      req.user.email ?? ''
+      req.user.email ?? '',
+      emailBody
     );
     res.json({ ok: true, donation });
   } catch (err) {
@@ -70,11 +86,11 @@ export const rejectHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { reason } = req.body as { reason: string };
+    const { emailBody } = req.body as { emailBody: string };
     const donation = await sadaqahService.rejectDonation(
       paramString(req.params.id),
       req.user.email ?? '',
-      reason
+      emailBody
     );
     res.json({ ok: true, donation });
   } catch (err) {

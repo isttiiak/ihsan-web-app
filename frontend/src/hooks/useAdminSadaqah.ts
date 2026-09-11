@@ -32,10 +32,26 @@ export function useAllDonations(status: DonationStatus | undefined, page: number
   });
 }
 
+/** On-demand fetch (not cached) for the prefilled, editable email text shown
+ *  before a Verify/Reject actually sends — wrapped as a mutation since it's
+ *  triggered imperatively by a button click, not rendered from cache. */
+export function useEmailDraft() {
+  return useMutation({
+    mutationFn: async ({ id, type }: { id: string; type: 'verified' | 'rejected' }) => {
+      const res = await api.get<{ subject: string; body: string }>(
+        `/api/admin/sadaqah/${id}/email-draft`,
+        { params: { type } }
+      );
+      return res.data;
+    },
+  });
+}
+
 export function useVerifyDonation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch(`/api/admin/sadaqah/${id}/verify`),
+    mutationFn: ({ id, emailBody }: { id: string; emailBody: string }) =>
+      api.patch(`/api/admin/sadaqah/${id}/verify`, { emailBody }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['admin', 'sadaqah'] });
       void queryClient.invalidateQueries({ queryKey: ['sadaqah', 'stats'] });
@@ -46,8 +62,8 @@ export function useVerifyDonation() {
 export function useRejectDonation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      api.patch(`/api/admin/sadaqah/${id}/reject`, { reason }),
+    mutationFn: ({ id, emailBody }: { id: string; emailBody: string }) =>
+      api.patch(`/api/admin/sadaqah/${id}/reject`, { emailBody }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['admin', 'sadaqah'] });
     },

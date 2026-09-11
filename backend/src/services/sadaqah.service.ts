@@ -1,13 +1,21 @@
+import mongoose from 'mongoose';
 import Donation, { IDonation } from '../models/Donation.js';
 import DonationStats, { IDonationStats, IQuarterlyEntry } from '../models/DonationStats.js';
 import { sendMail } from './email.service.js';
 import {
   donationReceivedEmail,
-  donationVerifiedEmail,
-  donationRejectedEmail,
+  donationVerifiedDraft,
+  donationRejectedDraft,
+  toSimpleHtml,
+  REPLY_SUBJECT,
 } from './sadaqahEmail.templates.js';
 
 const STATS_ID = 'current';
+
+/** Deterministic, not nodemailer-generated — known before the first email is
+ *  even sent, so verify/reject can always thread against it even if the
+ *  "received" send itself failed or is still in flight. */
+const donationMessageId = (id: string): string => `<sadaqah-${id}@bustandeen.com>`;
 
 const httpError = (status: number, message: string): Error & { status: number } => {
   const err = new Error(message) as Error & { status: number };
@@ -55,7 +63,12 @@ export const submitDonation = async (
   const donorName = isAnonymous ? null : (input.donorName ?? '').trim();
   const showNamePublicly = isAnonymous ? false : (input.showNamePublicly ?? false);
 
+  // Pre-generated so the thread's Message-ID is known before the first email
+  // even sends — verify/reject can reference it regardless of whether this
+  // first send succeeds.
+  const _id = new mongoose.Types.ObjectId();
   const donation = await Donation.create({
+    _id,
     donorName,
     onBehalfOf: input.onBehalfOf?.trim() || null,
     email: input.email.trim(),
@@ -69,10 +82,12 @@ export const submitDonation = async (
     isAnonymous,
     userId,
     ipAddress,
+    emailMessageId: donationMessageId(_id.toString()),
   });
 
   await sendMail({
     to: donation.email,
+    messageId: donation.emailMessageId ?? undefined,
     ...donationReceivedEmail({
       donorName: donation.donorName,
       amount: donation.amount,
@@ -128,7 +143,43 @@ const findPendingOrThrow = async (id: string): Promise<InstanceType<typeof Donat
   return donation;
 };
 
-export const verifyDonation = async (id: string, adminEmail: string): Promise<IDonation> => {
+/**
+ * Prefilled, editable draft text for the admin dashboard's Verify/Reject
+ * textarea — the admin always sees and can edit this before anything sends,
+ * so the actual email is whatever they end up submitting, not this template
+ * directly. Kept here (not duplicated on the frontend) as the single source
+ * of the wording.
+ */
+export const getEmailDraft = async (
+  id: string,
+  type: 'verified' | 'rejected'
+): Promise<{ subject: string; body: string }> => {
+  const donation = await Donation.findById(id);
+  if (!donation) throw httpError(404, 'Donation not found');
+
+  const body =
+    type === 'verified'
+      ? donationVerifiedDraft({
+          donorName: donation.donorName,
+          amount: donation.amount,
+          transactionId: donation.transactionId,
+          paymentMethod: donation.paymentMethod,
+          transactionDate: donation.transactionDate,
+        })
+      : donationRejectedDraft({
+          donorName: donation.donorName,
+          amount: donation.amount,
+          transactionId: donation.transactionId,
+        });
+
+  return { subject: REPLY_SUBJECT, body };
+};
+
+export const verifyDonation = async (
+  id: string,
+  adminEmail: string,
+  emailBody: string
+): Promise<IDonation> => {
   const donation = await findPendingOrThrow(id);
 
   donation.status = 'verified';
@@ -147,11 +198,11 @@ export const verifyDonation = async (id: string, adminEmail: string): Promise<ID
 
   await sendMail({
     to: donation.email,
-    ...donationVerifiedEmail({
-      donorName: donation.donorName,
-      amount: donation.amount,
-      transactionId: donation.transactionId,
-    }),
+    subject: REPLY_SUBJECT,
+    text: emailBody,
+    html: toSimpleHtml(emailBody),
+    inReplyTo: donation.emailMessageId ?? undefined,
+    references: donation.emailMessageId ?? undefined,
   });
 
   return donation;
@@ -160,24 +211,24 @@ export const verifyDonation = async (id: string, adminEmail: string): Promise<ID
 export const rejectDonation = async (
   id: string,
   adminEmail: string,
-  reason: string
+  emailBody: string
 ): Promise<IDonation> => {
   const donation = await findPendingOrThrow(id);
 
   donation.status = 'rejected';
   donation.verifiedAt = new Date();
   donation.verifiedBy = adminEmail;
-  donation.rejectionReason = reason;
+  // The record of "why" IS what was actually told the donor — same text.
+  donation.rejectionReason = emailBody;
   await donation.save();
 
   await sendMail({
     to: donation.email,
-    ...donationRejectedEmail({
-      donorName: donation.donorName,
-      amount: donation.amount,
-      transactionId: donation.transactionId,
-      reason,
-    }),
+    subject: REPLY_SUBJECT,
+    text: emailBody,
+    html: toSimpleHtml(emailBody),
+    inReplyTo: donation.emailMessageId ?? undefined,
+    references: donation.emailMessageId ?? undefined,
   });
 
   return donation;

@@ -20,6 +20,7 @@ import {
   ChatBubbleLeftRightIcon,
   GlobeAltIcon,
   BanknotesIcon,
+  HeartIcon,
 } from '@heroicons/react/24/outline';
 import i18n from '../i18n.js';
 import { syncQuranTranslationWithLang } from '../utils/quranData.js';
@@ -426,6 +427,17 @@ export default function Navbar() {
                       >
                         <ChatBubbleLeftRightIcon className="w-4 h-4 text-brand-emerald/70" />
                         {t('nav.feedbackContact')}
+                      </Link>
+
+                      {/* Sadaqah — visible to everyone, not just admins, right
+                          before sign-out so it's seen without being loud. */}
+                      <Link
+                        to="/sadaqah"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-brand-gold/10 text-sm transition-colors"
+                      >
+                        <HeartIcon className="w-4 h-4 text-brand-gold/70" />
+                        {t('nav.sadaqah', 'Sadaqah')}
                       </Link>
 
                       <div className="border-t border-brand-border/60 mt-1 pt-1">

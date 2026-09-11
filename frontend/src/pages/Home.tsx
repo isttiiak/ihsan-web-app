@@ -15,6 +15,7 @@ import MuhasabahReport from '../components/ai/MuhasabahReport.js';
 import NaturalLogEntry from '../components/ai/NaturalLogEntry.js';
 import StreakCoaching from '../components/ai/StreakCoaching.js';
 import AnimatedBackground from '../components/AnimatedBackground.js';
+import SadaqahFridayReminder from '../components/SadaqahFridayReminder.js';
 import {
   calcPrayerTimes,
   formatTime,
@@ -558,6 +559,9 @@ export default function Home() {
             ))}
           </motion.div>
         )}
+
+        {/* Friday: sadaqah nudge — once a day, auto-dismisses on its own */}
+        <SadaqahFridayReminder />
 
         {/* Friday: hour of response (Abū Dāwūd 1048, ṣaḥīḥ) */}
         {fridayHour.active && (
