@@ -99,3 +99,22 @@ export const quarterlyUpsertSchema = z.object({
 export const quarterlyParamSchema = z.object({
   params: z.object({ quarter: quarterField }),
 });
+
+// Generous but bounded the same way transactionDateField is — catches a
+// fat-fingered year without rejecting a genuinely backdated cost entry.
+const expenseDateField = z.coerce
+  .date()
+  .refine(
+    (d) =>
+      d.getTime() <= Date.now() + 24 * 60 * 60 * 1000 &&
+      d.getTime() >= Date.now() - 5 * 365 * 24 * 60 * 60 * 1000,
+    { message: 'Date must be within the past 5 years and not in the future' }
+  );
+
+export const addExpenseSchema = z.object({
+  body: z.object({
+    date: expenseDateField,
+    amount: z.number().min(0).max(10_000_000),
+    description: z.string().trim().min(1).max(300),
+  }),
+});

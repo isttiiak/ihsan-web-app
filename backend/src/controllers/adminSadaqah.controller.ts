@@ -98,6 +98,70 @@ export const rejectHandler = async (
   }
 };
 
+export const deleteDonationHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    await sadaqahService.deleteDonation(paramString(req.params.id));
+    res.json({ ok: true });
+  } catch (err) {
+    handleServiceError(err, res, next);
+  }
+};
+
+export const listExpensesHandler = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const expenses = await sadaqahService.listExpenses();
+    res.json({ ok: true, expenses });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const addExpenseHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // validate() already ran addExpenseSchema's z.coerce.date() over this —
+    // req.body.date is a real Date instance here, not a string.
+    const { date, amount, description } = req.body as {
+      date: Date;
+      amount: number;
+      description: string;
+    };
+    const expense = await sadaqahService.addExpense(
+      date,
+      amount,
+      description,
+      req.user.email ?? ''
+    );
+    res.json({ ok: true, expense });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteExpenseHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    await sadaqahService.deleteExpense(paramString(req.params.id));
+    res.json({ ok: true });
+  } catch (err) {
+    handleServiceError(err, res, next);
+  }
+};
+
 export const upsertQuarterlyHandler = async (
   req: Request,
   res: Response,

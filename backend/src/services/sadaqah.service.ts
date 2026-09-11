@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Donation, { IDonation } from '../models/Donation.js';
 import DonationStats, { IDonationStats, IQuarterlyEntry } from '../models/DonationStats.js';
+import SadaqahExpense, { ISadaqahExpense } from '../models/SadaqahExpense.js';
 import { sendMail } from './email.service.js';
 import {
   donationReceivedEmail,
@@ -101,13 +102,21 @@ export const submitDonation = async (
 export const getPublicStats = async (): Promise<{
   totalVerifiedAmount: number;
   totalVerifiedCount: number;
+  totalContributors: number;
   lastUpdated: Date;
   quarterlyBreakdown: IQuarterlyEntry[];
 }> => {
-  const stats = await getOrCreateStats();
+  const [stats, contributorEmails] = await Promise.all([
+    getOrCreateStats(),
+    // Distinct people, not distinct donations — someone giving twice still
+    // counts once. Donation counts are small enough that a live distinct()
+    // is simpler than maintaining another incremental counter.
+    Donation.distinct('email', { status: 'verified' }),
+  ]);
   return {
     totalVerifiedAmount: stats.totalVerifiedAmount,
     totalVerifiedCount: stats.totalVerifiedCount,
+    totalContributors: contributorEmails.length,
     lastUpdated: stats.lastUpdated,
     quarterlyBreakdown: stats.quarterlyBreakdown,
   };
@@ -234,6 +243,31 @@ export const rejectDonation = async (
   return donation;
 };
 
+/**
+ * Permanently removes a donation record (any status) — for erroneous/test
+ * entries, not a donor-facing action. Reverses its effect on the cached
+ * stats first if it had been verified, so deleting a mistaken "verified"
+ * entry doesn't leave the public lifetime total or contributor count
+ * overcounting a donation that no longer exists.
+ */
+export const deleteDonation = async (id: string): Promise<void> => {
+  const donation = await Donation.findById(id);
+  if (!donation) throw httpError(404, 'Donation not found');
+
+  if (donation.status === 'verified') {
+    await getOrCreateStats();
+    await DonationStats.updateOne(
+      { _id: STATS_ID },
+      {
+        $inc: { totalVerifiedAmount: -donation.amount, totalVerifiedCount: -1 },
+        $set: { lastUpdated: new Date() },
+      }
+    );
+  }
+
+  await donation.deleteOne();
+};
+
 export const upsertQuarterly = async (
   quarter: string,
   patch: { received?: number; spent?: number; notes?: string }
@@ -263,4 +297,25 @@ export const deleteQuarterly = async (quarter: string): Promise<IDonationStats> 
   ) as typeof stats.quarterlyBreakdown;
   await stats.save();
   return stats;
+};
+
+/**
+ * Internal cost ledger — admin-only, never surfaced publicly. Separate from
+ * quarterlyBreakdown.spent (one manually-entered aggregate per quarter for
+ * the public page); this is the itemized record behind that figure.
+ */
+export const listExpenses = async (): Promise<ISadaqahExpense[]> =>
+  SadaqahExpense.find().sort({ date: -1 }).limit(500);
+
+export const addExpense = async (
+  date: Date,
+  amount: number,
+  description: string,
+  createdBy: string
+): Promise<ISadaqahExpense> => SadaqahExpense.create({ date, amount, description, createdBy });
+
+export const deleteExpense = async (id: string): Promise<void> => {
+  const expense = await SadaqahExpense.findById(id);
+  if (!expense) throw httpError(404, 'Expense not found');
+  await expense.deleteOne();
 };

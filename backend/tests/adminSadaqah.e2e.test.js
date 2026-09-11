@@ -224,4 +224,104 @@ describe('Sadaqah admin API', () => {
       .send({ received: 100 });
     expect(res.status).toBe(400);
   });
+
+  test('public stats reports distinct contributors, not distinct donations', async () => {
+    const donorA1 = validDonation({ email: 'repeat-donor@test.dev' });
+    const donorA2 = validDonation({ email: 'repeat-donor@test.dev' });
+    const donorB = validDonation({ email: 'once-donor@test.dev' });
+
+    for (const d of [donorA1, donorA2, donorB]) {
+      const found = await submitAndFindPending(d);
+      await request(app)
+        .patch(`/api/admin/sadaqah/${found._id}/verify`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ emailBody: 'Verified.' });
+    }
+
+    const stats = await request(app).get('/api/sadaqah/stats');
+    // The repeat donor counts once regardless of how many times they gave.
+    const emails = new Set([donorA1.email, donorA2.email, donorB.email]);
+    expect(emails.size).toBe(2);
+    expect(stats.body.totalContributors).toBeGreaterThanOrEqual(2);
+  });
+
+  test('deleting a verified donation reverses its effect on stats', async () => {
+    const before = await request(app).get('/api/sadaqah/stats');
+    const donation = validDonation();
+    const found = await submitAndFindPending(donation);
+    await request(app)
+      .patch(`/api/admin/sadaqah/${found._id}/verify`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ emailBody: 'Verified.' });
+
+    const del = await request(app)
+      .delete(`/api/admin/sadaqah/${found._id}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(del.status).toBe(200);
+
+    const after = await request(app).get('/api/sadaqah/stats');
+    expect(after.body.totalVerifiedAmount).toBe(before.body.totalVerifiedAmount);
+    expect(after.body.totalVerifiedCount).toBe(before.body.totalVerifiedCount);
+
+    const all = await request(app)
+      .get('/api/admin/sadaqah/all')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(all.body.donations.find((d) => d._id === found._id)).toBeUndefined();
+  });
+
+  test('deleting a rejected donation does not touch stats', async () => {
+    const found = await submitAndFindPending(validDonation());
+    await request(app)
+      .patch(`/api/admin/sadaqah/${found._id}/reject`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ emailBody: 'Rejected.' });
+
+    const before = await request(app).get('/api/sadaqah/stats');
+    const del = await request(app)
+      .delete(`/api/admin/sadaqah/${found._id}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(del.status).toBe(200);
+    const after = await request(app).get('/api/sadaqah/stats');
+    expect(after.body.totalVerifiedAmount).toBe(before.body.totalVerifiedAmount);
+  });
+
+  test('expenses: add, list, and delete', async () => {
+    const add = await request(app)
+      .post('/api/admin/sadaqah/expenses')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ date: '2026-09-01', amount: 1500, description: 'Server hosting — September' });
+    expect(add.status).toBe(200);
+    expect(add.body.expense.amount).toBe(1500);
+    expect(add.body.expense.createdBy).toBe(ADMIN_EMAIL);
+
+    const list = await request(app)
+      .get('/api/admin/sadaqah/expenses')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(list.status).toBe(200);
+    expect(list.body.expenses.find((e) => e._id === add.body.expense._id)).toBeTruthy();
+
+    const del = await request(app)
+      .delete(`/api/admin/sadaqah/expenses/${add.body.expense._id}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(del.status).toBe(200);
+
+    const listAfter = await request(app)
+      .get('/api/admin/sadaqah/expenses')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(listAfter.body.expenses.find((e) => e._id === add.body.expense._id)).toBeUndefined();
+  });
+
+  test('rejects an expense with a negative amount or empty description', async () => {
+    const badAmount = await request(app)
+      .post('/api/admin/sadaqah/expenses')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ date: '2026-09-01', amount: -5, description: 'Bad' });
+    expect(badAmount.status).toBe(400);
+
+    const badDesc = await request(app)
+      .post('/api/admin/sadaqah/expenses')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ date: '2026-09-01', amount: 100, description: '' });
+    expect(badDesc.status).toBe(400);
+  });
 });

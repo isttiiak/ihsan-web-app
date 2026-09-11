@@ -11,8 +11,12 @@ import {
   useEmailDraft,
   useVerifyDonation,
   useRejectDonation,
+  useDeleteDonation,
   useUpsertQuarterly,
   useDeleteQuarterly,
+  useExpenses,
+  useAddExpense,
+  useDeleteExpense,
 } from '../hooks/useAdminSadaqah.js';
 import type { Donation, DonationStatus } from '../types/api.js';
 
@@ -185,6 +189,21 @@ export default function AdminSadaqah() {
     filterStatus === 'all' ? undefined : filterStatus,
     page
   );
+  const deleteDonation = useDeleteDonation();
+  // Two-click confirm inline (click once to arm, again to actually delete)
+  // rather than a native window.confirm() — consistent with this app's own
+  // preference for in-UI confirmation (see Navbar's sign-out modal) and
+  // avoids the cross-browser quirks of native dialogs.
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const clickDelete = (id: string) => {
+    if (confirmDeleteId !== id) {
+      setConfirmDeleteId(id);
+      setTimeout(() => setConfirmDeleteId((cur) => (cur === id ? null : cur)), 6000);
+      return;
+    }
+    setConfirmDeleteId(null);
+    deleteDonation.mutate(id);
+  };
 
   const verifiedThisMonth =
     verifiedRecent?.donations.filter((d) => isThisMonth(d.verifiedAt)) ?? [];
@@ -192,6 +211,38 @@ export default function AdminSadaqah() {
   const [qForm, setQForm] = useState({ quarter: '', received: '', spent: '', notes: '' });
   const upsertQuarterly = useUpsertQuarterly();
   const deleteQuarterly = useDeleteQuarterly();
+
+  const { data: expenses } = useExpenses();
+  const [expForm, setExpForm] = useState({
+    date: new Date().toISOString().slice(0, 10),
+    amount: '',
+    description: '',
+  });
+  const addExpense = useAddExpense();
+  const deleteExpense = useDeleteExpense();
+  const totalExpenses = expenses?.reduce((sum, e) => sum + e.amount, 0) ?? 0;
+
+  const saveExpense = () => {
+    const amount = Number(expForm.amount);
+    if (!expForm.date || !expForm.description.trim() || !(amount >= 0)) return;
+    addExpense.mutate(
+      { date: expForm.date, amount, description: expForm.description.trim() },
+      {
+        onSuccess: () =>
+          setExpForm({ date: new Date().toISOString().slice(0, 10), amount: '', description: '' }),
+      }
+    );
+  };
+  const [confirmDeleteExpenseId, setConfirmDeleteExpenseId] = useState<string | null>(null);
+  const clickDeleteExpense = (id: string) => {
+    if (confirmDeleteExpenseId !== id) {
+      setConfirmDeleteExpenseId(id);
+      setTimeout(() => setConfirmDeleteExpenseId((cur) => (cur === id ? null : cur)), 6000);
+      return;
+    }
+    setConfirmDeleteExpenseId(null);
+    deleteExpense.mutate(id);
+  };
 
   const saveQuarterly = () => {
     if (!/^\d{4}-Q[1-4]$/.test(qForm.quarter)) return;
@@ -294,12 +345,13 @@ export default function AdminSadaqah() {
                     </th>
                     <th className="text-left px-3 py-2">{t('adminSadaqah.colTrxId', 'Trx ID')}</th>
                     <th className="text-left px-3 py-2">{t('adminSadaqah.colStatus', 'Status')}</th>
+                    <th className="px-3 py-2" />
                   </tr>
                 </thead>
                 <tbody>
                   {allLoading && (
                     <tr>
-                      <td colSpan={5} className="text-center text-white/30 py-4">
+                      <td colSpan={6} className="text-center text-white/30 py-4">
                         {t('common.loading', 'Loading…')}
                       </td>
                     </tr>
@@ -320,6 +372,21 @@ export default function AdminSadaqah() {
                       </td>
                       <td className="px-3 py-2">
                         <DonationStatusBadge status={d.status} />
+                      </td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => clickDelete(d._id)}
+                          title={t('adminSadaqah.deleteEntry', 'Permanently delete this entry')}
+                          className={
+                            confirmDeleteId === d._id
+                              ? 'text-red-400 text-xs font-bold'
+                              : 'text-white/20 hover:text-red-400 text-xs'
+                          }
+                        >
+                          {confirmDeleteId === d._id
+                            ? t('adminSadaqah.confirmDelete', 'Confirm?')
+                            : '✕'}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -441,6 +508,99 @@ export default function AdminSadaqah() {
             <button
               onClick={saveQuarterly}
               disabled={!/^\d{4}-Q[1-4]$/.test(qForm.quarter) || upsertQuarterly.isPending}
+              className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim border-0 text-white disabled:opacity-40"
+            >
+              {t('adminSadaqah.save', 'Save')}
+            </button>
+          </div>
+        </section>
+
+        {/* Internal cost ledger — itemized record behind the quarterly
+            "spent" figure above; admin-only, never shown publicly. */}
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-white font-bold text-sm uppercase tracking-widest text-white/50">
+              {t('adminSadaqah.expensesTitle', 'Project costs')}
+            </h2>
+            <p className="text-white/25 text-xs mt-0.5">
+              {t('adminSadaqah.expensesNote', 'Internal record only — never shown publicly.')}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-2">
+            {expenses?.length === 0 && (
+              <p className="text-white/30 text-sm">
+                {t('adminSadaqah.noExpenses', 'No costs recorded yet.')}
+              </p>
+            )}
+            {expenses?.map((e) => (
+              <div
+                key={e._id}
+                className="flex items-center justify-between gap-3 border-b border-white/5 pb-2 last:border-0 last:pb-0"
+              >
+                <div className="min-w-0">
+                  <p className="text-white font-bold text-sm">
+                    {e.amount.toLocaleString()} <span className="text-xs text-white/40">BDT</span>
+                  </p>
+                  <p className="text-white/40 text-xs truncate">
+                    {e.date.slice(0, 10)} — {e.description}
+                  </p>
+                </div>
+                <button
+                  onClick={() => clickDeleteExpense(e._id)}
+                  className="btn btn-xs bg-white/5 border border-red-400/20 text-red-300 shrink-0"
+                >
+                  {confirmDeleteExpenseId === e._id
+                    ? t('adminSadaqah.confirmDelete', 'Confirm?')
+                    : t('adminSadaqah.delete', 'Delete')}
+                </button>
+              </div>
+            ))}
+            {!!expenses?.length && (
+              <p className="text-white/50 text-xs font-bold pt-1">
+                {t('adminSadaqah.totalCosts', 'Total: {{amount}} BDT', {
+                  amount: totalExpenses.toLocaleString(),
+                })}
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-brand-emerald/15 bg-brand-emerald/5 p-4 space-y-2">
+            <p className="text-white/70 text-xs font-bold">
+              {t('adminSadaqah.addExpense', 'Record a cost')}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="date"
+                value={expForm.date}
+                onChange={(e) => setExpForm((f) => ({ ...f, date: e.target.value }))}
+                className="input input-sm bg-white/5 border-brand-emerald/15 text-white"
+              />
+              <input
+                type="number"
+                value={expForm.amount}
+                onChange={(e) => setExpForm((f) => ({ ...f, amount: e.target.value }))}
+                placeholder={t('adminSadaqah.amountBdt', 'Amount (BDT)')}
+                className="input input-sm bg-white/5 border-brand-emerald/15 text-white"
+              />
+            </div>
+            <input
+              value={expForm.description}
+              onChange={(e) => setExpForm((f) => ({ ...f, description: e.target.value }))}
+              placeholder={t(
+                'adminSadaqah.expenseDescPlaceholder',
+                'e.g. Server hosting — September'
+              )}
+              className="input input-sm w-full bg-white/5 border-brand-emerald/15 text-white"
+            />
+            <button
+              onClick={saveExpense}
+              disabled={
+                !expForm.date ||
+                !expForm.description.trim() ||
+                !(Number(expForm.amount) >= 0) ||
+                addExpense.isPending
+              }
               className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim border-0 text-white disabled:opacity-40"
             >
               {t('adminSadaqah.save', 'Save')}

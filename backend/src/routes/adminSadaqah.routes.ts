@@ -8,6 +8,7 @@ import {
   emailDraftQuerySchema,
   quarterlyUpsertSchema,
   quarterlyParamSchema,
+  addExpenseSchema,
 } from '../validation/sadaqah.schemas.js';
 import * as adminSadaqahController from '../controllers/adminSadaqah.controller.js';
 
@@ -30,6 +31,14 @@ router.get(
 );
 router.patch('/:id/verify', validate(verifyDonationSchema), adminSadaqahController.verifyHandler);
 router.patch('/:id/reject', validate(rejectDonationSchema), adminSadaqahController.rejectHandler);
+
+// Erroneous/test entries only — not a donor-facing action. Reverses the
+// stats impact first if the donation had been verified.
+router.delete('/:id', adminSadaqahController.deleteDonationHandler);
+
+router.get('/expenses', adminSadaqahController.listExpensesHandler);
+router.post('/expenses', validate(addExpenseSchema), adminSadaqahController.addExpenseHandler);
+router.delete('/expenses/:id', adminSadaqahController.deleteExpenseHandler);
 
 router.patch(
   '/quarterly/:quarter',

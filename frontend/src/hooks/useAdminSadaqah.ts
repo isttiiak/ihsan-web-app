@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api.js';
-import type { Donation, DonationStatsResponse, DonationStatus } from '../types/api.js';
+import type {
+  Donation,
+  DonationStatsResponse,
+  DonationStatus,
+  SadaqahExpense,
+} from '../types/api.js';
 
 export function usePendingDonations() {
   return useQuery<Donation[]>({
@@ -66,6 +71,50 @@ export function useRejectDonation() {
       api.patch(`/api/admin/sadaqah/${id}/reject`, { emailBody }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['admin', 'sadaqah'] });
+    },
+  });
+}
+
+/** Erroneous/test entries only — reverses the stats impact server-side if
+ *  the donation had been verified. */
+export function useDeleteDonation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/api/admin/sadaqah/${id}`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'sadaqah'] });
+      void queryClient.invalidateQueries({ queryKey: ['sadaqah', 'stats'] });
+    },
+  });
+}
+
+export function useExpenses() {
+  return useQuery<SadaqahExpense[]>({
+    queryKey: ['admin', 'sadaqah', 'expenses'],
+    queryFn: async () => {
+      const res = await api.get<{ expenses: SadaqahExpense[] }>('/api/admin/sadaqah/expenses');
+      return res.data.expenses;
+    },
+  });
+}
+
+export function useAddExpense() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (expense: { date: string; amount: number; description: string }) =>
+      api.post('/api/admin/sadaqah/expenses', expense),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'sadaqah', 'expenses'] });
+    },
+  });
+}
+
+export function useDeleteExpense() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/api/admin/sadaqah/expenses/${id}`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'sadaqah', 'expenses'] });
     },
   });
 }
