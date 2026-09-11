@@ -1,4 +1,4 @@
-// Reader typography preferences (Istiak's spec, v4.9):
+﻿// Reader typography preferences (Istiak's spec, v4.9):
 // - selectable Arabic font, with the EASIEST-to-read one as default
 // - free-range px sliders for arabic / translation / transliteration / tafsir
 // - optional transliteration line (free source: alquran.cloud en.transliteration)
@@ -12,12 +12,24 @@ export interface ArabicFont {
 /** Order matters — first is the default. Tahoma's Arabic glyphs are famously
  * clear on every OS; the mushaf-style faces load from Google Fonts. */
 export const ARABIC_FONTS: ArabicFont[] = [
-  { id: 'clean', label: 'Clean — easiest to read (default)', stack: "Tahoma, 'Segoe UI', 'Noto Naskh Arabic', system-ui, sans-serif" },
-  { id: 'naskh', label: 'Naskh — traditional print', stack: "'Scheherazade New', 'Noto Naskh Arabic', 'Times New Roman', serif" },
-  { id: 'uthmani', label: 'Uthmani — muṣḥaf calligraphy', stack: "'Amiri', 'Scheherazade New', serif" },
+  {
+    id: 'clean',
+    label: 'Clean — easiest to read (default)',
+    stack: "Tahoma, 'Segoe UI', 'Noto Naskh Arabic', system-ui, sans-serif",
+  },
+  {
+    id: 'naskh',
+    label: 'Naskh — traditional print',
+    stack: "'Scheherazade New', 'Noto Naskh Arabic', 'Times New Roman', serif",
+  },
+  {
+    id: 'uthmani',
+    label: 'Uthmani — muṣḥaf calligraphy',
+    stack: "'Amiri', 'Scheherazade New', serif",
+  },
 ];
 
-const FONT_KEY = 'ihsan_arabic_font';
+const FONT_KEY = 'bustandeen_arabic_font';
 
 export function getArabicFont(): ArabicFont {
   const id = localStorage.getItem(FONT_KEY);
@@ -38,7 +50,7 @@ export const FONT_RANGES: Record<FontKind, { min: number; max: number; def: numb
   tafsir: { min: 13, max: 28, def: 17 },
 };
 
-const sizeKey = (kind: FontKind) => `ihsan_qfs_${kind}`;
+const sizeKey = (kind: FontKind) => `bustandeen_qfs_${kind}`;
 
 export function getFontPx(kind: FontKind): number {
   const { min, max, def } = FONT_RANGES[kind];
@@ -51,7 +63,7 @@ export function setFontPx(kind: FontKind, px: number): void {
 
 // ── Transliteration toggle ───────────────────────────────────────────────────
 
-const TRANSLIT_KEY = 'ihsan_quran_translit';
+const TRANSLIT_KEY = 'bustandeen_quran_translit';
 
 export function translitEnabled(): boolean {
   return localStorage.getItem(TRANSLIT_KEY) === '1';
@@ -62,7 +74,7 @@ export function setTranslitEnabled(on: boolean): void {
 
 // ── Listening → ayat counting toggle ────────────────────────────────────────
 
-const LISTEN_COUNTS_KEY = 'ihsan_quran_listen_counts';
+const LISTEN_COUNTS_KEY = 'bustandeen_quran_listen_counts';
 
 export function listenCountsAsAyat(): boolean {
   const v = localStorage.getItem(LISTEN_COUNTS_KEY);

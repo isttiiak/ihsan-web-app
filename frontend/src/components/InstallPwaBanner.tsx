@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useInstallPrompt } from '../hooks/useInstallPrompt.js';
 
-const DISMISS_KEY = 'ihsan_pwa_prompt_dismissed_at';
+const DISMISS_KEY = 'bustandeen_pwa_prompt_dismissed_at';
 const DISMISS_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // don't nag again for a week
 
 function wasDismissedRecently(): boolean {
@@ -56,7 +56,9 @@ export default function InstallPwaBanner() {
         <div className="pointer-events-auto w-full max-w-md rounded-2xl bg-brand-surface/95 backdrop-blur-xl border border-brand-border shadow-2xl p-4 flex items-start gap-3">
           <img src="/pwa-192.png" alt="" className="w-11 h-11 rounded-xl shrink-0" />
           <div className="min-w-0 flex-1">
-            <p className="text-white font-bold text-sm">{t('pwa.installTitle', 'Install Ihsan')}</p>
+            <p className="text-white font-bold text-sm">
+              {t('pwa.installTitle', 'Install Bustandeen')}
+            </p>
             {isIOS && !canInstall ? (
               showIOSSteps ? (
                 <p className="text-white/60 text-xs mt-1 leading-relaxed">
@@ -69,7 +71,7 @@ export default function InstallPwaBanner() {
                 <p className="text-white/60 text-xs mt-1 leading-relaxed">
                   {t(
                     'pwa.installDesc',
-                    'Add Ihsan to your home screen for a faster, full-screen experience — offline-ready and one tap away.'
+                    'Add Bustandeen to your home screen for a faster, full-screen experience — offline-ready and one tap away.'
                   )}
                 </p>
               )
@@ -77,7 +79,7 @@ export default function InstallPwaBanner() {
               <p className="text-white/60 text-xs mt-1 leading-relaxed">
                 {t(
                   'pwa.installDesc',
-                  'Add Ihsan to your home screen for a faster, full-screen experience — offline-ready and one tap away.'
+                  'Add Bustandeen to your home screen for a faster, full-screen experience — offline-ready and one tap away.'
                 )}
               </p>
             )}

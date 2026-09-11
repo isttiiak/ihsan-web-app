@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -10,7 +10,7 @@ import { celebrateSmall } from '../utils/celebrate.js';
 /**
  * Invite-link landing page: /connect/:code
  * Signed-in → connects automatically. Guest → sign-in gate that returns here
- * after auth (via the ihsan_redirect mechanism in App.tsx).
+ * after auth (via the bustandeen_redirect mechanism in App.tsx).
  */
 export default function ConnectFriend() {
   const { code } = useParams<{ code: string }>();
@@ -70,7 +70,7 @@ export default function ConnectFriend() {
                 <button
                   className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 w-full"
                   onClick={() => {
-                    sessionStorage.setItem('ihsan_redirect', `/connect/${code}`);
+                    sessionStorage.setItem('bustandeen_redirect', `/connect/${code}`);
                     navigate('/login');
                   }}
                 >
@@ -79,7 +79,7 @@ export default function ConnectFriend() {
                 <button
                   className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
                   onClick={() => {
-                    sessionStorage.setItem('ihsan_redirect', `/connect/${code}`);
+                    sessionStorage.setItem('bustandeen_redirect', `/connect/${code}`);
                     navigate('/signup');
                   }}
                 >

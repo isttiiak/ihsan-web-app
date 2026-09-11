@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +16,9 @@ export default function GenderGate() {
   const { user, setUser } = useAuthStore();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [skipped, setSkipped] = useState(() => !!sessionStorage.getItem('ihsan_gender_skipped'));
+  const [skipped, setSkipped] = useState(
+    () => !!sessionStorage.getItem('bustandeen_gender_skipped')
+  );
 
   if (!user || user.gender || skipped) return null;
 
@@ -26,7 +28,7 @@ export default function GenderGate() {
     try {
       await api.patch('/api/user/me', { gender });
       const updated: AuthUser = { ...user, gender };
-      localStorage.setItem('ihsan_user', JSON.stringify(updated));
+      localStorage.setItem('bustandeen_user', JSON.stringify(updated));
       setUser(updated);
     } catch {
       setError(t('genderGate.error', 'Something went wrong. Please try again.'));
@@ -35,7 +37,7 @@ export default function GenderGate() {
   };
 
   const skip = () => {
-    sessionStorage.setItem('ihsan_gender_skipped', '1');
+    sessionStorage.setItem('bustandeen_gender_skipped', '1');
     setSkipped(true);
   };
 
@@ -48,7 +50,7 @@ export default function GenderGate() {
     >
       <div className="max-w-2xl mx-auto flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
         <p className="text-white/60 text-sm flex-1">
-          {t('genderGate.bannerPrompt', 'Personalise your Ihsan — tell us who you are:')}
+          {t('genderGate.bannerPrompt', 'Personalise your Bustandeen — tell us who you are:')}
         </p>
 
         {error && <p className="text-red-400 text-xs">{error}</p>}

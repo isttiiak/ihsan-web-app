@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +19,7 @@ import { useAuthStore } from '../store/useAuthStore.js';
  * a single tiny AI call, never one per page view.
  */
 
-const CACHE_KEY = 'ihsan_comeback_nudge';
+const CACHE_KEY = 'bustandeen_comeback_nudge';
 
 function readCache(day: string): string | null {
   try {

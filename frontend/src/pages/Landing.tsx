@@ -84,7 +84,7 @@ export default function Landing() {
     <AnimatedBackground variant="dark">
       <InstallPwaBanner />
       <Seo
-        title={t('landing.seoTitle', 'Ihsan — Muslim Worship & Productivity Tracker')}
+        title={t('landing.seoTitle', 'Bustandeen — Grow Your Garden of Good Deeds')}
         description={t(
           'landing.seoDescription',
           'Track your zikr, salat, fasting and Quran reading — with authentic references, streaks, prayer times and a friends leaderboard. Free, private, and built for the Muslim community.'

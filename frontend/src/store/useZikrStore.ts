@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { getUserTimezoneOffset } from '../utils/timezone.js';
 import { getTrackingDay, getTrackingDayMiddayTs } from '../utils/trackingDay.js';
@@ -317,7 +317,7 @@ export const useZikrStore = create<ZikrState>()(
         // refresh (`getIdToken()`) to complete before the page is torn
         // down — read the last cached token synchronously instead.
         const idToken = opts?.keepalive
-          ? localStorage.getItem('ihsan_idToken')
+          ? localStorage.getItem('bustandeen_idToken')
           : await getIdToken();
         if (!idToken) return;
 
@@ -377,7 +377,7 @@ export const useZikrStore = create<ZikrState>()(
       },
     }),
     {
-      name: 'ihsan_zikr_store',
+      name: 'bustandeen_zikr_store',
       storage: debouncedStorage,
       partialize: (state) => ({
         selected: state.selected,

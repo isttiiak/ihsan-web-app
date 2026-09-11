@@ -1,4 +1,4 @@
-// The Ihsan TRACKING DAY — the app's day boundary, by default, is FAJR, not
+﻿// The Bustandeen TRACKING DAY — the app's day boundary, by default, is FAJR, not
 // midnight (Istiak's spec, 2026-07-18). A new worship day begins at the local
 // Fajr time: Isha prayed at 1 AM and tahajjud/suhoor before dawn belong to the
 // CLOSING day, matching the rhythm of ibadah.
@@ -18,13 +18,13 @@
 // dawn-to-sunset of a fixed calendar date regardless of this preference.
 //
 // Fallback: 'fajr'/'maghrib' need coordinates. Users who haven't set a
-// location (localStorage `ihsan_location`) keep the civil-midnight boundary
+// location (localStorage `bustandeen_location`) keep the civil-midnight boundary
 // until they do, same as always.
 import { calcPrayerTimes } from './prayerTimes.js';
 
 export type DayStartMode = 'fajr' | 'midnight' | 'maghrib';
 
-const DAY_START_MODE_KEY = 'ihsan_day_start_mode';
+const DAY_START_MODE_KEY = 'bustandeen_day_start_mode';
 
 interface StoredLocation {
   latitude: number;
@@ -34,7 +34,7 @@ interface StoredLocation {
 
 function readLocation(): StoredLocation | null {
   try {
-    const raw = localStorage.getItem('ihsan_location');
+    const raw = localStorage.getItem('bustandeen_location');
     if (!raw) return null;
     const loc = JSON.parse(raw) as StoredLocation;
     if (typeof loc?.latitude !== 'number' || typeof loc?.longitude !== 'number') return null;

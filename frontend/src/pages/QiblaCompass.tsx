@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { MapPinIcon } from '@heroicons/react/24/outline';
@@ -20,7 +20,7 @@ interface OrientationEventWithCompass extends DeviceOrientationEvent {
 
 function readLocation(): StoredLocation | null {
   try {
-    const s = localStorage.getItem('ihsan_location');
+    const s = localStorage.getItem('bustandeen_location');
     return s ? (JSON.parse(s) as StoredLocation) : null;
   } catch {
     return null;
@@ -124,7 +124,7 @@ export default function QiblaCompass() {
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
         };
-        localStorage.setItem('ihsan_location', JSON.stringify(loc));
+        localStorage.setItem('bustandeen_location', JSON.stringify(loc));
         setLocation(loc);
         setLocLoading(false);
       },

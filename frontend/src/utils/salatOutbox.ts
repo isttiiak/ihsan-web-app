@@ -1,11 +1,11 @@
-import type { UpdatePrayerVars, UpdateNaflVars } from '../hooks/useSalatLog.js';
+﻿import type { UpdatePrayerVars, UpdateNaflVars } from '../hooks/useSalatLog.js';
 
 // Offline outbox for salat prayer/nafl updates. Unlike the zikr counter,
 // salat status changes had zero local persistence — a network failure while
 // tapping "Done" just silently rolled the optimistic UI back and lost the
 // tap. This queues the PATCH so it can be replayed once the connection
 // returns, instead of asking the user to notice and re-tap.
-const STORAGE_KEY = 'ihsan_salat_outbox';
+const STORAGE_KEY = 'bustandeen_salat_outbox';
 
 interface QueuedPrayerOp {
   id: string;

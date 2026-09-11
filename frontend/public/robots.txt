@@ -11,4 +11,4 @@ Disallow: /zikr/analytics
 Disallow: /salat/analytics
 Disallow: /fasting/analytics
 
-Sitemap: https://ihsan-web-app-main.vercel.app/sitemap.xml
+Sitemap: https://bustandeen.com/sitemap.xml

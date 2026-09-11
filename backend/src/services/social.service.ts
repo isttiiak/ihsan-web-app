@@ -155,7 +155,7 @@ function toPendingItems(
     const photo = u?.photoUrl;
     return {
       uid,
-      displayName: u?.displayName || 'Ihsan user',
+      displayName: u?.displayName || 'Bustandeen user',
       ...(photo && /^https?:\/\//.test(photo) ? { photoUrl: photo } : {}),
     };
   });
@@ -311,7 +311,7 @@ export async function getFriendsList(userId: string): Promise<FriendListItem[]> 
     const since = profile.friendSince?.get(uid);
     return {
       uid,
-      displayName: u?.displayName || 'Ihsan user',
+      displayName: u?.displayName || 'Bustandeen user',
       ...(photo && /^https?:\/\//.test(photo) ? { photoUrl: photo } : {}),
       connectedSince: since ? since.toISOString() : null,
     };
@@ -546,7 +546,7 @@ async function statsForUser(
   const photo = user?.photoUrl;
   return {
     uid,
-    displayName: user?.displayName || 'Ihsan user',
+    displayName: user?.displayName || 'Bustandeen user',
     ...(photo && /^https?:\/\//.test(photo) ? { photoUrl: photo } : {}),
     ...(user?.country ? { country: user.country } : {}),
     ...base,

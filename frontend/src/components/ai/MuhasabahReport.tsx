@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+﻿import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAnalytics } from '../../hooks/useAnalytics.js';
@@ -16,7 +16,7 @@ import {
   type MuhasabahRef,
 } from '../../utils/muhasabahCorpus.js';
 
-const CACHE_KEY = 'ihsan_muhasabah_report';
+const CACHE_KEY = 'bustandeen_muhasabah_report';
 
 interface CachedReport {
   weekId: string;

@@ -124,7 +124,7 @@ export default function ShareAyahModal({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `ihsan-ayah-${surahNo}-${ayahNumberInSurah}.png`;
+      a.download = `bustandeen-ayah-${surahNo}-${ayahNumberInSurah}.png`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -139,7 +139,7 @@ export default function ShareAyahModal({
     try {
       const blob = await capture();
       if (!blob) throw new Error('capture failed');
-      const file = new File([blob], `ihsan-ayah-${surahNo}-${ayahNumberInSurah}.png`, {
+      const file = new File([blob], `bustandeen-ayah-${surahNo}-${ayahNumberInSurah}.png`, {
         type: 'image/png',
       });
       if (navigator.canShare?.({ files: [file] })) {

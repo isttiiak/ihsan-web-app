@@ -1,4 +1,4 @@
-// Quran text + metadata loaders — all from the free alquran.cloud API,
+﻿// Quran text + metadata loaders — all from the free alquran.cloud API,
 // cached hard in IndexedDB so each surah is fetched exactly once ever.
 //
 // This used to live in localStorage, but a full Quran cache (114 surahs ×
@@ -70,7 +70,7 @@ const LANG_TO_TRANSLATION: Record<string, string> = {
 export function selectedTranslations(): string[] {
   try {
     const raw = JSON.parse(
-      localStorage.getItem('ihsan_quran_translations') ?? '["en.sahih"]'
+      localStorage.getItem('bustandeen_quran_translations') ?? '["en.sahih"]'
     ) as string[];
     const valid = raw.filter((id) => TRANSLATIONS.some((t) => t.id === id)).slice(0, 2);
     return valid.length ? valid : ['en.sahih'];
@@ -87,10 +87,10 @@ export function syncQuranTranslationWithLang(lang: string): void {
   if (current[0] === target) return;
   const secondary = current[1] && current[1] !== target ? current[1] : undefined;
   const next = secondary ? [target, secondary] : [target];
-  localStorage.setItem('ihsan_quran_translations', JSON.stringify(next));
+  localStorage.setItem('bustandeen_quran_translations', JSON.stringify(next));
 }
 
-const SURAH_META_KEY = 'ihsan_surah_meta_v1';
+const SURAH_META_KEY = 'bustandeen_surah_meta_v1';
 
 /** One-time move of a value cached under `localStorageKey` into IndexedDB —
  * returns it and frees the localStorage entry, instead of discarding a
@@ -139,7 +139,7 @@ export async function loadSurahText(
 ): Promise<AyahText[]> {
   const eds = (editions?.length ? editions : selectedTranslations()).slice(0, 2);
   const all = withTranslit ? [...eds, TRANSLIT_EDITION] : eds;
-  const key = `ihsan_surah_text_${surah}_${all.join('+')}_v2`;
+  const key = `bustandeen_surah_text_${surah}_${all.join('+')}_v2`;
 
   const fromIdb = await idbGet<AyahText[]>(key);
   if (fromIdb) return fromIdb;

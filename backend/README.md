@@ -1,6 +1,6 @@
-# Backend — Ihsan API
+# Backend — Bustandeen API
 
-Express + TypeScript + Mongoose (MongoDB Atlas) + Firebase Admin backend for Ihsan.
+Express + TypeScript + Mongoose (MongoDB Atlas) + Firebase Admin backend for Bustandeen.
 
 See the root [`CLAUDE.md`](../CLAUDE.md) for the full architecture, conventions, and environment variable reference — this file only covers what's specific to running and testing the backend in isolation.
 

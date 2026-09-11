@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAiStreakCoach } from '../../hooks/useAi.js';
@@ -15,7 +15,7 @@ import { getTrackingDay } from '../../utils/trackingDay.js';
  * moment costs one API call, never more.
  */
 
-const CACHE_KEY = 'ihsan_streak_coach';
+const CACHE_KEY = 'bustandeen_streak_coach';
 const MILESTONES = [7, 30, 100, 365];
 
 function cacheId(day: string, feature: string, event: string): string {
@@ -89,7 +89,7 @@ function detectEvents(
   return null;
 }
 
-const PREV_KEY = 'ihsan_prev_streaks';
+const PREV_KEY = 'bustandeen_prev_streaks';
 
 function readPrev(): Record<string, number> {
   try {

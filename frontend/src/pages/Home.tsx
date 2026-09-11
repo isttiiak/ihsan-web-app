@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -112,7 +112,7 @@ export default function Home() {
   const todaySpecialDays = useMemo(() => getTodaySpecialDays(), []);
 
   const prayerWidgetData = useMemo(() => {
-    const stored = localStorage.getItem('ihsan_location');
+    const stored = localStorage.getItem('bustandeen_location');
     if (!stored) return null;
     try {
       const loc = JSON.parse(stored) as { latitude: number; longitude: number };
@@ -228,7 +228,7 @@ export default function Home() {
 
   return (
     <AnimatedBackground variant="dark">
-      <h1 className="sr-only">{t('home.srTitle', 'Ihsan — Islamic Productivity')}</h1>
+      <h1 className="sr-only">{t('home.srTitle', 'Bustandeen — Islamic Productivity')}</h1>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Welcome back after a quiet stretch — the gentlest possible restart */}
         <div className="mb-6 empty:mb-0">

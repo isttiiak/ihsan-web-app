@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const SITE_URL = 'https://ihsan-web-app-main.vercel.app';
+const SITE_URL = 'https://bustandeen.com';
 const DEFAULT_IMAGE = `${SITE_URL}/og-image.jpg`;
 
 interface SeoProps {
@@ -30,7 +30,7 @@ function setMeta(attr: 'name' | 'property', key: string, content: string) {
  */
 export default function Seo({ title, description, path, index = true }: SeoProps) {
   useEffect(() => {
-    const fullTitle = title.includes('Ihsan') ? title : `${title} | Ihsan`;
+    const fullTitle = title.includes('Bustandeen') ? title : `${title} | Bustandeen`;
     const url = `${SITE_URL}${path}`;
 
     document.title = fullTitle;

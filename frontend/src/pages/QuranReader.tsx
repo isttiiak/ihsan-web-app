@@ -1,4 +1,4 @@
-import {
+﻿import {
   useCallback,
   useEffect,
   useMemo,
@@ -79,7 +79,7 @@ import ShareAyahModal from '../components/ShareAyahModal.js';
 // localStorage is the fast cache; the SERVER copy (QuranProfile.readerPos) is
 // the source of truth so the same account resumes at the same āyah on every
 // device (Istiak: web said āyah 12, phone said 3 — critical bug).
-const RESUME_KEY = 'ihsan_reader_pos';
+const RESUME_KEY = 'bustandeen_reader_pos';
 function readResumeMap(): Record<string, number> {
   try {
     return JSON.parse(localStorage.getItem(RESUME_KEY) ?? '{}') as Record<string, number>;
@@ -134,7 +134,7 @@ export default function QuranReader() {
   // Draggable split (Istiak: a short āyah can pair with a LONG tafsir — the
   // reader decides how much room each side gets). Left-pane %, persisted.
   const [splitPct, setSplitPct] = useState<number>(() => {
-    const v = Number(localStorage.getItem('ihsan_split_pct'));
+    const v = Number(localStorage.getItem('bustandeen_split_pct'));
     return Number.isFinite(v) && v >= 25 && v <= 75 ? v : 50;
   });
   const draggingRef = useRef(false);
@@ -149,7 +149,7 @@ export default function QuranReader() {
   const [resumeAyah, setResumeAyah] = useState<number | null>(null); // continue-or-restart prompt
   const [shareOpen, setShareOpen] = useState(false);
   const [volume, setVolume] = useState<number>(() => {
-    const raw = localStorage.getItem('ihsan_quran_volume');
+    const raw = localStorage.getItem('bustandeen_quran_volume');
     const v = Number(raw);
     return raw !== null && Number.isFinite(v) && v >= 0 && v <= 1 ? v : 0.4; // 40% default
   });
@@ -168,13 +168,13 @@ export default function QuranReader() {
   // In-app ZOOM (Istiak's spec): big screens have room to spare — scale every
   // reader text together, without touching the browser zoom. Persisted.
   const [zoom, setZoom] = useState<number>(() => {
-    const v = Number(localStorage.getItem('ihsan_reader_zoom'));
+    const v = Number(localStorage.getItem('bustandeen_reader_zoom'));
     return Number.isFinite(v) && v >= 0.8 && v <= 1.8 ? v : 1;
   });
   const changeZoom = useCallback((delta: number) => {
     setZoom((z) => {
       const n = delta === 0 ? 1 : Math.min(1.8, Math.max(0.8, Math.round((z + delta) * 10) / 10));
-      localStorage.setItem('ihsan_reader_zoom', String(n));
+      localStorage.setItem('bustandeen_reader_zoom', String(n));
       return n;
     });
   }, []);
@@ -360,7 +360,7 @@ export default function QuranReader() {
   const changeVolume = useCallback((v: number) => {
     setVolume(v);
     if (audioRef.current) audioRef.current.volume = v;
-    localStorage.setItem('ihsan_quran_volume', String(v));
+    localStorage.setItem('bustandeen_quran_volume', String(v));
   }, []);
 
   // ── navigation ──
@@ -550,7 +550,7 @@ export default function QuranReader() {
     const onUp = () => {
       draggingRef.current = false;
       setSplitPct((v) => {
-        localStorage.setItem('ihsan_split_pct', String(Math.round(v)));
+        localStorage.setItem('bustandeen_split_pct', String(Math.round(v)));
         return v;
       });
       window.removeEventListener('pointermove', onMove);

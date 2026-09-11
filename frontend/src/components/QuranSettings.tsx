@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+﻿import { useEffect, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -94,7 +94,9 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
 
   const savedGoal = summary?.profile.dailyGoalAyat ?? 0;
   const [goal, setGoal] = useState<number>(savedGoal);
-  const [reciter, setReciter] = useState(() => localStorage.getItem('ihsan_reciter') || 'dossari');
+  const [reciter, setReciter] = useState(
+    () => localStorage.getItem('bustandeen_reciter') || 'dossari'
+  );
   const [translations, setTranslations] = useState<string[]>(selectedTranslations);
   const [arabicFontId, setArabicFontId] = useState(() => getArabicFont().id);
   const [translit, setTranslit] = useState(translitEnabled);
@@ -113,7 +115,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
   // reading settings" button. persistTranslations keeps localStorage in
   // sync with whatever selectedTranslations() will read back next time.
   const persistTranslations = (next: string[]) =>
-    localStorage.setItem('ihsan_quran_translations', JSON.stringify(next));
+    localStorage.setItem('bustandeen_quran_translations', JSON.stringify(next));
 
   const setPrimary = (id: string) => {
     setTranslations((prev) => {
@@ -277,7 +279,7 @@ export default function QuranSettings({ open, onClose }: { open: boolean; onClos
                   value={reciter}
                   onChange={(e) => {
                     setReciter(e.target.value);
-                    localStorage.setItem('ihsan_reciter', e.target.value);
+                    localStorage.setItem('bustandeen_reciter', e.target.value);
                   }}
                 >
                   {RECITER_OPTIONS.map((r) => (

@@ -1,10 +1,10 @@
-{
+﻿{
   "arabicKeyboard": {
     "space": "space"
   },
   "about": {
-    "seoTitle": "About Ihsan — Our Mission",
-    "seoDescription": "Ihsan is a free, private Islamic productivity app for zikr, salat, fasting and Quran habits — built for the Muslim community with authentic Quran and hadith references.",
+    "seoTitle": "About Bustandeen — Our Mission",
+    "seoDescription": "Bustandeen is a free, private Islamic productivity app for zikr, salat, fasting and Quran habits — built for the Muslim community with authentic Quran and hadith references.",
     "authenticityLabel": "Authenticity first",
     "authenticityOr": "or",
     "authenticityText1": "Every verse and hadith in this app links to its exact source on",
@@ -38,15 +38,16 @@
         "title": "Zikr Counter"
       }
     },
-    "githubAriaLabel": "Ihsan on GitHub",
+    "githubAriaLabel": "Bustandeen on GitHub",
     "hadithQuote": "\"The most beloved deeds to Allah are those most consistent, even if small.\"",
-    "heading": "About Ihsan",
-    "ihsanDefinition": "is to worship Allah as though you see Him — and though you do not see Him, He surely sees you",
-    "ihsanPurpose": "This app exists to help you bring that awareness into every day.",
+    "heading": "About Bustandeen",
+    "conceptDefinition": "is to worship Allah as though you see Him — and though you do not see Him, He surely sees you",
+    "conceptPurpose": "This app exists to help you bring that awareness into every day.",
     "intentionLabel": "Our intention",
-    "intentionText": "Worship deserves better than noisy, gamified apps. Ihsan is calm by design: it counts what you ask it to count, reminds you gently, celebrates sincerely, and never turns your dīn into a game. It is free, has no ads, and never sells your data — built simply in the hope of being a ṣadaqah jāriyah.",
+    "intentionText": "Worship deserves better than noisy, gamified apps. Bustandeen is calm by design: it counts what you ask it to count, reminds you gently, celebrates sincerely, and never turns your dīn into a game. It is free, has no ads, and never sells your data — built simply in the hope of being a ṣadaqah jāriyah.",
     "privacyLink": "Privacy →",
-    "srTitle": "About Ihsan"
+    "srTitle": "About Bustandeen",
+    "bustandeenDefinition": "A name born of بستان (bustān, garden) and دين (dīn, religion/faith) — a garden of faith, tended daily."
   },
   "aiFlair": {
     "badgeLabel": "Naseeh · AI companion",
@@ -147,7 +148,7 @@
     "gender": "Gender",
     "genderHint": "Required for personalized content and Rayhanah (cycle tracking for sisters).",
     "goBack": "Go back",
-    "joinIhsan": "Join Ihsan",
+    "joinIhsan": "Join Bustandeen",
     "lastName": "Last Name",
     "lastNamePlaceholder": "Last name",
     "logIn": "Log in",
@@ -234,7 +235,7 @@
     "invited": "A friend invited you!",
     "preparing": "Preparing your session…",
     "seeLeaderboard": "See the leaderboard",
-    "signInPrompt": "Sign in to Ihsan to connect — you'll see each other's streaks and daily worship, and race each other to good deeds.",
+    "signInPrompt": "Sign in to Bustandeen to connect — you'll see each other's streaks and daily worship, and race each other to good deeds.",
     "srTitle": "Connect with a friend",
     "yourFriend": "your friend"
   },
@@ -349,11 +350,11 @@
     "weekdays": ["S", "M", "T", "W", "T", "F", "S"]
   },
   "daifExplainer": {
-    "explainerParagraph": "The term <1>ḍaʿīf</1> means the chain of transmission has a flaw — a narrator with weak memory, an unknown link, or a break — so the words cannot be attributed to the Prophet ﷺ with confidence. It does not automatically mean the meaning is false. Many scholars permit acting on a weak report to encourage good deeds (faḍāʾil al-aʿmāl) provided nothing is treated as an established ruling or a guaranteed reward; others decline to use them at all. Ihsan shows the grade so you can follow your own scholars.",
+    "explainerParagraph": "The term <1>ḍaʿīf</1> means the chain of transmission has a flaw — a narrator with weak memory, an unknown link, or a break — so the words cannot be attributed to the Prophet ﷺ with confidence. It does not automatically mean the meaning is false. Many scholars permit acting on a weak report to encourage good deeds (faḍāʾil al-aʿmāl) provided nothing is treated as an established ruling or a guaranteed reward; others decline to use them at all. Bustandeen shows the grade so you can follow your own scholars.",
     "footerLink": "Tell us and we will correct it",
-    "footerText": "Ihsan is not a source of religious authority — verify with a scholar you trust. Spotted a grading you believe is wrong?",
+    "footerText": "Bustandeen is not a source of religious authority — verify with a scholar you trust. Spotted a grading you believe is wrong?",
     "headerTitle": "Why some things on this page are marked <1>ḍaʿīf</1>",
-    "howIhsanUsesIt": "How Ihsan uses it:",
+    "howWeUseIt": "How Bustandeen uses it:",
     "narrationCount_one": "{{count}} narration — the chain, the defect, and who graded it",
     "narrationCount_other": "{{count}} narrations — the chain, the defect, and who graded it",
     "readScholarlyDiscussion": "Read the scholarly discussion ↗",
@@ -552,12 +553,12 @@
   },
   "feedback": {
     "seoTitle": "Feedback & Contact",
-    "seoDescription": "Report a bug, suggest a feature, or ask a question — reach the Ihsan team directly. Real replies, kept private, built for the ummah.",
+    "seoDescription": "Report a bug, suggest a feature, or ask a question — reach the Bustandeen team directly. Real replies, kept private, built for the ummah.",
     "disclaimer": "Messages go directly to the developer. No data is shared with third parties.",
-    "heroDesc1": "Ihsan is built quietly by one developer for the sake of Allah — which means there's no big team testing every screen.",
+    "heroDesc1": "Bustandeen is built quietly by one developer for the sake of Allah — which means there's no big team testing every screen.",
     "heroDesc2": "You are the testers.",
     "heroDesc3": "If something broke, felt confusing, or you wished a feature existed — tell us. It genuinely gets read, and it genuinely changes what gets built next.",
-    "heroTitle": "Your voice shapes Ihsan",
+    "heroTitle": "Your voice shapes Bustandeen",
     "promise": {
       "builtForUmmah": {
         "text": "Your feedback directly shapes what gets built next.",
@@ -573,7 +574,7 @@
       }
     },
     "referenceNote": "Found a verse, hadith or grading you believe is inaccurate? Please report it — authenticity is the one thing we will never compromise, and corrections are treated as urgent.",
-    "submitLabel": "Send to Ihsan",
+    "submitLabel": "Send to Bustandeen",
     "type": {
       "account": {
         "hint": "Sign-in trouble, or data that looks wrong",
@@ -628,7 +629,7 @@
     "charCount": "{{count}} characters",
     "contactPlaceholder": "How can we help?",
     "emailLabel": "Email",
-    "feedbackPlaceholder": "What happened, or what would make Ihsan better for you? Steps to reproduce a bug are gold.",
+    "feedbackPlaceholder": "What happened, or what would make Bustandeen better for you? Steps to reproduce a bug are gold.",
     "messageLabel": "Tell us more",
     "moreChars": "{{count}} more characters",
     "multiTopicPlaceholder": "Please separate each topic in its own paragraph — one issue per paragraph makes it easier for us to track and fix.",
@@ -637,9 +638,9 @@
     "notConfigured": "This form needs",
     "notConfiguredSuffix": "set before it can send.",
     "notConnected": "The form isn't connected yet — please email us directly for now.",
-    "privacyNote": "We only use what you send here to reply and improve Ihsan — never for anything else.",
-    "receivedFeedback": "Your feedback reached us. Every note genuinely shapes what Ihsan becomes next — and if it needs a reply, we'll write back to",
-    "receivedMessage": "Your message reached us. Every note genuinely shapes what Ihsan becomes next — and if it needs a reply, we'll write back to",
+    "privacyNote": "We only use what you send here to reply and improve Bustandeen — never for anything else.",
+    "receivedFeedback": "Your feedback reached us. Every note genuinely shapes what Bustandeen becomes next — and if it needs a reply, we'll write back to",
+    "receivedMessage": "Your message reached us. Every note genuinely shapes what Bustandeen becomes next — and if it needs a reply, we'll write back to",
     "send": "Send",
     "sendAnother": "Send another",
     "sendFail": "Could not send right now — please check your connection and try again.",
@@ -649,7 +650,7 @@
   "footer": {
     "about": "About",
     "adFree": "Free · Ad-free · Open-source",
-    "copyright": "Ihsan",
+    "copyright": "Bustandeen",
     "feedbackContact": "Feedback & Contact",
     "forTheUmmah": "for the ummah",
     "madeWith": "Made with love",
@@ -717,7 +718,7 @@
     "requestsSubtitle": "People who opened your invite link",
     "requestsTitle": "Friend requests",
     "seeFriends": "See friends",
-    "shareMessage": "Assalamu alaikum! Join me on Ihsan to race each other in good deeds 🌙 {{link}}",
+    "shareMessage": "Assalamu alaikum! Join me on Bustandeen to race each other in good deeds 🌙 {{link}}",
     "srTitle": "Friends",
     "todaysCircle": "Today's circle",
     "tryAgain": "Try again",
@@ -744,7 +745,7 @@
     "prompt": "To personalise your experience — including content, greetings, and access to Rayhanah (cycle tracking for sisters) — please let us know:",
     "settingsHint": "You can set this anytime in",
     "sister": "Sister",
-    "bannerPrompt": "Personalise your Ihsan — tell us who you are:"
+    "bannerPrompt": "Personalise your Bustandeen — tell us who you are:"
   },
   "hijriMonths": {
     "0": "Muharram",
@@ -807,7 +808,7 @@
     "salatSubtitle": "Track your daily prayers",
     "salatTitle": "Salat Tracker",
     "setLocation": "Set Location →",
-    "srTitle": "Ihsan — Islamic Productivity",
+    "srTitle": "Bustandeen — Islamic Productivity",
     "startCounting": "Start Counting",
     "thisMonth": "This month",
     "toMaghrib": "to Maghrib",
@@ -821,13 +822,13 @@
     "fridayKahfQuote": "A light will shine for him between the two Fridays."
   },
   "landing": {
-    "seoTitle": "Ihsan — Muslim Worship & Productivity Tracker",
+    "seoTitle": "Bustandeen — Grow Your Garden of Good Deeds",
     "seoDescription": "Track your zikr, salat, fasting and Quran reading — with authentic references, streaks, prayer times and a friends leaderboard. Free, private, and built for the Muslim community.",
     "brother": "Brother",
     "cta": "Begin your journey — free",
     "ctaCounter": "Try the counter first",
     "ctaExplore": "Explore the full app",
-    "fajrDesc": "Isha prayed after midnight and suhoor before dawn belong to the right day, because Ihsan's tracking day flows the way a worship day actually does: dawn to dawn. Prefer midnight, or the Hijri sunset boundary instead? Change it anytime in Settings.",
+    "fajrDesc": "Isha prayed after midnight and suhoor before dawn belong to the right day, because Bustandeen's tracking day flows the way a worship day actually does: dawn to dawn. Prefer midnight, or the Hijri sunset boundary instead? Change it anytime in Settings.",
     "fajrTitle": "Your day begins at Fajr — not midnight",
     "featureFasting": "Fasting + Ramadan",
     "featureFastingDesc": "Qaḍā, kaffārah, vows and every sunnah day — each rule cited to its exact hadith. And a dedicated Ramadan home with suhoor, iftar, tarawih and Laylat al-Qadr.",
@@ -856,14 +857,14 @@
     "privacyPartnerDesc": "Sharing your cycle status with a partner is opt-in and revocable — it only ever sends a yes/no, never a date, symptom or note.",
     "privacyPartnerTitle": "Partner sees yes or no — nothing else",
     "privacyTitle": "Your privacy, engineered in",
-    "rayhanahDesc": "Allah Himself excused women from salat and fasting during their days — so Ihsan does too, with zero guilt. Cycle tracking with predictions and wellness notes, a ghusl guide, Ramadan days flowing into the make-up counter automatically, and a Noor score that keeps shining from dhikr, Quran and ṣalawāt. Completely private:",
+    "rayhanahDesc": "Allah Himself excused women from salat and fasting during their days — so Bustandeen does too, with zero guilt. Cycle tracking with predictions and wellness notes, a ghusl guide, Ramadan days flowing into the make-up counter automatically, and a Noor score that keeps shining from dhikr, Quran and ṣalawāt. Completely private:",
     "rayhanahHighlight": "A first among Muslim productivity apps",
     "rayhanahPrivate": " no friend can ever tell.",
     "rayhanahTitle": "Rayhanah Cycle — for our sisters",
     "readOurStory": "Read our story",
     "sister": "Sister",
     "tryIt": "Try it →",
-    "verifiedDesc": "Each Quran verse and hadith in Ihsan links to quran.com or sunnah.com with its exact number, and grades are shown where they matter. No fabricated virtues, no folklore — if we can't verify it, we don't say it.",
+    "verifiedDesc": "Each Quran verse and hadith in Bustandeen links to quran.com or sunnah.com with its exact number, and grades are shown where they matter. No fabricated virtues, no folklore — if we can't verify it, we don't say it.",
     "verifiedTitle": "Every reference, verified",
     "exploreAsBrother": "Explore as Brother",
     "exploreAsSister": "Explore as Sister"
@@ -1031,8 +1032,8 @@
   },
   "privacy": {
     "seoTitle": "Privacy Policy",
-    "seoDescription": "How Ihsan stores and protects your data: what we collect, what stays on your device, what friends can see, and your control over deletion.",
-    "aboutLink": "About Ihsan",
+    "seoDescription": "How Bustandeen stores and protects your data: what we collect, what stays on your device, what friends can see, and your control over deletion.",
+    "aboutLink": "About Bustandeen",
     "analytics": {
       "body0": "We use Google Analytics 4 (GA4) for page-view counts and anonymous usage patterns.",
       "body1": "No personal worship data is ever sent to GA4.",
@@ -1063,7 +1064,7 @@
       "body2": "The server runs on Vercel's infrastructure (SOC 2 Type II compliant).",
       "title": "How it's protected"
     },
-    "srTitle": "Privacy Policy — Ihsan",
+    "srTitle": "Privacy Policy — Bustandeen",
     "subtitle": "Short, honest, no legalese.",
     "whatWeStore": {
       "body0": "Your email (from Firebase sign-in) and an optional display name.",
@@ -1117,8 +1118,8 @@
     "genderHelp": "Personalises greetings and content — you can change this anytime.",
     "googleAccount": "Google Account",
     "googleAccountFallback": "Google Account",
-    "googleAlreadyConnectedDifferent": "This Google account is already connected to a different Ihsan account.",
-    "googleAlreadyLinkedOther": "This Google account is already linked to another Ihsan account.",
+    "googleAlreadyConnectedDifferent": "This Google account is already connected to a different Bustandeen account.",
+    "googleAlreadyLinkedOther": "This Google account is already linked to another Bustandeen account.",
     "googleConnectFailed": "Could not connect Google account. Please try again.",
     "howUpdate": "How would you like to update?",
     "imageProcessError": "Could not process image. Try a different file.",
@@ -1159,8 +1160,8 @@
     "useThisPhoto": "Use This Photo"
   },
   "pwa": {
-    "installTitle": "Install Ihsan",
-    "installDesc": "Add Ihsan to your home screen for a faster, full-screen experience — offline-ready and one tap away.",
+    "installTitle": "Install Bustandeen",
+    "installDesc": "Add Bustandeen to your home screen for a faster, full-screen experience — offline-ready and one tap away.",
     "install": "Install",
     "howTo": "How to install",
     "iosSteps": "Tap the Share icon in Safari's toolbar, then choose \"Add to Home Screen\".",
@@ -2089,7 +2090,7 @@
     "groqKeyActive": "Using your own key",
     "groqKeyAddedOn": "Added on",
     "groqKeyChange": "Change",
-    "groqKeyDetail": "By default, Naseeh runs on Ihsan's shared Groq key. Paste your own free key from",
+    "groqKeyDetail": "By default, Naseeh runs on Bustandeen's shared Groq key. Paste your own free key from",
     "groqKeyGetOne": "console.groq.com/keys",
     "groqKeyInvalid": "Couldn't verify that key — double check it and try again.",
     "groqKeyPlaceholder": "gsk_...",
@@ -2098,7 +2099,7 @@
     "groqKeySave": "Save",
     "groqKeySaved": "Saved ✓ — your key is encrypted and never shown again",
     "groqKeySection": "Your own Groq API key (optional)",
-    "groqKeySyncNote": "Saved to your Ihsan account — works automatically on any device you sign into.",
+    "groqKeySyncNote": "Saved to your Bustandeen account — works automatically on any device you sign into.",
     "highContrast": "High contrast",
     "highContrastDetail": "Stronger text and focus outlines",
     "hijriDefault": "Default",

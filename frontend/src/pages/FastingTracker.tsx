@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
@@ -260,7 +260,7 @@ export default function FastingTracker() {
   // Suhoor / iftar for the selected date (location optional)
   const dayTimes = useMemo(() => {
     try {
-      const stored = localStorage.getItem('ihsan_location');
+      const stored = localStorage.getItem('bustandeen_location');
       if (!stored) return null;
       const loc = JSON.parse(stored) as { latitude: number; longitude: number };
       const times = calcPrayerTimes(loc.latitude, loc.longitude, dateObj);
@@ -1974,7 +1974,7 @@ export default function FastingTracker() {
                 <button
                   className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 w-full"
                   onClick={() => {
-                    sessionStorage.setItem('ihsan_redirect', '/fasting');
+                    sessionStorage.setItem('bustandeen_redirect', '/fasting');
                     navigate('/login');
                   }}
                 >
@@ -1983,7 +1983,7 @@ export default function FastingTracker() {
                 <button
                   className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
                   onClick={() => {
-                    sessionStorage.setItem('ihsan_redirect', '/fasting');
+                    sessionStorage.setItem('bustandeen_redirect', '/fasting');
                     navigate('/signup');
                   }}
                 >

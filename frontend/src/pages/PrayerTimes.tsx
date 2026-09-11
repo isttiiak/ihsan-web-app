@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -491,7 +491,7 @@ export default function PrayerTimes() {
   const { t, i18n } = useTranslation();
   const [now, setNow] = useState(new Date());
   const [location, setLocation] = useState<StoredLocation | null>(() => {
-    const s = localStorage.getItem('ihsan_location');
+    const s = localStorage.getItem('bustandeen_location');
     return s ? (JSON.parse(s) as StoredLocation) : null;
   });
   const [times, setTimes] = useState<PrayerTimesResult | null>(null);
@@ -515,7 +515,7 @@ export default function PrayerTimes() {
 
   const saveLocation = useCallback((loc: StoredLocation) => {
     setLocation(loc);
-    localStorage.setItem('ihsan_location', JSON.stringify(loc));
+    localStorage.setItem('bustandeen_location', JSON.stringify(loc));
   }, []);
 
   // Self-heal: a location saved while reverse geocoding failed (network

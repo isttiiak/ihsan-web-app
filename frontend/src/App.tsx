@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
+﻿import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
@@ -172,7 +172,7 @@ const Protected = ({ children }: ProtectedProps) => {
   const { user, authLoading } = useAuthStore();
   const location = useLocation();
   const nav = useNavigate();
-  const hadSession = !!localStorage.getItem('ihsan_idToken');
+  const hadSession = !!localStorage.getItem('bustandeen_idToken');
   const [grace, setGrace] = useState(hadSession && !user);
   useEffect(() => {
     if (user) {
@@ -213,7 +213,7 @@ const Protected = ({ children }: ProtectedProps) => {
             <button
               className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 w-full"
               onClick={() => {
-                sessionStorage.setItem('ihsan_redirect', redirectTarget);
+                sessionStorage.setItem('bustandeen_redirect', redirectTarget);
                 nav('/login');
               }}
             >
@@ -222,7 +222,7 @@ const Protected = ({ children }: ProtectedProps) => {
             <button
               className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
               onClick={() => {
-                sessionStorage.setItem('ihsan_redirect', redirectTarget);
+                sessionStorage.setItem('bustandeen_redirect', redirectTarget);
                 nav('/signup');
               }}
             >
@@ -382,8 +382,11 @@ export default function App() {
   // Google Analytics 4: SPA page views (the gtag loader in index.html sets
   // send_page_view=false, so each route change is reported exactly once here)
   useEffect(() => {
-    const w = window as unknown as { gtag?: (...args: unknown[]) => void; __IHSAN_GA_ID?: string };
-    if (w.gtag && w.__IHSAN_GA_ID) {
+    const w = window as unknown as {
+      gtag?: (...args: unknown[]) => void;
+      __BUSTANDEEN_GA_ID?: string;
+    };
+    if (w.gtag && w.__BUSTANDEEN_GA_ID) {
       w.gtag('event', 'page_view', {
         page_path: location.pathname + location.search,
         page_location: window.location.href,
@@ -394,7 +397,7 @@ export default function App() {
 
   useEffect(() => {
     init();
-    const theme = localStorage.getItem('ihsan_theme') || 'ihsan';
+    const theme = localStorage.getItem('bustandeen_theme') || 'bustandeen';
     document.documentElement.setAttribute('data-theme', theme);
 
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -407,12 +410,12 @@ export default function App() {
         // device can't hydrate against the outgoing account's stale blob.
         flushZikrLocalPersistence();
         clearSalatOutbox();
-        localStorage.removeItem('ihsan_user');
-        localStorage.removeItem('ihsan_idToken');
+        localStorage.removeItem('bustandeen_user');
+        localStorage.removeItem('bustandeen_idToken');
         // The persisted React Query cache holds personal stats (incl. cycle
         // data) — never leave it behind after sign-out on a shared device.
         queryClient.clear();
-        void idbRemove('ihsan_rq_cache');
+        void idbRemove('bustandeen_rq_cache');
         setAuthLoading(false);
         return;
       }
@@ -428,7 +431,9 @@ export default function App() {
         emailVerified: u.emailVerified,
       };
       try {
-        const cached = JSON.parse(localStorage.getItem('ihsan_user') ?? 'null') as AuthUser | null;
+        const cached = JSON.parse(
+          localStorage.getItem('bustandeen_user') ?? 'null'
+        ) as AuthUser | null;
         if (cached?.uid === u.uid) {
           optimistic.displayName = cached.displayName ?? optimistic.displayName;
           optimistic.photoUrl = cached.photoUrl ?? optimistic.photoUrl;
@@ -448,8 +453,8 @@ export default function App() {
       // Only navigate away from /login or /signup once the email is verified.
       // Unverified email/password accounts stay on /signup so the verification screen shows.
       if (['/login', '/signup'].includes(pathnameRef.current) && u.emailVerified) {
-        const redirect = sessionStorage.getItem('ihsan_redirect');
-        sessionStorage.removeItem('ihsan_redirect');
+        const redirect = sessionStorage.getItem('bustandeen_redirect');
+        sessionStorage.removeItem('bustandeen_redirect');
         navigateRef.current(safeRedirect(redirect), { replace: true });
       }
 
@@ -457,9 +462,9 @@ export default function App() {
       void (async () => {
         try {
           const idToken = await u.getIdToken();
-          localStorage.setItem('ihsan_idToken', idToken);
-          const pendingGender = sessionStorage.getItem('ihsan_pending_gender');
-          if (pendingGender) sessionStorage.removeItem('ihsan_pending_gender');
+          localStorage.setItem('bustandeen_idToken', idToken);
+          const pendingGender = sessionStorage.getItem('bustandeen_pending_gender');
+          if (pendingGender) sessionStorage.removeItem('bustandeen_pending_gender');
           const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
@@ -493,11 +498,14 @@ export default function App() {
                 photoUrl: verifyData?.user?.photoUrl || optimistic.photoUrl,
                 gender: verifyData?.user?.gender ?? optimistic.gender,
               };
-              localStorage.setItem('ihsan_user', JSON.stringify(authUser));
+              localStorage.setItem('bustandeen_user', JSON.stringify(authUser));
               setUser(authUser);
               // Sync hijri offset from server → localStorage
               if (verifyData?.user?.hijriOffset !== undefined) {
-                localStorage.setItem('ihsan_hijri_offset', String(verifyData.user.hijriOffset));
+                localStorage.setItem(
+                  'bustandeen_hijri_offset',
+                  String(verifyData.user.hijriOffset)
+                );
               }
               // Sync day-start mode from server → localStorage
               if (verifyData?.user?.dayStartMode !== undefined) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAiFastingCompanion } from '../../hooks/useAi.js';
@@ -16,7 +16,7 @@ import { getTrackingDay } from '../../utils/trackingDay.js';
  * fasting day per period at most.
  */
 
-const CACHE_KEY = 'ihsan_fasting_companion';
+const CACHE_KEY = 'bustandeen_fasting_companion';
 
 function cacheId(day: string, period: string, fastType: string): string {
   return `${day}|${period}|${fastType}`;

@@ -1,4 +1,4 @@
-// Tafsir editions available in the reader — real scholarly tafsir sourced from
+﻿// Tafsir editions available in the reader — real scholarly tafsir sourced from
 // api.quran.com (proxied by our backend). Ids match the quran.com resource ids.
 
 export interface TafsirEdition {
@@ -16,7 +16,7 @@ export const TAFSIRS: TafsirEdition[] = [
   { id: 166, name: 'তাফসীর আবু বকর জাকারিয়া', language: 'bn' },
 ];
 
-const KEY = 'ihsan_tafsir_edition';
+const KEY = 'bustandeen_tafsir_edition';
 
 export function getPreferredTafsir(): number {
   const n = Number(localStorage.getItem(KEY));

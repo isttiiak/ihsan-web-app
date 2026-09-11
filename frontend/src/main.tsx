@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient } from '@tanstack/react-query';
@@ -46,7 +46,7 @@ const queryClient = new QueryClient({
 // localStorage ceiling and blocking the main thread on every throttled write.
 const persister = createAsyncStoragePersister({
   storage: { getItem: idbGet, setItem: idbSet, removeItem: idbRemove },
-  key: 'ihsan_rq_cache',
+  key: 'bustandeen_rq_cache',
   throttleTime: 2_000,
   // If storage is full, drop the oldest queries instead of giving up.
   retry: removeOldestQuery,
@@ -56,7 +56,7 @@ const persister = createAsyncStoragePersister({
 // key. It's disposable (just refetches on miss), so no migration — just
 // reclaim the quota it was using.
 try {
-  localStorage.removeItem('ihsan_rq_cache');
+  localStorage.removeItem('bustandeen_rq_cache');
 } catch {
   /* ignore */
 }

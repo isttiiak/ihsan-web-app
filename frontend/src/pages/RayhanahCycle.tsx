@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -238,16 +238,16 @@ export default function RayhanahCycle() {
   // progress survives a device switch or cache clear instead of living only
   // in localStorage. One-time migration: any pre-existing local checklist
   // data (from before this was server-synced) is moved up on first load,
-  // then every orphaned `ihsan_rayhanah_garden_*` key is cleared — those
+  // then every orphaned `bustandeen_rayhanah_garden_*` key is cleared — those
   // used to accumulate one new key per day forever with no cleanup.
   const gardenIds = useMemo(() => todayNote?.garden ?? [], [todayNote]);
   const garden = useMemo(() => Object.fromEntries(gardenIds.map((id) => [id, true])), [gardenIds]);
   useEffect(() => {
     const legacyKeys = Object.keys(localStorage).filter((k) =>
-      k.startsWith('ihsan_rayhanah_garden_')
+      k.startsWith('bustandeen_rayhanah_garden_')
     );
     if (!legacyKeys.length) return;
-    const todayKey = `ihsan_rayhanah_garden_${today}`;
+    const todayKey = `bustandeen_rayhanah_garden_${today}`;
     if (legacyKeys.includes(todayKey) && !todayNote?.garden?.length) {
       try {
         const local = JSON.parse(localStorage.getItem(todayKey) ?? '{}') as Record<string, boolean>;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -452,7 +452,7 @@ export default function Settings() {
   const [dayStartInfoMode, setDayStartInfoMode] = useState<DayStartMode | null>(null);
   const [savedLocation, setSavedLocation] = useState<string | null>(() => {
     try {
-      const s = localStorage.getItem('ihsan_location');
+      const s = localStorage.getItem('bustandeen_location');
       return s ? ((JSON.parse(s) as { name?: string }).name ?? 'Saved location') : null;
     } catch {
       return null;
@@ -495,7 +495,7 @@ export default function Settings() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `ihsan-backup-${new Date().toISOString().substring(0, 10)}.json`;
+      a.download = `bustandeen-backup-${new Date().toISOString().substring(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Backup downloaded — keep it somewhere safe 📦');
@@ -580,7 +580,7 @@ export default function Settings() {
         toast.error('Nothing to export yet.');
         return;
       }
-      XLSX.writeFile(wb, `ihsan-export-${new Date().toISOString().substring(0, 10)}.xlsx`);
+      XLSX.writeFile(wb, `bustandeen-export-${new Date().toISOString().substring(0, 10)}.xlsx`);
       toast.success('Excel file downloaded ✓');
     } catch {
       toast.error('Excel export failed. Check your connection and try again.');
@@ -589,7 +589,7 @@ export default function Settings() {
     }
   };
 
-  // ── Restore from an Ihsan backup .json — merge, imported days win ───────────
+  // ── Restore from a Bustandeen backup .json — merge, imported days win ──────
   const importProfile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = ''; // allow re-selecting the same file
@@ -598,7 +598,7 @@ export default function Settings() {
     try {
       const parsed = JSON.parse(await file.text()) as { app?: string; version?: number };
       if (parsed?.app !== 'ihsan') {
-        toast.error('That is not an Ihsan backup file — export one from this page first.');
+        toast.error('That is not a Bustandeen backup file — export one from this page first.');
         return;
       }
       const { data } = await api.post<{ ok: boolean; counts: Record<string, number> }>(
@@ -640,7 +640,7 @@ export default function Settings() {
     setDeleteAccountStep('deleting');
     try {
       await api.delete('/api/user/me');
-      localStorage.removeItem('ihsan_idToken');
+      localStorage.removeItem('bustandeen_idToken');
       await signOut(auth);
       // Without this, staying on /settings after sign-out hits the Protected
       // route's "sign in required" gate on the same page instead of landing
@@ -1031,7 +1031,7 @@ export default function Settings() {
               {savedLocation && (
                 <button
                   onClick={() => {
-                    localStorage.removeItem('ihsan_location');
+                    localStorage.removeItem('bustandeen_location');
                     setSavedLocation(null);
                     toast.success('Saved location cleared.');
                   }}

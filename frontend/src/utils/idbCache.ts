@@ -7,7 +7,7 @@
 // storage, or an older browser — since a cache miss just means "fetch it
 // again," which every caller already handles.
 
-const DB_NAME = 'ihsan-cache';
+const DB_NAME = 'bustandeen-cache';
 const DB_VERSION = 1;
 const STORE_NAME = 'kv';
 

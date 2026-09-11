@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Swal from 'sweetalert2';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -479,7 +479,7 @@ export default function Profile() {
   // Load prayer-times location for city/country pre-fill
   const locationFromStorage = useMemo(() => {
     try {
-      const s = localStorage.getItem('ihsan_location');
+      const s = localStorage.getItem('bustandeen_location');
       if (!s) return null;
       return JSON.parse(s) as { latitude: number; longitude: number; name?: string };
     } catch {
@@ -586,9 +586,9 @@ export default function Profile() {
         };
         setUser(updatedAuthUser);
         localStorage.setItem(
-          'ihsan_user',
+          'bustandeen_user',
           JSON.stringify({
-            ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'),
+            ...JSON.parse(localStorage.getItem('bustandeen_user') || '{}'),
             displayName: updatedAuthUser.displayName,
             photoUrl: updatedAuthUser.photoUrl,
             gender: updatedAuthUser.gender,
@@ -702,9 +702,9 @@ export default function Profile() {
           };
           setUser(updated);
           localStorage.setItem(
-            'ihsan_user',
+            'bustandeen_user',
             JSON.stringify({
-              ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'),
+              ...JSON.parse(localStorage.getItem('bustandeen_user') || '{}'),
               photoUrl: httpsUrl,
             })
           );
@@ -767,9 +767,9 @@ export default function Profile() {
           };
           setUser(updated);
           localStorage.setItem(
-            'ihsan_user',
+            'bustandeen_user',
             JSON.stringify({
-              ...JSON.parse(localStorage.getItem('ihsan_user') || '{}'),
+              ...JSON.parse(localStorage.getItem('bustandeen_user') || '{}'),
               photoUrl: finalUrl,
             })
           );
@@ -840,7 +840,7 @@ export default function Profile() {
           res.status === 409
             ? t(
                 'profile.googleAlreadyLinkedOther',
-                'This Google account is already linked to another Ihsan account.'
+                'This Google account is already linked to another Bustandeen account.'
               )
             : (data.error ??
               t('profile.linkSaveFailed', 'Failed to save linked account. Please try again.'));
@@ -861,7 +861,7 @@ export default function Profile() {
           title: t('profile.alreadyLinkedTitle', 'Already linked'),
           text: t(
             'profile.googleAlreadyConnectedDifferent',
-            'This Google account is already connected to a different Ihsan account.'
+            'This Google account is already connected to a different Bustandeen account.'
           ),
           icon: 'warning',
           background: '#1a1812',

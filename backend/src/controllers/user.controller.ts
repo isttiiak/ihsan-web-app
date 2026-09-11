@@ -166,7 +166,7 @@ export const importAllHandler = async (
     if (body?.app !== 'ihsan' || body?.version !== backupService.BACKUP_VERSION) {
       res.status(400).json({
         ok: false,
-        error: `Not an Ihsan backup file (expected app "ihsan", version ${backupService.BACKUP_VERSION}).`,
+        error: `Not a Bustandeen backup file (expected app "ihsan", version ${backupService.BACKUP_VERSION}).`,
       });
       return;
     }

@@ -54,14 +54,14 @@ export async function linkGoogleProvider(
   googleEmail: string,
   googleUid: string
 ): Promise<IUser | null> {
-  // Prevent the same Google account being linked to two Ihsan accounts
+  // Prevent the same Google account being linked to two Bustandeen accounts
   const duplicate = await User.findOne({
     'linkedProviders.providerUid': googleUid,
     uid: { $ne: uid },
   });
   if (duplicate) {
     const err = Object.assign(
-      new Error('This Google account is already linked to another Ihsan account.'),
+      new Error('This Google account is already linked to another Bustandeen account.'),
       { statusCode: 409 }
     );
     throw err;

@@ -16,8 +16,13 @@ function seedInt(i: number, min: number, max: number): number {
 }
 
 const DEMO_USERS: Record<string, AuthUser> = {
-  male: { uid: 'demo-001', email: 'demo@ihsan.app', displayName: 'Abdullah', gender: 'male' },
-  female: { uid: 'demo-001', email: 'demo@ihsan.app', displayName: 'Khadijah', gender: 'female' },
+  male: { uid: 'demo-001', email: 'demo@bustandeen.com', displayName: 'Abdullah', gender: 'male' },
+  female: {
+    uid: 'demo-001',
+    email: 'demo@bustandeen.com',
+    displayName: 'Khadijah',
+    gender: 'female',
+  },
 };
 
 export function getDemoUser(gender: string): AuthUser {

@@ -1,4 +1,4 @@
-// Salat preferences — mirrors utils/quranPrefs.ts. Plain localStorage (read
+﻿// Salat preferences — mirrors utils/quranPrefs.ts. Plain localStorage (read
 // synchronously; no zustand rehydrate race) so the salat tracker and the
 // prayer-time maths can both read them on first paint.
 //
@@ -65,13 +65,13 @@ export const TASBIH_MODES: TasbihModeMeta[] = [
   },
 ];
 
-// NOT 'ihsan_tasbih_mode' — that key belongs to useUiStore's unrelated
+// NOT 'bustandeen_tasbih_mode' — that key belongs to useUiStore's unrelated
 // Zikr-counter countdown toggle (also called "tasbih mode"). The two used
 // to collide on the same key: setting one silently corrupted the other's
 // stored value (a boolean '1'/'0' doesn't match 'tahlil'/'takbir34', so
 // getTasbihMode() below would silently fall back to the default the moment
 // someone toggled the Zikr counter's tasbih mode on).
-const TASBIH_KEY = 'ihsan_tasbih_breakdown';
+const TASBIH_KEY = 'bustandeen_tasbih_breakdown';
 export const DEFAULT_TASBIH_MODE: TasbihMode = 'takbir34';
 
 export function getTasbihMode(): TasbihMode {
@@ -119,7 +119,7 @@ export const AYATUL_KURSI_REF = {
 
 // ─── auto-count dhikr toggle ────────────────────────────────────────────────
 
-const AUTO_COUNT_KEY = 'ihsan_salat_auto_count';
+const AUTO_COUNT_KEY = 'bustandeen_salat_auto_count';
 /** Existing behaviour for everyone today — tapping a tag has always also
  * credited the zikr counter until this setting existed. */
 export const DEFAULT_AUTO_COUNT_DHIKR = true;
@@ -153,7 +153,7 @@ export function setAutoCountDhikr(value: boolean): void {
  * simply makes the previous day's record irrelevant; no explicit cleanup
  * needed, the single key is just overwritten with the new day's own record.
  */
-const CREDITED_KEY = 'ihsan_salat_dhikr_credited';
+const CREDITED_KEY = 'bustandeen_salat_dhikr_credited';
 interface CreditedRecord {
   date: string;
   credited: Record<string, boolean>;
@@ -204,7 +204,7 @@ export function setDhikrCredited(
 /** Sunnah Mu'akkadah (confirmed rawātib — Fajr/Dhuhr/Maghrib/Isha) guidance
  * shown once each prayer's time has started. On by default — same
  * always-visible precedent as the existing Witr reminder. */
-const SHOW_SUNNAH_KEY = 'ihsan_show_sunnah_guide';
+const SHOW_SUNNAH_KEY = 'bustandeen_show_sunnah_guide';
 export const DEFAULT_SHOW_SUNNAH_GUIDE = true;
 
 export function getShowSunnahGuide(): boolean {
@@ -227,7 +227,7 @@ export function setShowSunnahGuide(value: boolean): void {
 /** Ghair Mu'akkadah / lighter nafl guidance (4 before ʿAṣr, 2 before
  * Maghrib) — a separate toggle since these carry a lighter emphasis than
  * the confirmed rawātib and some users may only want the confirmed set. */
-const SHOW_NAFL_KEY = 'ihsan_show_nafl_guide';
+const SHOW_NAFL_KEY = 'bustandeen_show_nafl_guide';
 export const DEFAULT_SHOW_NAFL_GUIDE = false;
 
 export function getShowNaflGuide(): boolean {
@@ -257,7 +257,7 @@ export function setShowNaflGuide(value: boolean): void {
  */
 export type AsrMadhab = 'standard' | 'hanafi';
 
-const ASR_KEY = 'ihsan_asr_madhab';
+const ASR_KEY = 'bustandeen_asr_madhab';
 /** What every existing user has been seeing (adhan's default) — keeping it as
  * the default means nobody's timetable shifts under them after this update. */
 export const DEFAULT_ASR_MADHAB: AsrMadhab = 'standard';
@@ -314,7 +314,7 @@ export type CalculationMethodId =
   | 'Tehran'
   | 'Turkey';
 
-const CALC_METHOD_KEY = 'ihsan_calc_method';
+const CALC_METHOD_KEY = 'bustandeen_calc_method';
 /** Existing behaviour, unchanged for anyone who never touches the setting. */
 export const DEFAULT_CALC_METHOD: CalculationMethodId = 'MoonsightingCommittee';
 

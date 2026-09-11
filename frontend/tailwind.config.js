@@ -58,7 +58,7 @@ export default {
   daisyui: {
     themes: [
       {
-        ihsan: {
+        bustandeen: {
           primary: '#7a9e6e',
           secondary: '#5a7a50',
           accent: '#c9a96e',
@@ -75,6 +75,6 @@ export default {
       },
       'light',
     ],
-    darkTheme: 'ihsan',
+    darkTheme: 'bustandeen',
   },
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import AnimatedBackground from '../components/AnimatedBackground.js';
 import {
   createUserWithEmailAndPassword,
@@ -146,7 +146,7 @@ export default function AuthSignUp() {
 
     setLoading(true);
     try {
-      sessionStorage.setItem('ihsan_pending_gender', gender);
+      sessionStorage.setItem('bustandeen_pending_gender', gender);
       const res = await createUserWithEmailAndPassword(auth, email, password);
       const fullName = [firstName, lastName].filter(Boolean).join(' ');
       if (fullName) {
@@ -291,7 +291,7 @@ export default function AuthSignUp() {
             <div className="p-8 space-y-6">
               <div className="text-center space-y-2">
                 <h2 className="text-4xl sm:text-5xl font-bold text-brand-emerald">
-                  {t('authSignUp.joinIhsan', 'Join Ihsan')}
+                  {t('authSignUp.joinIhsan', 'Join Bustandeen')}
                 </h2>
                 <p className="text-white/60 text-sm sm:text-base">
                   {t('authSignUp.subtitle', 'Start your spiritual journey today')}

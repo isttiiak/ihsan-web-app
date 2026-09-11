@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+﻿import { forwardRef } from 'react';
 import { surahDisplayName } from '../utils/quranData.js';
 import { getArabicFont } from '../utils/quranPrefs.js';
 import type { SurahMeta, AyahText } from '../utils/quranData.js';
@@ -54,7 +54,7 @@ export const SHARE_CARD_THEMES: ShareCardTheme[] = [
 
 export const DEFAULT_SHARE_CARD_THEME = SHARE_CARD_THEMES[0]!;
 
-const THEME_KEY = 'ihsan_share_card_theme';
+const THEME_KEY = 'bustandeen_share_card_theme';
 
 export function getShareCardTheme(): ShareCardTheme {
   const id = localStorage.getItem(THEME_KEY);
@@ -176,7 +176,7 @@ const AyahShareCard = forwardRef<HTMLDivElement, AyahShareCardProps>(function Ay
           }}
         />
         <span style={{ color: '#64748b', fontSize: 17, fontWeight: 800, letterSpacing: 3 }}>
-          IHSAN
+          BUSTANDEEN
         </span>
       </div>
     </div>

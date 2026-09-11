@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { AuthUser } from '../types/api.js';
 import { getDemoUser } from '../utils/demoData.js';
 
@@ -31,7 +31,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setRedirectPath: (path) => set({ redirectPath: path || '/' }),
 
   setAiEnabled: (aiEnabled) => {
-    localStorage.setItem('ihsan_ai_enabled', aiEnabled ? '1' : '0');
+    localStorage.setItem('bustandeen_ai_enabled', aiEnabled ? '1' : '0');
     set({ aiEnabled });
   },
 
@@ -47,11 +47,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   init: () => {
-    const ai = localStorage.getItem('ihsan_ai_enabled');
+    const ai = localStorage.getItem('bustandeen_ai_enabled');
 
     let cachedUser: AuthUser | null = null;
     try {
-      cachedUser = JSON.parse(localStorage.getItem('ihsan_user') ?? 'null') as AuthUser | null;
+      cachedUser = JSON.parse(localStorage.getItem('bustandeen_user') ?? 'null') as AuthUser | null;
     } catch {
       // cachedUser already defaults to null
     }
@@ -61,7 +61,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // No cached session — if there is also no token on disk, the user is
       // definitely signed out: show the landing immediately instead of flashing
       // a black spinner screen while Firebase confirms.
-      const hasToken = !!localStorage.getItem('ihsan_idToken');
+      const hasToken = !!localStorage.getItem('bustandeen_idToken');
       set({ aiEnabled: ai === '1', ...(!hasToken && { authLoading: false }) });
     }
   },

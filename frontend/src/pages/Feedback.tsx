@@ -94,7 +94,7 @@ export default function Feedback() {
         title={t('feedback.seoTitle', 'Feedback & Contact')}
         description={t(
           'feedback.seoDescription',
-          'Report a bug, suggest a feature, or ask a question — reach the Ihsan team directly. Real replies, kept private, built for the ummah.'
+          'Report a bug, suggest a feature, or ask a question — reach the Bustandeen team directly. Real replies, kept private, built for the ummah.'
         )}
         path="/feedback"
       />

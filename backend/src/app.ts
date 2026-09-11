@@ -21,7 +21,7 @@ import { globalErrorHandler } from './middleware/errorHandler.js';
 
 // Vercel serves gzip and brotli compression automatically on all responses
 // (including JSON) — no express middleware needed. Verified 2026-09-02:
-//   curl -sI -H "Accept-Encoding: br" https://ihsan-web-app-main.vercel.app/api/health
+//   curl -sI -H "Accept-Encoding: br" https://bustandeen.com/api/health
 //   → content-encoding: br
 const app = express();
 
@@ -69,9 +69,10 @@ app.use(morgan(isProd ? 'combined' : 'dev'));
 //
 // Matched origins:
 //   1. Anything in FRONTEND_ORIGIN (comma-separated list, e.g. custom domain)
-//   2. https://ihsan-web-app-main.vercel.app  (production deployment)
-//   3. https://ihsan-web-app-main-<sha>-isttiiak.vercel.app   (deploy preview)
-//   4. https://ihsan-web-app-main-git-<branch>-isttiiak.vercel.app  (branch preview)
+//   2. https://bustandeen.com  (production domain)
+//   3. https://ihsan-web-app-main.vercel.app  (legacy Vercel deployment)
+//   4. https://ihsan-web-app-main-<sha>-isttiiak.vercel.app   (deploy preview)
+//   5. https://ihsan-web-app-main-git-<branch>-isttiiak.vercel.app  (branch preview)
 //
 // The `-isttiiak` suffix is Vercel's per-account slug — only the `isttiiak`
 // account can generate URLs with that suffix, so this is safe against any
@@ -108,7 +109,7 @@ app.use(generalLimiter);
 
 // Health check (no auth, no rate limit beyond general)
 app.get('/api/health', (_req: Request, res: Response) => {
-  res.json({ ok: true, message: 'Ihsan API is healthy' });
+  res.json({ ok: true, message: 'Bustandeen API is healthy' });
 });
 
 // Bot-only invite-link unfurl preview — NOT under /api; only reached in

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -82,10 +82,10 @@ export default function QuranAudioPlayer() {
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [surahNo, setSurahNo] = useState<number>(
-    () => Number(localStorage.getItem('ihsan_last_surah')) || 1
+    () => Number(localStorage.getItem('bustandeen_last_surah')) || 1
   );
   const [reciter, setReciter] = useState<string>(() => {
-    const stored = localStorage.getItem('ihsan_reciter') || 'dossari';
+    const stored = localStorage.getItem('bustandeen_reciter') || 'dossari';
     return RECITERS.some((r) => r.id === stored) ? stored : 'dossari';
   });
   const [playing, setPlaying] = useState(false);
@@ -93,7 +93,7 @@ export default function QuranAudioPlayer() {
   const [duration, setDuration] = useState(0);
   const [buffering, setBuffering] = useState(false);
   const [volume, setVolume] = useState<number>(() => {
-    const raw = localStorage.getItem('ihsan_quran_volume');
+    const raw = localStorage.getItem('bustandeen_quran_volume');
     const v = Number(raw);
     // Default 40% (Istiak's spec) when nothing is stored yet
     return raw !== null && Number.isFinite(v) && v >= 0 && v <= 1 ? v : 0.4;
@@ -179,7 +179,7 @@ export default function QuranAudioPlayer() {
   const changeSurah = (n: number) => {
     const clamped = Math.min(114, Math.max(1, n));
     setSurahNo(clamped);
-    localStorage.setItem('ihsan_last_surah', String(clamped));
+    localStorage.setItem('bustandeen_last_surah', String(clamped));
     setProgress(0);
     lastTimeRef.current = 0;
     listenedRef.current = 0;
@@ -208,7 +208,7 @@ export default function QuranAudioPlayer() {
             value={reciter}
             onChange={(e) => {
               setReciter(e.target.value);
-              localStorage.setItem('ihsan_reciter', e.target.value);
+              localStorage.setItem('bustandeen_reciter', e.target.value);
             }}
           >
             {RECITERS.map((r) => (
@@ -336,7 +336,7 @@ export default function QuranAudioPlayer() {
                   const v = Number(e.target.value) / 100;
                   setVolume(v);
                   setMuted(v === 0);
-                  localStorage.setItem('ihsan_quran_volume', String(v));
+                  localStorage.setItem('bustandeen_quran_volume', String(v));
                 }}
                 className="range range-xs w-32 [--range-shdw:theme(colors.brand.info)]"
               />

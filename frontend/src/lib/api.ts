@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import type { InternalAxiosRequestConfig, AxiosHeaders } from 'axios';
 import toast from 'react-hot-toast';
 import { auth } from '../firebase.js';
@@ -30,13 +30,13 @@ export async function getIdToken(): Promise<string | null> {
   if (user) {
     try {
       const token = await user.getIdToken();
-      localStorage.setItem('ihsan_idToken', token);
+      localStorage.setItem('bustandeen_idToken', token);
       return token;
     } catch {
       /* fall through to cached copy */
     }
   }
-  return localStorage.getItem('ihsan_idToken');
+  return localStorage.getItem('bustandeen_idToken');
 }
 
 // Demo mode: intercept all requests and return mock data
@@ -84,8 +84,8 @@ api.interceptors.response.use(
   (res) => res,
   (err: unknown) => {
     if (axios.isAxiosError(err) && err.response?.status === 401) {
-      const hadSession = !!auth.currentUser || !!localStorage.getItem('ihsan_idToken');
-      localStorage.removeItem('ihsan_idToken');
+      const hadSession = !!auth.currentUser || !!localStorage.getItem('bustandeen_idToken');
+      localStorage.removeItem('bustandeen_idToken');
       if (hadSession && auth.currentUser === null) {
         window.location.href = '/login';
       }

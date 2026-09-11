@@ -26,10 +26,10 @@ export default function About() {
   return (
     <AnimatedBackground variant="dark">
       <Seo
-        title={t('about.seoTitle', 'About Ihsan — Our Mission')}
+        title={t('about.seoTitle', 'About Bustandeen — Our Mission')}
         description={t(
           'about.seoDescription',
-          'Ihsan is a free, private Islamic productivity app for zikr, salat, fasting and Quran habits — built for the Muslim community with authentic Quran and hadith references.'
+          'Bustandeen is a free, private Islamic productivity app for zikr, salat, fasting and Quran habits — built for the Muslim community with authentic Quran and hadith references.'
         )}
         path="/about"
       />
@@ -42,20 +42,28 @@ export default function About() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-6 space-y-3"
           >
-            <p className="text-5xl">🕌</p>
+            <p className="text-5xl">🌱</p>
             <h2 className="text-3xl font-black text-white">{t('about.heading')}</h2>
-            <p className="font-arabic text-brand-gold/70 text-xl">الإحسان</p>
+            <p className="font-arabic text-brand-gold/70 text-xl">بستان + دين</p>
             <p className="text-white/50 text-sm leading-relaxed max-w-lg mx-auto">
-              <b className="text-brand-emerald">Iḥsān</b> {t('about.ihsanDefinition')}
+              {t(
+                'about.bustandeenDefinition',
+                'A name born of بستان (bustān, garden) and دين (dīn, religion/faith) — a garden of faith, tended daily.'
+              )}
+            </p>
+            <p className="text-brand-emerald/80 text-sm font-semibold italic">
+              "Grow your garden of good deeds."
+            </p>
+            <p className="text-white/25 text-xs max-w-sm mx-auto">
+              {t('about.hadithQuote')}{' '}
               <a
-                href="https://sunnah.com/muslim:8a"
+                href="https://sunnah.com/bukhari:6464"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-brand-gold/60 underline ml-1 text-xs"
+                className="underline"
               >
-                {translateReference('(Ṣaḥīḥ Muslim 8a ↗)', i18n.language)}
+                {translateReference('Ṣaḥīḥ al-Bukhārī 6464 ↗', i18n.language)}
               </a>
-              . {t('about.ihsanPurpose')}
             </p>
           </motion.div>
 
@@ -152,7 +160,7 @@ export default function About() {
               {t('about.developedBy')} <span className="text-brand-emerald font-bold">Istiak</span>
             </p>
             <a
-              href="https://github.com/isttiiak/ihsan-web-app"
+              href="https://github.com/isttiiak/bustandeen-web-app"
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t('about.githubAriaLabel')}
@@ -161,19 +169,8 @@ export default function About() {
               <svg viewBox="0 0 16 16" className="w-4 h-4 fill-current" aria-hidden="true">
                 <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
               </svg>
-              github.com/isttiiak/ihsan-web-app
+              github.com/isttiiak/bustandeen-web-app
             </a>
-            <p className="text-white/20 text-[11px] italic pt-2">
-              {t('about.hadithQuote')} —{' '}
-              <a
-                href="https://sunnah.com/bukhari:6464"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                {translateReference('Ṣaḥīḥ al-Bukhārī 6464 ↗', i18n.language)}
-              </a>
-            </p>
           </motion.div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+﻿import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAnalytics } from '../../hooks/useAnalytics.js';
@@ -10,8 +10,8 @@ import { useAuthStore } from '../../store/useAuthStore.js';
 import { AiPanel, AiBadge, AiDisclaimer, AiThinking } from './AiFlair.js';
 import { getTrackingDay } from '../../utils/trackingDay.js';
 
-const WEEKLY_KEY = 'ihsan_naseeh_weekly';
-const INSIGHT_KEY = 'ihsan_naseeh_insight';
+const WEEKLY_KEY = 'bustandeen_naseeh_weekly';
+const INSIGHT_KEY = 'bustandeen_naseeh_insight';
 
 function weekId(): string {
   const d = new Date();

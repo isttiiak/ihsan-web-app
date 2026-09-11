@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -627,7 +627,7 @@ export default function ZikrCounter() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ihsan-custom-zikr.json';
+    a.download = 'bustandeen-custom-zikr.json';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1914,7 +1914,7 @@ export default function ZikrCounter() {
                 <button
                   className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 w-full"
                   onClick={() => {
-                    sessionStorage.setItem('ihsan_redirect', '/zikr');
+                    sessionStorage.setItem('bustandeen_redirect', '/zikr');
                     navigate('/login');
                   }}
                 >

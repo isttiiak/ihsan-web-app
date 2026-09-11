@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 
 interface UiState {
   reduceMotion: boolean;
@@ -40,75 +40,75 @@ interface UiState {
 }
 
 export const useUiStore = create<UiState>((set) => ({
-  reduceMotion: localStorage.getItem('ihsan_reduce_motion') === '1',
-  highContrast: localStorage.getItem('ihsan_high_contrast') === '1',
-  showNoorAllTime: localStorage.getItem('ihsan_noor_alltime') === '1',
-  showNoorToday: localStorage.getItem('ihsan_noor_today') === '1',
-  vibrationEnabled: localStorage.getItem('ihsan_vibration') !== '0',
-  zikrSoundEnabled: localStorage.getItem('ihsan_zikr_sound') === '1',
-  tasbihMode: localStorage.getItem('ihsan_tasbih_mode') === '1',
+  reduceMotion: localStorage.getItem('bustandeen_reduce_motion') === '1',
+  highContrast: localStorage.getItem('bustandeen_high_contrast') === '1',
+  showNoorAllTime: localStorage.getItem('bustandeen_noor_alltime') === '1',
+  showNoorToday: localStorage.getItem('bustandeen_noor_today') === '1',
+  vibrationEnabled: localStorage.getItem('bustandeen_vibration') !== '0',
+  zikrSoundEnabled: localStorage.getItem('bustandeen_zikr_sound') === '1',
+  tasbihMode: localStorage.getItem('bustandeen_tasbih_mode') === '1',
   tasbihTarget: Math.max(
     1,
-    parseInt(localStorage.getItem('ihsan_tasbih_target') || '33', 10) || 33
+    parseInt(localStorage.getItem('bustandeen_tasbih_target') || '33', 10) || 33
   ),
-  zikrAudioEnabled: localStorage.getItem('ihsan_zikr_audio') !== '0',
-  zikrAudioVolume: parseFloat(localStorage.getItem('ihsan_zikr_volume') || '0.7'),
-  discreetMode: localStorage.getItem('ihsan_discreet_mode') === '1',
+  zikrAudioEnabled: localStorage.getItem('bustandeen_zikr_audio') !== '0',
+  zikrAudioVolume: parseFloat(localStorage.getItem('bustandeen_zikr_volume') || '0.7'),
+  discreetMode: localStorage.getItem('bustandeen_discreet_mode') === '1',
 
   setReduceMotion: (val) => {
-    localStorage.setItem('ihsan_reduce_motion', val ? '1' : '0');
+    localStorage.setItem('bustandeen_reduce_motion', val ? '1' : '0');
     set({ reduceMotion: !!val });
   },
 
   setHighContrast: (val) => {
-    localStorage.setItem('ihsan_high_contrast', val ? '1' : '0');
+    localStorage.setItem('bustandeen_high_contrast', val ? '1' : '0');
     set({ highContrast: !!val });
   },
 
   setShowNoorAllTime: (val) => {
-    localStorage.setItem('ihsan_noor_alltime', val ? '1' : '0');
+    localStorage.setItem('bustandeen_noor_alltime', val ? '1' : '0');
     set({ showNoorAllTime: !!val });
   },
 
   setShowNoorToday: (val) => {
-    localStorage.setItem('ihsan_noor_today', val ? '1' : '0');
+    localStorage.setItem('bustandeen_noor_today', val ? '1' : '0');
     set({ showNoorToday: !!val });
   },
 
   setVibrationEnabled: (val) => {
-    localStorage.setItem('ihsan_vibration', val ? '1' : '0');
+    localStorage.setItem('bustandeen_vibration', val ? '1' : '0');
     set({ vibrationEnabled: !!val });
   },
 
   setZikrSoundEnabled: (val) => {
-    localStorage.setItem('ihsan_zikr_sound', val ? '1' : '0');
+    localStorage.setItem('bustandeen_zikr_sound', val ? '1' : '0');
     set({ zikrSoundEnabled: !!val });
   },
 
   setTasbihMode: (val) => {
-    localStorage.setItem('ihsan_tasbih_mode', val ? '1' : '0');
+    localStorage.setItem('bustandeen_tasbih_mode', val ? '1' : '0');
     set({ tasbihMode: !!val });
   },
 
   setTasbihTarget: (val) => {
     const clamped = Math.max(1, Math.min(1000, Math.round(val) || 33));
-    localStorage.setItem('ihsan_tasbih_target', String(clamped));
+    localStorage.setItem('bustandeen_tasbih_target', String(clamped));
     set({ tasbihTarget: clamped });
   },
 
   setZikrAudioEnabled: (val) => {
-    localStorage.setItem('ihsan_zikr_audio', val ? '1' : '0');
+    localStorage.setItem('bustandeen_zikr_audio', val ? '1' : '0');
     set({ zikrAudioEnabled: !!val });
   },
 
   setZikrAudioVolume: (val) => {
     const clamped = Math.max(0, Math.min(1, val));
-    localStorage.setItem('ihsan_zikr_volume', String(clamped));
+    localStorage.setItem('bustandeen_zikr_volume', String(clamped));
     set({ zikrAudioVolume: clamped });
   },
 
   setDiscreetMode: (val) => {
-    localStorage.setItem('ihsan_discreet_mode', val ? '1' : '0');
+    localStorage.setItem('bustandeen_discreet_mode', val ? '1' : '0');
     set({ discreetMode: !!val });
   },
 }));

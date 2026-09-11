@@ -1,4 +1,4 @@
-// Islamic calendar utilities — Hijri date detection and special day definitions.
+﻿// Islamic calendar utilities — Hijri date detection and special day definitions.
 // Uses Intl.DateTimeFormat with the islamic-umalqura calendar.
 // The Islamic day starts at Maghrib: getHijriToday() accounts for this.
 
@@ -559,7 +559,7 @@ const HIJRI_MONTH_NAMES = [
 // Umm al-Qura follows Saudi sighting; Bangladesh/India/Pakistan are often one
 // day behind. The user can correct this in Settings (-1, 0, +1 days).
 
-const HIJRI_ADJUSTMENT_KEY = 'ihsan_hijri_offset';
+const HIJRI_ADJUSTMENT_KEY = 'bustandeen_hijri_offset';
 
 export function getHijriAdjustment(): number {
   const raw = parseInt(localStorage.getItem(HIJRI_ADJUSTMENT_KEY) ?? '0', 10);
@@ -612,7 +612,7 @@ export function formatHijriDate(h: HijriDate): string {
  */
 export function isPostMaghrib(now: Date = new Date()): boolean {
   try {
-    const stored = localStorage.getItem('ihsan_location');
+    const stored = localStorage.getItem('bustandeen_location');
     if (!stored) return false;
     const loc = JSON.parse(stored) as { latitude: number; longitude: number };
     const times = calcPrayerTimes(loc.latitude, loc.longitude, now);

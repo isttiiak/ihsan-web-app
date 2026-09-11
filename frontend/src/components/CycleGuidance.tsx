@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAiCycleGuidance } from '../hooks/useAi.js';
@@ -14,7 +14,7 @@ import { AiBadge } from './ai/AiFlair.js';
  * Cached per (day + phase + dayCount) so re-renders don't spam the API.
  */
 
-const CACHE_KEY = 'ihsan_cycle_guidance';
+const CACHE_KEY = 'bustandeen_cycle_guidance';
 
 function sig(day: string, phase: string, dayCount: number): string {
   return `${day}|${phase}|${dayCount}`;

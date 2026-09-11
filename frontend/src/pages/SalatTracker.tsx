@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -253,7 +253,7 @@ export default function SalatTracker() {
 
   // Start date: the day tracking began (or was reset after deletion).
   // Prevents users from adding entries before this date after a data wipe.
-  const salatStartDate = localStorage.getItem('ihsan_salat_start_date') ?? null;
+  const salatStartDate = localStorage.getItem('bustandeen_salat_start_date') ?? null;
   const isAtStartDate = salatStartDate ? selectedDate <= salatStartDate : false;
 
   // Minute tick so the "current prayer" highlight and 🔒 future locks don't
@@ -269,7 +269,7 @@ export default function SalatTracker() {
   // times when the tracking day ≠ civil date (i.e., before Fajr the tracking
   // day is still "yesterday", so we compute yesterday's prayer times).
   const todayPrayerTimes = useMemo(() => {
-    const stored = localStorage.getItem('ihsan_location');
+    const stored = localStorage.getItem('bustandeen_location');
     if (!stored) return null;
     try {
       const loc = JSON.parse(stored) as { latitude: number; longitude: number };
@@ -1002,7 +1002,7 @@ export default function SalatTracker() {
                         const isFuture = dateStr > todayStr();
                         const isSel = dateStr === selectedDate;
                         const isTod = dateStr === todayStr();
-                        const salatStart = localStorage.getItem('ihsan_salat_start_date');
+                        const salatStart = localStorage.getItem('bustandeen_salat_start_date');
                         const isBeforeStart = salatStart ? dateStr < salatStart : false;
                         const dot =
                           completed === 5
@@ -2147,7 +2147,7 @@ export default function SalatTracker() {
                 <button
                   className="btn bg-brand-emerald hover:bg-brand-emerald-dim text-white border-0 w-full"
                   onClick={() => {
-                    sessionStorage.setItem('ihsan_redirect', '/salat');
+                    sessionStorage.setItem('bustandeen_redirect', '/salat');
                     navigate('/login');
                   }}
                 >
@@ -2156,7 +2156,7 @@ export default function SalatTracker() {
                 <button
                   className="btn btn-ghost text-brand-emerald border border-brand-emerald/30 w-full"
                   onClick={() => {
-                    sessionStorage.setItem('ihsan_redirect', '/salat');
+                    sessionStorage.setItem('bustandeen_redirect', '/salat');
                     navigate('/signup');
                   }}
                 >

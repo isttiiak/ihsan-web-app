@@ -1,6 +1,6 @@
-# 🌙 Ihsan — Islamic Productivity App
+# 🌱 Bustandeen — Islamic Productivity App
 
-**Live:** [https://ihsan-web-app-main.vercel.app/](https://ihsan-web-app-main.vercel.app/) · [CHANGELOG](CHANGELOG.md)
+**Live:** [https://bustandeen.com/](https://bustandeen.com/) · [CHANGELOG](CHANGELOG.md)
 
 > _Iḥsān is to worship Allah as though you see Him._
 
@@ -71,7 +71,7 @@ verse and hadith links to quran.com or sunnah.com with its exact number and grad
 ### 🌍 Built right
 
 - Hijri dates with a ±1-day moon-sighting adjustment; every quote linked to quran.com / sunnah.com with grading
-- Wherever a **ḍaʿīf** (weak) grade appears, a `<DaifExplainer>` card before the footer names the claim, the collection, the _specific_ defect in the chain, the verdict, and how Ihsan uses it anyway — we never ship a weak label without the reasoning
+- Wherever a **ḍaʿīf** (weak) grade appears, a `<DaifExplainer>` card before the footer names the claim, the collection, the _specific_ defect in the chain, the verdict, and how Bustandeen uses it anyway — we never ship a weak label without the reasoning
 - **Configurable tracking day** — Fajr-to-Fajr (default, the day flips at dawn), civil Midnight, or the Hijri day (starts at Maghrib); celebration animations that respect reduced-motion
 - **PWA**: installable, offline-ready, and self-updating (workbox `skipWaiting` + `clientsClaim`)
 - **i18n** (English + Bengali) on the core screens; **full backup** export / restore and per-feature deletion from Settings
@@ -104,7 +104,7 @@ verse and hadith links to quran.com or sunnah.com with its exact number and grad
 ## 📁 Project Structure
 
 ```
-ihsan/
+bustandeen/
 ├── api/
 │   └── index.ts          # Vercel serverless entry — wraps the whole Express app
 ├── backend/
@@ -140,8 +140,8 @@ ihsan/
 ### 1. Clone
 
 ```bash
-git clone https://github.com/isttiiak/ihsan-web-app.git
-cd ihsan-web-app
+git clone https://github.com/isttiiak/bustandeen-web-app.git
+cd bustandeen-web-app
 ```
 
 ### 2. Backend
@@ -184,7 +184,7 @@ npm run dev
 
 ## 🕰️ How "today" works
 
-Ihsan's tracking day flows the way a worship day does — **it flips at local Fajr,
+Bustandeen's tracking day flows the way a worship day does — **it flips at local Fajr,
 not midnight** (`utils/trackingDay.ts`). Isha prayed at 1 AM and suhoor before
 dawn belong to the right day. Salat and fasting use client-authoritative local
 civil date strings; the server clock is never the source of "today". Hijri dates

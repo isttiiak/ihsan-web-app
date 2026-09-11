@@ -12,9 +12,9 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
-const SITE_URL = 'https://ihsan-web-app-main.vercel.app';
+const SITE_URL = 'https://bustandeen.com';
 const FALLBACK_IMAGE = `${SITE_URL}/og-image.jpg`;
-const FALLBACK_TITLE = 'Ihsan — Muslim Worship & Productivity Tracker';
+const FALLBACK_TITLE = 'Bustandeen — Grow Your Garden of Good Deeds';
 const FALLBACK_DESCRIPTION =
   "Zikr, salat, fasting, Quran and prayer times — with streaks, authentic references, and friends to race toward good. 'So compete with one another in doing good' (Quran 2:148).";
 
@@ -22,7 +22,7 @@ const FALLBACK_DESCRIPTION =
  * Bot-only route (see the `has`-header-matched rewrite in /vercel.json that
  * routes link-unfurl crawlers here instead of the normal SPA shell): renders
  * a lightweight static document with the inviter's real name in the OG tags,
- * so a shared invite link reads "Amir invited you to Ihsan" instead of
+ * so a shared invite link reads "Amir invited you to Bustandeen" instead of
  * generic site branding. A real browser never reaches this handler — it
  * always gets the ordinary React app at this same URL.
  */
@@ -36,9 +36,9 @@ export const getConnectPreview = async (
     const code = typeof rawCode === 'string' ? rawCode : '';
     const preview = await socialService.getInvitePreview(code);
 
-    const title = preview ? `${preview.displayName} invited you to Ihsan` : FALLBACK_TITLE;
+    const title = preview ? `${preview.displayName} invited you to Bustandeen` : FALLBACK_TITLE;
     const description = preview
-      ? `Join ${preview.displayName} on Ihsan — track salat, zikr, Quran and fasting, and race toward good together.`
+      ? `Join ${preview.displayName} on Bustandeen — track salat, zikr, Quran and fasting, and race toward good together.`
       : FALLBACK_DESCRIPTION;
     const image = FALLBACK_IMAGE; // a per-inviter image is a possible future enhancement
     const pageUrl = `${SITE_URL}/connect/${encodeURIComponent(code)}`;
@@ -62,7 +62,7 @@ export const getConnectPreview = async (
 <meta property="og:description" content="${safeDescription}" />
 <meta property="og:image" content="${image}" />
 <meta property="og:url" content="${pageUrl}" />
-<meta property="og:site_name" content="Ihsan" />
+<meta property="og:site_name" content="Bustandeen" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${safeTitle}" />
 <meta name="twitter:description" content="${safeDescription}" />

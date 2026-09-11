@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { auth } from '../firebase.js';
@@ -51,7 +51,7 @@ const PAGE_META: Record<string, { title: string; emoji: string }> = {
   '/quran': { title: 'Quran Habit', emoji: '📖' },
   '/friends': { title: 'Friends', emoji: '🤝' },
   '/settings': { title: 'Settings', emoji: '⚙️' },
-  '/about': { title: 'About Ihsan', emoji: '🕌' },
+  '/about': { title: 'About Bustandeen', emoji: '🌱' },
   '/privacy': { title: 'Privacy', emoji: '🔒' },
   '/feedback': { title: 'Feedback', emoji: '💬' },
   '/contact': { title: 'Contact Us', emoji: '📨' },
@@ -189,9 +189,9 @@ export default function Navbar() {
               to="/"
               className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl hover:bg-white/10 transition-all group"
             >
-              <img src={logo as string} alt="Ihsan" className="w-5 h-5 flex-shrink-0" />
+              <img src={logo as string} alt="Bustandeen" className="w-5 h-5 flex-shrink-0" />
               <span className="font-display font-bold text-white text-sm hidden sm:inline group-hover:text-brand-emerald transition-colors">
-                Ihsan
+                Bustandeen
               </span>
             </Link>
 
@@ -436,7 +436,7 @@ export default function Navbar() {
               <Link
                 to="/login"
                 className="ml-1 px-3 py-1.5 rounded-xl bg-brand-emerald hover:bg-brand-emerald-dim text-white text-xs font-semibold transition-all shadow-md"
-                onClick={() => sessionStorage.setItem('ihsan_redirect', location.pathname)}
+                onClick={() => sessionStorage.setItem('bustandeen_redirect', location.pathname)}
               >
                 {t('nav.signIn')}
               </Link>
@@ -464,9 +464,9 @@ export default function Navbar() {
                   onClick={async () => {
                     await signOut(auth);
                     setUser(null);
-                    localStorage.removeItem('ihsan_user');
-                    localStorage.removeItem('ihsan_idToken');
-                    sessionStorage.removeItem('ihsan_redirect');
+                    localStorage.removeItem('bustandeen_user');
+                    localStorage.removeItem('bustandeen_idToken');
+                    sessionStorage.removeItem('bustandeen_redirect');
                     resetAll();
                     setConfirmLogout(false);
                     navigate('/', { replace: true });

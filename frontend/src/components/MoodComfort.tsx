@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAiComfort } from '../hooks/useAi.js';
@@ -11,7 +11,7 @@ import { AiBadge } from './ai/AiFlair.js';
  * one short call per distinct combination per day.
  */
 
-const CACHE_KEY = 'ihsan_mood_comfort';
+const CACHE_KEY = 'bustandeen_mood_comfort';
 
 // Computed locally from `moods` (not from the AI response) so it still shows
 // on a cache hit, where the mutation never runs — see useEffect below.
