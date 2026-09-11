@@ -41,7 +41,7 @@ describe('GET /connect/:code — bot-only invite-link preview', () => {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/text\/html/);
     expect(res.headers['x-robots-tag']).toBe('noindex, nofollow');
-    expect(res.text).toContain('Ihsan — Muslim Worship &amp; Productivity Tracker');
+    expect(res.text).toContain('Bustandeen — Grow Your Garden of Good Deeds');
     expect(res.text).toContain('og:image');
   });
 
@@ -55,8 +55,8 @@ describe('GET /connect/:code — bot-only invite-link preview', () => {
 
     const res = await request(app).get(`/connect/${amirCode}`);
     expect(res.status).toBe(200);
-    expect(res.text).toContain('Amir invited you to Ihsan');
-    expect(res.text).toContain('Join Amir on Ihsan');
+    expect(res.text).toContain('Amir invited you to Bustandeen');
+    expect(res.text).toContain('Join Amir on Bustandeen');
   });
 
   test('a display name with HTML metacharacters is escaped, not injected raw', async () => {
