@@ -111,4 +111,68 @@ export interface AuthUser {
   emailVerified?: boolean;
   /** From the DB profile — gates the Rayhanah Cycle entry (female only) */
   gender?: 'male' | 'female' | 'other' | 'prefer_not_say';
+  /** Computed server-side from ADMIN_EMAILS on each /verify or /user/me call
+   *  — never stored, so it's always in sync with the env var. Gates /admin/sadaqah. */
+  isAdmin?: boolean;
+}
+
+export type SadaqahPaymentMethod = 'bkash' | 'nagad';
+export type DonationStatus = 'pending' | 'verified' | 'rejected';
+
+export interface Donation {
+  _id: string;
+  donorName: string | null;
+  onBehalfOf: string | null;
+  email: string;
+  phone: string;
+  paymentMethod: SadaqahPaymentMethod;
+  transactionId: string;
+  amount: number;
+  transactionDate: string;
+  message: string | null;
+  showNamePublicly: boolean;
+  isAnonymous: boolean;
+  userId: string | null;
+  status: DonationStatus;
+  verifiedAt: string | null;
+  verifiedBy: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QuarterlyEntry {
+  quarter: string;
+  received: number;
+  spent: number;
+  notes: string;
+}
+
+export interface DonationStatsResponse {
+  ok: boolean;
+  totalVerifiedAmount: number;
+  totalVerifiedCount: number;
+  lastUpdated: string;
+  quarterlyBreakdown: QuarterlyEntry[];
+}
+
+export interface SadaqahConfigResponse {
+  ok: boolean;
+  bkashNumber: string | null;
+  nagadNumber: string | null;
+  nagadEnabled: boolean;
+}
+
+export interface SubmitDonationRequest {
+  donorName?: string;
+  onBehalfOf?: string;
+  email: string;
+  phone: string;
+  paymentMethod: SadaqahPaymentMethod;
+  transactionId: string;
+  amount: number;
+  transactionDate: string;
+  message?: string;
+  showNamePublicly?: boolean;
+  isAnonymous?: boolean;
 }

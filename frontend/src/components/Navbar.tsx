@@ -19,6 +19,7 @@ import {
   ShieldCheckIcon,
   ChatBubbleLeftRightIcon,
   GlobeAltIcon,
+  BanknotesIcon,
 } from '@heroicons/react/24/outline';
 import i18n from '../i18n.js';
 import { syncQuranTranslationWithLang } from '../utils/quranData.js';
@@ -403,6 +404,17 @@ export default function Navbar() {
                             {discreetMode ? '🍃' : '🌸'}
                           </span>
                           {discreetMode ? t('nav.wellness', 'Wellness') : t('nav.rayhanahCycle')}
+                        </Link>
+                      )}
+
+                      {user.isAdmin && (
+                        <Link
+                          to="/admin/sadaqah"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-brand-gold/10 text-sm transition-colors"
+                        >
+                          <BanknotesIcon className="w-4 h-4 text-brand-gold/70" />
+                          {t('nav.sadaqahAdmin', 'Sadaqah Admin')}
                         </Link>
                       )}
 

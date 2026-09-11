@@ -70,6 +70,10 @@ const QuranReader = lazy(() => import('./pages/QuranReader.js'));
 const QuranBookmarks = lazy(() => import('./pages/QuranBookmarks.js'));
 const QuranHifz = lazy(() => import('./pages/QuranHifz.js'));
 const Landing = lazy(() => import('./pages/Landing.js'));
+const Sadaqah = lazy(() => import('./pages/Sadaqah.js'));
+const SadaqahDonate = lazy(() => import('./pages/SadaqahDonate.js'));
+const SadaqahThankYou = lazy(() => import('./pages/SadaqahThankYou.js'));
+const AdminSadaqah = lazy(() => import('./pages/AdminSadaqah.js'));
 
 /**
  * Post-sign-in redirects are read back out of sessionStorage, so they must be
@@ -240,6 +244,15 @@ const Protected = ({ children }: ProtectedProps) => {
     return <VerifyEmailGate email={user.email} />;
   }
   return <>{children}</>;
+};
+
+/** Admin-only pages: sign-in/verification handled by Protected, then a
+ * signed-in non-admin gets NotFound rather than a "forbidden" message —
+ * consistent with this app not advertising admin/internal routes elsewhere
+ * (the bot-only /connect preview, noindex on it in vercel.json). */
+const AdminProtected = ({ children }: ProtectedProps) => {
+  const { user } = useAuthStore();
+  return <Protected>{user?.isAdmin ? children : <NotFound />}</Protected>;
 };
 
 export default function App() {
@@ -446,6 +459,9 @@ export default function App() {
           // it, flashing the GenderGate banner on an account that already has
           // a gender set.
           optimistic.gender = cached.gender ?? optimistic.gender;
+          // Same reasoning as gender above — a returning admin's nav link
+          // shouldn't flicker away and back while /api/auth/verify round-trips.
+          optimistic.isAdmin = cached.isAdmin ?? optimistic.isAdmin;
         }
       } catch {
         /* corrupt cache — Firebase values are fine */
@@ -494,12 +510,14 @@ export default function App() {
                   hijriOffset?: number;
                   dayStartMode?: DayStartMode;
                 };
+                isAdmin?: boolean;
               };
               const authUser: AuthUser = {
                 ...optimistic,
                 displayName: verifyData?.user?.displayName || optimistic.displayName,
                 photoUrl: verifyData?.user?.photoUrl || optimistic.photoUrl,
                 gender: verifyData?.user?.gender ?? optimistic.gender,
+                isAdmin: verifyData?.isAdmin ?? optimistic.isAdmin,
               };
               localStorage.setItem('bustandeen_user', JSON.stringify(authUser));
               setUser(authUser);
@@ -730,6 +748,18 @@ export default function App() {
                 />
                 {/* Public: handles guests itself (sign-in gate that returns here) */}
                 <Route path="/connect/:code" element={<ConnectFriend />} />
+                {/* Public: guests can donate too, so these are unwrapped */}
+                <Route path="/sadaqah" element={<Sadaqah />} />
+                <Route path="/sadaqah/donate" element={<SadaqahDonate />} />
+                <Route path="/sadaqah/thank-you" element={<SadaqahThankYou />} />
+                <Route
+                  path="/admin/sadaqah"
+                  element={
+                    <AdminProtected>
+                      <AdminSadaqah />
+                    </AdminProtected>
+                  }
+                />
                 <Route path="/about" element={<About />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/feedback" element={<Feedback />} />

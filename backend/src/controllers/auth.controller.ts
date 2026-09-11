@@ -5,6 +5,7 @@ import {
   decodeUnverifiedJwt,
 } from '../config/firebaseAdmin.js';
 import User from '../models/User.js';
+import { isAdminEmail } from '../middleware/auth.js';
 
 export const verifyHandler = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -64,7 +65,7 @@ export const verifyHandler = async (req: Request, res: Response): Promise<void> 
       }
     );
 
-    res.json({ ok: true, user });
+    res.json({ ok: true, user, isAdmin: isAdminEmail(email) });
   } catch (err) {
     const error = err as {
       code?: string;

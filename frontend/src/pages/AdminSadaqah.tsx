@@ -1,0 +1,423 @@
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import AnimatedBackground from '../components/AnimatedBackground.js';
+import Seo from '../components/Seo.js';
+import DonationStatusBadge from '../components/DonationStatusBadge.js';
+import { useSadaqahStats } from '../hooks/useSadaqah.js';
+import {
+  usePendingDonations,
+  useAllDonations,
+  useVerifyDonation,
+  useRejectDonation,
+  useUpsertQuarterly,
+  useDeleteQuarterly,
+} from '../hooks/useAdminSadaqah.js';
+import type { Donation, DonationStatus } from '../types/api.js';
+
+function donorLabel(d: Donation): string {
+  if (d.isAnonymous) return 'Anonymous';
+  return d.donorName || '(no name)';
+}
+
+function isThisMonth(iso: string | null): boolean {
+  if (!iso) return false;
+  const d = new Date(iso);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+}
+
+function PendingCard({ donation }: { donation: Donation }) {
+  const { t } = useTranslation();
+  const verify = useVerifyDonation();
+  const reject = useRejectDonation();
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState('');
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-2xl border border-brand-gold/20 bg-white/[0.03] p-4 space-y-3"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-white font-bold text-sm truncate">
+            {donorLabel(donation)}
+            {donation.onBehalfOf && (
+              <span className="text-white/40 font-normal">
+                {' '}
+                — {t('adminSadaqah.onBehalfOfPrefix', 'on behalf of')} {donation.onBehalfOf}
+              </span>
+            )}
+          </p>
+          <p className="text-white/40 text-xs mt-0.5">
+            {donation.email} · {donation.phone}
+          </p>
+        </div>
+        <p className="text-brand-gold font-black text-lg shrink-0">
+          {donation.amount.toLocaleString()} <span className="text-xs">BDT</span>
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded-xl bg-black/20 px-3 py-2">
+          <p className="text-white/30">{t('adminSadaqah.trxId', 'Transaction ID')}</p>
+          <p className="text-white font-mono font-bold">{donation.transactionId}</p>
+        </div>
+        <div className="rounded-xl bg-black/20 px-3 py-2">
+          <p className="text-white/30">
+            {t('adminSadaqah.method', 'Method')} · {t('adminSadaqah.date', 'Date')}
+          </p>
+          <p className="text-white font-bold">
+            {donation.paymentMethod === 'bkash' ? 'bKash' : 'Nagad'} ·{' '}
+            {donation.transactionDate.slice(0, 10)}
+          </p>
+        </div>
+      </div>
+
+      {donation.message && (
+        <p className="text-white/50 text-xs italic border-l-2 border-white/10 pl-3">
+          {donation.message}
+        </p>
+      )}
+
+      {!rejecting ? (
+        <div className="flex gap-2">
+          <button
+            onClick={() => verify.mutate(donation._id)}
+            disabled={verify.isPending}
+            className="btn btn-sm flex-1 bg-brand-emerald hover:bg-brand-emerald-dim border-0 text-white"
+          >
+            {verify.isPending ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              t('adminSadaqah.verify', 'Verify')
+            )}
+          </button>
+          <button
+            onClick={() => setRejecting(true)}
+            className="btn btn-sm flex-1 bg-white/5 hover:bg-red-500/20 border border-red-400/30 text-red-300"
+          >
+            {t('adminSadaqah.reject', 'Reject')}
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <textarea
+            autoFocus
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder={t(
+              'adminSadaqah.reasonPlaceholder',
+              'Reason (sent to the donor, kindly worded)'
+            )}
+            rows={2}
+            className="textarea textarea-bordered w-full bg-white/5 border-red-400/20 text-white text-sm"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => reject.mutate({ id: donation._id, reason: reason.trim() })}
+              disabled={!reason.trim() || reject.isPending}
+              className="btn btn-sm flex-1 bg-red-500 hover:bg-red-600 border-0 text-white disabled:opacity-40"
+            >
+              {reject.isPending ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : (
+                t('adminSadaqah.confirmReject', 'Confirm reject')
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setRejecting(false);
+                setReason('');
+              }}
+              className="btn btn-sm bg-white/5 border border-white/10 text-white/60"
+            >
+              {t('common.cancel', 'Cancel')}
+            </button>
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+export default function AdminSadaqah() {
+  const { t } = useTranslation();
+  const { data: stats } = useSadaqahStats();
+  const { data: pending, isLoading: pendingLoading } = usePendingDonations();
+  const { data: verifiedRecent } = useAllDonations('verified', 1, 100);
+
+  const [filterStatus, setFilterStatus] = useState<DonationStatus | 'all'>('all');
+  const [page, setPage] = useState(1);
+  const { data: allResult, isLoading: allLoading } = useAllDonations(
+    filterStatus === 'all' ? undefined : filterStatus,
+    page
+  );
+
+  const verifiedThisMonth =
+    verifiedRecent?.donations.filter((d) => isThisMonth(d.verifiedAt)) ?? [];
+
+  const [qForm, setQForm] = useState({ quarter: '', received: '', spent: '', notes: '' });
+  const upsertQuarterly = useUpsertQuarterly();
+  const deleteQuarterly = useDeleteQuarterly();
+
+  const saveQuarterly = () => {
+    if (!/^\d{4}-Q[1-4]$/.test(qForm.quarter)) return;
+    upsertQuarterly.mutate(
+      {
+        quarter: qForm.quarter,
+        received: qForm.received === '' ? undefined : Number(qForm.received),
+        spent: qForm.spent === '' ? undefined : Number(qForm.spent),
+        notes: qForm.notes || undefined,
+      },
+      { onSuccess: () => setQForm({ quarter: '', received: '', spent: '', notes: '' }) }
+    );
+  };
+
+  return (
+    <AnimatedBackground variant="dark">
+      <Seo
+        title={t('adminSadaqah.seoTitle', 'Sadaqah Admin')}
+        description="Internal dashboard."
+        path="/admin/sadaqah"
+        index={false}
+      />
+      <div className="max-w-3xl mx-auto px-4 py-6 sm:py-10 space-y-6">
+        <h1 className="text-2xl font-black text-white">
+          {t('adminSadaqah.title', 'Sadaqah Admin')}
+        </h1>
+
+        {/* Top stats */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-2xl border border-brand-gold/20 bg-brand-gold/5 p-4 text-center">
+            <p className="text-white text-2xl font-black">{pending?.length ?? '—'}</p>
+            <p className="text-white/40 text-xs mt-1">{t('adminSadaqah.statPending', 'Pending')}</p>
+          </div>
+          <div className="rounded-2xl border border-brand-emerald/20 bg-brand-emerald/5 p-4 text-center">
+            <p className="text-white text-2xl font-black">{verifiedThisMonth.length}</p>
+            <p className="text-white/40 text-xs mt-1">
+              {t('adminSadaqah.statThisMonth', 'Verified this month')}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-brand-emerald/10 bg-white/[0.04] p-4 text-center">
+            <p className="text-white text-2xl font-black">
+              {stats?.totalVerifiedAmount.toLocaleString() ?? '—'}
+            </p>
+            <p className="text-white/40 text-xs mt-1">
+              {t('adminSadaqah.statLifetime', 'Lifetime BDT')}
+            </p>
+          </div>
+        </div>
+
+        {/* Pending queue */}
+        <section className="space-y-3">
+          <h2 className="text-white font-bold text-sm uppercase tracking-widest text-brand-gold">
+            {t('adminSadaqah.pendingQueue', 'Pending queue')}
+          </h2>
+          {pendingLoading && (
+            <p className="text-white/40 text-sm">{t('common.loading', 'Loading…')}</p>
+          )}
+          {!pendingLoading && pending?.length === 0 && (
+            <p className="text-white/30 text-sm">
+              {t('adminSadaqah.noPending', 'Nothing waiting — all caught up.')}
+            </p>
+          )}
+          <div className="space-y-3">
+            {pending?.map((d) => (
+              <PendingCard key={d._id} donation={d} />
+            ))}
+          </div>
+        </section>
+
+        {/* All submissions */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-white font-bold text-sm uppercase tracking-widest text-white/50">
+              {t('adminSadaqah.allSubmissions', 'All submissions')}
+            </h2>
+            <select
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value as DonationStatus | 'all');
+                setPage(1);
+              }}
+              className="select select-sm bg-white/5 border-brand-emerald/15 text-white"
+            >
+              <option value="all">{t('adminSadaqah.filterAll', 'All')}</option>
+              <option value="pending">{t('adminSadaqah.statusPending', 'Pending')}</option>
+              <option value="verified">{t('adminSadaqah.statusVerified', 'Verified')}</option>
+              <option value="rejected">{t('adminSadaqah.statusRejected', 'Rejected')}</option>
+            </select>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-white/40 text-xs border-b border-white/10">
+                    <th className="text-left px-3 py-2">{t('adminSadaqah.colDate', 'Date')}</th>
+                    <th className="text-left px-3 py-2">{t('adminSadaqah.colDonor', 'Donor')}</th>
+                    <th className="text-right px-3 py-2">
+                      {t('adminSadaqah.colAmount', 'Amount')}
+                    </th>
+                    <th className="text-left px-3 py-2">{t('adminSadaqah.colTrxId', 'Trx ID')}</th>
+                    <th className="text-left px-3 py-2">{t('adminSadaqah.colStatus', 'Status')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allLoading && (
+                    <tr>
+                      <td colSpan={5} className="text-center text-white/30 py-4">
+                        {t('common.loading', 'Loading…')}
+                      </td>
+                    </tr>
+                  )}
+                  {allResult?.donations.map((d) => (
+                    <tr key={d._id} className="border-b border-white/5 last:border-0">
+                      <td className="px-3 py-2 text-white/50 whitespace-nowrap">
+                        {d.createdAt.slice(0, 10)}
+                      </td>
+                      <td className="px-3 py-2 text-white/80 truncate max-w-[140px]">
+                        {donorLabel(d)}
+                      </td>
+                      <td className="px-3 py-2 text-white text-right font-bold whitespace-nowrap">
+                        {d.amount.toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2 text-white/50 font-mono text-xs">
+                        {d.transactionId}
+                      </td>
+                      <td className="px-3 py-2">
+                        <DonationStatusBadge status={d.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {allResult && allResult.total > allResult.limit && (
+            <div className="flex items-center justify-center gap-3 text-sm">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="btn btn-sm bg-white/5 border border-white/10 text-white/60 disabled:opacity-30"
+              >
+                {t('adminSadaqah.prevPage', 'Prev')}
+              </button>
+              <span className="text-white/40">
+                {t('adminSadaqah.pageOf', 'Page {{page}} of {{total}}', {
+                  page,
+                  total: Math.ceil(allResult.total / allResult.limit),
+                })}
+              </span>
+              <button
+                disabled={page >= Math.ceil(allResult.total / allResult.limit)}
+                onClick={() => setPage((p) => p + 1)}
+                className="btn btn-sm bg-white/5 border border-white/10 text-white/60 disabled:opacity-30"
+              >
+                {t('adminSadaqah.nextPage', 'Next')}
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* Quarterly breakdown manager */}
+        <section className="space-y-3">
+          <h2 className="text-white font-bold text-sm uppercase tracking-widest text-white/50">
+            {t('adminSadaqah.quarterlyTitle', 'Quarterly breakdown')}
+          </h2>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-2">
+            {stats?.quarterlyBreakdown.length === 0 && (
+              <p className="text-white/30 text-sm">
+                {t('adminSadaqah.noQuarters', 'No quarters recorded yet.')}
+              </p>
+            )}
+            {stats?.quarterlyBreakdown.map((q) => (
+              <div
+                key={q.quarter}
+                className="flex items-center justify-between gap-3 border-b border-white/5 pb-2 last:border-0 last:pb-0"
+              >
+                <div className="min-w-0">
+                  <p className="text-white font-bold text-sm">{q.quarter}</p>
+                  <p className="text-white/40 text-xs truncate">
+                    +{q.received.toLocaleString()} / -{q.spent.toLocaleString()}
+                    {q.notes ? ` — ${q.notes}` : ''}
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() =>
+                      setQForm({
+                        quarter: q.quarter,
+                        received: String(q.received),
+                        spent: String(q.spent),
+                        notes: q.notes,
+                      })
+                    }
+                    className="btn btn-xs bg-white/5 border border-white/10 text-white/60"
+                  >
+                    {t('adminSadaqah.edit', 'Edit')}
+                  </button>
+                  <button
+                    onClick={() => deleteQuarterly.mutate(q.quarter)}
+                    className="btn btn-xs bg-white/5 border border-red-400/20 text-red-300"
+                  >
+                    {t('adminSadaqah.delete', 'Delete')}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-brand-emerald/15 bg-brand-emerald/5 p-4 space-y-2">
+            <p className="text-white/70 text-xs font-bold">
+              {t('adminSadaqah.addEditQuarter', 'Add / edit a quarter')}
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <input
+                value={qForm.quarter}
+                onChange={(e) => setQForm((f) => ({ ...f, quarter: e.target.value }))}
+                placeholder="2026-Q3"
+                className="input input-sm bg-white/5 border-brand-emerald/15 text-white col-span-1"
+              />
+              <input
+                type="number"
+                value={qForm.received}
+                onChange={(e) => setQForm((f) => ({ ...f, received: e.target.value }))}
+                placeholder={t('adminSadaqah.received', 'Received')}
+                className="input input-sm bg-white/5 border-brand-emerald/15 text-white col-span-1"
+              />
+              <input
+                type="number"
+                value={qForm.spent}
+                onChange={(e) => setQForm((f) => ({ ...f, spent: e.target.value }))}
+                placeholder={t('adminSadaqah.spent', 'Spent')}
+                className="input input-sm bg-white/5 border-brand-emerald/15 text-white col-span-1"
+              />
+            </div>
+            <input
+              value={qForm.notes}
+              onChange={(e) => setQForm((f) => ({ ...f, notes: e.target.value }))}
+              placeholder={t(
+                'adminSadaqah.notesPlaceholder',
+                'Notes (e.g. server costs, qari recording)'
+              )}
+              className="input input-sm w-full bg-white/5 border-brand-emerald/15 text-white"
+            />
+            <button
+              onClick={saveQuarterly}
+              disabled={!/^\d{4}-Q[1-4]$/.test(qForm.quarter) || upsertQuarterly.isPending}
+              className="btn btn-sm bg-brand-emerald hover:bg-brand-emerald-dim border-0 text-white disabled:opacity-40"
+            >
+              {t('adminSadaqah.save', 'Save')}
+            </button>
+          </div>
+        </section>
+      </div>
+    </AnimatedBackground>
+  );
+}

@@ -45,6 +45,32 @@ export const requireAuth = async (
 const REAUTH_MAX_AGE_SECONDS = 5 * 60;
 
 /**
+ * Admin allowlist check — a comma-separated ADMIN_EMAILS env var rather than
+ * a DB role field, since this app's user model has no role/permission
+ * concept yet and there's only ever a couple of admin accounts. Exported
+ * standalone (not just as the requireAdminEmail middleware below) so
+ * controllers can also expose `isAdmin` on user-profile responses for the
+ * frontend to gate its own UI, without duplicating the parsing logic.
+ */
+export const isAdminEmail = (email: string | null | undefined): boolean => {
+  if (typeof email !== 'string' || !email) return false;
+  const adminEmails = (process.env.ADMIN_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return adminEmails.includes(email.toLowerCase());
+};
+
+/** Must run after requireAuth (needs req.user populated). */
+export const requireAdminEmail = (req: Request, res: Response, next: NextFunction): void => {
+  if (!isAdminEmail(req.user?.email)) {
+    res.status(403).json({ ok: false, error: 'Forbidden' });
+    return;
+  }
+  next();
+};
+
+/**
  * Gate for irreversible operations (account deletion): rejects unless the
  * caller's Firebase ID token was minted from an authentication within the
  * last few minutes, via the token's `auth_time` claim. This is the

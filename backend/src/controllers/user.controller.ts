@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/user.service.js';
+import { isAdminEmail } from '../middleware/auth.js';
 
 export const getUserHandler = async (
   req: Request,
@@ -20,7 +21,7 @@ export const getUserHandler = async (
       return;
     }
     res.setHeader('ETag', etag);
-    res.json({ ok: true, user });
+    res.json({ ok: true, user, isAdmin: isAdminEmail(req.user.email) });
   } catch (err) {
     next(err);
   }

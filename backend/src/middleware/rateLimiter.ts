@@ -75,3 +75,10 @@ export const importLimiter = makeUidLimit(60 * 60 * 1000, 10, {
   ok: false,
   error: 'Too many import attempts. Try again in an hour.',
 });
+
+/** Sadaqah submissions: 5 per hour per IP — the endpoint is unauthenticated
+ *  (guests can donate), so this must be IP-keyed rather than UID-keyed. */
+export const sadaqahSubmitLimiter = makeLimit(60 * 60 * 1000, 5, {
+  ok: false,
+  error: 'Too many donation submissions. Please try again in an hour.',
+});

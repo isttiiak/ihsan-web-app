@@ -16,6 +16,8 @@ import cycleRoutes from './routes/cycle.routes.js';
 import insightsRoutes from './routes/insights.routes.js';
 import naturalLogRoutes from './routes/naturalLog.routes.js';
 import connectPreviewRoutes from './routes/connectPreview.routes.js';
+import sadaqahRoutes from './routes/sadaqah.routes.js';
+import adminSadaqahRoutes from './routes/adminSadaqah.routes.js';
 import { generalLimiter, authLimiter, zikrLimiter, aiLimiter } from './middleware/rateLimiter.js';
 import { globalErrorHandler } from './middleware/errorHandler.js';
 
@@ -132,6 +134,8 @@ app.use('/api/social', socialRoutes);
 app.use('/api/cycle', cycleRoutes);
 app.use('/api/insights', insightsRoutes);
 app.use('/api/natural-log', aiLimiter, naturalLogRoutes);
+app.use('/api/sadaqah', sadaqahRoutes);
+app.use('/api/admin/sadaqah', adminSadaqahRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {
