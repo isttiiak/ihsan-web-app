@@ -20,6 +20,7 @@ const TAB_DEFS = [
   { id: 'read', labelKey: 'quranTabs.read', fallback: '🧭 Read', to: '/quran/browse' },
   { id: 'listen', labelKey: 'quranTabs.listen', fallback: '🎧 Listen', to: '/quran/listen' },
   { id: 'bookmarks', labelKey: 'quranTabs.saved', fallback: '🔖 Saved', to: '/quran/bookmarks' },
+  { id: 'hifz', labelKey: 'quranTabs.hifz', fallback: '🧠 Hifz', to: '/quran/hifz' },
   {
     id: 'analytics',
     labelKey: 'quranTabs.analytics',

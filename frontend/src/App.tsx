@@ -68,6 +68,7 @@ const QuranListen = lazy(() => import('./pages/QuranListen.js'));
 const QuranAnalytics = lazy(() => import('./pages/QuranAnalytics.js'));
 const QuranReader = lazy(() => import('./pages/QuranReader.js'));
 const QuranBookmarks = lazy(() => import('./pages/QuranBookmarks.js'));
+const QuranHifz = lazy(() => import('./pages/QuranHifz.js'));
 const Landing = lazy(() => import('./pages/Landing.js'));
 
 /**
@@ -632,6 +633,14 @@ export default function App() {
                   element={
                     <Protected>
                       <QuranBookmarks />
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="/quran/hifz"
+                  element={
+                    <Protected>
+                      <QuranHifz />
                     </Protected>
                   }
                 />

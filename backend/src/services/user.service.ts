@@ -12,6 +12,9 @@ import FastingLog from '../models/FastingLog.js';
 import FastingProfile from '../models/FastingProfile.js';
 import QuranLog from '../models/QuranLog.js';
 import QuranProfile from '../models/QuranProfile.js';
+import HifzEntry from '../models/HifzEntry.js';
+import HifzProfile from '../models/HifzProfile.js';
+import HifzLog from '../models/HifzLog.js';
 import CycleLog from '../models/CycleLog.js';
 import CycleDay from '../models/CycleDay.js';
 import CycleProfile from '../models/CycleProfile.js';
@@ -100,6 +103,9 @@ export async function deleteAccount(uid: string): Promise<void> {
     FastingProfile.deleteMany({ userId: uid }),
     QuranLog.deleteMany({ userId: uid }),
     QuranProfile.deleteMany({ userId: uid }),
+    HifzEntry.deleteMany({ userId: uid }),
+    HifzProfile.deleteMany({ userId: uid }),
+    HifzLog.deleteMany({ userId: uid }),
     CycleLog.deleteMany({ userId: uid }),
     CycleDay.deleteMany({ userId: uid }),
     CycleProfile.deleteMany({ userId: uid }),

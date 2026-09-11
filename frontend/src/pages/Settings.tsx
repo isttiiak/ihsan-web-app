@@ -185,6 +185,29 @@ const DANGER_GROUPS: DangerGroup[] = [
     ],
   },
   {
+    id: 'hifz',
+    emoji: '🧠',
+    title: 'Hifz',
+    card: 'border-brand-emerald/20 bg-brand-emerald/[0.04]',
+    rows: [
+      {
+        id: 'hifz-all',
+        label: 'All Hifz data',
+        detail: 'Memorised āyāt, revision schedule & daily targets',
+        method: 'delete',
+        endpoint: '/api/hifz/all',
+      },
+      {
+        id: 'hifz-cursor',
+        label: 'Restart "add next āyah" cursor',
+        detail: 'Back to 1:1; already-memorised āyāt keep their progress',
+        method: 'post',
+        endpoint: '/api/hifz/cursor/reset',
+        sub: true,
+      },
+    ],
+  },
+  {
     id: 'cycle',
     emoji: '🌸',
     title: 'Rayhanah Cycle',
