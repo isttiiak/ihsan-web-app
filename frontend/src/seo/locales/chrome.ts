@@ -89,6 +89,9 @@ export interface ChromeStrings {
     hijriLabel: string;
     todayLabel: string;
     convertHint: string;
+    adjustmentLabel: string;
+    adjustmentNone: string;
+    adjustmentNote: string;
   };
 }
 
@@ -195,7 +198,11 @@ const en: ChromeStrings = {
     gregorianLabel: 'Gregorian date',
     hijriLabel: 'Hijri date',
     todayLabel: "Today's date",
-    convertHint: 'Open the app for an interactive date-by-date converter.',
+    convertHint: 'Open Bustandeen for prayer times, fasting tracking and more',
+    adjustmentLabel: 'Moon-sighting adjustment',
+    adjustmentNone: 'Standard',
+    adjustmentNote:
+      "The Hijri month's start can genuinely differ by a day between regions depending on local moon-sighting announcements — adjust here if your local authority differs from the standard calculation.",
   },
 };
 
@@ -301,7 +308,11 @@ const bn: ChromeStrings = {
     gregorianLabel: 'গ্রেগরিয়ান তারিখ',
     hijriLabel: 'হিজরি তারিখ',
     todayLabel: 'আজকের তারিখ',
-    convertHint: 'ইন্টারেক্টিভ তারিখ-ভিত্তিক কনভার্টারের জন্য অ্যাপ খুলুন।',
+    convertHint: 'নামাজের সময়, রোজা ট্র্যাকিং ও আরও অনেক কিছুর জন্য Bustandeen অ্যাপ খুলুন',
+    adjustmentLabel: 'চাঁদ দেখা সমন্বয়',
+    adjustmentNone: 'আদর্শ',
+    adjustmentNote:
+      'স্থানীয় চাঁদ দেখার ঘোষণার উপর নির্ভর করে হিজরি মাসের শুরু বিভিন্ন অঞ্চলে সত্যিই এক দিন কমবেশি হতে পারে — আপনার স্থানীয় কর্তৃপক্ষ আদর্শ হিসাব থেকে ভিন্ন হলে এখানে সমন্বয় করুন।',
   },
 };
 
@@ -408,7 +419,11 @@ const ar: ChromeStrings = {
     gregorianLabel: 'التاريخ الميلادي',
     hijriLabel: 'التاريخ الهجري',
     todayLabel: 'تاريخ اليوم',
-    convertHint: 'افتح التطبيق لمحول تفاعلي بين التواريخ.',
+    convertHint: 'افتح تطبيق Bustandeen لمواقيت الصلاة وتتبع الصيام والمزيد',
+    adjustmentLabel: 'تعديل رؤية الهلال',
+    adjustmentNone: 'قياسي',
+    adjustmentNote:
+      'قد يختلف بداية الشهر الهجري فعليًا بيوم واحد بين المناطق حسب إعلانات رؤية الهلال المحلية — عدّل هنا إذا اختلفت جهتك المحلية عن الحساب القياسي.',
   },
 };
 

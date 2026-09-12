@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import type { SeoLang } from '../locales/chrome.js';
-import { CHROME, RTL_LANGS } from '../locales/chrome.js';
+import { CHROME, RTL_LANGS, SEO_LANGS } from '../locales/chrome.js';
+
+const LANG_LABEL: Record<SeoLang, string> = { en: 'EN', bn: 'বাং', ar: 'عربي' };
 
 // Deliberately not importing AnimatedBackground, Zustand, Firebase or
 // React Query — this whole src/seo/ tree is rendered server-side via
@@ -19,11 +21,15 @@ interface BreadcrumbItem {
 
 interface LayoutProps {
   lang: SeoLang;
+  /** Unprefixed (English-canonical) path for the current page, e.g.
+   * `/duas/travel` — used to build the language-switcher links so switching
+   * language keeps you on the equivalent page instead of bouncing to home. */
+  barePath: string;
   breadcrumbs: BreadcrumbItem[];
   children: ReactNode;
 }
 
-export default function Layout({ lang, breadcrumbs, children }: LayoutProps) {
+export default function Layout({ lang, barePath, breadcrumbs, children }: LayoutProps) {
   const t = CHROME[lang];
   const dir = RTL_LANGS.includes(lang) ? 'rtl' : 'ltr';
 
@@ -41,18 +47,26 @@ export default function Layout({ lang, breadcrumbs, children }: LayoutProps) {
         <header className="border-b border-[#1e2d42]">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
             <a
-              href={langPath(lang, '/')}
+              href="https://bustandeen.com/"
               className="flex items-center gap-2 font-black text-lg text-[#f1f5f9] no-underline"
             >
               <span aria-hidden>🌙</span> {t.siteName}
             </a>
-            <nav
-              aria-label={t.languageLabel}
-              className="flex items-center gap-3 text-sm text-[#94a3b8]"
-            >
-              <a href="https://bustandeen.com/" className="hover:text-[#10b981] no-underline">
-                {t.home}
-              </a>
+            <nav aria-label={t.languageLabel} className="flex items-center gap-1.5">
+              {SEO_LANGS.map((l) => (
+                <a
+                  key={l}
+                  href={langPath(l, barePath)}
+                  aria-current={l === lang ? 'page' : undefined}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-bold no-underline ${
+                    l === lang
+                      ? 'bg-[#10b981] text-[#080c12]'
+                      : 'text-[#94a3b8] border border-[#1e2d42] hover:text-[#10b981]'
+                  }`}
+                >
+                  {LANG_LABEL[l]}
+                </a>
+              ))}
             </nav>
           </div>
         </header>
