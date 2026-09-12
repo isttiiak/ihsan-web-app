@@ -47,10 +47,13 @@ export default function Sadaqah() {
             </div>
           </motion.div>
 
-          {/* A contributor count, not a money figure — showing amounts raised
-              isn't the right framing for sadaqah. Only shown once someone has
-              actually given, same reasoning as before for an empty state. */}
-          {!!stats && stats.totalContributors > 0 && (
+          {/* A donation count, not a money figure — showing amounts raised
+              isn't the right framing for sadaqah. Counts every verified
+              donation (not unique donors) since one person can give more
+              than once, or give on behalf of others. Only shown once
+              someone has actually given, same reasoning as before for an
+              empty state. */}
+          {!!stats && stats.totalVerifiedCount > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -58,10 +61,10 @@ export default function Sadaqah() {
               className="rounded-2xl border border-brand-gold/25 bg-brand-gold/5 p-5 text-center"
             >
               <p className="text-brand-gold font-black text-sm uppercase tracking-widest">
-                {t('sadaqah.contributorsLabel', 'People who have given')}
+                {t('sadaqah.contributorsLabel', 'Donations given')}
               </p>
               <p className="text-white text-3xl font-black mt-1.5">
-                {stats.totalContributors.toLocaleString()}
+                {stats.totalVerifiedCount.toLocaleString()}
               </p>
               <p className="text-white/40 text-xs mt-1">
                 {t(

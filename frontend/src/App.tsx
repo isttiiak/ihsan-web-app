@@ -75,6 +75,36 @@ const SadaqahDonate = lazy(() => import('./pages/SadaqahDonate.js'));
 const SadaqahThankYou = lazy(() => import('./pages/SadaqahThankYou.js'));
 const AdminSadaqah = lazy(() => import('./pages/AdminSadaqah.js'));
 
+// Programmatic-SEO static pages (prayer-times/qibla/ramadan-calendar by
+// city, du'a library, adhkar, Hijri converter) — pre-rendered at build time
+// by scripts/prerender.mjs; these lazy wrappers let React Router take over
+// in-app navigation once the client bundle loads. One shared chunk (same
+// import specifier) reused across every language-prefixed route below.
+const SeoPrayerTimesCity = lazy(() =>
+  import('./seo/routes/ClientRoutes.js').then((m) => ({ default: m.PrayerTimesCityRoute }))
+);
+const SeoQiblaCity = lazy(() =>
+  import('./seo/routes/ClientRoutes.js').then((m) => ({ default: m.QiblaCityRoute }))
+);
+const SeoRamadanCalendar = lazy(() =>
+  import('./seo/routes/ClientRoutes.js').then((m) => ({ default: m.RamadanCalendarRoute }))
+);
+const SeoDuaSituation = lazy(() =>
+  import('./seo/routes/ClientRoutes.js').then((m) => ({ default: m.DuaSituationRoute }))
+);
+const SeoDuasIndex = lazy(() =>
+  import('./seo/routes/ClientRoutes.js').then((m) => ({ default: m.DuasIndexRoute }))
+);
+const SeoAdhkarMorning = lazy(() =>
+  import('./seo/routes/ClientRoutes.js').then((m) => ({ default: m.AdhkarMorningRoute }))
+);
+const SeoAdhkarEvening = lazy(() =>
+  import('./seo/routes/ClientRoutes.js').then((m) => ({ default: m.AdhkarEveningRoute }))
+);
+const SeoHijriConverter = lazy(() =>
+  import('./seo/routes/ClientRoutes.js').then((m) => ({ default: m.HijriConverterRoute }))
+);
+
 /**
  * Post-sign-in redirects are read back out of sessionStorage, so they must be
  * treated as untrusted before being handed to navigate().
@@ -562,6 +592,16 @@ export default function App() {
 
   const { authLoading } = useAuthStore();
   const isAuthPage = ['/login', '/signup', '/auth/action'].includes(location.pathname);
+  // Programmatic-SEO static pages (src/seo/) ship their own self-contained
+  // header/breadcrumb/footer (see src/seo/components/Layout.tsx) — the app
+  // shell's Navbar/Footer would otherwise double up on top of it once
+  // client-side routing takes over from the pre-rendered HTML. Deliberately
+  // excludes the bare `/prayer-times` and `/qibla` paths (the live, on-device
+  // tracker pages), which keep the normal app chrome.
+  const isSeoPage =
+    /^\/(bn\/|ar\/)?(prayer-times\/|qibla\/|ramadan-calendar\/|duas(\/|$)|adhkar\/|hijri-date-converter)/.test(
+      location.pathname
+    );
   const noFooterPrefixes = [
     '/zikr',
     '/salat',
@@ -573,6 +613,7 @@ export default function App() {
   ];
   const showFooter =
     !isAuthPage &&
+    !isSeoPage &&
     !noFooterPrefixes.some((p) => location.pathname === p || location.pathname.startsWith(p + '/'));
 
   return (
@@ -588,10 +629,10 @@ export default function App() {
         </div>
       ) : (
         <>
-          <DemoBanner />
-          {!isAuthPage && <Navbar />}
-          {!isAuthPage && <UnsavedWarning />}
-          {!isAuthPage && <GenderGate />}
+          {!isSeoPage && <DemoBanner />}
+          {!isAuthPage && !isSeoPage && <Navbar />}
+          {!isAuthPage && !isSeoPage && <UnsavedWarning />}
+          {!isAuthPage && !isSeoPage && <GenderGate />}
           <div className="flex-1">
             <Suspense fallback={<RouteFallback />}>
               <Routes>
@@ -617,6 +658,43 @@ export default function App() {
                 />
                 <Route path="/prayer-times" element={<PrayerTimes />} />
                 <Route path="/qibla" element={<QiblaCompass />} />
+
+                {/* Programmatic-SEO static pages — pre-rendered by
+                    scripts/prerender.mjs, React Router takes over from here
+                    once the client bundle loads. See TODO-v3.md. */}
+                <Route path="/prayer-times/:city" element={<SeoPrayerTimesCity lang="en" />} />
+                <Route path="/bn/prayer-times/:city" element={<SeoPrayerTimesCity lang="bn" />} />
+                <Route path="/ar/prayer-times/:city" element={<SeoPrayerTimesCity lang="ar" />} />
+                <Route path="/qibla/:city" element={<SeoQiblaCity lang="en" />} />
+                <Route path="/bn/qibla/:city" element={<SeoQiblaCity lang="bn" />} />
+                <Route path="/ar/qibla/:city" element={<SeoQiblaCity lang="ar" />} />
+                <Route
+                  path="/ramadan-calendar/:city/:year"
+                  element={<SeoRamadanCalendar lang="en" />}
+                />
+                <Route
+                  path="/bn/ramadan-calendar/:city/:year"
+                  element={<SeoRamadanCalendar lang="bn" />}
+                />
+                <Route
+                  path="/ar/ramadan-calendar/:city/:year"
+                  element={<SeoRamadanCalendar lang="ar" />}
+                />
+                <Route path="/duas" element={<SeoDuasIndex lang="en" />} />
+                <Route path="/bn/duas" element={<SeoDuasIndex lang="bn" />} />
+                <Route path="/ar/duas" element={<SeoDuasIndex lang="ar" />} />
+                <Route path="/duas/:situation" element={<SeoDuaSituation lang="en" />} />
+                <Route path="/bn/duas/:situation" element={<SeoDuaSituation lang="bn" />} />
+                <Route path="/ar/duas/:situation" element={<SeoDuaSituation lang="ar" />} />
+                <Route path="/adhkar/morning" element={<SeoAdhkarMorning lang="en" />} />
+                <Route path="/bn/adhkar/morning" element={<SeoAdhkarMorning lang="bn" />} />
+                <Route path="/ar/adhkar/morning" element={<SeoAdhkarMorning lang="ar" />} />
+                <Route path="/adhkar/evening" element={<SeoAdhkarEvening lang="en" />} />
+                <Route path="/bn/adhkar/evening" element={<SeoAdhkarEvening lang="bn" />} />
+                <Route path="/ar/adhkar/evening" element={<SeoAdhkarEvening lang="ar" />} />
+                <Route path="/hijri-date-converter" element={<SeoHijriConverter lang="en" />} />
+                <Route path="/bn/hijri-date-converter" element={<SeoHijriConverter lang="bn" />} />
+                <Route path="/ar/hijri-date-converter" element={<SeoHijriConverter lang="ar" />} />
                 <Route
                   path="/quran"
                   element={
